@@ -1,13 +1,42 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React from 'react';
+import { useSearchParams } from 'react-router-dom';
+import Navbar from '@/components/Navbar';
+import LandingPage from '@/components/LandingPage';
+import Dashboard from '@/components/Dashboard';
+import ProfilePage from '@/components/ProfilePage';
 
 const Index = () => {
+  const [searchParams] = useSearchParams();
+  const view = searchParams.get('view');
+  const username = searchParams.get('username');
+
+  // If accessing a specific username profile
+  if (username) {
+    return <ProfilePage />;
+  }
+
+  // Show dashboard view
+  if (view === 'dashboard') {
+    return (
+      <>
+        <Navbar />
+        <Dashboard />
+      </>
+    );
+  }
+
+  // Show profile view (visitor perspective)
+  if (view === 'profile') {
+    return <ProfilePage />;
+  }
+
+  // Default landing page
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <>
+      <Navbar />
+      <LandingPage />
+    </>
   );
 };
 
