@@ -31,7 +31,8 @@ import {
   Palette,
   Code,
   Zap,
-  Gift
+  Gift,
+  ArrowRight
 } from 'lucide-react';
 
 const ProfilePage = () => {
