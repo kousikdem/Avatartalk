@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { UserCircle, Settings, Home } from 'lucide-react';
+import { UserCircle, Settings, Home, LogIn } from 'lucide-react';
 
 const Navbar = () => {
   return (
@@ -9,11 +9,6 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4">
-            <img 
-              src="/lovable-uploads/d6afa97d-dc19-4ce0-9426-ba291ed29f50.png" 
-              alt="AvatarTalk.bio" 
-              className="h-8 w-auto"
-            />
             <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
               AvatarTalk.bio
             </span>
@@ -28,9 +23,13 @@ const Navbar = () => {
               <Settings className="w-4 h-4 mr-2" />
               Settings
             </Button>
+            <Button variant="ghost" size="sm" className="text-gray-300 hover:text-white">
+              <LogIn className="w-4 h-4 mr-2" />
+              Sign In
+            </Button>
             <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
               <UserCircle className="w-4 h-4 mr-2" />
-              Profile
+              Get Started
             </Button>
           </div>
         </div>
