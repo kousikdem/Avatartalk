@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,25 +21,34 @@ import {
   EyeOff,
   Plus,
   Youtube,
-  Instagram
+  Instagram,
+  Shield,
+  Bell,
+  Globe,
+  Trash2,
+  Download
 } from 'lucide-react';
 
 const Dashboard = () => {
   const [isPublic, setIsPublic] = React.useState(true);
   const [personality, setPersonality] = React.useState([50]);
+  const [notifications, setNotifications] = React.useState(true);
+  const [darkMode, setDarkMode] = React.useState(true);
 
   return (
-    <div className="min-h-screen bg-gray-950 pt-20 pb-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-blue-950/10 to-purple-950/10 pt-20 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white">Avatar Dashboard</h1>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+            Avatar Dashboard
+          </h1>
           <p className="text-gray-400 mt-2">Customize your AI avatar and manage your profile</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Avatar Preview */}
           <div className="lg:col-span-1">
-            <Card className="bg-gray-900/50 border-gray-800">
+            <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="text-white flex items-center justify-between">
                   Avatar Preview
@@ -56,7 +64,7 @@ const Dashboard = () => {
             </Card>
 
             {/* Quick Stats */}
-            <Card className="bg-gray-900/50 border-gray-800 mt-6">
+            <Card className="bg-gray-900/50 border-gray-800 mt-6 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="text-white flex items-center">
                   <BarChart3 className="w-5 h-5 mr-2" />
@@ -83,26 +91,30 @@ const Dashboard = () => {
           {/* Main Configuration */}
           <div className="lg:col-span-2">
             <Tabs defaultValue="profile" className="space-y-6">
-              <TabsList className="bg-gray-800 border-gray-700">
-                <TabsTrigger value="profile" className="data-[state=active]:bg-blue-600">
+              <TabsList className="bg-gray-800/50 border-gray-700 backdrop-blur-sm">
+                <TabsTrigger value="profile" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600">
                   <User className="w-4 h-4 mr-2" />
                   Profile
                 </TabsTrigger>
-                <TabsTrigger value="avatar" className="data-[state=active]:bg-blue-600">
+                <TabsTrigger value="avatar" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600">
                   <Palette className="w-4 h-4 mr-2" />
                   Avatar
                 </TabsTrigger>
-                <TabsTrigger value="voice" className="data-[state=active]:bg-blue-600">
+                <TabsTrigger value="voice" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600">
                   <Volume2 className="w-4 h-4 mr-2" />
                   Voice
                 </TabsTrigger>
-                <TabsTrigger value="responses" className="data-[state=active]:bg-blue-600">
+                <TabsTrigger value="responses" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600">
                   <MessageSquare className="w-4 h-4 mr-2" />
                   Responses
                 </TabsTrigger>
-                <TabsTrigger value="links" className="data-[state=active]:bg-blue-600">
+                <TabsTrigger value="links" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600">
                   <Link className="w-4 h-4 mr-2" />
                   Links
+                </TabsTrigger>
+                <TabsTrigger value="settings" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Settings
                 </TabsTrigger>
               </TabsList>
 
@@ -311,6 +323,59 @@ const Dashboard = () => {
                     <Button className="w-full bg-blue-600 hover:bg-blue-700">
                       <Plus className="w-4 h-4 mr-2" />
                       Add New Link
+                    </Button>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="settings" className="space-y-6">
+                <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+                  <CardHeader>
+                    <CardTitle className="text-white">Account Settings</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-gray-300">Email Notifications</Label>
+                        <p className="text-sm text-gray-500">Receive email updates about your avatar activity</p>
+                      </div>
+                      <Switch checked={notifications} onCheckedChange={setNotifications} />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-gray-300">Dark Mode</Label>
+                        <p className="text-sm text-gray-500">Toggle between light and dark themes</p>
+                      </div>
+                      <Switch checked={darkMode} onCheckedChange={setDarkMode} />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-gray-300">Public Profile</Label>
+                        <p className="text-sm text-gray-500">Make your avatar discoverable by others</p>
+                      </div>
+                      <Switch checked={isPublic} onCheckedChange={setIsPublic} />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+                  <CardHeader>
+                    <CardTitle className="text-white">Privacy & Security</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Button variant="outline" className="w-full justify-start border-gray-600 text-gray-300">
+                      <Shield className="w-4 h-4 mr-2" />
+                      Change Password
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start border-gray-600 text-gray-300">
+                      <Download className="w-4 h-4 mr-2" />
+                      Download My Data
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start border-red-600 text-red-400 hover:bg-red-600/10">
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete Account
                     </Button>
                   </CardContent>
                 </Card>

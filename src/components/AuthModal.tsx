@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { Mail, Lock, User, Github, Chrome } from 'lucide-react';
+import { Mail, Lock, User, Github, Chrome, Play, Sparkles } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -32,25 +32,58 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle authentication logic here
     console.log('Auth form submitted:', formData);
+  };
+
+  const handleDemoLogin = () => {
+    console.log('Demo login clicked');
+    // Simulate demo login
+    onClose();
+  };
+
+  const handleGoogleLogin = () => {
+    console.log('Google login clicked');
+    // Implement Google OAuth
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
-      <DialogContent className="sm:max-w-md bg-gray-900 border-gray-700">
+      <DialogContent className="sm:max-w-md bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700/50 backdrop-blur-xl">
         <DialogHeader>
-          <DialogTitle className="text-center text-white text-2xl">
+          <DialogTitle className="text-center text-white text-2xl mb-2">
             Welcome to AvatarTalk.bio
           </DialogTitle>
+          <p className="text-center text-gray-400 text-sm">
+            Create your AI avatar and start engaging with your audience
+          </p>
         </DialogHeader>
 
+        {/* Demo Login Banner */}
+        <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-lg p-4 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Play className="w-5 h-5 text-blue-400 mr-2" />
+              <div>
+                <p className="text-white font-medium text-sm">Try Demo Account</p>
+                <p className="text-gray-400 text-xs">Experience all features instantly</p>
+              </div>
+            </div>
+            <Button 
+              onClick={handleDemoLogin}
+              size="sm" 
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+            >
+              Demo Login
+            </Button>
+          </div>
+        </div>
+
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'signin' | 'signup')} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-gray-800">
-            <TabsTrigger value="signin" className="data-[state=active]:bg-blue-600">
+          <TabsList className="grid w-full grid-cols-2 bg-gray-800/50 border border-gray-700">
+            <TabsTrigger value="signin" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
               Sign In
             </TabsTrigger>
-            <TabsTrigger value="signup" className="data-[state=active]:bg-blue-600">
+            <TabsTrigger value="signup" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
               Sign Up
             </TabsTrigger>
           </TabsList>
@@ -68,7 +101,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
                     placeholder="Enter your email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="pl-10 bg-gray-800 border-gray-600 text-white"
+                    className="pl-10 bg-gray-800/50 border-gray-600 text-white focus:border-blue-500"
                     required
                   />
                 </div>
@@ -85,13 +118,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
                     placeholder="Enter your password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="pl-10 bg-gray-800 border-gray-600 text-white"
+                    className="pl-10 bg-gray-800/50 border-gray-600 text-white focus:border-blue-500"
                     required
                   />
                 </div>
               </div>
 
-              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
+              <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
                 Sign In
               </Button>
             </form>
@@ -116,7 +149,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
                     placeholder="Enter your full name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="pl-10 bg-gray-800 border-gray-600 text-white"
+                    className="pl-10 bg-gray-800/50 border-gray-600 text-white focus:border-blue-500"
                     required
                   />
                 </div>
@@ -133,7 +166,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
                     placeholder="Enter your email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="pl-10 bg-gray-800 border-gray-600 text-white"
+                    className="pl-10 bg-gray-800/50 border-gray-600 text-white focus:border-blue-500"
                     required
                   />
                 </div>
@@ -150,7 +183,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
                     placeholder="Create a password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="pl-10 bg-gray-800 border-gray-600 text-white"
+                    className="pl-10 bg-gray-800/50 border-gray-600 text-white focus:border-blue-500"
                     required
                   />
                 </div>
@@ -167,13 +200,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
                     placeholder="Confirm your password"
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    className="pl-10 bg-gray-800 border-gray-600 text-white"
+                    className="pl-10 bg-gray-800/50 border-gray-600 text-white focus:border-blue-500"
                     required
                   />
                 </div>
               </div>
 
-              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
+              <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
                 Create Account
               </Button>
             </form>
@@ -185,18 +218,22 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
             <Separator className="w-full bg-gray-700" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-gray-900 px-2 text-gray-400">Or continue with</span>
+            <span className="bg-gradient-to-r from-gray-900 to-gray-800 px-2 text-gray-400">Or continue with</span>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800">
-            <Github className="mr-2 h-4 w-4" />
-            GitHub
-          </Button>
-          <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800">
+          <Button 
+            variant="outline" 
+            className="border-gray-600 text-gray-300 hover:bg-gray-800/50 hover:border-blue-500"
+            onClick={handleGoogleLogin}
+          >
             <Chrome className="mr-2 h-4 w-4" />
             Google
+          </Button>
+          <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800/50 hover:border-purple-500">
+            <Github className="mr-2 h-4 w-4" />
+            GitHub
           </Button>
         </div>
 

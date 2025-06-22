@@ -5,6 +5,7 @@ import Navbar from '@/components/Navbar';
 import LandingPage from '@/components/LandingPage';
 import Dashboard from '@/components/Dashboard';
 import ProfilePage from '@/components/ProfilePage';
+import PricingPage from '@/components/PricingPage';
 
 const Index = () => {
   const [searchParams] = useSearchParams();
@@ -20,10 +21,15 @@ const Index = () => {
   if (view === 'dashboard') {
     return (
       <>
-        <Navbar />
+        <Navbar showAuth={true} />
         <Dashboard />
       </>
     );
+  }
+
+  // Show pricing page
+  if (view === 'pricing') {
+    return <PricingPage />;
   }
 
   // Show profile view (visitor perspective)

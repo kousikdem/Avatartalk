@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +17,12 @@ import {
   TrendingUp,
   Users,
   Clock,
-  Award
+  Award,
+  Github,
+  Twitter,
+  Instagram,
+  Youtube,
+  Linkedin
 } from 'lucide-react';
 import AvatarPreview from './AvatarPreview';
 
@@ -84,34 +88,26 @@ const LandingPage = () => {
     }
   ];
 
-  const pricingPlans = [
-    {
-      name: "Starter",
-      price: "Free",
-      description: "Perfect for getting started",
-      features: ["1 Avatar", "Basic customization", "5 conversations/day", "Email support"]
-    },
-    {
-      name: "Creator",
-      price: "$19/mo",
-      description: "For serious content creators",
-      features: ["3 Avatars", "Advanced customization", "Unlimited conversations", "Voice cloning", "Analytics"]
-    },
-    {
-      name: "Business",
-      price: "$49/mo",
-      description: "For teams and businesses",
-      features: ["Unlimited avatars", "Team collaboration", "Custom branding", "API access", "Priority support"]
-    }
+  const socialLinks = [
+    { icon: Github, label: 'GitHub', href: '#' },
+    { icon: Twitter, label: 'Twitter', href: '#' },
+    { icon: Instagram, label: 'Instagram', href: '#' },
+    { icon: Youtube, label: 'YouTube', href: '#' },
+    { icon: Linkedin, label: 'LinkedIn', href: '#' }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-blue-950/10 to-gray-950">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950/20 to-purple-950/20">
       {/* Hero Section */}
-      <div className="pt-20 pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="pt-20 pb-16 relative overflow-hidden">
+        {/* Background gradient effects */}
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 animate-pulse"></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl"></div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full mb-6">
+            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-full mb-6 backdrop-blur-sm">
               <Sparkles className="w-4 h-4 text-blue-400 mr-2" />
               <span className="text-blue-400 text-sm font-medium">The Future of Personal Branding</span>
             </div>
@@ -121,7 +117,7 @@ const LandingPage = () => {
                 Your Digital Twin
               </span>
               <br />
-              <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
                 That Never Sleeps
               </span>
             </h1>
@@ -135,7 +131,7 @@ const LandingPage = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
               <Button 
                 size="lg" 
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 text-lg rounded-2xl"
+                className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white px-8 py-4 text-lg rounded-2xl shadow-2xl shadow-blue-500/25"
               >
                 Create Your Avatar
                 <ArrowRight className="w-5 h-5 ml-2" />
@@ -143,7 +139,7 @@ const LandingPage = () => {
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="border-gray-600 text-gray-300 hover:bg-gray-800 px-8 py-4 text-lg rounded-2xl"
+                className="border-gray-600 text-gray-300 hover:bg-gradient-to-r hover:from-gray-800/50 hover:to-gray-700/50 px-8 py-4 text-lg rounded-2xl backdrop-blur-sm"
               >
                 <Play className="w-5 h-5 mr-2" />
                 Watch Demo
@@ -154,7 +150,9 @@ const LandingPage = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
               {stats.map((stat, index) => (
                 <div key={index} className="text-center">
-                  <div className="text-3xl font-bold text-white mb-2">{stat.number}</div>
+                  <div className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
+                    {stat.number}
+                  </div>
                   <div className="text-gray-400">{stat.label}</div>
                 </div>
               ))}
@@ -164,8 +162,9 @@ const LandingPage = () => {
           {/* Hero Avatar Display */}
           <div className="flex justify-center mb-16">
             <div className="relative">
+              <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-3xl blur-2xl"></div>
               <AvatarPreview isLarge={true} showControls={true} />
-              <div className="absolute -top-4 -right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium animate-pulse">
+              <div className="absolute -top-4 -right-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-1 rounded-full text-sm font-medium animate-pulse shadow-lg">
                 Live
               </div>
             </div>
@@ -174,11 +173,13 @@ const LandingPage = () => {
       </div>
 
       {/* Features Section */}
-      <div className="py-16 bg-gray-900/20">
+      <div className="py-16 bg-gradient-to-r from-gray-900/20 via-blue-900/10 to-purple-900/20 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Powered by Advanced AI Technology
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              <span className="bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
+                Powered by Advanced AI Technology
+              </span>
             </h2>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">
               Everything you need to create an engaging, intelligent digital presence
@@ -187,9 +188,11 @@ const LandingPage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, index) => (
-              <Card key={index} className="bg-gray-800/40 border-gray-700 backdrop-blur-sm hover:bg-gray-800/60 transition-all hover:scale-105">
+              <Card key={index} className="bg-gradient-to-br from-gray-800/40 to-gray-900/40 border border-gray-700/50 backdrop-blur-sm hover:bg-gradient-to-br hover:from-gray-800/60 hover:to-gray-900/60 transition-all hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/10">
                 <CardHeader>
-                  <feature.icon className="w-8 h-8 text-blue-400 mb-2" />
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-blue-500/20 to-purple-500/20 flex items-center justify-center mb-4">
+                    <feature.icon className="w-6 h-6 text-blue-400" />
+                  </div>
                   <CardTitle className="text-white text-lg">{feature.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -244,53 +247,13 @@ const LandingPage = () => {
         </div>
       </div>
 
-      {/* Pricing Section */}
-      <div className="py-16 bg-gray-900/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Choose Your Plan
-            </h2>
-            <p className="text-gray-400 text-lg">Start free, upgrade as you grow</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {pricingPlans.map((plan, index) => (
-              <Card key={index} className={`bg-gray-800/40 border-gray-700 backdrop-blur-sm ${index === 1 ? 'ring-2 ring-blue-500 scale-105' : ''}`}>
-                <CardHeader>
-                  <CardTitle className="text-white text-xl">{plan.name}</CardTitle>
-                  <div className="text-3xl font-bold text-white">
-                    {plan.price}
-                    {plan.price !== "Free" && <span className="text-lg text-gray-400">/month</span>}
-                  </div>
-                  <p className="text-gray-400">{plan.description}</p>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-3 mb-6">
-                    {plan.features.map((feature, featureIndex) => (
-                      <li key={featureIndex} className="flex items-center text-gray-300">
-                        <div className="w-2 h-2 bg-blue-400 rounded-full mr-3"></div>
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  <Button 
-                    className={`w-full ${index === 1 ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-700 hover:bg-gray-600'}`}
-                  >
-                    {plan.price === "Free" ? "Get Started" : "Upgrade Now"}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* CTA Section */}
-      <div className="py-16 bg-gradient-to-r from-blue-900/20 to-purple-900/20">
+      <div className="py-16 bg-gradient-to-r from-blue-900/20 via-purple-900/20 to-pink-900/20 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Ready to Meet Your Digital Twin?
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <span className="bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
+              Ready to Meet Your Digital Twin?
+            </span>
           </h2>
           <p className="text-gray-300 text-lg mb-8">
             Join thousands of creators who are already using AI avatars to transform their online presence
@@ -298,7 +261,7 @@ const LandingPage = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-12 py-4 text-lg rounded-2xl"
+              className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white px-12 py-4 text-lg rounded-2xl shadow-2xl shadow-blue-500/25"
             >
               Start Creating - It's Free
               <ArrowRight className="w-5 h-5 ml-2" />
@@ -306,7 +269,7 @@ const LandingPage = () => {
             <Button 
               size="lg" 
               variant="outline" 
-              className="border-gray-600 text-gray-300 hover:bg-gray-800 px-8 py-4 text-lg rounded-2xl"
+              className="border-gray-600 text-gray-300 hover:bg-gradient-to-r hover:from-gray-800/50 hover:to-gray-700/50 px-8 py-4 text-lg rounded-2xl backdrop-blur-sm"
             >
               <Play className="w-5 h-5 mr-2" />
               See It In Action
@@ -314,6 +277,37 @@ const LandingPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Footer with Social Links */}
+      <footer className="py-12 border-t border-gray-800/50 bg-gradient-to-r from-gray-900/50 to-gray-800/50 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="mb-4 md:mb-0">
+              <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                AvatarTalk.bio
+              </span>
+              <p className="text-gray-400 text-sm mt-2">Create your AI avatar today</p>
+            </div>
+            
+            <div className="flex space-x-6">
+              {socialLinks.map((social, index) => (
+                <a
+                  key={index}
+                  href={social.href}
+                  className="text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-gradient-to-r hover:from-blue-500/20 hover:to-purple-500/20"
+                  aria-label={social.label}
+                >
+                  <social.icon className="w-5 h-5" />
+                </a>
+              ))}
+            </div>
+          </div>
+          
+          <div className="mt-8 pt-8 border-t border-gray-800/50 text-center text-gray-400 text-sm">
+            © 2024 AvatarTalk.bio. All rights reserved.
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
