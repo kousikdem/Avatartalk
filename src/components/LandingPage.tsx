@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +23,8 @@ import {
   Twitter,
   Instagram,
   Youtube,
-  Linkedin
+  Linkedin,
+  DollarSign
 } from 'lucide-react';
 import AvatarPreview from './AvatarPreview';
 
@@ -96,6 +98,10 @@ const LandingPage = () => {
     { icon: Linkedin, label: 'LinkedIn', href: '#' }
   ];
 
+  const handlePricingClick = () => {
+    window.location.href = '/?view=pricing';
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950/20 to-purple-950/20">
       {/* Hero Section */}
@@ -114,11 +120,11 @@ const LandingPage = () => {
             
             <h1 className="text-5xl md:text-7xl font-bold mb-6">
               <span className="bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
-                Your Digital Twin
+                Link in Bio AI Avatar
               </span>
               <br />
               <span className="bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-                That Never Sleeps
+                That Engages 24/7
               </span>
             </h1>
             
@@ -143,6 +149,15 @@ const LandingPage = () => {
               >
                 <Play className="w-5 h-5 mr-2" />
                 Watch Demo
+              </Button>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="border-purple-500/50 text-purple-300 hover:bg-gradient-to-r hover:from-purple-800/50 hover:to-pink-800/50 px-8 py-4 text-lg rounded-2xl backdrop-blur-sm"
+                onClick={handlePricingClick}
+              >
+                <DollarSign className="w-5 h-5 mr-2" />
+                View Pricing
               </Button>
             </div>
 
@@ -252,7 +267,7 @@ const LandingPage = () => {
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             <span className="bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
-              Ready to Meet Your Digital Twin?
+              Ready to Meet Your AI Avatar?
             </span>
           </h2>
           <p className="text-gray-300 text-lg mb-8">

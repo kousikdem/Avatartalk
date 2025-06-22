@@ -6,7 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { Mail, Lock, User, Github, Chrome, Play, Sparkles } from 'lucide-react';
+import { Mail, Lock, User, Chrome } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -16,12 +18,14 @@ interface AuthModalProps {
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'signin' }) => {
   const [activeTab, setActiveTab] = useState(defaultTab);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     name: '',
     confirmPassword: ''
   });
+  const { toast } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -30,20 +34,118 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Auth form submitted:', formData);
+    setLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Signed in successfully!",
+        });
+        onClose();
+      }
+    } catch (error) {
+      console.error('Sign in error:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDemoLogin = () => {
-    console.log('Demo login clicked');
-    // Simulate demo login
-    onClose();
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.name,
+          }
+        }
+      });
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Account created! Please check your email to verify your account.",
+        });
+        onClose();
+      }
+    } catch (error) {
+      console.error('Sign up error:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleGoogleLogin = () => {
-    console.log('Google login clicked');
-    // Implement Google OAuth
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        }
+      });
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Google login error:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -58,26 +160,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
           </p>
         </DialogHeader>
 
-        {/* Demo Login Banner */}
-        <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-lg p-4 mb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Play className="w-5 h-5 text-blue-400 mr-2" />
-              <div>
-                <p className="text-white font-medium text-sm">Try Demo Account</p>
-                <p className="text-gray-400 text-xs">Experience all features instantly</p>
-              </div>
-            </div>
-            <Button 
-              onClick={handleDemoLogin}
-              size="sm" 
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-            >
-              Demo Login
-            </Button>
-          </div>
-        </div>
-
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'signin' | 'signup')} className="w-full">
           <TabsList className="grid w-full grid-cols-2 bg-gray-800/50 border border-gray-700">
             <TabsTrigger value="signin" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
@@ -89,7 +171,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
           </TabsList>
 
           <TabsContent value="signin" className="space-y-4 mt-6">
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSignIn} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="signin-email" className="text-gray-300">Email</Label>
                 <div className="relative">
@@ -103,6 +185,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
                     onChange={handleInputChange}
                     className="pl-10 bg-gray-800/50 border-gray-600 text-white focus:border-blue-500"
                     required
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -120,12 +203,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
                     onChange={handleInputChange}
                     className="pl-10 bg-gray-800/50 border-gray-600 text-white focus:border-blue-500"
                     required
+                    disabled={loading}
                   />
                 </div>
               </div>
 
-              <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
-                Sign In
+              <Button 
+                type="submit" 
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                disabled={loading}
+              >
+                {loading ? "Signing In..." : "Sign In"}
               </Button>
             </form>
 
@@ -137,7 +225,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
           </TabsContent>
 
           <TabsContent value="signup" className="space-y-4 mt-6">
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSignUp} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="signup-name" className="text-gray-300">Full Name</Label>
                 <div className="relative">
@@ -151,6 +239,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
                     onChange={handleInputChange}
                     className="pl-10 bg-gray-800/50 border-gray-600 text-white focus:border-blue-500"
                     required
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -168,6 +257,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
                     onChange={handleInputChange}
                     className="pl-10 bg-gray-800/50 border-gray-600 text-white focus:border-blue-500"
                     required
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -185,6 +275,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
                     onChange={handleInputChange}
                     className="pl-10 bg-gray-800/50 border-gray-600 text-white focus:border-blue-500"
                     required
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -202,12 +293,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
                     onChange={handleInputChange}
                     className="pl-10 bg-gray-800/50 border-gray-600 text-white focus:border-blue-500"
                     required
+                    disabled={loading}
                   />
                 </div>
               </div>
 
-              <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
-                Create Account
+              <Button 
+                type="submit" 
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                disabled={loading}
+              >
+                {loading ? "Creating Account..." : "Create Account"}
               </Button>
             </form>
           </TabsContent>
@@ -222,20 +318,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <Button 
-            variant="outline" 
-            className="border-gray-600 text-gray-300 hover:bg-gray-800/50 hover:border-blue-500"
-            onClick={handleGoogleLogin}
-          >
-            <Chrome className="mr-2 h-4 w-4" />
-            Google
-          </Button>
-          <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800/50 hover:border-purple-500">
-            <Github className="mr-2 h-4 w-4" />
-            GitHub
-          </Button>
-        </div>
+        <Button 
+          variant="outline" 
+          className="w-full border-gray-600 text-gray-300 hover:bg-gray-800/50 hover:border-blue-500"
+          onClick={handleGoogleLogin}
+          disabled={loading}
+        >
+          <Chrome className="mr-2 h-4 w-4" />
+          {loading ? "Connecting..." : "Continue with Google"}
+        </Button>
 
         <p className="text-center text-sm text-gray-400">
           By continuing, you agree to our{' '}
