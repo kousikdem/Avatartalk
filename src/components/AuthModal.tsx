@@ -45,11 +45,19 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
       });
 
       if (error) {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
+        if (error.message === 'Supabase not configured') {
+          toast({
+            title: "Setup Required",
+            description: "Please configure your Supabase environment variables to enable authentication.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
       } else {
         toast({
           title: "Success",
@@ -95,11 +103,19 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
       });
 
       if (error) {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
+        if (error.message === 'Supabase not configured') {
+          toast({
+            title: "Setup Required",
+            description: "Please configure your Supabase environment variables to enable authentication.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
       } else {
         toast({
           title: "Success",
@@ -130,11 +146,19 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
       });
 
       if (error) {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
+        if (error.message === 'Supabase not configured') {
+          toast({
+            title: "Setup Required",
+            description: "Please configure your Supabase environment variables to enable Google authentication.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       console.error('Google login error:', error);
