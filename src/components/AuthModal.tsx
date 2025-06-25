@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -64,8 +63,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
           description: "Signed in successfully!",
         });
         onClose();
-        // Redirect to profile after successful login
-        window.location.href = '?view=profile';
+        // Redirect to dashboard after successful login
+        window.location.href = '/?view=dashboard';
       }
     } catch (error) {
       console.error('Sign in error:', error);
@@ -124,8 +123,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
           description: "Account created! Please check your email to verify your account.",
         });
         onClose();
-        // Auto-login for first-time users
-        window.location.href = '?view=profile';
+        // Auto-redirect new users to dashboard
+        window.location.href = '/?view=dashboard';
       }
     } catch (error) {
       console.error('Sign up error:', error);
@@ -145,7 +144,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/?view=profile`,
+          redirectTo: `${window.location.origin}/?view=dashboard`,
         }
       });
 
@@ -177,7 +176,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
   };
 
   const handleDemoLogin = () => {
-    // Store demo user data and redirect
+    // Store demo user data and redirect to dashboard
     localStorage.setItem('demoUser', JSON.stringify({
       name: 'Demo User',
       isDemo: true,
@@ -186,11 +185,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
     
     toast({
       title: "Demo Mode Activated",
-      description: "Welcome Demo User! You're now in demo mode.",
+      description: "Welcome Demo User! Redirecting to dashboard...",
     });
     
     onClose();
-    window.location.href = '?view=profile';
+    window.location.href = '/?view=dashboard';
   };
 
   return (
