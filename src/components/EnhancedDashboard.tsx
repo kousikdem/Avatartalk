@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -149,7 +148,7 @@ const EnhancedDashboard = () => {
                 <div className="mt-6 w-full space-y-3">
                   <Button 
                     onClick={handleVoiceTest}
-                    className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
+                    className="w-full gradient-button"
                   >
                     <Play className="w-4 h-4 mr-2" />
                     Test Voice & Animation
@@ -197,7 +196,7 @@ const EnhancedDashboard = () => {
                     <Button 
                       onClick={handleCreateAvatar}
                       disabled={!uploadedImage}
-                      className="w-full bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white disabled:from-gray-300 disabled:to-gray-400"
+                      className="w-full gradient-button-alt disabled:from-gray-300 disabled:to-gray-400"
                     >
                       <Image className="w-4 h-4 mr-2" />
                       Create Avatar
@@ -247,27 +246,27 @@ const EnhancedDashboard = () => {
           >
             <Tabs defaultValue="profile" className="space-y-6">
               <TabsList className="grid w-full grid-cols-6 bg-gray-100 border border-gray-200">
-                <TabsTrigger value="profile" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white">
+                <TabsTrigger value="profile" className="data-[state=active]:gradient-button">
                   <User className="w-4 h-4 mr-2" />
                   Profile
                 </TabsTrigger>
-                <TabsTrigger value="avatar" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white">
+                <TabsTrigger value="avatar" className="data-[state=active]:gradient-button">
                   <Palette className="w-4 h-4 mr-2" />
                   Avatar
                 </TabsTrigger>
-                <TabsTrigger value="voice" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white">
+                <TabsTrigger value="voice" className="data-[state=active]:gradient-button">
                   <Volume2 className="w-4 h-4 mr-2" />
                   Voice
                 </TabsTrigger>
-                <TabsTrigger value="personality" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white">
+                <TabsTrigger value="personality" className="data-[state=active]:gradient-button">
                   <Brain className="w-4 h-4 mr-2" />
                   Mind
                 </TabsTrigger>
-                <TabsTrigger value="responses" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white">
+                <TabsTrigger value="responses" className="data-[state=active]:gradient-button">
                   <MessageSquare className="w-4 h-4 mr-2" />
                   Chat
                 </TabsTrigger>
-                <TabsTrigger value="links" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white">
+                <TabsTrigger value="links" className="data-[state=active]:gradient-button">
                   <Link className="w-4 h-4 mr-2" />
                   Links
                 </TabsTrigger>
@@ -429,7 +428,7 @@ const EnhancedDashboard = () => {
                     
                     <div className="flex space-x-4">
                       <Button 
-                        className="flex-1 bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white"
+                        className="flex-1 gradient-button"
                         onClick={handleVoiceTest}
                       >
                         <Play className="w-4 h-4 mr-2" />
@@ -538,7 +537,7 @@ const EnhancedDashboard = () => {
                         <Button size="sm" variant="outline" className="border-yellow-400 text-yellow-600 hover:bg-yellow-100">Edit</Button>
                       </div>
                     </div>
-                    <Button className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white">
+                    <Button className="w-full gradient-button-alt">
                       <Plus className="w-4 h-4 mr-2" />
                       Add New Response
                     </Button>
@@ -565,7 +564,7 @@ const EnhancedDashboard = () => {
                         </div>
                       ))}
                     </div>
-                    <Button className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white">
+                    <Button className="w-full gradient-button">
                       <Plus className="w-4 h-4 mr-2" />
                       Add New Link
                     </Button>
