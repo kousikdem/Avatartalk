@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +6,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import Avatar3D from './Avatar3D';
+import VisitorAuth from './VisitorAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { motion } from 'framer-motion';
 import { 
   MessageSquare, 
   Star, 
@@ -45,10 +49,6 @@ import {
   Eye,
   ChevronRight
 } from 'lucide-react';
-import AvatarPreview from './AvatarPreview';
-import VisitorAuth from './VisitorAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 const ProfilePage = () => {
   const [isFollowing, setIsFollowing] = useState(false);
@@ -60,6 +60,7 @@ const ProfilePage = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [message, setMessage] = useState('');
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [isTalking, setIsTalking] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -88,7 +89,7 @@ const ProfilePage = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Mock profile data
+  // Mock profile data with updated colors
   const profile = {
     name: "Emily Parker",
     username: "@emily",
@@ -222,7 +223,12 @@ const ProfilePage = () => {
 
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Profile Header */}
-        <div className="text-center mb-8">
+        <motion.div 
+          className="text-center mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
           <div className="relative inline-block mb-4">
             <Avatar className="w-24 h-24 ring-4 ring-blue-500/30 mb-2">
               <AvatarImage src={profile.avatar} />
@@ -239,150 +245,172 @@ const ProfilePage = () => {
           <p className={`text-lg mb-2 ${darkMode ? 'text-blue-300' : 'text-blue-600'}`}>
             {profile.username}
           </p>
-          <p className={`max-w-md mx-auto mb-6 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+          <p className={`max-w-md mx-auto mb-6 ${darkMode ? 'text-blue-200' : 'text-slate-600'}`}>
             {profile.bio}
           </p>
-        </div>
+        </motion.div>
 
         {/* Avatar Section */}
-        <Card className={`mb-8 overflow-hidden ${darkMode ? 'bg-slate-800/50 border-slate-700/50' : 'bg-white/80 border-slate-200'} backdrop-blur-sm`}>
-          <CardContent className="p-6">
-            <div className="flex flex-col lg:flex-row gap-6 items-center">
-              <div className="flex-1 max-w-md">
-                <AvatarPreview showControls={true} isLarge={true} />
-              </div>
-              <div className="flex-1 space-y-4">
-                <div className="flex gap-4">
-                  <Button className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white">
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Talk to Me
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setIsFollowing(!isFollowing)}
-                    className={`px-6 ${darkMode ? 'border-slate-600 text-slate-300 hover:bg-slate-700/50' : 'border-slate-300 text-slate-700 hover:bg-slate-100'}`}
-                  >
-                    {isFollowing ? (
-                      <>
-                        <UserCheck className="w-4 h-4 mr-2" />
-                        Following
-                      </>
-                    ) : (
-                      <>
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Follow
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={`w-10 h-10 p-0 ${darkMode ? 'border-slate-600 text-slate-300 hover:bg-slate-700/50' : 'border-slate-300 text-slate-700 hover:bg-slate-100'}`}
-                  >
-                    <Eye className="w-4 h-4" />
-                  </Button>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <Card className={`mb-8 overflow-hidden ${darkMode ? 'neo-glass border-blue-500/30' : 'bg-white/80 border-slate-200'} backdrop-blur-sm`}>
+            <CardContent className="p-6">
+              <div className="flex flex-col lg:flex-row gap-6 items-center">
+                <div className="flex-1 max-w-md">
+                  <Avatar3D 
+                    isLarge={true} 
+                    isTalking={isTalking}
+                    avatarStyle="realistic"
+                    mood="friendly"
+                    onInteraction={() => setIsTalking(!isTalking)}
+                  />
                 </div>
+                <div className="flex-1 space-y-4">
+                  <div className="flex gap-4">
+                    <Button 
+                      className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
+                      onClick={() => setIsTalking(!isTalking)}
+                    >
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      {isTalking ? 'Stop Talking' : 'Talk to Me'}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsFollowing(!isFollowing)}
+                      className={`px-6 ${darkMode ? 'border-blue-500/50 text-blue-300 hover:bg-blue-500/20' : 'border-slate-300 text-slate-700 hover:bg-slate-100'}`}
+                    >
+                      {isFollowing ? (
+                        <>
+                          <UserCheck className="w-4 h-4 mr-2" />
+                          Following
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          Follow
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={`w-10 h-10 p-0 ${darkMode ? 'border-blue-500/50 text-blue-300 hover:bg-blue-500/20' : 'border-slate-300 text-slate-700 hover:bg-slate-100'}`}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                  </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-4">
-                  <div className={`text-center p-3 rounded-lg ${darkMode ? 'bg-slate-700/50' : 'bg-slate-100'}`}>
-                    <div className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-slate-800'}`}>
-                      {profile.conversations}
+                  {/* Stats with updated colors */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className={`text-center p-3 rounded-lg ${darkMode ? 'bg-blue-500/20 border border-blue-500/30' : 'bg-blue-100 border border-blue-300'}`}>
+                      <div className={`text-2xl font-bold ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+                        {profile.conversations}
+                      </div>
+                      <div className={`text-sm ${darkMode ? 'text-blue-200' : 'text-blue-600'}`}>
+                        Total Conversations
+                      </div>
                     </div>
-                    <div className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                      Total Conversations
+                    <div className={`text-center p-3 rounded-lg ${darkMode ? 'bg-purple-500/20 border border-purple-500/30' : 'bg-purple-100 border border-purple-300'}`}>
+                      <div className={`text-2xl font-bold ${darkMode ? 'text-purple-300' : 'text-purple-700'}`}>
+                        {profile.followers}
+                      </div>
+                      <div className={`text-sm ${darkMode ? 'text-purple-200' : 'text-purple-600'}`}>
+                        Followers / {profile.following}
+                      </div>
                     </div>
-                  </div>
-                  <div className={`text-center p-3 rounded-lg ${darkMode ? 'bg-slate-700/50' : 'bg-slate-100'}`}>
-                    <div className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-slate-800'}`}>
-                      {profile.followers}
-                    </div>
-                    <div className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                      Followers / {profile.following}
-                    </div>
-                  </div>
-                  <div className={`text-center p-3 rounded-lg ${darkMode ? 'bg-slate-700/50' : 'bg-slate-100'}`}>
-                    <div className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-slate-800'}`}>
-                      {profile.engagementScore}
-                    </div>
-                    <div className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                      Engagement Score
+                    <div className={`text-center p-3 rounded-lg ${darkMode ? 'bg-green-500/20 border border-green-500/30' : 'bg-green-100 border border-green-300'}`}>
+                      <div className={`text-2xl font-bold ${darkMode ? 'text-green-300' : 'text-green-700'}`}>
+                        {profile.engagementScore}
+                      </div>
+                      <div className={`text-sm ${darkMode ? 'text-green-200' : 'text-green-600'}`}>
+                        Engagement Score
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* Chat Box */}
-        <Card className={`mb-8 ${darkMode ? 'bg-slate-800/50 border-slate-700/50' : 'bg-white/80 border-slate-200'} backdrop-blur-sm`}>
-          <CardContent className="p-4">
-            <div className="flex gap-3">
-              <Input
-                placeholder="Ask me anything..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className={`flex-1 ${darkMode ? 'bg-slate-700/50 border-slate-600 text-white placeholder-slate-400' : 'bg-white border-slate-300 text-slate-800 placeholder-slate-500'}`}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleVoiceToggle}
-                className={`w-10 h-10 p-0 ${isRecording ? 'bg-red-500 border-red-500 text-white' : ''} ${darkMode ? 'border-slate-600 text-slate-300 hover:bg-slate-700/50' : 'border-slate-300 text-slate-700 hover:bg-slate-100'}`}
-              >
-                {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className={`w-10 h-10 p-0 ${darkMode ? 'border-slate-600 text-slate-300 hover:bg-slate-700/50' : 'border-slate-300 text-slate-700 hover:bg-slate-100'}`}
-              >
-                <Smile className="w-4 h-4" />
-              </Button>
-              <Button
-                onClick={handleSendMessage}
-                className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
-              >
-                <Send className="w-4 h-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+        >
+          <Card className={`mb-8 ${darkMode ? 'neo-glass border-blue-500/30' : 'bg-white/80 border-slate-200'} backdrop-blur-sm`}>
+            <CardContent className="p-4">
+              <div className="flex gap-3">
+                <Input
+                  placeholder="Ask me anything..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className={`flex-1 ${darkMode ? 'bg-slate-800/50 border-blue-500/30 text-white placeholder-blue-300' : 'bg-white border-slate-300 text-slate-800 placeholder-slate-500'}`}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleVoiceToggle}
+                  className={`w-10 h-10 p-0 ${isRecording ? 'bg-red-500 border-red-500 text-white' : ''} ${darkMode ? 'border-blue-500/50 text-blue-300 hover:bg-blue-500/20' : 'border-slate-300 text-slate-700 hover:bg-slate-100'}`}
+                >
+                  {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={`w-10 h-10 p-0 ${darkMode ? 'border-blue-500/50 text-blue-300 hover:bg-blue-500/20' : 'border-slate-300 text-slate-700 hover:bg-slate-100'}`}
+                >
+                  <Smile className="w-4 h-4" />
+                </Button>
+                <Button
+                  onClick={handleSendMessage}
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-        {/* Tabs */}
+        {/* Tabs with updated styling */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className={`grid w-full grid-cols-3 ${darkMode ? 'bg-slate-800/50' : 'bg-white/80'}`}>
-            <TabsTrigger value="overview" className={`${darkMode ? 'data-[state=active]:bg-slate-700' : 'data-[state=active]:bg-slate-100'}`}>
+          <TabsList className={`grid w-full grid-cols-3 ${darkMode ? 'bg-slate-800/50 border border-blue-500/30' : 'bg-white/80'}`}>
+            <TabsTrigger value="overview" className={`${darkMode ? 'data-[state=active]:bg-blue-500/30 data-[state=active]:text-blue-200' : 'data-[state=active]:bg-slate-100'}`}>
               Overview
             </TabsTrigger>
-            <TabsTrigger value="responses" className={`${darkMode ? 'data-[state=active]:bg-slate-700' : 'data-[state=active]:bg-slate-100'}`}>
+            <TabsTrigger value="responses" className={`${darkMode ? 'data-[state=active]:bg-blue-500/30 data-[state=active]:text-blue-200' : 'data-[state=active]:bg-slate-100'}`}>
               Talk Logs/Responses
             </TabsTrigger>
-            <TabsTrigger value="projects" className={`${darkMode ? 'data-[state=active]:bg-slate-700' : 'data-[state=active]:bg-slate-100'}`}>
+            <TabsTrigger value="projects" className={`${darkMode ? 'data-[state=active]:bg-blue-500/30 data-[state=active]:text-blue-200' : 'data-[state=active]:bg-slate-100'}`}>
               Projects/Links
             </TabsTrigger>
           </TabsList>
 
+          {/* Overview Tab */}
           <TabsContent value="overview" className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className={`${darkMode ? 'bg-slate-800/50 border-slate-700/50' : 'bg-white/80 border-slate-200'} backdrop-blur-sm`}>
+              <Card className={`${darkMode ? 'neo-glass border-blue-500/30' : 'bg-white/80 border-slate-200'} backdrop-blur-sm`}>
                 <CardHeader>
                   <CardTitle className={`${darkMode ? 'text-white' : 'text-slate-800'}`}>About</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="flex items-center gap-3">
-                      <MapPin className={`w-5 h-5 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`} />
-                      <span className={`${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>{profile.location}</span>
+                      <MapPin className={`w-5 h-5 ${darkMode ? 'text-blue-400' : 'text-slate-600'}`} />
+                      <span className={`${darkMode ? 'text-blue-200' : 'text-slate-700'}`}>{profile.location}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Calendar className={`w-5 h-5 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`} />
-                      <span className={`${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>Joined {profile.joinDate}</span>
+                      <Calendar className={`w-5 h-5 ${darkMode ? 'text-blue-400' : 'text-slate-600'}`} />
+                      <span className={`${darkMode ? 'text-blue-200' : 'text-slate-700'}`}>Joined {profile.joinDate}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Globe className={`w-5 h-5 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`} />
+                      <Globe className={`w-5 h-5 ${darkMode ? 'text-blue-400' : 'text-slate-600'}`} />
                       <a href={`https://${profile.website}`} className="text-blue-500 hover:text-blue-400">
                         {profile.website}
                       </a>
@@ -391,7 +419,7 @@ const ProfilePage = () => {
                 </CardContent>
               </Card>
 
-              <Card className={`${darkMode ? 'bg-slate-800/50 border-slate-700/50' : 'bg-white/80 border-slate-200'} backdrop-blur-sm`}>
+              <Card className={`${darkMode ? 'neo-glass border-purple-500/30' : 'bg-white/80 border-slate-200'} backdrop-blur-sm`}>
                 <CardHeader>
                   <CardTitle className={`${darkMode ? 'text-white' : 'text-slate-800'}`}>Social & Contact</CardTitle>
                 </CardHeader>
@@ -401,7 +429,7 @@ const ProfilePage = () => {
                       <a
                         key={index}
                         href={social.url}
-                        className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${darkMode ? 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+                        className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${darkMode ? 'bg-slate-700/50 text-blue-200 hover:bg-slate-600/50 border border-blue-500/20' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
                       >
                         <social.icon className="w-5 h-5" />
                         <span className="text-sm">{social.platform}</span>
@@ -413,19 +441,20 @@ const ProfilePage = () => {
             </div>
           </TabsContent>
 
+          {/* Talk Logs/Responses Tab */}
           <TabsContent value="responses" className="mt-6">
-            <Card className={`${darkMode ? 'bg-slate-800/50 border-slate-700/50' : 'bg-white/80 border-slate-200'} backdrop-blur-sm`}>
+            <Card className={`${darkMode ? 'neo-glass border-blue-500/30' : 'bg-white/80 border-slate-200'} backdrop-blur-sm`}>
               <CardHeader>
                 <CardTitle className={`${darkMode ? 'text-white' : 'text-slate-800'}`}>Sample Responses</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {profile.sampleResponses.map((item, index) => (
-                    <div key={index} className={`p-4 rounded-lg ${darkMode ? 'bg-slate-700/50' : 'bg-slate-100'}`}>
-                      <div className={`font-medium mb-2 ${darkMode ? 'text-white' : 'text-slate-800'}`}>
+                    <div key={index} className={`p-4 rounded-lg ${darkMode ? 'bg-blue-500/20 border border-blue-500/30' : 'bg-blue-100 border border-blue-300'}`}>
+                      <div className={`font-medium mb-2 ${darkMode ? 'text-white' : 'text-blue-700'}`}>
                         {item.question}
                       </div>
-                      <div className={`text-sm ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                      <div className={`text-sm ${darkMode ? 'text-blue-200' : 'text-blue-600'}`}>
                         {item.response}
                       </div>
                     </div>
@@ -435,8 +464,9 @@ const ProfilePage = () => {
             </Card>
           </TabsContent>
 
+          {/* Projects/Links Tab */}
           <TabsContent value="projects" className="mt-6">
-            <Card className={`${darkMode ? 'bg-slate-800/50 border-slate-700/50' : 'bg-white/80 border-slate-200'} backdrop-blur-sm`}>
+            <Card className={`${darkMode ? 'neo-glass border-blue-500/30' : 'bg-white/80 border-slate-200'} backdrop-blur-sm`}>
               <CardHeader>
                 <CardTitle className={`${darkMode ? 'text-white' : 'text-slate-800'}`}>Projects & Links</CardTitle>
               </CardHeader>
@@ -446,13 +476,13 @@ const ProfilePage = () => {
                     <a
                       key={index}
                       href={project.url}
-                      className={`flex items-center justify-between p-4 rounded-lg transition-colors ${darkMode ? 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+                      className={`flex items-center justify-between p-4 rounded-lg transition-colors ${darkMode ? 'bg-slate-700/50 text-blue-200 hover:bg-slate-600/50 border border-blue-500/20' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
                     >
                       <div>
-                        <div className={`font-medium ${darkMode ? 'text-white' : 'text-slate-800'}`}>
+                        <div className={`font-medium ${darkMode ? 'text-white' : 'text-blue-700'}`}>
                           {project.title}
                         </div>
-                        <div className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                        <div className={`text-sm ${darkMode ? 'text-blue-200' : 'text-blue-600'}`}>
                           {project.type}
                         </div>
                       </div>
@@ -468,7 +498,7 @@ const ProfilePage = () => {
         {/* Share Menu */}
         {showShareMenu && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-            <Card className={`w-full max-w-sm mx-4 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <Card className={`w-full max-w-sm mx-4 ${darkMode ? 'neo-glass border-blue-500/30' : 'bg-white border-slate-200'}`}>
               <CardHeader>
                 <CardTitle className={`${darkMode ? 'text-white' : 'text-slate-800'}`}>Share Profile</CardTitle>
               </CardHeader>
