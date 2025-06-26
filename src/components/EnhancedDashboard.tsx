@@ -18,6 +18,9 @@ import {
   Zap, Brain, Heart, Smile, Briefcase, Gamepad2, Sparkles
 } from 'lucide-react';
 
+type AvatarStyle = 'realistic' | 'cartoon' | 'anime' | 'minimal';
+type AvatarMood = 'professional' | 'friendly' | 'mysterious';
+
 const EnhancedDashboard = () => {
   const [isPublic, setIsPublic] = useState(true);
   const [personality, setPersonality] = useState([50]);
@@ -26,8 +29,8 @@ const EnhancedDashboard = () => {
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(true);
   const [isTalking, setIsTalking] = useState(false);
-  const [avatarStyle, setAvatarStyle] = useState('realistic');
-  const [avatarMood, setAvatarMood] = useState('friendly');
+  const [avatarStyle, setAvatarStyle] = useState<AvatarStyle>('realistic');
+  const [avatarMood, setAvatarMood] = useState<AvatarMood>('friendly');
   const [isVoiceRecording, setIsVoiceRecording] = useState(false);
   const [setupProgress, setSetupProgress] = useState(85);
 
@@ -40,10 +43,10 @@ const EnhancedDashboard = () => {
   ];
 
   const personalityTemplates = [
-    { name: 'Professional Coach', icon: Briefcase, mood: 'professional' },
-    { name: 'Friendly Guide', icon: Heart, mood: 'friendly' },
-    { name: 'Creative Entertainer', icon: Sparkles, mood: 'creative' },
-    { name: 'Mysterious Advisor', icon: Brain, mood: 'mysterious' },
+    { name: 'Professional Coach', icon: Briefcase, mood: 'professional' as AvatarMood },
+    { name: 'Friendly Guide', icon: Heart, mood: 'friendly' as AvatarMood },
+    { name: 'Creative Entertainer', icon: Sparkles, mood: 'friendly' as AvatarMood },
+    { name: 'Mysterious Advisor', icon: Brain, mood: 'mysterious' as AvatarMood },
   ];
 
   const handleVoiceTest = () => {
@@ -286,7 +289,7 @@ const EnhancedDashboard = () => {
                     <div>
                       <Label className="text-blue-200 mb-4 block">Avatar Style</Label>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {['realistic', 'cartoon', 'anime', 'minimal'].map((style) => (
+                        {(['realistic', 'cartoon', 'anime', 'minimal'] as AvatarStyle[]).map((style) => (
                           <Button
                             key={style}
                             variant={avatarStyle === style ? "default" : "outline"}
