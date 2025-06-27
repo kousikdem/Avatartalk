@@ -7,6 +7,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import ProfilePage from "./components/ProfilePage";
 import AiTraining from "./components/AiTraining";
+import Dashboard from "./components/Dashboard";
+import CalendarPage from "./components/CalendarPage";
+import NotificationsPage from "./components/NotificationsPage";
+import FollowersPage from "./components/FollowersPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,6 +24,10 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/followers" element={<FollowersPage />} />
             <Route path="/train" element={<AiTraining />} />
             <Route path="/:username" element={<ProfilePage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
