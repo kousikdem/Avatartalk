@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Avatar3D from './Avatar3D';
 import VisitorAuth from './VisitorAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,8 +50,34 @@ import {
   Sun,
   UserCheck,
   Eye,
-  ChevronRight
+  ChevronRight,
+  Plus,
+  Image,
+  Video,
+  Link as LinkIcon,
+  HelpCircle,
+  FileText,
+  Camera,
+  Paperclip
 } from 'lucide-react';
+
+interface Post {
+  id: string;
+  type: 'video' | 'photo' | 'link' | 'integration' | 'qa' | 'text';
+  content: string;
+  media?: string;
+  timestamp: Date;
+  likes: number;
+  comments: number;
+}
+
+interface ChatMessage {
+  id: string;
+  message: string;
+  response: string;
+  timestamp: Date;
+  isUser: boolean;
+}
 
 const ProfilePage = () => {
   const [isFollowing, setIsFollowing] = useState(false);
@@ -56,11 +85,17 @@ const ProfilePage = () => {
   const [user, setUser] = useState(null);
   const [visitor, setVisitor] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [message, setMessage] = useState('');
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [isTalking, setIsTalking] = useState(false);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [newPostType, setNewPostType] = useState<'video' | 'photo' | 'link' | 'integration' | 'qa' | 'text'>('text');
+  const [newPostContent, setNewPostContent] = useState('');
+  const [isCreatingPost, setIsCreatingPost] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -86,10 +121,40 @@ const ProfilePage = () => {
       setUser(session?.user || null);
     });
 
+    // Mock data
+    setPosts([
+      {
+        id: '1',
+        type: 'text',
+        content: 'Just launched my new AI avatar! Excited to connect with everyone.',
+        timestamp: new Date(Date.now() - 3600000),
+        likes: 24,
+        comments: 8
+      },
+      {
+        id: '2',
+        type: 'qa',
+        content: 'Q: What\'s your favorite AI trend? A: I\'m fascinated by multimodal AI and how it\'s changing conversations.',
+        timestamp: new Date(Date.now() - 7200000),
+        likes: 18,
+        comments: 5
+      }
+    ]);
+
+    setChatMessages([
+      {
+        id: '1',
+        message: 'Hello! Tell me about your AI expertise.',
+        response: 'Hi there! I specialize in AI conversation design and helping people create engaging digital experiences.',
+        timestamp: new Date(Date.now() - 1800000),
+        isUser: false
+      }
+    ]);
+
     return () => subscription.unsubscribe();
   }, []);
 
-  // Mock profile data with updated colors
+  // Mock profile data
   const profile = {
     name: "Emily Parker",
     username: "@emily",
@@ -119,11 +184,6 @@ const ProfilePage = () => {
       { title: "AI Voice Assistant", url: "#", type: "Project" },
       { title: "Personal Blog", url: "#", type: "Link" },
       { title: "NFT Collection", url: "#", type: "NFT" }
-    ],
-    sampleResponses: [
-      { question: "What's your favorite AI trend?", response: "I'm fascinated by multimodal AI..." },
-      { question: "How do you see the future of AI?", response: "AI will become more conversational..." },
-      { question: "What advice for AI beginners?", response: "Start with curiosity and experiment..." }
     ]
   };
 
@@ -135,13 +195,62 @@ const ProfilePage = () => {
     });
   };
 
-  const handleSendMessage = () => {
+  const processWithLlama = async (input: string) => {
+    setIsProcessing(true);
+    try {
+      // Mock Llama 4 processing - in production, this would call actual API
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const responses = [
+        "That's a fascinating question! Based on my training, I'd say...",
+        "I understand what you're asking. Let me break this down for you...",
+        "Great point! Here's my perspective on that topic...",
+        "Thanks for sharing that. Here's what I think about it..."
+      ];
+      
+      const randomResponse = responses[Math.floor(Math.random() * responses.length)] + 
+        " " + input.split(' ').reverse().join(' ').toLowerCase();
+      
+      return randomResponse;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSendMessage = async () => {
     if (message.trim()) {
+      const userMessage = message;
+      setMessage('');
+      
+      // Add user message to chat
+      const newUserMessage: ChatMessage = {
+        id: Date.now().toString(),
+        message: userMessage,
+        response: '',
+        timestamp: new Date(),
+        isUser: true
+      };
+      
+      setChatMessages(prev => [...prev, newUserMessage]);
+      
+      // Process with Llama 4
+      const response = await processWithLlama(userMessage);
+      
+      // Add AI response
+      const aiResponse: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        message: userMessage,
+        response: response,
+        timestamp: new Date(),
+        isUser: false
+      };
+      
+      setChatMessages(prev => [...prev, aiResponse]);
+      
       toast({
         title: "Message Sent!",
-        description: "Your message has been sent to Emily's AI avatar",
+        description: "Your message has been processed by AI",
       });
-      setMessage('');
     }
   };
 
@@ -152,18 +261,40 @@ const ProfilePage = () => {
         title: "Voice Recording",
         description: "Listening... Speak your message",
       });
-    } else {
+      // Mock voice input after 3 seconds
+      setTimeout(() => {
+        setMessage("Hello, this is a voice message converted to text!");
+        setIsRecording(false);
+      }, 3000);
+    }
+  };
+
+  const handleCreatePost = async () => {
+    if (newPostContent.trim()) {
+      const newPost: Post = {
+        id: Date.now().toString(),
+        type: newPostType,
+        content: newPostContent,
+        timestamp: new Date(),
+        likes: 0,
+        comments: 0
+      };
+      
+      setPosts(prev => [newPost, ...prev]);
+      setNewPostContent('');
+      setIsCreatingPost(false);
+      
       toast({
-        title: "Recording Stopped",
-        description: "Processing your voice message...",
+        title: "Post Created!",
+        description: "Your post has been published successfully",
       });
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-gray-800">Loading...</div>
       </div>
     );
   }
@@ -171,13 +302,13 @@ const ProfilePage = () => {
   // Show visitor auth if no user or visitor
   if (!user && !visitor) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-white mb-4">Welcome to AvatarTalk.bio</h1>
-          <p className="text-blue-200 mb-8">Connect with AI avatars and have meaningful conversations</p>
+          <h1 className="text-4xl font-bold text-gray-800 mb-4">Welcome to AvatarTalk.bio</h1>
+          <p className="text-gray-600 mb-8">Connect with AI avatars and have meaningful conversations</p>
           <Button 
             onClick={() => setIsVisitorAuthOpen(true)}
-            className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
+            className="gradient-button"
           >
             <UserPlus className="w-4 h-4 mr-2" />
             Enter as Visitor
@@ -192,283 +323,240 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className={`min-h-screen transition-all duration-300 ${darkMode ? 'bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900' : 'bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-50'}`}>
+    <div className="min-h-screen bg-white text-gray-800">
       {/* Header */}
-      <div className="relative">
-        <div className="absolute top-4 left-4 z-10">
-          <div className={`px-3 py-1 rounded-full text-sm font-medium backdrop-blur-sm ${darkMode ? 'bg-slate-800/50 text-white' : 'bg-white/50 text-slate-800'}`}>
-            AvatarTalk.bio
+      <div className="relative bg-gradient-to-br from-blue-600 to-purple-600 rounded-b-3xl p-6 text-white">
+        <div className="flex justify-between items-center mb-6">
+          <div className="text-xl font-bold">AvatarTalk.bio</div>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDarkMode(!darkMode)}
+              className="rounded-full w-10 h-10 p-0 text-white hover:bg-white/20"
+            >
+              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowShareMenu(!showShareMenu)}
+              className="rounded-full w-10 h-10 p-0 text-white hover:bg-white/20"
+            >
+              <Download className="w-4 h-4" />
+            </Button>
           </div>
         </div>
-        
-        <div className="absolute top-4 right-4 z-10 flex gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setDarkMode(!darkMode)}
-            className={`rounded-full w-10 h-10 p-0 backdrop-blur-sm ${darkMode ? 'bg-slate-800/50 text-white hover:bg-slate-700/50' : 'bg-white/50 text-slate-800 hover:bg-white/70'}`}
-          >
-            {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowShareMenu(!showShareMenu)}
-            className={`rounded-full w-10 h-10 p-0 backdrop-blur-sm ${darkMode ? 'bg-slate-800/50 text-white hover:bg-slate-700/50' : 'bg-white/50 text-slate-800 hover:bg-white/70'}`}
-          >
-            <Download className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Profile Header */}
-        <motion.div 
-          className="text-center mb-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
+        <div className="text-center mb-6">
           <div className="relative inline-block mb-4">
-            <Avatar className="w-24 h-24 ring-4 ring-blue-500/30 mb-2">
+            <Avatar className="w-20 h-20 ring-4 ring-white/30 mb-2">
               <AvatarImage src={profile.avatar} />
               <AvatarFallback>EP</AvatarFallback>
             </Avatar>
             {profile.isOnline && (
-              <div className="absolute bottom-2 right-0 w-6 h-6 bg-green-500 rounded-full border-2 border-white"></div>
+              <div className="absolute bottom-2 right-0 w-5 h-5 bg-green-500 rounded-full border-2 border-white"></div>
             )}
           </div>
           
-          <h1 className={`text-3xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-slate-800'}`}>
-            {profile.name}
-          </h1>
-          <p className={`text-lg mb-2 ${darkMode ? 'text-blue-300' : 'text-blue-600'}`}>
-            {profile.username}
-          </p>
-          <p className={`max-w-md mx-auto mb-6 ${darkMode ? 'text-blue-200' : 'text-slate-600'}`}>
-            {profile.bio}
-          </p>
-        </motion.div>
+          <h1 className="text-2xl font-bold mb-1">{profile.name}</h1>
+          <p className="text-blue-200 mb-3">{profile.username}</p>
+          <p className="text-blue-100 text-sm max-w-sm mx-auto">{profile.bio}</p>
+        </div>
 
-        {/* Avatar Section */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
-          <Card className={`mb-8 overflow-hidden ${darkMode ? 'neo-glass border-blue-500/30' : 'bg-white/80 border-slate-200'} backdrop-blur-sm`}>
-            <CardContent className="p-6">
-              <div className="flex flex-col lg:flex-row gap-6 items-center">
-                <div className="flex-1 max-w-md">
-                  <Avatar3D 
-                    isLarge={true} 
-                    isTalking={isTalking}
-                    avatarStyle="realistic"
-                    mood="friendly"
-                    onInteraction={() => setIsTalking(!isTalking)}
-                  />
-                </div>
-                <div className="flex-1 space-y-4">
-                  <div className="flex gap-4">
-                    <Button 
-                      className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
-                      onClick={() => setIsTalking(!isTalking)}
-                    >
-                      <MessageSquare className="w-4 h-4 mr-2" />
-                      {isTalking ? 'Stop Talking' : 'Talk to Me'}
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setIsFollowing(!isFollowing)}
-                      className={`px-6 ${darkMode ? 'border-blue-500/50 text-blue-300 hover:bg-blue-500/20' : 'border-slate-300 text-slate-700 hover:bg-slate-100'}`}
-                    >
-                      {isFollowing ? (
-                        <>
-                          <UserCheck className="w-4 h-4 mr-2" />
-                          Following
-                        </>
-                      ) : (
-                        <>
-                          <UserPlus className="w-4 h-4 mr-2" />
-                          Follow
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={`w-10 h-10 p-0 ${darkMode ? 'border-blue-500/50 text-blue-300 hover:bg-blue-500/20' : 'border-slate-300 text-slate-700 hover:bg-slate-100'}`}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                  </div>
+        {/* Avatar Display */}
+        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 mb-6">
+          <Avatar3D 
+            isLarge={true} 
+            isTalking={isTalking}
+            avatarStyle="realistic"
+            mood="friendly"
+            onInteraction={() => setIsTalking(!isTalking)}
+          />
+        </div>
 
-                  {/* Stats with updated colors */}
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className={`text-center p-3 rounded-lg ${darkMode ? 'bg-blue-500/20 border border-blue-500/30' : 'bg-blue-100 border border-blue-300'}`}>
-                      <div className={`text-2xl font-bold ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>
-                        {profile.conversations}
-                      </div>
-                      <div className={`text-sm ${darkMode ? 'text-blue-200' : 'text-blue-600'}`}>
-                        Total Conversations
-                      </div>
-                    </div>
-                    <div className={`text-center p-3 rounded-lg ${darkMode ? 'bg-purple-500/20 border border-purple-500/30' : 'bg-purple-100 border border-purple-300'}`}>
-                      <div className={`text-2xl font-bold ${darkMode ? 'text-purple-300' : 'text-purple-700'}`}>
-                        {profile.followers}
-                      </div>
-                      <div className={`text-sm ${darkMode ? 'text-purple-200' : 'text-purple-600'}`}>
-                        Followers / {profile.following}
-                      </div>
-                    </div>
-                    <div className={`text-center p-3 rounded-lg ${darkMode ? 'bg-green-500/20 border border-green-500/30' : 'bg-green-100 border border-green-300'}`}>
-                      <div className={`text-2xl font-bold ${darkMode ? 'text-green-300' : 'text-green-700'}`}>
-                        {profile.engagementScore}
-                      </div>
-                      <div className={`text-sm ${darkMode ? 'text-green-200' : 'text-green-600'}`}>
-                        Engagement Score
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+        {/* Action Buttons */}
+        <div className="flex gap-3 mb-6">
+          <Button 
+            className="flex-1 bg-white text-blue-600 hover:bg-gray-100"
+            onClick={() => setIsTalking(!isTalking)}
+          >
+            Talk to Me
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => setIsFollowing(!isFollowing)}
+            className="px-6 border-white/30 text-white hover:bg-white/20"
+          >
+            {isFollowing ? 'Following' : 'Follow'}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-10 h-10 p-0 border-white/30 text-white hover:bg-white/20"
+          >
+            <UserCheck className="w-4 h-4" />
+          </Button>
+        </div>
 
-        {/* Chat Box */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-        >
-          <Card className={`mb-8 ${darkMode ? 'neo-glass border-blue-500/30' : 'bg-white/80 border-slate-200'} backdrop-blur-sm`}>
-            <CardContent className="p-4">
-              <div className="flex gap-3">
-                <Input
-                  placeholder="Ask me anything..."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  className={`flex-1 ${darkMode ? 'bg-slate-800/50 border-blue-500/30 text-white placeholder-blue-300' : 'bg-white border-slate-300 text-slate-800 placeholder-slate-500'}`}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleVoiceToggle}
-                  className={`w-10 h-10 p-0 ${isRecording ? 'bg-red-500 border-red-500 text-white' : ''} ${darkMode ? 'border-blue-500/50 text-blue-300 hover:bg-blue-500/20' : 'border-slate-300 text-slate-700 hover:bg-slate-100'}`}
-                >
-                  {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={`w-10 h-10 p-0 ${darkMode ? 'border-blue-500/50 text-blue-300 hover:bg-blue-500/20' : 'border-slate-300 text-slate-700 hover:bg-slate-100'}`}
-                >
-                  <Smile className="w-4 h-4" />
-                </Button>
-                <Button
-                  onClick={handleSendMessage}
-                  className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="text-center">
+            <div className="text-xl font-bold">{profile.conversations}</div>
+            <div className="text-blue-200 text-sm">Total Conversations</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xl font-bold">{profile.followers}</div>
+            <div className="text-blue-200 text-sm">Followers / {profile.following}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xl font-bold">{profile.engagementScore}</div>
+            <div className="text-blue-200 text-sm">Engagement Score</div>
+          </div>
+        </div>
+      </div>
 
-        {/* Tabs with updated styling */}
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className={`grid w-full grid-cols-3 ${darkMode ? 'bg-slate-800/50 border border-blue-500/30' : 'bg-white/80'}`}>
-            <TabsTrigger value="overview" className={`${darkMode ? 'data-[state=active]:bg-blue-500/30 data-[state=active]:text-blue-200' : 'data-[state=active]:bg-slate-100'}`}>
-              Overview
+      <div className="max-w-4xl mx-auto px-4">
+        {/* Tabs */}
+        <Tabs defaultValue="posts" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 bg-gray-100 mt-6">
+            <TabsTrigger value="posts" className="data-[state=active]:bg-white">
+              Posts
             </TabsTrigger>
-            <TabsTrigger value="responses" className={`${darkMode ? 'data-[state=active]:bg-blue-500/30 data-[state=active]:text-blue-200' : 'data-[state=active]:bg-slate-100'}`}>
-              Talk Logs/Responses
+            <TabsTrigger value="chat" className="data-[state=active]:bg-white">
+              Chat
             </TabsTrigger>
-            <TabsTrigger value="projects" className={`${darkMode ? 'data-[state=active]:bg-blue-500/30 data-[state=active]:text-blue-200' : 'data-[state=active]:bg-slate-100'}`}>
+            <TabsTrigger value="projects" className="data-[state=active]:bg-white">
               Projects/Links
             </TabsTrigger>
           </TabsList>
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className={`${darkMode ? 'neo-glass border-blue-500/30' : 'bg-white/80 border-slate-200'} backdrop-blur-sm`}>
-                <CardHeader>
-                  <CardTitle className={`${darkMode ? 'text-white' : 'text-slate-800'}`}>About</CardTitle>
-                </CardHeader>
-                <CardContent>
+          {/* Posts Tab */}
+          <TabsContent value="posts" className="mt-6 space-y-4">
+            {/* Create Post */}
+            {isCreatingPost ? (
+              <Card className="bg-white border-gray-200">
+                <CardContent className="p-4">
                   <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <MapPin className={`w-5 h-5 ${darkMode ? 'text-blue-400' : 'text-slate-600'}`} />
-                      <span className={`${darkMode ? 'text-blue-200' : 'text-slate-700'}`}>{profile.location}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Calendar className={`w-5 h-5 ${darkMode ? 'text-blue-400' : 'text-slate-600'}`} />
-                      <span className={`${darkMode ? 'text-blue-200' : 'text-slate-700'}`}>Joined {profile.joinDate}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Globe className={`w-5 h-5 ${darkMode ? 'text-blue-400' : 'text-slate-600'}`} />
-                      <a href={`https://${profile.website}`} className="text-blue-500 hover:text-blue-400">
-                        {profile.website}
-                      </a>
+                    <Select value={newPostType} onValueChange={(value: any) => setNewPostType(value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="text">Text Post</SelectItem>
+                        <SelectItem value="video">Video</SelectItem>
+                        <SelectItem value="photo">Photo</SelectItem>
+                        <SelectItem value="link">Link</SelectItem>
+                        <SelectItem value="integration">Integration</SelectItem>
+                        <SelectItem value="qa">Q&A</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <Textarea
+                      placeholder={`Write your ${newPostType} post...`}
+                      value={newPostContent}
+                      onChange={(e) => setNewPostContent(e.target.value)}
+                      className="min-h-[100px]"
+                    />
+                    
+                    <div className="flex gap-2">
+                      <Button onClick={handleCreatePost} className="gradient-button">
+                        Post
+                      </Button>
+                      <Button variant="outline" onClick={() => setIsCreatingPost(false)}>
+                        Cancel
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
               </Card>
+            ) : (
+              <Button 
+                onClick={() => setIsCreatingPost(true)}
+                className="w-full gradient-button"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create New Post
+              </Button>
+            )}
 
-              <Card className={`${darkMode ? 'neo-glass border-purple-500/30' : 'bg-white/80 border-slate-200'} backdrop-blur-sm`}>
-                <CardHeader>
-                  <CardTitle className={`${darkMode ? 'text-white' : 'text-slate-800'}`}>Social & Contact</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-3">
-                    {profile.socialLinks.map((social, index) => (
-                      <a
-                        key={index}
-                        href={social.url}
-                        className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${darkMode ? 'bg-slate-700/50 text-blue-200 hover:bg-slate-600/50 border border-blue-500/20' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
-                      >
-                        <social.icon className="w-5 h-5" />
-                        <span className="text-sm">{social.platform}</span>
-                      </a>
-                    ))}
+            {/* Posts List */}
+            {posts.map((post) => (
+              <Card key={post.id} className="bg-white border-gray-200">
+                <CardContent className="p-4">
+                  <div className="flex items-start space-x-3">
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage src={profile.avatar} />
+                      <AvatarFallback>EP</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <span className="font-medium">{profile.name}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {post.type.toUpperCase()}
+                        </Badge>
+                        <span className="text-sm text-gray-500">
+                          {post.timestamp.toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-gray-800 mb-3">{post.content}</p>
+                      <div className="flex items-center space-x-4 text-sm text-gray-500">
+                        <button className="flex items-center space-x-1 hover:text-red-500">
+                          <Heart className="w-4 h-4" />
+                          <span>{post.likes}</span>
+                        </button>
+                        <button className="flex items-center space-x-1 hover:text-blue-500">
+                          <MessageSquare className="w-4 h-4" />
+                          <span>{post.comments}</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-            </div>
+            ))}
           </TabsContent>
 
-          {/* Talk Logs/Responses Tab */}
-          <TabsContent value="responses" className="mt-6">
-            <Card className={`${darkMode ? 'neo-glass border-blue-500/30' : 'bg-white/80 border-slate-200'} backdrop-blur-sm`}>
+          {/* Chat Tab */}
+          <TabsContent value="chat" className="mt-6">
+            <Card className="bg-white border-gray-200">
               <CardHeader>
-                <CardTitle className={`${darkMode ? 'text-white' : 'text-slate-800'}`}>Sample Responses</CardTitle>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Chat Messages</span>
+                  {isProcessing && (
+                    <Badge variant="outline" className="text-blue-600">
+                      Processing with Llama 4...
+                    </Badge>
+                  )}
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {profile.sampleResponses.map((item, index) => (
-                    <div key={index} className={`p-4 rounded-lg ${darkMode ? 'bg-blue-500/20 border border-blue-500/30' : 'bg-blue-100 border border-blue-300'}`}>
-                      <div className={`font-medium mb-2 ${darkMode ? 'text-white' : 'text-blue-700'}`}>
-                        {item.question}
-                      </div>
-                      <div className={`text-sm ${darkMode ? 'text-blue-200' : 'text-blue-600'}`}>
-                        {item.response}
+              <CardContent className="space-y-4 max-h-96 overflow-y-auto">
+                {chatMessages.map((chat) => (
+                  <div key={chat.id} className="space-y-2">
+                    <div className="flex justify-end">
+                      <div className="bg-blue-500 text-white p-3 rounded-lg max-w-xs">
+                        {chat.message}
                       </div>
                     </div>
-                  ))}
-                </div>
+                    {chat.response && (
+                      <div className="flex justify-start">
+                        <div className="bg-gray-100 text-gray-800 p-3 rounded-lg max-w-xs">
+                          {chat.response}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </CardContent>
             </Card>
           </TabsContent>
 
           {/* Projects/Links Tab */}
           <TabsContent value="projects" className="mt-6">
-            <Card className={`${darkMode ? 'neo-glass border-blue-500/30' : 'bg-white/80 border-slate-200'} backdrop-blur-sm`}>
+            <Card className="bg-white border-gray-200">
               <CardHeader>
-                <CardTitle className={`${darkMode ? 'text-white' : 'text-slate-800'}`}>Projects & Links</CardTitle>
+                <CardTitle>Projects & Links</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -476,17 +564,13 @@ const ProfilePage = () => {
                     <a
                       key={index}
                       href={project.url}
-                      className={`flex items-center justify-between p-4 rounded-lg transition-colors ${darkMode ? 'bg-slate-700/50 text-blue-200 hover:bg-slate-600/50 border border-blue-500/20' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+                      className="flex items-center justify-between p-4 rounded-lg border border-gray-200 hover:bg-gray-50"
                     >
                       <div>
-                        <div className={`font-medium ${darkMode ? 'text-white' : 'text-blue-700'}`}>
-                          {project.title}
-                        </div>
-                        <div className={`text-sm ${darkMode ? 'text-blue-200' : 'text-blue-600'}`}>
-                          {project.type}
-                        </div>
+                        <div className="font-medium text-gray-800">{project.title}</div>
+                        <div className="text-sm text-gray-600">{project.type}</div>
                       </div>
-                      <ChevronRight className="w-5 h-5" />
+                      <ChevronRight className="w-5 h-5 text-gray-400" />
                     </a>
                   ))}
                 </div>
@@ -495,41 +579,102 @@ const ProfilePage = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Share Menu */}
-        {showShareMenu && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-            <Card className={`w-full max-w-sm mx-4 ${darkMode ? 'neo-glass border-blue-500/30' : 'bg-white border-slate-200'}`}>
-              <CardHeader>
-                <CardTitle className={`${darkMode ? 'text-white' : 'text-slate-800'}`}>Share Profile</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={handleCopyLink}
+        {/* Fixed Chat Input - Always Visible */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex gap-3 mb-3">
+              <Input
+                placeholder="Ask me anything..."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                className="flex-1 border-gray-300"
+                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleVoiceToggle}
+                className={`w-10 h-10 p-0 ${isRecording ? 'bg-red-500 border-red-500 text-white' : 'border-gray-300'}`}
+              >
+                {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-10 h-10 p-0 border-gray-300"
+              >
+                <Smile className="w-4 h-4" />
+              </Button>
+              <Button
+                onClick={handleSendMessage}
+                className="gradient-button"
+                disabled={isProcessing}
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            {/* Social Links */}
+            <div className="flex justify-center space-x-4">
+              {profile.socialLinks.map((social, index) => (
+                <a
+                  key={index}
+                  href={social.url}
+                  className="text-gray-600 hover:text-blue-500"
                 >
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copy Link
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <QrCode className="w-4 h-4 mr-2" />
-                  QR Code
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => setShowShareMenu(false)}
-                >
-                  Cancel
-                </Button>
-              </CardContent>
-            </Card>
+                  <social.icon className="w-5 h-5" />
+                </a>
+              ))}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowShareMenu(true)}
+                className="text-gray-600 hover:text-blue-500"
+              >
+                <Share2 className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* Add bottom padding to account for fixed input */}
+        <div className="h-32"></div>
       </div>
+
+      {/* Share Menu */}
+      {showShareMenu && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+          <Card className="w-full max-w-sm mx-4 bg-white border-gray-200">
+            <CardHeader>
+              <CardTitle>Share Profile</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={handleCopyLink}
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Copy Link
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+              >
+                <QrCode className="w-4 h-4 mr-2" />
+                QR Code
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => setShowShareMenu(false)}
+              >
+                Cancel
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
