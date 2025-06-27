@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -92,9 +91,6 @@ const ProfilePage = () => {
   const [isTalking, setIsTalking] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [newPostType, setNewPostType] = useState<'video' | 'photo' | 'link' | 'integration' | 'qa' | 'text'>('text');
-  const [newPostContent, setNewPostContent] = useState('');
-  const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
@@ -269,28 +265,6 @@ const ProfilePage = () => {
     }
   };
 
-  const handleCreatePost = async () => {
-    if (newPostContent.trim()) {
-      const newPost: Post = {
-        id: Date.now().toString(),
-        type: newPostType,
-        content: newPostContent,
-        timestamp: new Date(),
-        likes: 0,
-        comments: 0
-      };
-      
-      setPosts(prev => [newPost, ...prev]);
-      setNewPostContent('');
-      setIsCreatingPost(false);
-      
-      toast({
-        title: "Post Created!",
-        description: "Your post has been published successfully",
-      });
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -434,53 +408,6 @@ const ProfilePage = () => {
 
           {/* Posts Tab */}
           <TabsContent value="posts" className="mt-6 space-y-4">
-            {/* Create Post */}
-            {isCreatingPost ? (
-              <Card className="bg-white border-gray-200">
-                <CardContent className="p-4">
-                  <div className="space-y-4">
-                    <Select value={newPostType} onValueChange={(value: any) => setNewPostType(value)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="text">Text Post</SelectItem>
-                        <SelectItem value="video">Video</SelectItem>
-                        <SelectItem value="photo">Photo</SelectItem>
-                        <SelectItem value="link">Link</SelectItem>
-                        <SelectItem value="integration">Integration</SelectItem>
-                        <SelectItem value="qa">Q&A</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    
-                    <Textarea
-                      placeholder={`Write your ${newPostType} post...`}
-                      value={newPostContent}
-                      onChange={(e) => setNewPostContent(e.target.value)}
-                      className="min-h-[100px]"
-                    />
-                    
-                    <div className="flex gap-2">
-                      <Button onClick={handleCreatePost} className="gradient-button">
-                        Post
-                      </Button>
-                      <Button variant="outline" onClick={() => setIsCreatingPost(false)}>
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Button 
-                onClick={() => setIsCreatingPost(true)}
-                className="w-full gradient-button"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create New Post
-              </Button>
-            )}
-
             {/* Posts List */}
             {posts.map((post) => (
               <Card key={post.id} className="bg-white border-gray-200">
