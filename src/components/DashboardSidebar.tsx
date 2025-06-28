@@ -56,47 +56,54 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
   };
 
   return (
-    <Sidebar className="border-r border-gray-200">
-      <SidebarHeader className="p-4">
+    <Sidebar 
+      className="border-r border-gray-200 bg-white"
+      collapsible="icon"
+    >
+      <SidebarHeader className="p-4 border-b border-gray-100">
         <div 
           className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
           onClick={handleLogoClick}
         >
-          <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
             <span className="text-white font-bold text-sm">A</span>
           </div>
           {!isCollapsed && (
-            <div>
-              <h2 className="font-semibold text-gray-900">AvatarTalk.bio</h2>
-              <p className="text-xs text-gray-500">Dashboard</p>
+            <div className="min-w-0">
+              <h2 className="font-semibold text-gray-900 truncate">AvatarTalk.bio</h2>
+              <p className="text-xs text-gray-500 truncate">Dashboard</p>
             </div>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="p-2">
         <SidebarGroup>
           <SidebarGroupContent>
-            <div className="px-2 mb-4">
+            <div className="mb-4">
               <Button
                 onClick={onCreatePost}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                className={`w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white ${
+                  isCollapsed ? 'px-2' : 'px-4'
+                }`}
+                size={isCollapsed ? "icon" : "default"}
               >
-                <Plus className="w-4 h-4 mr-2" />
-                {!isCollapsed && "Create Post"}
+                <Plus className="w-4 h-4" />
+                {!isCollapsed && <span className="ml-2">Create Post</span>}
               </Button>
             </div>
 
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
-                    className="hover:bg-gray-100 text-gray-700 hover:text-gray-900"
+                    className="hover:bg-gray-100 text-gray-700 hover:text-gray-900 w-full"
+                    tooltip={isCollapsed ? item.title : undefined}
                   >
-                    <a href={item.url} className="flex items-center gap-3">
-                      <item.icon className="w-5 h-5" />
-                      {!isCollapsed && <span>{item.title}</span>}
+                    <a href={item.url} className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
+                      <item.icon className="w-5 h-5 flex-shrink-0" />
+                      {!isCollapsed && <span className="truncate">{item.title}</span>}
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

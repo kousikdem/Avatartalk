@@ -24,19 +24,19 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full bg-white">
         <DashboardSidebar onCreatePost={() => setIsCreatePostOpen(true)} />
         
         <SidebarInset className="flex-1">
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-            <SidebarTrigger className="-ml-1" />
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 bg-white sticky top-0 z-10">
+            <SidebarTrigger className="-ml-1 h-8 w-8" />
             <div className="flex-1">
               <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
             </div>
           </header>
           
-          <main className="flex-1">
+          <main className="flex-1 overflow-auto">
             {children}
           </main>
         </SidebarInset>
