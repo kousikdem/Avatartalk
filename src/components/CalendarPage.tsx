@@ -16,65 +16,17 @@ import {
   MapPin,
   Phone,
   Trash2,
-  Edit3
+  Edit3,
+  Loader2
 } from 'lucide-react';
-
-interface Event {
-  id: string;
-  title: string;
-  type: 'meeting' | 'appointment' | 'call' | 'video';
-  date: Date;
-  time: string;
-  duration: string;
-  attendees?: string[];
-  location?: string;
-  description?: string;
-  status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
-}
+import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 
 const CalendarPage = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [view, setView] = useState<'month' | 'week' | 'day'>('month');
-  const [events] = useState<Event[]>([
-    {
-      id: '1',
-      title: 'Product Strategy Meeting',
-      type: 'meeting',
-      date: new Date(),
-      time: '10:00 AM',
-      duration: '1h',
-      attendees: ['John Doe', 'Jane Smith', 'Mike Johnson'],
-      location: 'Conference Room A',
-      description: 'Quarterly product roadmap discussion',
-      status: 'upcoming'
-    },
-    {
-      id: '2',
-      title: 'Client Consultation',
-      type: 'appointment',
-      date: new Date(),
-      time: '2:30 PM',
-      duration: '45m',
-      attendees: ['Sarah Wilson'],
-      location: 'Office 201',
-      description: 'Initial consultation for new project',
-      status: 'upcoming'
-    },
-    {
-      id: '3',
-      title: 'Team Stand-up',
-      type: 'video',
-      date: new Date(),
-      time: '9:00 AM',
-      duration: '30m',
-      attendees: ['Development Team'],
-      location: 'Zoom Meeting',
-      description: 'Daily team sync and updates',
-      status: 'completed'
-    }
-  ]);
+  const { events, loading, deleteEvent } = useCalendarEvents();
 
-  const getEventTypeIcon = (type: Event['type']) => {
+  const getEventTypeIcon = (type: string) => {
     switch (type) {
       case 'meeting': return <Users className="w-4 h-4" />;
       case 'appointment': return <CalendarIcon className="w-4 h-4" />;
@@ -84,7 +36,7 @@ const CalendarPage = () => {
     }
   };
 
-  const getStatusColor = (status: Event['status']) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'upcoming': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'ongoing': return 'bg-green-100 text-green-800 border-green-200';
@@ -94,9 +46,40 @@ const CalendarPage = () => {
     }
   };
 
-  const todaysEvents = events.filter(event => 
-    event.date.toDateString() === new Date().toDateString()
-  );
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  const getDuration = (start: string, end: string) => {
+    const startTime = new Date(start);
+    const endTime = new Date(end);
+    const diff = endTime.getTime() - startTime.getTime();
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(minutes / 60);
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes % 60}m`;
+    }
+    return `${minutes}m`;
+  };
+
+  const todaysEvents = events.filter(event => {
+    const eventDate = new Date(event.start_time);
+    const today = new Date();
+    return eventDate.toDateString() === today.toDateString();
+  });
+
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -202,7 +185,7 @@ const CalendarPage = () => {
                     <div key={event.id} className="p-4 rounded-lg border border-gray-200 hover:border-blue-300 transition-all">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center space-x-2">
-                          {getEventTypeIcon(event.type)}
+                          {getEventTypeIcon(event.event_type)}
                           <h3 className="font-semibold text-gray-800">{event.title}</h3>
                         </div>
                         <Badge className={getStatusColor(event.status)}>
@@ -213,7 +196,7 @@ const CalendarPage = () => {
                       <div className="space-y-2 text-sm text-gray-600">
                         <div className="flex items-center space-x-2">
                           <Clock className="w-4 h-4" />
-                          <span>{event.time} ({event.duration})</span>
+                          <span>{formatTime(event.start_time)} ({getDuration(event.start_time, event.end_time)})</span>
                         </div>
                         
                         {event.location && (
@@ -223,7 +206,7 @@ const CalendarPage = () => {
                           </div>
                         )}
                         
-                        {event.attendees && (
+                        {event.attendees && event.attendees.length > 0 && (
                           <div className="flex items-center space-x-2">
                             <Users className="w-4 h-4" />
                             <span>{event.attendees.join(', ')}</span>
@@ -239,7 +222,12 @@ const CalendarPage = () => {
                         <Button size="sm" variant="outline" className="border-gray-300">
                           <Edit3 className="w-4 h-4" />
                         </Button>
-                        <Button size="sm" variant="outline" className="border-red-300 text-red-600 hover:bg-red-50">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="border-red-300 text-red-600 hover:bg-red-50"
+                          onClick={() => deleteEvent(event.id)}
+                        >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -257,20 +245,20 @@ const CalendarPage = () => {
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center p-3 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
-                    <div className="text-2xl font-bold text-blue-600">12</div>
+                    <div className="text-2xl font-bold text-blue-600">{events.filter(e => e.event_type === 'meeting').length}</div>
                     <div className="text-sm text-blue-500">Meetings</div>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-gradient-to-br from-green-50 to-green-100 border border-green-200">
-                    <div className="text-2xl font-bold text-green-600">8</div>
+                    <div className="text-2xl font-bold text-green-600">{events.filter(e => e.event_type === 'appointment').length}</div>
                     <div className="text-sm text-green-500">Appointments</div>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200">
-                    <div className="text-2xl font-bold text-purple-600">24h</div>
-                    <div className="text-sm text-purple-500">Total Time</div>
+                    <div className="text-2xl font-bold text-purple-600">{events.length}</div>
+                    <div className="text-sm text-purple-500">Total Events</div>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200">
-                    <div className="text-2xl font-bold text-orange-600">95%</div>
-                    <div className="text-sm text-orange-500">Attendance</div>
+                    <div className="text-2xl font-bold text-orange-600">{events.filter(e => e.status === 'completed').length}</div>
+                    <div className="text-sm text-orange-500">Completed</div>
                   </div>
                 </div>
               </CardContent>

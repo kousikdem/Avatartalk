@@ -9,6 +9,237 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      calendar_events: {
+        Row: {
+          attendees: Json | null
+          created_at: string
+          description: string | null
+          end_time: string
+          event_type: string | null
+          id: string
+          location: string | null
+          start_time: string
+          status: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attendees?: Json | null
+          created_at?: string
+          description?: string | null
+          end_time: string
+          event_type?: string | null
+          id?: string
+          location?: string | null
+          start_time: string
+          status?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attendees?: Json | null
+          created_at?: string
+          description?: string | null
+          end_time?: string
+          event_type?: string | null
+          id?: string
+          location?: string | null
+          start_time?: string
+          status?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follows_following_id_fkey"
+            columns: ["following_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          data: Json | null
+          id: string
+          message: string
+          read: boolean | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          message: string
+          read?: boolean | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          message?: string
+          read?: boolean | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          comments_count: number | null
+          content: string | null
+          created_at: string
+          id: string
+          is_paid: boolean | null
+          likes_count: number | null
+          media_type: string | null
+          media_url: string | null
+          metadata: Json | null
+          post_type: string | null
+          price: number | null
+          updated_at: string
+          user_id: string
+          views_count: number | null
+        }
+        Insert: {
+          comments_count?: number | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_paid?: boolean | null
+          likes_count?: number | null
+          media_type?: string | null
+          media_url?: string | null
+          metadata?: Json | null
+          post_type?: string | null
+          price?: number | null
+          updated_at?: string
+          user_id: string
+          views_count?: number | null
+        }
+        Update: {
+          comments_count?: number | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_paid?: boolean | null
+          likes_count?: number | null
+          media_type?: string | null
+          media_url?: string | null
+          metadata?: Json | null
+          post_type?: string | null
+          price?: number | null
+          updated_at?: string
+          user_id?: string
+          views_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_visitors: {
+        Row: {
+          id: string
+          ip_address: unknown | null
+          user_agent: string | null
+          visited_at: string
+          visited_profile_id: string
+          visitor_id: string | null
+        }
+        Insert: {
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          visited_at?: string
+          visited_profile_id: string
+          visitor_id?: string | null
+        }
+        Update: {
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          visited_at?: string
+          visited_profile_id?: string
+          visitor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_visitors_visited_profile_id_fkey"
+            columns: ["visited_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_visitors_visitor_id_fkey"
+            columns: ["visitor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -35,6 +266,53 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      user_analytics: {
+        Row: {
+          created_at: string
+          date: string
+          engagement_rate: number | null
+          id: string
+          new_followers: number | null
+          post_comments: number | null
+          post_likes: number | null
+          post_views: number | null
+          profile_views: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          engagement_rate?: number | null
+          id?: string
+          new_followers?: number | null
+          post_comments?: number | null
+          post_likes?: number | null
+          post_views?: number | null
+          profile_views?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          engagement_rate?: number | null
+          id?: string
+          new_followers?: number | null
+          post_comments?: number | null
+          post_likes?: number | null
+          post_views?: number | null
+          profile_views?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_analytics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

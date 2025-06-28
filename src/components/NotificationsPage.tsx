@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,101 +15,25 @@ import {
   UserPlus,
   Calendar,
   Clock,
-  MapPin
+  Loader2
 } from 'lucide-react';
-
-interface NotificationItem {
-  id: string;
-  type: 'message' | 'like' | 'follow' | 'event';
-  user: {
-    name: string;
-    username: string;
-    avatar: string;
-  };
-  content: string;
-  timestamp: Date;
-  read: boolean;
-}
+import { useNotifications } from '@/hooks/useNotifications';
 
 const NotificationsPage = () => {
-  const [notifications, setNotifications] = useState<NotificationItem[]>([
-    {
-      id: '1',
-      type: 'message',
-      user: {
-        name: 'John Doe',
-        username: 'johndoe',
-        avatar: '/api/placeholder/64/64',
-      },
-      content: 'Sent you a direct message',
-      timestamp: new Date(Date.now() - 5 * 60 * 1000),
-      read: false,
-    },
-    {
-      id: '2',
-      type: 'like',
-      user: {
-        name: 'Jane Smith',
-        username: 'janesmith',
-        avatar: '/api/placeholder/64/64',
-      },
-      content: 'Liked your recent post',
-      timestamp: new Date(Date.now() - 30 * 60 * 1000),
-      read: false,
-    },
-    {
-      id: '3',
-      type: 'follow',
-      user: {
-        name: 'Mike Johnson',
-        username: 'mikejohnson',
-        avatar: '/api/placeholder/64/64',
-      },
-      content: 'Started following you',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      read: true,
-    },
-    {
-      id: '4',
-      type: 'event',
-      user: {
-        name: 'Event Reminder',
-        username: 'eventreminder',
-        avatar: '/api/placeholder/64/64',
-      },
-      content: 'Upcoming meeting: Product Strategy at 10:00 AM',
-      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-      read: true,
-    },
-  ]);
+  const { notifications, loading, markAsRead, markAllAsRead } = useNotifications();
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === id ? { ...notification, read: true } : notification
-      )
-    );
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notification => ({ ...notification, read: true }))
-    );
-  };
-
-  const unreadNotifications = notifications.filter(notification => !notification.read);
-
-  const getNotificationIcon = (type: NotificationItem['type']) => {
+  const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'message': return <MessageSquare className="w-4 h-4 text-blue-500" />;
-      case 'like': return <Heart className="w-4 h-4 text-red-500" />;
       case 'follow': return <UserPlus className="w-4 h-4 text-green-500" />;
+      case 'like': return <Heart className="w-4 h-4 text-red-500" />;
+      case 'comment': return <MessageSquare className="w-4 h-4 text-blue-500" />;
       case 'event': return <Calendar className="w-4 h-4 text-purple-500" />;
       default: return <Bell className="w-4 h-4 text-gray-500" />;
     }
   };
 
-  const getTimeAgo = (date: Date) => {
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / (1000 * 60));
@@ -120,6 +44,16 @@ const NotificationsPage = () => {
     if (hours < 24) return `${hours}h ago`;
     return `${days}d ago`;
   };
+
+  const unreadNotifications = notifications.filter(notification => !notification.read);
+
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -148,6 +82,7 @@ const NotificationsPage = () => {
                 variant="outline" 
                 className="border-gray-300"
                 onClick={markAllAsRead}
+                disabled={unreadNotifications.length === 0}
               >
                 <CheckCheck className="w-4 h-4 mr-2" />
                 Mark All Read
@@ -174,25 +109,25 @@ const NotificationsPage = () => {
                   {notifications.map(notification => (
                     <motion.li
                       key={notification.id}
-                      className="flex items-start justify-between p-4 rounded-lg border border-gray-100 hover:border-blue-300 transition-all"
+                      className={`flex items-start justify-between p-4 rounded-lg border transition-all ${
+                        notification.read 
+                          ? 'border-gray-100 hover:border-blue-300' 
+                          : 'border-blue-200 bg-blue-50 hover:border-blue-300'
+                      }`}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.4 }}
                     >
                       <div className="flex items-start space-x-4">
-                        <Avatar className="w-10 h-10">
-                          <AvatarImage src={notification.user.avatar} alt={notification.user.name} />
-                          <AvatarFallback>{notification.user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                        </Avatar>
+                        <div className="mt-1">
+                          {getNotificationIcon(notification.type)}
+                        </div>
                         <div>
-                          <div className="flex items-center space-x-2 mb-1">
-                            <h3 className="font-semibold text-gray-800">{notification.user.name}</h3>
-                            <Badge variant="secondary" className="text-gray-500">@{notification.user.username}</Badge>
-                          </div>
-                          <p className="text-gray-700 text-sm">{notification.content}</p>
+                          <h3 className="font-semibold text-gray-800">{notification.title}</h3>
+                          <p className="text-gray-700 text-sm mt-1">{notification.message}</p>
                           <div className="flex items-center text-gray-500 text-sm mt-2">
-                            {getNotificationIcon(notification.type)}
-                            <span className="ml-1">{getTimeAgo(notification.timestamp)}</span>
+                            <Clock className="w-4 h-4 mr-1" />
+                            <span>{getTimeAgo(notification.created_at)}</span>
                           </div>
                         </div>
                       </div>
