@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -186,7 +187,7 @@ const NotificationsPage = () => {
                         <div>
                           <div className="flex items-center space-x-2 mb-1">
                             <h3 className="font-semibold text-gray-800">{notification.user.name}</h3>
-                            <Badge variant="ghost" className="text-gray-500">@{notification.user.username}</Badge>
+                            <Badge variant="secondary" className="text-gray-500">@{notification.user.username}</Badge>
                           </div>
                           <p className="text-gray-700 text-sm">{notification.content}</p>
                           <div className="flex items-center text-gray-500 text-sm mt-2">
