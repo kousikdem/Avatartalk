@@ -7,12 +7,12 @@ interface CalendarEvent {
   id: string;
   title: string;
   description?: string;
-  event_type: string; // Changed from union type to string
+  event_type: string;
   start_time: string;
   end_time: string;
   location?: string;
   attendees: string[];
-  status: string; // Changed from union type to string
+  status: string;
   user_id: string;
   created_at: string;
   updated_at: string;
@@ -35,6 +35,11 @@ export const useCalendarEvents = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  const transformEvent = (event: any): CalendarEvent => ({
+    ...event,
+    attendees: Array.isArray(event.attendees) ? event.attendees : []
+  });
+
   const fetchEvents = async () => {
     try {
       const { data, error } = await supabase
@@ -43,7 +48,7 @@ export const useCalendarEvents = () => {
         .order('start_time', { ascending: true });
 
       if (error) throw error;
-      setEvents(data || []);
+      setEvents((data || []).map(transformEvent));
     } catch (error) {
       console.error('Error fetching calendar events:', error);
       toast({
@@ -66,7 +71,7 @@ export const useCalendarEvents = () => {
 
       if (error) throw error;
       
-      setEvents(prev => [...prev, data]);
+      setEvents(prev => [...prev, transformEvent(data)]);
       toast({
         title: "Success",
         description: "Event created successfully",
@@ -94,7 +99,7 @@ export const useCalendarEvents = () => {
 
       if (error) throw error;
       
-      setEvents(prev => prev.map(event => event.id === id ? data : event));
+      setEvents(prev => prev.map(event => event.id === id ? transformEvent(data) : event));
       toast({
         title: "Success",
         description: "Event updated successfully",
