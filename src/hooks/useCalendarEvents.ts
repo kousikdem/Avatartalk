@@ -7,14 +7,27 @@ interface CalendarEvent {
   id: string;
   title: string;
   description?: string;
-  event_type: 'meeting' | 'appointment' | 'call' | 'video';
+  event_type: string; // Changed from union type to string
   start_time: string;
   end_time: string;
   location?: string;
   attendees: string[];
-  status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+  status: string; // Changed from union type to string
+  user_id: string;
   created_at: string;
   updated_at: string;
+}
+
+interface CreateEventData {
+  title: string;
+  description?: string;
+  event_type: string;
+  start_time: string;
+  end_time: string;
+  location?: string;
+  attendees: string[];
+  status: string;
+  user_id: string;
 }
 
 export const useCalendarEvents = () => {
@@ -43,7 +56,7 @@ export const useCalendarEvents = () => {
     }
   };
 
-  const createEvent = async (eventData: Omit<CalendarEvent, 'id' | 'created_at' | 'updated_at'>) => {
+  const createEvent = async (eventData: CreateEventData) => {
     try {
       const { data, error } = await supabase
         .from('calendar_events')

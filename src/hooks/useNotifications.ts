@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface Notification {
   id: string;
-  type: 'follow' | 'like' | 'comment' | 'mention' | 'system' | 'event';
+  type: string; // Changed from union type to string
   title: string;
   message: string;
   data: any;

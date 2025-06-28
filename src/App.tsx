@@ -59,10 +59,14 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/train" element={<AiTraining />} />
+            <Route path="/train" element={
+              <DashboardLayout>
+                <AiTraining />
+              </DashboardLayout>
+            } />
             <Route path="/:username" element={<ProfilePage />} />
             
-            {/* Dashboard routes with sidebar */}
+            {/* All dashboard routes with sidebar */}
             <Route path="/dashboard" element={
               <DashboardLayout>
                 <Dashboard />
@@ -81,6 +85,38 @@ const App = () => (
             <Route path="/followers" element={
               <DashboardLayout>
                 <FollowersPage />
+              </DashboardLayout>
+            } />
+            <Route path="/feed" element={
+              <DashboardLayout>
+                <div className="p-6">
+                  <h1 className="text-2xl font-bold">Feed</h1>
+                  <p className="text-gray-600 mt-2">Your social feed will be displayed here.</p>
+                </div>
+              </DashboardLayout>
+            } />
+            <Route path="/analytics" element={
+              <DashboardLayout>
+                <div className="p-6">
+                  <h1 className="text-2xl font-bold">Analytics</h1>
+                  <p className="text-gray-600 mt-2">Your analytics data will be displayed here.</p>
+                </div>
+              </DashboardLayout>
+            } />
+            <Route path="/bookmarks" element={
+              <DashboardLayout>
+                <div className="p-6">
+                  <h1 className="text-2xl font-bold">Bookmarks</h1>
+                  <p className="text-gray-600 mt-2">Your saved bookmarks will be displayed here.</p>
+                </div>
+              </DashboardLayout>
+            } />
+            <Route path="/settings" element={
+              <DashboardLayout>
+                <div className="p-6">
+                  <h1 className="text-2xl font-bold">Settings</h1>
+                  <p className="text-gray-600 mt-2">Your account settings will be displayed here.</p>
+                </div>
               </DashboardLayout>
             } />
             

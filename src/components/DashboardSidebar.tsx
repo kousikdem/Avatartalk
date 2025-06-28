@@ -30,7 +30,7 @@ interface DashboardSidebarProps {
 }
 
 const navigationItems = [
-  { title: "Dashboard", icon: Home, url: "/" },
+  { title: "Dashboard", icon: Home, url: "/dashboard" },
   { title: "Feed", icon: MessageSquare, url: "/feed" },
   { title: "Analytics", icon: BarChart3, url: "/analytics" },
   { title: "Followers", icon: Users, url: "/followers" },
@@ -44,16 +44,30 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
+  const handleLogoClick = () => {
+    // Check if user is logged in (you might want to implement proper auth check)
+    const isLoggedIn = localStorage.getItem('supabase.auth.token') || false;
+    
+    if (isLoggedIn) {
+      window.location.href = '/dashboard';
+    } else {
+      window.location.href = '/';
+    }
+  };
+
   return (
     <Sidebar className="border-r border-gray-200">
       <SidebarHeader className="p-4">
-        <div className="flex items-center gap-2">
+        <div 
+          className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={handleLogoClick}
+        >
           <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">A</span>
           </div>
           {!isCollapsed && (
             <div>
-              <h2 className="font-semibold text-gray-900">AvatarTalk</h2>
+              <h2 className="font-semibold text-gray-900">AvatarTalk.bio</h2>
               <p className="text-xs text-gray-500">Dashboard</p>
             </div>
           )}
