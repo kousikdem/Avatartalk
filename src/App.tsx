@@ -15,13 +15,37 @@ import CalendarPage from "./components/CalendarPage";
 import NotificationsPage from "./components/NotificationsPage";
 import FollowersPage from "./components/FollowersPage";
 import NotFound from "./pages/NotFound";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
 
 const queryClient = new QueryClient();
 
-// Dashboard Layout wrapper component
-const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
+// Global Layout wrapper component that includes sidebar for all pages
+const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    // Check current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Show sidebar only for authenticated users
+  if (!user) {
+    return <>{children}</>;
+  }
 
   return (
     <SidebarProvider defaultOpen={true}>
@@ -32,7 +56,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 bg-white sticky top-0 z-10">
             <SidebarTrigger className="-ml-1 h-8 w-8" />
             <div className="flex-1">
-              <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
+              <h1 className="text-xl font-semibold text-gray-900">AvatarTalk.bio</h1>
             </div>
           </header>
           
@@ -57,72 +81,45 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/train" element={
-              <DashboardLayout>
-                <AiTraining />
-              </DashboardLayout>
-            } />
-            <Route path="/:username" element={<ProfilePage />} />
-            
-            {/* All dashboard routes with sidebar */}
-            <Route path="/dashboard" element={
-              <DashboardLayout>
-                <Dashboard />
-              </DashboardLayout>
-            } />
-            <Route path="/calendar" element={
-              <DashboardLayout>
-                <CalendarPage />
-              </DashboardLayout>
-            } />
-            <Route path="/notifications" element={
-              <DashboardLayout>
-                <NotificationsPage />
-              </DashboardLayout>
-            } />
-            <Route path="/followers" element={
-              <DashboardLayout>
-                <FollowersPage />
-              </DashboardLayout>
-            } />
-            <Route path="/feed" element={
-              <DashboardLayout>
+          <GlobalLayout>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/train" element={<AiTraining />} />
+              <Route path="/:username" element={<ProfilePage />} />
+              
+              {/* All routes now have sidebar for logged-in users */}
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/calendar" element={<CalendarPage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/followers" element={<FollowersPage />} />
+              <Route path="/feed" element={
                 <div className="p-6">
                   <h1 className="text-2xl font-bold">Feed</h1>
                   <p className="text-gray-600 mt-2">Your social feed will be displayed here.</p>
                 </div>
-              </DashboardLayout>
-            } />
-            <Route path="/analytics" element={
-              <DashboardLayout>
+              } />
+              <Route path="/analytics" element={
                 <div className="p-6">
                   <h1 className="text-2xl font-bold">Analytics</h1>
                   <p className="text-gray-600 mt-2">Your analytics data will be displayed here.</p>
                 </div>
-              </DashboardLayout>
-            } />
-            <Route path="/bookmarks" element={
-              <DashboardLayout>
+              } />
+              <Route path="/bookmarks" element={
                 <div className="p-6">
                   <h1 className="text-2xl font-bold">Bookmarks</h1>
                   <p className="text-gray-600 mt-2">Your saved bookmarks will be displayed here.</p>
                 </div>
-              </DashboardLayout>
-            } />
-            <Route path="/settings" element={
-              <DashboardLayout>
+              } />
+              <Route path="/settings" element={
                 <div className="p-6">
                   <h1 className="text-2xl font-bold">Settings</h1>
                   <p className="text-gray-600 mt-2">Your account settings will be displayed here.</p>
                 </div>
-              </DashboardLayout>
-            } />
-            
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              } />
+              
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </GlobalLayout>
         </BrowserRouter>
       </div>
     </TooltipProvider>
