@@ -71,9 +71,6 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
         <SidebarInset className="flex-1 w-full">
           <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 bg-white sticky top-0 z-50 w-full">
             <SidebarTrigger className="h-8 w-8 p-1" />
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl font-semibold text-gray-900 truncate">AvatarTalk.bio</h1>
-            </div>
           </header>
           
           <main className="flex-1 overflow-auto w-full">
