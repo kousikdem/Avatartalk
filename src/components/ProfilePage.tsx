@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +13,7 @@ import Avatar3D from './Avatar3D';
 import VisitorAuth from './VisitorAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MessageSquare, 
   Star, 
@@ -29,11 +30,6 @@ import {
   Mail,
   Phone,
   Globe,
-  Instagram,
-  Twitter,
-  Youtube,
-  Linkedin,
-  Github,
   UserPlus,
   Settings,
   MoreHorizontal,
@@ -57,7 +53,12 @@ import {
   HelpCircle,
   FileText,
   Camera,
-  Paperclip
+  Paperclip,
+  Facebook,
+  Instagram,
+  Twitter,
+  Pinterest,
+  Youtube
 } from 'lucide-react';
 
 interface Post {
@@ -92,6 +93,7 @@ const ProfilePage = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showChatBox, setShowChatBox] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -170,11 +172,11 @@ const ProfilePage = () => {
     specialties: ["AI Technology", "Personal Branding", "Content Creation"],
     socialLinks: [
       { platform: "Twitter", url: "#", icon: Twitter },
-      { platform: "LinkedIn", url: "#", icon: Linkedin },
+      { platform: "LinkedIn", url: "#", icon: Globe },
       { platform: "Instagram", url: "#", icon: Instagram },
       { platform: "YouTube", url: "#", icon: Youtube },
-      { platform: "GitHub", url: "#", icon: Github },
-      { platform: "Website", url: "#", icon: Globe }
+      { platform: "Facebook", url: "#", icon: Facebook },
+      { platform: "Pinterest", url: "#", icon: Pinterest }
     ],
     projects: [
       { title: "AI Voice Assistant", url: "#", type: "Project" },
@@ -189,6 +191,30 @@ const ProfilePage = () => {
       title: "Link Copied!",
       description: "Profile link copied to clipboard",
     });
+  };
+
+  const handleShare = (platform: string) => {
+    const url = window.location.href;
+    const text = `Check out ${profile.name}'s AI Avatar on AvatarTalk.bio`;
+    
+    const shareUrls = {
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+      twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
+      instagram: url, // Instagram doesn't support direct URL sharing
+      pinterest: `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(url)}&description=${encodeURIComponent(text)}`,
+      youtube: url, // YouTube doesn't support direct URL sharing
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`
+    };
+
+    if (shareUrls[platform as keyof typeof shareUrls]) {
+      window.open(shareUrls[platform as keyof typeof shareUrls], '_blank');
+    }
+    
+    toast({
+      title: "Shared!",
+      description: `Shared on ${platform}`,
+    });
+    setShowShareMenu(false);
   };
 
   const processWithLlama = async (input: string) => {
@@ -265,6 +291,12 @@ const ProfilePage = () => {
     }
   };
 
+  const handleMessageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setMessage(value);
+    setShowChatBox(value.length > 0);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -298,30 +330,8 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-white text-gray-800">
-      {/* Header */}
+      {/* Profile Content - No Header */}
       <div className="relative bg-gradient-to-br from-blue-600 to-purple-600 rounded-b-3xl p-6 text-white">
-        <div className="flex justify-between items-center mb-6">
-          <div className="text-xl font-bold">AvatarTalk.bio</div>
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setDarkMode(!darkMode)}
-              className="rounded-full w-10 h-10 p-0 text-white hover:bg-white/20"
-            >
-              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowShareMenu(!showShareMenu)}
-              className="rounded-full w-10 h-10 p-0 text-white hover:bg-white/20"
-            >
-              <Download className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-
         {/* Profile Header */}
         <div className="text-center mb-6">
           <div className="relative inline-block mb-4">
@@ -506,48 +516,82 @@ const ProfilePage = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Fixed Chat Input - Always Visible */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
+        {/* Chat Box - Auto-appears when typing */}
+        <AnimatePresence>
+          {showChatBox && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="fixed bottom-32 left-4 right-4 max-w-4xl mx-auto bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-h-64 overflow-y-auto z-40"
+            >
+              <div className="space-y-4">
+                {chatMessages.slice(-3).map((chat) => (
+                  <div key={chat.id} className="space-y-2">
+                    <div className="flex justify-end">
+                      <div className="bg-blue-500 text-white p-2 rounded-lg max-w-xs text-sm">
+                        {chat.message}
+                      </div>
+                    </div>
+                    {chat.response && (
+                      <div className="flex justify-start">
+                        <div className="bg-gray-100 text-gray-800 p-2 rounded-lg max-w-xs text-sm">
+                          {chat.response}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Fixed Chat Input - Modern UI */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-50">
           <div className="max-w-4xl mx-auto">
-            <div className="flex gap-3 mb-3">
-              <Input
-                placeholder="Ask me anything..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="flex-1 border-gray-300"
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleVoiceToggle}
-                className={`w-10 h-10 p-0 ${isRecording ? 'bg-red-500 border-red-500 text-white' : 'border-gray-300'}`}
-              >
-                {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-10 h-10 p-0 border-gray-300"
-              >
-                <Smile className="w-4 h-4" />
-              </Button>
-              <Button
-                onClick={handleSendMessage}
-                className="gradient-button"
-                disabled={isProcessing}
-              >
-                <Send className="w-4 h-4" />
-              </Button>
+            {/* Message Input with Modern UI */}
+            <div className="bg-gray-50 rounded-full p-2 mb-4 shadow-sm border border-gray-200">
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Ask me anything..."
+                  value={message}
+                  onChange={handleMessageChange}
+                  className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-4"
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-10 h-10 p-0 rounded-full hover:bg-gray-200"
+                >
+                  <Smile className="w-5 h-5 text-gray-600" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleVoiceToggle}
+                  className={`w-10 h-10 p-0 rounded-full ${isRecording ? 'bg-red-100 text-red-600' : 'hover:bg-gray-200'}`}
+                >
+                  {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5 text-gray-600" />}
+                </Button>
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!message.trim() || isProcessing}
+                  className="gradient-button w-10 h-10 p-0 rounded-full"
+                >
+                  <Send className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
             
-            {/* Social Links */}
-            <div className="flex justify-center space-x-4">
+            {/* Modern Social Links Row */}
+            <div className="flex items-center justify-center space-x-6 bg-gray-50 rounded-full py-3 px-6">
               {profile.socialLinks.map((social, index) => (
                 <a
                   key={index}
                   href={social.url}
-                  className="text-gray-600 hover:text-blue-500"
+                  className="text-gray-600 hover:text-blue-500 transition-colors p-2 rounded-full hover:bg-white"
                 >
                   <social.icon className="w-5 h-5" />
                 </a>
@@ -556,7 +600,7 @@ const ProfilePage = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowShareMenu(true)}
-                className="text-gray-600 hover:text-blue-500"
+                className="text-gray-600 hover:text-blue-500 p-2 rounded-full hover:bg-white"
               >
                 <Share2 className="w-5 h-5" />
               </Button>
@@ -565,10 +609,10 @@ const ProfilePage = () => {
         </div>
 
         {/* Add bottom padding to account for fixed input */}
-        <div className="h-32"></div>
+        <div className="h-40"></div>
       </div>
 
-      {/* Share Menu */}
+      {/* Enhanced Share Menu */}
       {showShareMenu && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
           <Card className="w-full max-w-sm mx-4 bg-white border-gray-200">
@@ -576,6 +620,55 @@ const ProfilePage = () => {
               <CardTitle>Share Profile</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              <Button
+                variant="outline"
+                className="w-full justify-start hover:bg-blue-50"
+                onClick={() => handleShare('facebook')}
+              >
+                <Facebook className="w-4 h-4 mr-2 text-blue-600" />
+                Share on Facebook
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-start hover:bg-blue-50"
+                onClick={() => handleShare('twitter')}
+              >
+                <Twitter className="w-4 h-4 mr-2 text-blue-400" />
+                Share on Twitter
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-start hover:bg-pink-50"
+                onClick={() => handleShare('instagram')}
+              >
+                <Instagram className="w-4 h-4 mr-2 text-pink-600" />
+                Share on Instagram
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-start hover:bg-red-50"
+                onClick={() => handleShare('pinterest')}
+              >
+                <Pinterest className="w-4 h-4 mr-2 text-red-600" />
+                Share on Pinterest
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-start hover:bg-red-50"
+                onClick={() => handleShare('youtube')}
+              >
+                <Youtube className="w-4 h-4 mr-2 text-red-600" />
+                Share on YouTube
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-start hover:bg-blue-50"
+                onClick={() => handleShare('linkedin')}
+              >
+                <Globe className="w-4 h-4 mr-2 text-blue-700" />
+                Share on LinkedIn
+              </Button>
+              <Separator />
               <Button
                 variant="outline"
                 className="w-full justify-start"
