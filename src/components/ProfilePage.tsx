@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,8 +56,8 @@ import {
   Facebook,
   Instagram,
   Twitter,
-  Pinterest,
-  Youtube
+  Youtube,
+  Hash
 } from 'lucide-react';
 
 interface Post {
@@ -176,7 +175,7 @@ const ProfilePage = () => {
       { platform: "Instagram", url: "#", icon: Instagram },
       { platform: "YouTube", url: "#", icon: Youtube },
       { platform: "Facebook", url: "#", icon: Facebook },
-      { platform: "Pinterest", url: "#", icon: Pinterest }
+      { platform: "Pinterest", url: "#", icon: Hash }
     ],
     projects: [
       { title: "AI Voice Assistant", url: "#", type: "Project" },
@@ -649,7 +648,7 @@ const ProfilePage = () => {
                 className="w-full justify-start hover:bg-red-50"
                 onClick={() => handleShare('pinterest')}
               >
-                <Pinterest className="w-4 h-4 mr-2 text-red-600" />
+                <Hash className="w-4 h-4 mr-2 text-red-600" />
                 Share on Pinterest
               </Button>
               <Button
