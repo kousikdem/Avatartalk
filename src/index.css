@@ -94,10 +94,46 @@
   body {
     @apply bg-white text-foreground;
     background-color: white !important;
+    font-size: 16px;
+    line-height: 1.5;
   }
 
   html {
     background-color: white !important;
+    font-size: 16px;
+  }
+
+  /* Responsive font scaling */
+  @media (max-width: 640px) {
+    html {
+      font-size: 14px;
+    }
+  }
+
+  /* Ensure proper mobile viewport */
+  @media (max-width: 768px) {
+    body {
+      overflow-x: hidden;
+    }
+  }
+}
+
+/* Mobile-first responsive utilities */
+@layer utilities {
+  .mobile-padding {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+  
+  .mobile-text {
+    @apply text-sm sm:text-base;
+  }
+  
+  .mobile-heading {
+    @apply text-lg sm:text-xl lg:text-2xl;
+  }
+  
+  .mobile-container {
+    @apply w-full max-w-full overflow-hidden;
   }
 }
 
@@ -176,3 +212,19 @@
   box-shadow: 0 10px 20px rgba(240, 147, 251, 0.3);
 }
 
+/* Responsive sidebar styles */
+@media (max-width: 768px) {
+  .sidebar-mobile {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+  }
+  
+  .sidebar-mobile.open {
+    transform: translateX(0);
+  }
+}

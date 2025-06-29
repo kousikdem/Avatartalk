@@ -18,6 +18,7 @@ import NotFound from "./pages/NotFound";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const queryClient = new QueryClient();
 
@@ -25,11 +26,14 @@ const queryClient = new QueryClient();
 const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     // Check current session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      setLoading(false);
     });
 
     // Listen for auth changes
@@ -42,26 +46,40 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   // Show sidebar only for authenticated users
   if (!user) {
-    return <>{children}</>;
+    return (
+      <div className="min-h-screen w-full bg-white">
+        {children}
+      </div>
+    );
   }
 
   return (
-    <SidebarProvider defaultOpen={true}>
+    <SidebarProvider defaultOpen={!isMobile}>
       <div className="min-h-screen flex w-full bg-white">
         <DashboardSidebar onCreatePost={() => setIsCreatePostOpen(true)} />
         
-        <SidebarInset className="flex-1">
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 bg-white sticky top-0 z-10">
-            <SidebarTrigger className="-ml-1 h-8 w-8" />
-            <div className="flex-1">
-              <h1 className="text-xl font-semibold text-gray-900">AvatarTalk.bio</h1>
+        <SidebarInset className="flex-1 w-full">
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 bg-white sticky top-0 z-50 w-full">
+            <SidebarTrigger className="h-8 w-8 p-1" />
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl font-semibold text-gray-900 truncate">AvatarTalk.bio</h1>
             </div>
           </header>
           
-          <main className="flex-1 overflow-auto">
-            {children}
+          <main className="flex-1 overflow-auto w-full">
+            <div className="w-full max-w-full">
+              {children}
+            </div>
           </main>
         </SidebarInset>
 
@@ -93,25 +111,25 @@ const App = () => (
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/followers" element={<FollowersPage />} />
               <Route path="/feed" element={
-                <div className="p-6">
+                <div className="p-4 md:p-6 w-full">
                   <h1 className="text-2xl font-bold">Feed</h1>
                   <p className="text-gray-600 mt-2">Your social feed will be displayed here.</p>
                 </div>
               } />
               <Route path="/analytics" element={
-                <div className="p-6">
+                <div className="p-4 md:p-6 w-full">
                   <h1 className="text-2xl font-bold">Analytics</h1>
                   <p className="text-gray-600 mt-2">Your analytics data will be displayed here.</p>
                 </div>
               } />
               <Route path="/bookmarks" element={
-                <div className="p-6">
+                <div className="p-4 md:p-6 w-full">
                   <h1 className="text-2xl font-bold">Bookmarks</h1>
                   <p className="text-gray-600 mt-2">Your saved bookmarks will be displayed here.</p>
                 </div>
               } />
               <Route path="/settings" element={
-                <div className="p-6">
+                <div className="p-4 md:p-6 w-full">
                   <h1 className="text-2xl font-bold">Settings</h1>
                   <p className="text-gray-600 mt-2">Your account settings will be displayed here.</p>
                 </div>
