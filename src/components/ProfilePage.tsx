@@ -211,10 +211,10 @@ const ProfilePage = () => {
       { platform: "Facebook", url: "#", icon: Facebook },
       { platform: "Pinterest", url: "#", icon: Hash }
     ],
-    projects: [
-      { title: "AI Voice Assistant", url: "#", type: "Project" },
+    gifts: [
+      { title: "AI Voice Assistant", url: "#", type: "Gift" },
       { title: "Personal Blog", url: "#", type: "Link" },
-      { title: "NFT Collection", url: "#", type: "NFT" }
+      { title: "NFT Collection", url: "#", type: "Gift" }
     ]
   };
 
@@ -506,8 +506,8 @@ const ProfilePage = () => {
             <TabsTrigger value="chat" className="data-[state=active]:bg-white">
               Chat
             </TabsTrigger>
-            <TabsTrigger value="projects" className="data-[state=active]:bg-white">
-              Projects/Links
+            <TabsTrigger value="gifts" className="data-[state=active]:bg-white">
+              Gifts/Links
             </TabsTrigger>
           </TabsList>
 
@@ -584,23 +584,23 @@ const ProfilePage = () => {
             </Card>
           </TabsContent>
 
-          {/* Projects/Links Tab */}
-          <TabsContent value="projects" className="mt-6">
+          {/* Gifts/Links Tab */}
+          <TabsContent value="gifts" className="mt-6">
             <Card className="bg-white border-gray-200">
               <CardHeader>
-                <CardTitle>Projects & Links</CardTitle>
+                <CardTitle>Gifts & Links</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {profile.projects.map((project, index) => (
+                  {profile.gifts.map((gift, index) => (
                     <a
                       key={index}
-                      href={project.url}
+                      href={gift.url}
                       className="flex items-center justify-between p-4 rounded-lg border border-gray-200 hover:bg-gray-50"
                     >
                       <div>
-                        <div className="font-medium text-gray-800">{project.title}</div>
-                        <div className="text-sm text-gray-600">{project.type}</div>
+                        <div className="font-medium text-gray-800">{gift.title}</div>
+                        <div className="text-sm text-gray-600">{gift.type}</div>
                       </div>
                       <ChevronRight className="w-5 h-5 text-gray-400" />
                     </a>

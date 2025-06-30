@@ -1,270 +1,221 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar } from '@/components/ui/calendar';
-import { motion } from 'framer-motion';
-import { 
-  Calendar as CalendarIcon,
-  Clock,
-  Users,
-  Video,
-  Plus,
-  Filter,
-  Search,
-  MapPin,
-  Phone,
-  Trash2,
-  Edit3,
-  Loader2
-} from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, MapPin, Users, Plus, Video, Phone } from 'lucide-react';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
+import { Calendar } from '@/components/ui/calendar';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
+
+interface CalendarEvent {
+  id: string;
+  title: string;
+  description?: string;
+  event_type: string;
+  start_time: string;
+  end_time: string;
+  location?: string;
+  attendees: string[];
+  status: string;
+}
 
 const CalendarPage = () => {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [view, setView] = useState<'month' | 'week' | 'day'>('month');
-  const { events, loading, deleteEvent } = useCalendarEvents();
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const { events, loading, createEvent } = useCalendarEvents();
 
-  const getEventTypeIcon = (type: string) => {
-    switch (type) {
-      case 'meeting': return <Users className="w-4 h-4" />;
-      case 'appointment': return <CalendarIcon className="w-4 h-4" />;
-      case 'call': return <Phone className="w-4 h-4" />;
-      case 'video': return <Video className="w-4 h-4" />;
-      default: return <CalendarIcon className="w-4 h-4" />;
+  // Mock events for demonstration
+  const mockEvents: CalendarEvent[] = [
+    {
+      id: '1',
+      title: 'Team Meeting',
+      description: 'Weekly team sync',
+      event_type: 'meeting',
+      start_time: new Date().toISOString(),
+      end_time: new Date(Date.now() + 3600000).toISOString(),
+      location: 'Conference Room A',
+      attendees: ['john@example.com', 'jane@example.com'],
+      status: 'confirmed'
+    },
+    {
+      id: '2',
+      title: 'Client Consultation',
+      description: 'AI avatar consultation',
+      event_type: 'appointment',
+      start_time: new Date(Date.now() + 86400000).toISOString(),
+      end_time: new Date(Date.now() + 86400000 + 1800000).toISOString(),
+      location: 'Virtual Meeting',
+      attendees: ['client@example.com'],
+      status: 'pending'
     }
-  };
+  ];
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'upcoming': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'ongoing': return 'bg-green-100 text-green-800 border-green-200';
-      case 'completed': return 'bg-gray-100 text-gray-800 border-gray-200';
-      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
+  const allEvents = [...events, ...mockEvents];
 
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
-
-  const getDuration = (start: string, end: string) => {
-    const startTime = new Date(start);
-    const endTime = new Date(end);
-    const diff = endTime.getTime() - startTime.getTime();
-    const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(minutes / 60);
-    
-    if (hours > 0) {
-      return `${hours}h ${minutes % 60}m`;
-    }
-    return `${minutes}m`;
-  };
-
-  const todaysEvents = events.filter(event => {
-    const eventDate = new Date(event.start_time);
-    const today = new Date();
-    return eventDate.toDateString() === today.toDateString();
-  });
-
-  if (loading) {
-    return (
-      <div className="p-6 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
+  const getEventsForDate = (date: Date) => {
+    return allEvents.filter(event => 
+      isSameDay(new Date(event.start_time), date)
     );
-  }
+  };
+
+  const selectedDateEvents = getEventsForDate(selectedDate);
+
+  const getEventTypeColor = (type: string) => {
+    switch (type) {
+      case 'meeting':
+        return 'bg-blue-100 text-blue-800';
+      case 'appointment':
+        return 'bg-green-100 text-green-800';
+      case 'call':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getEventIcon = (type: string) => {
+    switch (type) {
+      case 'meeting':
+        return Users;
+      case 'appointment':
+        return CalendarIcon;
+      case 'call':
+        return Phone;
+      default:
+        return CalendarIcon;
+    }
+  };
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <motion.div 
-          className="mb-8"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Calendar
-              </h1>
-              <p className="text-gray-600 mt-2">Manage your meetings and appointments</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" className="border-gray-300">
-                <Filter className="w-4 h-4 mr-2" />
-                Filter
-              </Button>
-              <Button variant="outline" className="border-gray-300">
-                <Search className="w-4 h-4 mr-2" />
-                Search
-              </Button>
-              <Button className="gradient-button">
-                <Plus className="w-4 h-4 mr-2" />
-                New Event
-              </Button>
-            </div>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Calendar</h1>
+            <p className="text-gray-600">Manage your meetings and appointments</p>
           </div>
+          <Button className="bg-blue-600 hover:bg-blue-700">
+            <Plus className="w-4 h-4 mr-2" />
+            New Event
+          </Button>
+        </div>
 
-          {/* View Toggle */}
-          <div className="flex space-x-2">
-            {(['month', 'week', 'day'] as const).map((viewType) => (
-              <Button
-                key={viewType}
-                variant={view === viewType ? "default" : "outline"}
-                className={view === viewType ? 'gradient-button' : 'border-gray-300'}
-                onClick={() => setView(viewType)}
-              >
-                {viewType.charAt(0).toUpperCase() + viewType.slice(1)}
-              </Button>
-            ))}
-          </div>
-        </motion.div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Calendar Widget */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <CalendarIcon className="w-5 h-5 mr-2" />
+                {format(currentMonth, 'MMMM yyyy')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => date && setSelectedDate(date)}
+                month={currentMonth}
+                onMonthChange={setCurrentMonth}
+                className="rounded-md border"
+                modifiers={{
+                  hasEvents: (date) => getEventsForDate(date).length > 0
+                }}
+                modifiersStyles={{
+                  hasEvents: {
+                    backgroundColor: '#dbeafe',
+                    color: '#1e40af',
+                    fontWeight: 'bold'
+                  }
+                }}
+              />
+            </CardContent>
+          </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Calendar */}
-          <motion.div 
-            className="lg:col-span-2"
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <Card className="bg-white border-2 border-blue-200 shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-gray-800 flex items-center">
-                  <CalendarIcon className="w-5 h-5 mr-2 text-blue-500" />
-                  {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  className="rounded-md border border-gray-200"
-                />
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Today's Events */}
-          <motion.div 
-            className="lg:col-span-2 space-y-6"
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            <Card className="bg-white border-2 border-green-200 shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-gray-800 flex items-center justify-between">
-                  <span className="flex items-center">
-                    <Clock className="w-5 h-5 mr-2 text-green-500" />
-                    Today's Schedule
-                  </span>
-                  <Badge variant="outline" className="border-green-400 text-green-600 bg-green-50">
-                    {todaysEvents.length} events
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {todaysEvents.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <CalendarIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                    <p>No events scheduled for today</p>
-                  </div>
-                ) : (
-                  todaysEvents.map((event) => (
-                    <div key={event.id} className="p-4 rounded-lg border border-gray-200 hover:border-blue-300 transition-all">
+          {/* Events for Selected Date */}
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                Events for {format(selectedDate, 'MMM dd, yyyy')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {selectedDateEvents.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">No events scheduled</p>
+              ) : (
+                selectedDateEvents.map((event) => {
+                  const EventIcon = getEventIcon(event.event_type);
+                  return (
+                    <div key={event.id} className="border rounded-lg p-4 hover:bg-gray-50">
                       <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center space-x-2">
-                          {getEventTypeIcon(event.event_type)}
-                          <h3 className="font-semibold text-gray-800">{event.title}</h3>
-                        </div>
-                        <Badge className={getStatusColor(event.status)}>
-                          {event.status}
+                        <h3 className="font-medium text-gray-900">{event.title}</h3>
+                        <Badge className={getEventTypeColor(event.event_type)}>
+                          {event.event_type}
                         </Badge>
                       </div>
                       
                       <div className="space-y-2 text-sm text-gray-600">
-                        <div className="flex items-center space-x-2">
-                          <Clock className="w-4 h-4" />
-                          <span>{formatTime(event.start_time)} ({getDuration(event.start_time, event.end_time)})</span>
+                        <div className="flex items-center">
+                          <Clock className="w-4 h-4 mr-2" />
+                          {format(new Date(event.start_time), 'HH:mm')} - {format(new Date(event.end_time), 'HH:mm')}
                         </div>
                         
                         {event.location && (
-                          <div className="flex items-center space-x-2">
-                            <MapPin className="w-4 h-4" />
-                            <span>{event.location}</span>
+                          <div className="flex items-center">
+                            <MapPin className="w-4 h-4 mr-2" />
+                            {event.location}
                           </div>
                         )}
                         
-                        {event.attendees && event.attendees.length > 0 && (
-                          <div className="flex items-center space-x-2">
-                            <Users className="w-4 h-4" />
-                            <span>{event.attendees.join(', ')}</span>
+                        {event.attendees.length > 0 && (
+                          <div className="flex items-center">
+                            <Users className="w-4 h-4 mr-2" />
+                            {event.attendees.length} attendee{event.attendees.length > 1 ? 's' : ''}
                           </div>
-                        )}
-                        
-                        {event.description && (
-                          <p className="text-gray-600 mt-2">{event.description}</p>
                         )}
                       </div>
                       
-                      <div className="flex justify-end space-x-2 mt-4">
-                        <Button size="sm" variant="outline" className="border-gray-300">
-                          <Edit3 className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="border-red-300 text-red-600 hover:bg-red-50"
-                          onClick={() => deleteEvent(event.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                      {event.description && (
+                        <p className="text-sm text-gray-600 mt-2">{event.description}</p>
+                      )}
                     </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Quick Stats */}
-            <Card className="bg-white border-2 border-purple-200 shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-gray-800">This Week</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
-                    <div className="text-2xl font-bold text-blue-600">{events.filter(e => e.event_type === 'meeting').length}</div>
-                    <div className="text-sm text-blue-500">Meetings</div>
-                  </div>
-                  <div className="text-center p-3 rounded-lg bg-gradient-to-br from-green-50 to-green-100 border border-green-200">
-                    <div className="text-2xl font-bold text-green-600">{events.filter(e => e.event_type === 'appointment').length}</div>
-                    <div className="text-sm text-green-500">Appointments</div>
-                  </div>
-                  <div className="text-center p-3 rounded-lg bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200">
-                    <div className="text-2xl font-bold text-purple-600">{events.length}</div>
-                    <div className="text-sm text-purple-500">Total Events</div>
-                  </div>
-                  <div className="text-center p-3 rounded-lg bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200">
-                    <div className="text-2xl font-bold text-orange-600">{events.filter(e => e.status === 'completed').length}</div>
-                    <div className="text-sm text-orange-500">Completed</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+                  );
+                })
+              )}
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Upcoming Events */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Upcoming Events</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {allEvents.slice(0, 6).map((event) => {
+                const EventIcon = getEventIcon(event.event_type);
+                return (
+                  <div key={event.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                    <div className="flex items-center justify-between mb-2">
+                      <EventIcon className="w-5 h-5 text-gray-600" />
+                      <Badge className={getEventTypeColor(event.event_type)}>
+                        {event.event_type}
+                      </Badge>
+                    </div>
+                    <h3 className="font-medium text-gray-900 mb-1">{event.title}</h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      {format(new Date(event.start_time), 'MMM dd, HH:mm')}
+                    </p>
+                    {event.location && (
+                      <p className="text-sm text-gray-500">{event.location}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

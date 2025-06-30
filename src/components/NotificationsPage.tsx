@@ -1,150 +1,280 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Checkbox } from '@/components/ui/checkbox';
-import { motion } from 'framer-motion';
-import { 
-  Bell,
-  Settings,
-  CheckCheck,
-  MessageSquare,
-  Heart,
-  UserPlus,
-  Calendar,
-  Clock,
-  Loader2
-} from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Bell, Check, CheckCheck, MessageSquare, UserPlus, Heart, Calendar, Settings } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
+import { formatDistanceToNow } from 'date-fns';
 
 const NotificationsPage = () => {
   const { notifications, loading, markAsRead, markAllAsRead } = useNotifications();
 
+  // Mock notifications for demonstration
+  const mockNotifications = [
+    {
+      id: '1',
+      type: 'message',
+      title: 'New Message',
+      message: 'Sarah sent you a message about the AI project',
+      data: { userId: 'user1', messageId: 'msg1' },
+      read: false,
+      created_at: new Date(Date.now() - 300000).toISOString()
+    },
+    {
+      id: '2',
+      type: 'follow',
+      title: 'New Follower',
+      message: 'John started following you',
+      data: { userId: 'user2' },
+      read: false,
+      created_at: new Date(Date.now() - 3600000).toISOString()
+    },
+    {
+      id: '3',
+      type: 'like',
+      title: 'Post Liked',
+      message: 'Your post about AI avatars received 10 new likes',
+      data: { postId: 'post1', count: 10 },
+      read: true,
+      created_at: new Date(Date.now() - 7200000).toISOString()
+    },
+    {
+      id: '4',
+      type: 'appointment',
+      title: 'Upcoming Meeting',
+      message: 'You have a meeting with client in 30 minutes',
+      data: { eventId: 'event1' },
+      read: false,
+      created_at: new Date(Date.now() - 1800000).toISOString()
+    }
+  ];
+
+  const allNotifications = [...notifications, ...mockNotifications];
+  const unreadCount = allNotifications.filter(n => !n.read).length;
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'follow': return <UserPlus className="w-4 h-4 text-green-500" />;
-      case 'like': return <Heart className="w-4 h-4 text-red-500" />;
-      case 'comment': return <MessageSquare className="w-4 h-4 text-blue-500" />;
-      case 'event': return <Calendar className="w-4 h-4 text-purple-500" />;
-      default: return <Bell className="w-4 h-4 text-gray-500" />;
+      case 'message':
+        return MessageSquare;
+      case 'follow':
+        return UserPlus;
+      case 'like':
+        return Heart;
+      case 'appointment':
+        return Calendar;
+      default:
+        return Bell;
     }
   };
 
-  const getTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    return `${days}d ago`;
+  const getNotificationColor = (type: string) => {
+    switch (type) {
+      case 'message':
+        return 'bg-blue-100 text-blue-800';
+      case 'follow':
+        return 'bg-green-100 text-green-800';
+      case 'like':
+        return 'bg-red-100 text-red-800';
+      case 'appointment':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
-  const unreadNotifications = notifications.filter(notification => !notification.read);
+  const handleMarkAsRead = (id: string) => {
+    markAsRead(id);
+  };
 
-  if (loading) {
-    return (
-      <div className="p-6 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
-    );
-  }
+  const handleMarkAllAsRead = () => {
+    markAllAsRead();
+  };
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <motion.div 
-          className="mb-8"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <Bell className="w-8 h-8 text-blue-600" />
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Notifications
-              </h1>
-              <p className="text-gray-600 mt-2">Stay updated with your latest activities</p>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" className="border-gray-300">
-                <Settings className="w-4 h-4 mr-2" />
-                Settings
-              </Button>
-              <Button 
-                variant="outline" 
-                className="border-gray-300"
-                onClick={markAllAsRead}
-                disabled={unreadNotifications.length === 0}
-              >
-                <CheckCheck className="w-4 h-4 mr-2" />
-                Mark All Read
-              </Button>
+              <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
+              <p className="text-gray-600">
+                {unreadCount > 0 ? `${unreadCount} unread notifications` : 'All caught up!'}
+              </p>
             </div>
           </div>
+          {unreadCount > 0 && (
+            <Button onClick={handleMarkAllAsRead} variant="outline">
+              <CheckCheck className="w-4 h-4 mr-2" />
+              Mark All Read
+            </Button>
+          )}
+        </div>
 
-          {/* Notification List */}
-          <Card className="bg-white border border-gray-200 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold">
-                Recent Notifications
-                <Badge variant="secondary" className="ml-2">{unreadNotifications.length} Unread</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              {notifications.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <Bell className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <p>No notifications yet</p>
-                </div>
-              ) : (
-                <ul className="space-y-4">
-                  {notifications.map(notification => (
-                    <motion.li
-                      key={notification.id}
-                      className={`flex items-start justify-between p-4 rounded-lg border transition-all ${
-                        notification.read 
-                          ? 'border-gray-100 hover:border-blue-300' 
-                          : 'border-blue-200 bg-blue-50 hover:border-blue-300'
-                      }`}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4 }}
-                    >
-                      <div className="flex items-start space-x-4">
-                        <div className="mt-1">
-                          {getNotificationIcon(notification.type)}
+        <Tabs defaultValue="all" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="unread">
+              Unread {unreadCount > 0 && <Badge className="ml-2">{unreadCount}</Badge>}
+            </TabsTrigger>
+            <TabsTrigger value="messages">Messages</TabsTrigger>
+            <TabsTrigger value="activity">Activity</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="all" className="mt-6">
+            <Card>
+              <CardContent className="p-0">
+                {allNotifications.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Bell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">No notifications yet</p>
+                  </div>
+                ) : (
+                  <div className="divide-y">
+                    {allNotifications.map((notification) => {
+                      const NotificationIcon = getNotificationIcon(notification.type);
+                      return (
+                        <div
+                          key={notification.id}
+                          className={`p-4 hover:bg-gray-50 transition-colors ${
+                            !notification.read ? 'bg-blue-50' : ''
+                          }`}
+                        >
+                          <div className="flex items-start space-x-4">
+                            <div className={`p-2 rounded-full ${getNotificationColor(notification.type)}`}>
+                              <NotificationIcon className="w-4 h-4" />
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <h3 className="font-medium text-gray-900">
+                                  {notification.title}
+                                </h3>
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-sm text-gray-500">
+                                    {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                                  </span>
+                                  {!notification.read && (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleMarkAsRead(notification.id)}
+                                    >
+                                      <Check className="w-4 h-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                              <p className="text-gray-600 mt-1">{notification.message}</p>
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-semibold text-gray-800">{notification.title}</h3>
-                          <p className="text-gray-700 text-sm mt-1">{notification.message}</p>
-                          <div className="flex items-center text-gray-500 text-sm mt-2">
-                            <Clock className="w-4 h-4 mr-1" />
-                            <span>{getTimeAgo(notification.created_at)}</span>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="unread" className="mt-6">
+            <Card>
+              <CardContent className="p-0">
+                {allNotifications.filter(n => !n.read).length === 0 ? (
+                  <div className="text-center py-12">
+                    <CheckCheck className="w-12 h-12 text-green-500 mx-auto mb-4" />
+                    <p className="text-gray-500">All notifications read!</p>
+                  </div>
+                ) : (
+                  <div className="divide-y">
+                    {allNotifications.filter(n => !n.read).map((notification) => {
+                      const NotificationIcon = getNotificationIcon(notification.type);
+                      return (
+                        <div key={notification.id} className="p-4 bg-blue-50 hover:bg-blue-100 transition-colors">
+                          <div className="flex items-start space-x-4">
+                            <div className={`p-2 rounded-full ${getNotificationColor(notification.type)}`}>
+                              <NotificationIcon className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <h3 className="font-medium text-gray-900">{notification.title}</h3>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleMarkAsRead(notification.id)}
+                                >
+                                  <Check className="w-4 h-4" />
+                                </Button>
+                              </div>
+                              <p className="text-gray-600 mt-1">{notification.message}</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="messages" className="mt-6">
+            <Card>
+              <CardContent className="p-0">
+                <div className="divide-y">
+                  {allNotifications.filter(n => n.type === 'message').map((notification) => (
+                    <div key={notification.id} className="p-4 hover:bg-gray-50">
+                      <div className="flex items-start space-x-4">
+                        <Avatar>
+                          <AvatarImage src="/placeholder-avatar.jpg" />
+                          <AvatarFallback>U</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <h3 className="font-medium">{notification.title}</h3>
+                          <p className="text-gray-600">{notification.message}</p>
+                          <span className="text-sm text-gray-500">
+                            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="activity" className="mt-6">
+            <Card>
+              <CardContent className="p-0">
+                <div className="divide-y">
+                  {allNotifications.filter(n => ['follow', 'like', 'appointment'].includes(n.type)).map((notification) => {
+                    const NotificationIcon = getNotificationIcon(notification.type);
+                    return (
+                      <div key={notification.id} className="p-4 hover:bg-gray-50">
+                        <div className="flex items-start space-x-4">
+                          <div className={`p-2 rounded-full ${getNotificationColor(notification.type)}`}>
+                            <NotificationIcon className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-medium">{notification.title}</h3>
+                            <p className="text-gray-600">{notification.message}</p>
+                            <span className="text-sm text-gray-500">
+                              {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                            </span>
                           </div>
                         </div>
                       </div>
-                      
-                      <Checkbox 
-                        id={`notification-${notification.id}`}
-                        checked={notification.read}
-                        onCheckedChange={() => markAsRead(notification.id)}
-                        className="ml-4"
-                      />
-                    </motion.li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

@@ -17,7 +17,7 @@ const Index = () => {
     return <ProfilePage />;
   }
 
-  // Show dashboard view
+  // Show dashboard view (with sidebar)
   if (view === 'dashboard') {
     return (
       <>
@@ -37,7 +37,7 @@ const Index = () => {
     return <ProfilePage />;
   }
 
-  // Default landing page
+  // Default landing page (no sidebar)
   return (
     <>
       <Navbar />
