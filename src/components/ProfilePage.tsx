@@ -12,6 +12,7 @@ import Avatar3D from './Avatar3D';
 import VisitorAuth from './VisitorAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useSTT } from '@/hooks/useSTT';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MessageSquare, 
@@ -60,37 +61,6 @@ import {
   Hash
 } from 'lucide-react';
 
-// Properly declare Speech Recognition API types
-interface SpeechRecognition extends EventTarget {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  start(): void;
-  stop(): void;
-  onresult: (event: SpeechRecognitionEvent) => void;
-  onerror: (event: SpeechRecognitionErrorEvent) => void;
-  onend: () => void;
-}
-
-interface SpeechRecognitionEvent extends Event {
-  results: SpeechRecognitionResultList;
-}
-
-interface SpeechRecognitionErrorEvent extends Event {
-  error: string;
-}
-
-declare global {
-  interface Window {
-    SpeechRecognition: {
-      new(): SpeechRecognition;
-    };
-    webkitSpeechRecognition: {
-      new(): SpeechRecognition;
-    };
-  }
-}
-
 interface Post {
   id: string;
   type: 'video' | 'photo' | 'link' | 'integration' | 'qa' | 'text';
@@ -116,7 +86,6 @@ const ProfilePage = () => {
   const [visitor, setVisitor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
   const [message, setMessage] = useState('');
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [isTalking, setIsTalking] = useState(false);
@@ -128,6 +97,17 @@ const ProfilePage = () => {
   const [isAutoVoiceEnabled, setIsAutoVoiceEnabled] = useState(true);
   const audioRef = useRef<HTMLAudioElement>(null);
   const { toast } = useToast();
+  
+  // Use the STT hook
+  const { 
+    isListening, 
+    transcript, 
+    interimTranscript, 
+    startListening, 
+    stopListening, 
+    clearTranscript,
+    isSupported 
+  } = useSTT();
 
   useEffect(() => {
     // Check for authenticated user or visitor
@@ -184,6 +164,14 @@ const ProfilePage = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Update message when transcript changes
+  useEffect(() => {
+    if (transcript) {
+      setMessage(transcript);
+      setShowChatBox(true);
+    }
+  }, [transcript]);
 
   // Mock profile data
   const profile = {
@@ -296,6 +284,7 @@ const ProfilePage = () => {
       const userMessage = message;
       setMessage('');
       setShowChatBox(false);
+      clearTranscript();
       
       const newUserMessage: ChatMessage = {
         id: Date.now().toString(),
@@ -327,54 +316,25 @@ const ProfilePage = () => {
   };
 
   const handleVoiceToggle = () => {
-    setIsRecording(!isRecording);
-    if (!isRecording) {
-      toast({
-        title: "Voice Recording",
-        description: "Listening... Speak your message",
-      });
-      
-      // Check if Speech Recognition is available
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      
-      if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        
-        recognition.continuous = false;
-        recognition.interimResults = false;
-        recognition.lang = 'en-US';
-        
-        recognition.onresult = (event: SpeechRecognitionEvent) => {
-          const transcript = event.results[0][0].transcript;
-          setMessage(transcript);
-          setShowChatBox(true);
-        };
-        
-        recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-          console.error('Speech recognition error:', event.error);
-          toast({
-            title: "Voice Recognition Error",
-            description: "Could not recognize speech. Please try again.",
-          });
-        };
-        
-        recognition.onend = () => {
-          setIsRecording(false);
-        };
-        
-        recognition.start();
-      } else {
-        // Fallback mock for browsers without speech recognition
-        setTimeout(() => {
-          setMessage("Hello, this is a voice message converted to text!");
-          setShowChatBox(true);
-          setIsRecording(false);
-        }, 3000);
-      }
+    if (isListening) {
+      stopListening();
     } else {
-      // Stop recognition if active
-      if ('speechSynthesis' in window) {
-        speechSynthesis.cancel();
+      if (isSupported) {
+        startListening({
+          continuous: false,
+          interimResults: true,
+          language: 'en-US'
+        });
+        toast({
+          title: "Voice Recording",
+          description: "Listening... Speak your message",
+        });
+      } else {
+        toast({
+          title: "Voice Recognition Not Supported",
+          description: "Your browser doesn't support speech recognition",
+          variant: "destructive",
+        });
       }
     }
   };
@@ -692,9 +652,9 @@ const ProfilePage = () => {
                   variant="ghost"
                   size="sm"
                   onClick={handleVoiceToggle}
-                  className={`w-10 h-10 p-0 rounded-full ${isRecording ? 'bg-red-100 text-red-600' : 'hover:bg-gray-200'}`}
+                  className={`w-10 h-10 p-0 rounded-full ${isListening ? 'bg-red-100 text-red-600' : 'hover:bg-gray-200'}`}
                 >
-                  {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5 text-gray-600" />}
+                  {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5 text-gray-600" />}
                 </Button>
                 <Button
                   onClick={handleSendMessage}
