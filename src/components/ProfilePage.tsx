@@ -60,6 +60,33 @@ import {
   Hash
 } from 'lucide-react';
 
+// Add type declarations for Speech Recognition API
+declare global {
+  interface Window {
+    SpeechRecognition: typeof SpeechRecognition;
+    webkitSpeechRecognition: typeof SpeechRecognition;
+  }
+}
+
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onerror: (event: SpeechRecognitionErrorEvent) => void;
+  onend: () => void;
+}
+
 interface Post {
   id: string;
   type: 'video' | 'photo' | 'link' | 'integration' | 'qa' | 'text';
@@ -248,11 +275,13 @@ const ProfilePage = () => {
   const playTextAsVoice = async (text: string) => {
     try {
       // Mock voice synthesis - in production, use Web Speech API or TTS service
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.9;
-      utterance.pitch = 1;
-      utterance.volume = 0.8;
-      speechSynthesis.speak(utterance);
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.9;
+        utterance.pitch = 1;
+        utterance.volume = 0.8;
+        speechSynthesis.speak(utterance);
+      }
     } catch (error) {
       console.error('Voice synthesis error:', error);
     }
@@ -301,22 +330,23 @@ const ProfilePage = () => {
         description: "Listening... Speak your message",
       });
       
-      // Mock voice recognition - in production, use Web Speech API
-      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      // Check if Speech Recognition is available
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      
+      if (SpeechRecognition) {
         const recognition = new SpeechRecognition();
         
         recognition.continuous = false;
         recognition.interimResults = false;
         recognition.lang = 'en-US';
         
-        recognition.onresult = (event) => {
+        recognition.onresult = (event: SpeechRecognitionEvent) => {
           const transcript = event.results[0][0].transcript;
           setMessage(transcript);
           setShowChatBox(true);
         };
         
-        recognition.onerror = (event) => {
+        recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
           console.error('Speech recognition error:', event.error);
           toast({
             title: "Voice Recognition Error",
@@ -339,7 +369,7 @@ const ProfilePage = () => {
       }
     } else {
       // Stop recognition if active
-      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      if ('speechSynthesis' in window) {
         speechSynthesis.cancel();
       }
     }
