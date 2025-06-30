@@ -416,10 +416,10 @@ const ProfilePage = () => {
           />
         </div>
 
-        {/* Action Buttons - Icons Only */}
+        {/* Action Buttons - Updated colors for better visibility */}
         <div className="flex gap-3 mb-6">
           <Button 
-            className="flex-1 bg-white text-blue-600 hover:bg-gray-100 px-4 py-3"
+            className="flex-1 bg-green-500 text-white hover:bg-green-600 px-4 py-3 font-semibold"
             onClick={() => setIsTalking(!isTalking)}
           >
             <MessageSquare className="w-5 h-5" />
@@ -427,7 +427,7 @@ const ProfilePage = () => {
           <Button 
             variant="outline" 
             onClick={() => setIsFollowing(!isFollowing)}
-            className="px-4 py-3 border-white/30 text-white hover:bg-white/20"
+            className="px-4 py-3 border-2 border-orange-400 text-orange-400 hover:bg-orange-400 hover:text-white font-semibold"
           >
             {isFollowing ? <UserCheck className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
           </Button>
@@ -467,7 +467,7 @@ const ProfilePage = () => {
               Chat
             </TabsTrigger>
             <TabsTrigger value="gifts" className="data-[state=active]:bg-white">
-              Gifts/Links
+              Gifts/Product
             </TabsTrigger>
           </TabsList>
 
@@ -544,11 +544,11 @@ const ProfilePage = () => {
             </Card>
           </TabsContent>
 
-          {/* Gifts/Links Tab */}
+          {/* Gifts/Product Tab - Updated name */}
           <TabsContent value="gifts" className="mt-6">
             <Card className="bg-white border-gray-200">
               <CardHeader>
-                <CardTitle>Gifts & Links</CardTitle>
+                <CardTitle>Gifts & Products</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">

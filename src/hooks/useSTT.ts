@@ -8,50 +8,29 @@ interface STTOptions {
   interimResults?: boolean;
 }
 
-// Properly declare Speech Recognition API types
-interface SpeechRecognitionResult {
-  readonly isFinal: boolean;
-  readonly [index: number]: SpeechRecognitionAlternative;
-  readonly length: number;
-}
-
-interface SpeechRecognitionAlternative {
-  readonly transcript: string;
-  readonly confidence: number;
-}
-
-interface SpeechRecognitionResultList {
-  readonly [index: number]: SpeechRecognitionResult;
-  readonly length: number;
-}
-
-interface SpeechRecognitionEvent extends Event {
-  readonly results: SpeechRecognitionResultList;
-  readonly resultIndex: number;
-}
-
-interface SpeechRecognitionErrorEvent extends Event {
-  readonly error: string;
-  readonly message: string;
-}
-
-interface SpeechRecognitionAPI extends EventTarget {
+// Use a different interface name to avoid conflicts
+interface CustomSpeechRecognition extends EventTarget {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
   start(): void;
   stop(): void;
   abort(): void;
-  onresult: ((event: SpeechRecognitionEvent) => void) | null;
-  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onresult: ((event: any) => void) | null;
+  onerror: ((event: any) => void) | null;
   onend: (() => void) | null;
   onstart: (() => void) | null;
 }
 
+// Extend the Window interface without conflicts
 declare global {
   interface Window {
-    SpeechRecognition?: new() => SpeechRecognitionAPI;
-    webkitSpeechRecognition?: new() => SpeechRecognitionAPI;
+    webkitSpeechRecognition?: {
+      new(): CustomSpeechRecognition;
+    };
+    SpeechRecognition?: {
+      new(): CustomSpeechRecognition;
+    };
   }
 }
 
@@ -60,7 +39,7 @@ export const useSTT = () => {
   const [transcript, setTranscript] = useState('');
   const [interimTranscript, setInterimTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const recognitionRef = useRef<SpeechRecognitionAPI | null>(null);
+  const recognitionRef = useRef<CustomSpeechRecognition | null>(null);
   const { toast } = useToast();
 
   // Initialize speech recognition
@@ -105,7 +84,7 @@ export const useSTT = () => {
         setInterimTranscript('');
       };
 
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
+      recognition.onresult = (event: any) => {
         let finalTranscript = '';
         let interimTranscript = '';
 
@@ -122,7 +101,7 @@ export const useSTT = () => {
         setInterimTranscript(interimTranscript);
       };
 
-      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      recognition.onerror = (event: any) => {
         const errorMsg = `Speech recognition error: ${event.error}`;
         setError(errorMsg);
         setIsListening(false);

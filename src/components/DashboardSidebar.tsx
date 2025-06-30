@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   Home, 
@@ -46,14 +45,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
   const isMobile = useIsMobile();
 
   const handleLogoClick = () => {
-    // Check if user is logged in (you might want to implement proper auth check)
-    const isLoggedIn = localStorage.getItem('supabase.auth.token') || false;
-    
-    if (isLoggedIn) {
-      window.location.href = '/dashboard';
-    } else {
-      window.location.href = '/';
-    }
+    // For logged-in users, navigate to dashboard
+    window.location.href = '/dashboard';
   };
 
   const handleMenuItemClick = () => {
