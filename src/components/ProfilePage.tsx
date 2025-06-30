@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -93,6 +93,9 @@ const ProfilePage = () => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showChatBox, setShowChatBox] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isAutoVoiceEnabled, setIsAutoVoiceEnabled] = useState(true);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -199,9 +202,9 @@ const ProfilePage = () => {
     const shareUrls = {
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
       twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
-      instagram: url, // Instagram doesn't support direct URL sharing
+      instagram: url,
       pinterest: `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(url)}&description=${encodeURIComponent(text)}`,
-      youtube: url, // YouTube doesn't support direct URL sharing
+      youtube: url,
       linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`
     };
 
@@ -219,7 +222,6 @@ const ProfilePage = () => {
   const processWithLlama = async (input: string) => {
     setIsProcessing(true);
     try {
-      // Mock Llama 4 processing - in production, this would call actual API
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       const responses = [
@@ -232,9 +234,27 @@ const ProfilePage = () => {
       const randomResponse = responses[Math.floor(Math.random() * responses.length)] + 
         " " + input.split(' ').reverse().join(' ').toLowerCase();
       
+      // Auto voice output if enabled
+      if (isAutoVoiceEnabled) {
+        await playTextAsVoice(randomResponse);
+      }
+      
       return randomResponse;
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const playTextAsVoice = async (text: string) => {
+    try {
+      // Mock voice synthesis - in production, use Web Speech API or TTS service
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.9;
+      utterance.pitch = 1;
+      utterance.volume = 0.8;
+      speechSynthesis.speak(utterance);
+    } catch (error) {
+      console.error('Voice synthesis error:', error);
     }
   };
 
@@ -242,8 +262,8 @@ const ProfilePage = () => {
     if (message.trim()) {
       const userMessage = message;
       setMessage('');
+      setShowChatBox(false);
       
-      // Add user message to chat
       const newUserMessage: ChatMessage = {
         id: Date.now().toString(),
         message: userMessage,
@@ -254,10 +274,8 @@ const ProfilePage = () => {
       
       setChatMessages(prev => [...prev, newUserMessage]);
       
-      // Process with Llama 4
       const response = await processWithLlama(userMessage);
       
-      // Add AI response
       const aiResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
         message: userMessage,
@@ -282,11 +300,48 @@ const ProfilePage = () => {
         title: "Voice Recording",
         description: "Listening... Speak your message",
       });
-      // Mock voice input after 3 seconds
-      setTimeout(() => {
-        setMessage("Hello, this is a voice message converted to text!");
-        setIsRecording(false);
-      }, 3000);
+      
+      // Mock voice recognition - in production, use Web Speech API
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+        
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          setMessage(transcript);
+          setShowChatBox(true);
+        };
+        
+        recognition.onerror = (event) => {
+          console.error('Speech recognition error:', event.error);
+          toast({
+            title: "Voice Recognition Error",
+            description: "Could not recognize speech. Please try again.",
+          });
+        };
+        
+        recognition.onend = () => {
+          setIsRecording(false);
+        };
+        
+        recognition.start();
+      } else {
+        // Fallback mock for browsers without speech recognition
+        setTimeout(() => {
+          setMessage("Hello, this is a voice message converted to text!");
+          setShowChatBox(true);
+          setIsRecording(false);
+        }, 3000);
+      }
+    } else {
+      // Stop recognition if active
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        speechSynthesis.cancel();
+      }
     }
   };
 
@@ -295,6 +350,14 @@ const ProfilePage = () => {
     setMessage(value);
     setShowChatBox(value.length > 0);
   };
+
+  const addEmoji = (emoji: string) => {
+    setMessage(prev => prev + emoji);
+    setShowEmojiPicker(false);
+    setShowChatBox(true);
+  };
+
+  const commonEmojis = ['😊', '😂', '🤔', '👍', '❤️', '🔥', '💯', '🎉', '👋', '🙏'];
 
   if (loading) {
     return (
@@ -359,27 +422,26 @@ const ProfilePage = () => {
           />
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Buttons - Icons Only */}
         <div className="flex gap-3 mb-6">
           <Button 
-            className="flex-1 bg-white text-blue-600 hover:bg-gray-100"
+            className="flex-1 bg-white text-blue-600 hover:bg-gray-100 px-4 py-3"
             onClick={() => setIsTalking(!isTalking)}
           >
-            Talk to Me
+            <MessageSquare className="w-5 h-5" />
           </Button>
           <Button 
             variant="outline" 
             onClick={() => setIsFollowing(!isFollowing)}
-            className="px-6 border-white/30 text-white hover:bg-white/20"
+            className="px-4 py-3 border-white/30 text-white hover:bg-white/20"
           >
-            {isFollowing ? 'Following' : 'Follow'}
+            {isFollowing ? <UserCheck className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
           </Button>
           <Button
             variant="outline"
-            size="sm"
-            className="w-10 h-10 p-0 border-white/30 text-white hover:bg-white/20"
+            className="px-4 py-3 border-white/30 text-white hover:bg-white/20"
           >
-            <UserCheck className="w-4 h-4" />
+            <Settings className="w-5 h-5" />
           </Button>
         </div>
 
@@ -515,14 +577,14 @@ const ProfilePage = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Chat Box - Auto-appears when typing */}
+        {/* Auto-appearing Chat Box */}
         <AnimatePresence>
           {showChatBox && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className="fixed bottom-32 left-4 right-4 max-w-4xl mx-auto bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-h-64 overflow-y-auto z-40"
+              className="fixed bottom-28 left-4 right-4 max-w-4xl mx-auto bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-h-64 overflow-y-auto z-40"
             >
               <div className="space-y-4">
                 {chatMessages.slice(-3).map((chat) => (
@@ -546,6 +608,31 @@ const ProfilePage = () => {
           )}
         </AnimatePresence>
 
+        {/* Emoji Picker */}
+        <AnimatePresence>
+          {showEmojiPicker && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="fixed bottom-32 left-4 right-4 max-w-4xl mx-auto bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50"
+            >
+              <div className="grid grid-cols-5 gap-2">
+                {commonEmojis.map((emoji, index) => (
+                  <Button
+                    key={index}
+                    variant="ghost"
+                    className="text-2xl p-2 h-12 w-12 hover:bg-gray-100"
+                    onClick={() => addEmoji(emoji)}
+                  >
+                    {emoji}
+                  </Button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Fixed Chat Input - Modern UI */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-50">
           <div className="max-w-4xl mx-auto">
@@ -562,6 +649,7 @@ const ProfilePage = () => {
                 <Button
                   variant="ghost"
                   size="sm"
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                   className="w-10 h-10 p-0 rounded-full hover:bg-gray-200"
                 >
                   <Smile className="w-5 h-5 text-gray-600" />
@@ -584,13 +672,13 @@ const ProfilePage = () => {
               </div>
             </div>
             
-            {/* Modern Social Links Row */}
-            <div className="flex items-center justify-center space-x-6 bg-gray-50 rounded-full py-3 px-6">
+            {/* Modern Social Links Row with Circles */}
+            <div className="flex items-center justify-center bg-gray-50 rounded-full py-3 px-6">
               {profile.socialLinks.map((social, index) => (
                 <a
                   key={index}
                   href={social.url}
-                  className="text-gray-600 hover:text-blue-500 transition-colors p-2 rounded-full hover:bg-white"
+                  className="mx-1 text-gray-600 hover:text-blue-500 transition-colors p-3 rounded-full hover:bg-white shadow-sm border border-gray-200 bg-white"
                 >
                   <social.icon className="w-5 h-5" />
                 </a>
@@ -599,7 +687,7 @@ const ProfilePage = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowShareMenu(true)}
-                className="text-gray-600 hover:text-blue-500 p-2 rounded-full hover:bg-white"
+                className="mx-1 text-gray-600 hover:text-blue-500 p-3 rounded-full hover:bg-white shadow-sm border border-gray-200 bg-white"
               >
                 <Share2 className="w-5 h-5" />
               </Button>
