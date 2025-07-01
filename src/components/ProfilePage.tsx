@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, Heart, Users, BarChart3, Smile, Mic } from 'lucide-react';
+import { MessageCircle, Heart, Users, BarChart3, Smile, Mic, Settings, Upload } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import Avatar3D from '@/components/Avatar3D';
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('posts');
@@ -16,10 +17,27 @@ const ProfilePage = () => {
   const [displayName, setDisplayName] = useState('Emily Parker');
   const [username, setUsername] = useState('emily');
   const [bio, setBio] = useState('Exploring the boundaries of AI conversation. Let\'s create something amazing!');
+  const [showAvatarPreview, setShowAvatarPreview] = useState(false);
+  const [isTalking, setIsTalking] = useState(false);
+  const [avatarStyle, setAvatarStyle] = useState<'realistic' | 'cartoon' | 'anime' | 'minimal'>('realistic');
+  const [avatarMood, setAvatarMood] = useState<'professional' | 'friendly' | 'mysterious'>('friendly');
 
   const handleSendMessage = () => {
     if (message.trim()) {
+      setIsTalking(true);
+      // Simulate AI response
+      setTimeout(() => {
+        setIsTalking(false);
+      }, 3000);
       setMessage('');
+    }
+  };
+
+  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const imageUrl = URL.createObjectURL(file);
+      setProfileImage(imageUrl);
     }
   };
 
@@ -30,10 +48,20 @@ const ProfilePage = () => {
         {/* Header */}
         <div className="absolute top-0 left-0 right-0 p-4 lg:p-6 flex justify-between items-center z-10">
           <h1 className="text-white text-xl lg:text-2xl font-semibold">AvatarTalk.bio</h1>
-          <div className="flex gap-1">
-            <div className="w-2 h-2 bg-white/50 rounded-full"></div>
-            <div className="w-2 h-2 bg-white/50 rounded-full"></div>
-            <div className="w-2 h-2 bg-white/50 rounded-full"></div>
+          <div className="flex gap-2 items-center">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-white hover:bg-white/10"
+              onClick={() => setShowAvatarPreview(!showAvatarPreview)}
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+            <div className="flex gap-1">
+              <div className="w-2 h-2 bg-white/50 rounded-full"></div>
+              <div className="w-2 h-2 bg-white/50 rounded-full"></div>
+              <div className="w-2 h-2 bg-white/50 rounded-full"></div>
+            </div>
           </div>
         </div>
 
@@ -43,15 +71,80 @@ const ProfilePage = () => {
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-800/50 to-slate-900"></div>
           
           <div className="relative z-10">
-            {/* Avatar */}
-            <div className="mb-6">
-              <Avatar className="w-32 h-32 lg:w-40 lg:h-40 mx-auto border-4 border-white/20 shadow-2xl">
-                <AvatarImage src={profileImage} alt="Profile" className="object-cover" />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-2xl lg:text-3xl font-bold">
-                  {displayName.split(' ').map(n => n[0]).join('')}
-                </AvatarFallback>
-              </Avatar>
-            </div>
+            {/* Avatar Preview Toggle */}
+            {showAvatarPreview ? (
+              <div className="mb-6 flex flex-col items-center">
+                <div className="mb-4">
+                  <Avatar3D
+                    isLarge={true}
+                    isTalking={isTalking}
+                    avatarStyle={avatarStyle}
+                    mood={avatarMood}
+                    onInteraction={() => setIsTalking(!isTalking)}
+                  />
+                </div>
+                
+                {/* Avatar Controls */}
+                <div className="flex flex-wrap gap-2 mb-4 justify-center">
+                  <select
+                    value={avatarStyle}
+                    onChange={(e) => setAvatarStyle(e.target.value as any)}
+                    className="bg-white/10 text-white border border-white/20 rounded px-3 py-1 text-sm backdrop-blur"
+                  >
+                    <option value="realistic" className="text-black">Realistic</option>
+                    <option value="cartoon" className="text-black">Cartoon</option>
+                    <option value="anime" className="text-black">Anime</option>
+                    <option value="minimal" className="text-black">Minimal</option>
+                  </select>
+                  
+                  <select
+                    value={avatarMood}
+                    onChange={(e) => setAvatarMood(e.target.value as any)}
+                    className="bg-white/10 text-white border border-white/20 rounded px-3 py-1 text-sm backdrop-blur"
+                  >
+                    <option value="professional" className="text-black">Professional</option>
+                    <option value="friendly" className="text-black">Friendly</option>
+                    <option value="mysterious" className="text-black">Mysterious</option>
+                  </select>
+                </div>
+                
+                <Button
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700 mb-4"
+                  onClick={() => setShowAvatarPreview(false)}
+                >
+                  Use This Avatar
+                </Button>
+              </div>
+            ) : (
+              <div className="mb-6 relative group">
+                <Avatar className="w-32 h-32 lg:w-40 lg:h-40 mx-auto border-4 border-white/20 shadow-2xl cursor-pointer" onClick={() => setShowAvatarPreview(true)}>
+                  <AvatarImage src={profileImage} alt="Profile" className="object-cover" />
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-2xl lg:text-3xl font-bold">
+                    {displayName.split(' ').map(n => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
+                
+                {/* Upload overlay */}
+                <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                  <label htmlFor="avatar-upload" className="cursor-pointer">
+                    <Upload className="w-8 h-8 text-white" />
+                    <input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleAvatarUpload}
+                    />
+                  </label>
+                </div>
+                
+                {/* 3D Avatar Preview indicator */}
+                <div className="absolute -bottom-2 -right-2 bg-blue-600 rounded-full p-2">
+                  <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                </div>
+              </div>
+            )}
 
             {/* Name and Username */}
             <div className="mb-4">
@@ -68,7 +161,11 @@ const ProfilePage = () => {
             <div className="flex gap-4 mb-8 justify-center">
               <Button
                 className="bg-blue-600 hover:bg-blue-700 text-white px-8 lg:px-10 py-3 lg:py-4 rounded-full font-semibold text-base lg:text-lg flex-1 max-w-40 lg:max-w-48"
-                onClick={() => setActiveTab('chat')}
+                onClick={() => {
+                  setActiveTab('chat');
+                  setIsTalking(true);
+                  setTimeout(() => setIsTalking(false), 2000);
+                }}
               >
                 Talk to Me
               </Button>
@@ -147,6 +244,7 @@ const ProfilePage = () => {
                   <Button
                     size="sm"
                     className="bg-blue-600 hover:bg-blue-700 rounded-full w-8 h-8 p-0"
+                    onClick={() => setIsTalking(!isTalking)}
                   >
                     <Mic className="w-4 h-4" />
                   </Button>
@@ -181,10 +279,18 @@ const ProfilePage = () => {
             <TabsContent value="chat" className="space-y-4 pb-6">
               <Card className="bg-white/10 backdrop-blur border-white/20">
                 <CardContent className="p-4">
-                  <p className="text-white/90 text-sm mb-3">
-                    Hi there! I'm ready to chat. What would you like to talk about today?
-                  </p>
-                  <div className="text-white/60 text-xs">Just now</div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
+                      {displayName.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-white/90 text-sm mb-3">
+                        Hi there! I'm ready to chat. What would you like to talk about today? 
+                        {isTalking && <span className="animate-pulse">I'm listening...</span>}
+                      </p>
+                      <div className="text-white/60 text-xs">Just now</div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
