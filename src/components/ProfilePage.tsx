@@ -26,10 +26,10 @@ const ProfilePage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800">
       {/* Main Profile Container */}
-      <div className="max-w-md mx-auto bg-gradient-to-br from-slate-800 to-slate-900 min-h-screen relative overflow-hidden">
+      <div className="max-w-md mx-auto lg:max-w-lg xl:max-w-xl bg-gradient-to-br from-slate-800 to-slate-900 min-h-screen relative overflow-hidden">
         {/* Header */}
-        <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-10">
-          <h1 className="text-white text-xl font-semibold">AvatarTalk.bio</h1>
+        <div className="absolute top-0 left-0 right-0 p-4 lg:p-6 flex justify-between items-center z-10">
+          <h1 className="text-white text-xl lg:text-2xl font-semibold">AvatarTalk.bio</h1>
           <div className="flex gap-1">
             <div className="w-2 h-2 bg-white/50 rounded-full"></div>
             <div className="w-2 h-2 bg-white/50 rounded-full"></div>
@@ -38,16 +38,16 @@ const ProfilePage = () => {
         </div>
 
         {/* Profile Section */}
-        <div className="pt-20 pb-8 px-6 text-center relative">
+        <div className="pt-20 lg:pt-24 pb-8 px-6 lg:px-8 text-center relative">
           {/* Background Blur Effect */}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-800/50 to-slate-900"></div>
           
           <div className="relative z-10">
             {/* Avatar */}
             <div className="mb-6">
-              <Avatar className="w-32 h-32 mx-auto border-4 border-white/20 shadow-2xl">
+              <Avatar className="w-32 h-32 lg:w-40 lg:h-40 mx-auto border-4 border-white/20 shadow-2xl">
                 <AvatarImage src={profileImage} alt="Profile" className="object-cover" />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-2xl font-bold">
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-2xl lg:text-3xl font-bold">
                   {displayName.split(' ').map(n => n[0]).join('')}
                 </AvatarFallback>
               </Avatar>
@@ -55,19 +55,19 @@ const ProfilePage = () => {
 
             {/* Name and Username */}
             <div className="mb-4">
-              <h2 className="text-white text-3xl font-bold mb-2">{displayName}</h2>
-              <p className="text-white/70 text-lg">@{username}</p>
+              <h2 className="text-white text-3xl lg:text-4xl font-bold mb-2">{displayName}</h2>
+              <p className="text-white/70 text-lg lg:text-xl">@{username}</p>
             </div>
 
             {/* Bio */}
-            <p className="text-white/90 text-base leading-relaxed mb-8 max-w-sm mx-auto">
+            <p className="text-white/90 text-base lg:text-lg leading-relaxed mb-8 max-w-sm lg:max-w-md mx-auto">
               {bio}
             </p>
 
             {/* Action Buttons */}
             <div className="flex gap-4 mb-8 justify-center">
               <Button
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-semibold text-base flex-1 max-w-40"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 lg:px-10 py-3 lg:py-4 rounded-full font-semibold text-base lg:text-lg flex-1 max-w-40 lg:max-w-48"
                 onClick={() => setActiveTab('chat')}
               >
                 Talk to Me
@@ -75,7 +75,7 @@ const ProfilePage = () => {
               <Button
                 onClick={() => setIsFollowing(!isFollowing)}
                 variant="outline"
-                className={`px-8 py-3 rounded-full font-semibold text-base border-2 flex-1 max-w-32 ${
+                className={`px-8 lg:px-10 py-3 lg:py-4 rounded-full font-semibold text-base lg:text-lg border-2 flex-1 max-w-32 lg:max-w-40 ${
                   isFollowing 
                     ? 'bg-white/10 border-white/30 text-white hover:bg-white/20' 
                     : 'bg-transparent border-white/30 text-white hover:bg-white/10'
@@ -86,25 +86,25 @@ const ProfilePage = () => {
             </div>
 
             {/* Stats */}
-            <div className="flex justify-center gap-8 mb-8">
+            <div className="flex justify-center gap-6 lg:gap-12 mb-8">
               <div className="text-center">
-                <div className="text-white text-2xl font-bold">352</div>
-                <div className="text-white/60 text-sm">Total Conversations</div>
+                <div className="text-white text-2xl lg:text-3xl font-bold">352</div>
+                <div className="text-white/60 text-sm lg:text-base">Total Conversations</div>
               </div>
               <div className="text-center">
-                <div className="text-white text-2xl font-bold">1.2K</div>
-                <div className="text-white/60 text-sm">Followers</div>
+                <div className="text-white text-2xl lg:text-3xl font-bold">1.2K</div>
+                <div className="text-white/60 text-sm lg:text-base">Followers</div>
               </div>
               <div className="text-center">
-                <div className="text-white text-2xl font-bold">89</div>
-                <div className="text-white/60 text-sm">Engagement Score</div>
+                <div className="text-white text-2xl lg:text-3xl font-bold">89</div>
+                <div className="text-white/60 text-sm lg:text-base">Engagement Score</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Tabs Navigation */}
-        <div className="px-6">
+        <div className="px-6 lg:px-8">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3 bg-white/10 rounded-full p-1 mb-6">
               <TabsTrigger 
@@ -206,66 +206,6 @@ const ProfilePage = () => {
               </div>
             </TabsContent>
           </Tabs>
-        </div>
-      </div>
-
-      {/* Desktop View - Hidden on Mobile */}
-      <div className="hidden lg:block fixed inset-0 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800">
-        <div className="flex items-center justify-center min-h-screen p-8">
-          <div className="max-w-md w-full bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl overflow-hidden shadow-2xl">
-            {/* Desktop content mirrors mobile but in a contained card */}
-            <div className="p-8 text-center">
-              <div className="mb-6">
-                <Avatar className="w-40 h-40 mx-auto border-4 border-white/20 shadow-2xl">
-                  <AvatarImage src={profileImage} alt="Profile" className="object-cover" />
-                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-3xl font-bold">
-                    {displayName.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-
-              <div className="mb-6">
-                <h2 className="text-white text-4xl font-bold mb-2">{displayName}</h2>
-                <p className="text-white/70 text-xl">@{username}</p>
-              </div>
-
-              <p className="text-white/90 text-lg leading-relaxed mb-8 max-w-sm mx-auto">
-                {bio}
-              </p>
-
-              <div className="flex gap-4 mb-8 justify-center">
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-full font-semibold text-lg">
-                  Talk to Me
-                </Button>
-                <Button
-                  onClick={() => setIsFollowing(!isFollowing)}
-                  variant="outline"
-                  className={`px-10 py-4 rounded-full font-semibold text-lg border-2 ${
-                    isFollowing 
-                      ? 'bg-white/10 border-white/30 text-white hover:bg-white/20' 
-                      : 'bg-transparent border-white/30 text-white hover:bg-white/10'
-                  }`}
-                >
-                  {isFollowing ? 'Following' : 'Follow'}
-                </Button>
-              </div>
-
-              <div className="flex justify-center gap-12 mb-8">
-                <div className="text-center">
-                  <div className="text-white text-3xl font-bold">352</div>
-                  <div className="text-white/60">Total Conversations</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-white text-3xl font-bold">1.2K</div>
-                  <div className="text-white/60">Followers</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-white text-3xl font-bold">89</div>
-                  <div className="text-white/60">Engagement Score</div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
