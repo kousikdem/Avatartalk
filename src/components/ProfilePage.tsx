@@ -1,793 +1,281 @@
-import React, { useState, useEffect, useRef } from 'react';
+
+import React, { useState, useEffect } from 'react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { MessageCircle, Heart, Share2, Gift, Package, Settings, Bell } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import Avatar3D from './Avatar3D';
-import VisitorAuth from './VisitorAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useSTT } from '@/hooks/useSTT';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  MessageSquare, 
-  Star, 
-  Users, 
-  Calendar,
-  MapPin,
-  Share2,
-  Heart,
-  Play,
-  Pause,
-  Volume2,
-  VolumeX,
-  ExternalLink,
-  Mail,
-  Phone,
-  Globe,
-  UserPlus,
-  Settings,
-  MoreHorizontal,
-  ArrowRight,
-  Send,
-  Mic,
-  MicOff,
-  Smile,
-  Copy,
-  QrCode,
-  Download,
-  Moon,
-  Sun,
-  UserCheck,
-  Eye,
-  ChevronRight,
-  Plus,
-  Image,
-  Video,
-  Link as LinkIcon,
-  HelpCircle,
-  FileText,
-  Camera,
-  Paperclip,
-  Facebook,
-  Instagram,
-  Twitter,
-  Youtube,
-  Hash,
-  Menu
-} from 'lucide-react';
-
-interface Post {
-  id: string;
-  type: 'video' | 'photo' | 'link' | 'integration' | 'qa' | 'text';
-  content: string;
-  media?: string;
-  timestamp: Date;
-  likes: number;
-  comments: number;
-}
-
-interface ChatMessage {
-  id: string;
-  message: string;
-  response: string;
-  timestamp: Date;
-  isUser: boolean;
-}
 
 const ProfilePage = () => {
+  const [activeTab, setActiveTab] = useState('chat');
   const [isFollowing, setIsFollowing] = useState(false);
-  const [isVisitorAuthOpen, setIsVisitorAuthOpen] = useState(false);
-  const [user, setUser] = useState(null);
-  const [visitor, setVisitor] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [message, setMessage] = useState('');
-  const [showShareMenu, setShowShareMenu] = useState(false);
-  const [isTalking, setIsTalking] = useState(false);
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [showChatBox, setShowChatBox] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [isAutoVoiceEnabled, setIsAutoVoiceEnabled] = useState(true);
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const { toast } = useToast();
-  
-  // Use the STT hook
-  const { 
-    isListening, 
-    transcript, 
-    interimTranscript, 
-    startListening, 
-    stopListening, 
-    clearTranscript,
-    isSupported 
-  } = useSTT();
+  const [chatMessages, setChatMessages] = useState([
+    { id: 1, text: "Hello! Welcome to my profile!", sender: 'avatar', timestamp: new Date() },
+  ]);
 
-  useEffect(() => {
-    // Check for authenticated user or visitor
-    const checkAuth = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (data?.user) {
-        setUser(data.user);
-      } else {
-        // Check for visitor
-        const visitorData = localStorage.getItem('visitorUser');
-        if (visitorData) {
-          setVisitor(JSON.parse(visitorData));
-        }
-      }
-      setLoading(false);
-    };
-
-    checkAuth();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null);
-    });
-
-    // Mock data
-    setPosts([
-      {
-        id: '1',
-        type: 'text',
-        content: 'Just launched my new AI avatar! Excited to connect with everyone.',
-        timestamp: new Date(Date.now() - 3600000),
-        likes: 24,
-        comments: 8
-      },
-      {
-        id: '2',
-        type: 'qa',
-        content: 'Q: What\'s your favorite AI trend? A: I\'m fascinated by multimodal AI and how it\'s changing conversations.',
-        timestamp: new Date(Date.now() - 7200000),
-        likes: 18,
-        comments: 5
-      }
-    ]);
-
-    setChatMessages([
-      {
-        id: '1',
-        message: 'Hello! Tell me about your AI expertise.',
-        response: 'Hi there! I specialize in AI conversation design and helping people create engaging digital experiences.',
-        timestamp: new Date(Date.now() - 1800000),
-        isUser: false
-      }
-    ]);
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  // Update message when transcript changes
-  useEffect(() => {
-    if (transcript) {
-      setMessage(transcript);
-      setShowChatBox(true);
-    }
-  }, [transcript]);
-
-  // Mock profile data
-  const profile = {
-    name: "Emily Parker",
-    username: "@emily",
-    bio: "Exploring the boundaries of AI conversation. Let's create something amazing!",
-    location: "San Francisco, CA",
-    website: "emilyparker.com",
-    joinDate: "March 2024",
-    followers: "1.2K",
-    following: "34",
-    conversations: "352",
-    engagementScore: "89",
-    rating: 4.9,
-    avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
-    coverImage: "https://images.unsplash.com/photo-1557683316-973673baf926?w=800&h=400&fit=crop",
-    isVerified: true,
-    isOnline: true,
-    specialties: ["AI Technology", "Personal Branding", "Content Creation"],
-    socialLinks: [
-      { platform: "Twitter", url: "#", icon: Twitter },
-      { platform: "LinkedIn", url: "#", icon: Globe },
-      { platform: "Instagram", url: "#", icon: Instagram },
-      { platform: "YouTube", url: "#", icon: Youtube },
-      { platform: "Facebook", url: "#", icon: Facebook },
-      { platform: "Pinterest", url: "#", icon: Hash }
-    ],
-    gifts: [
-      { title: "AI Voice Assistant", url: "#", type: "Gift" },
-      { title: "Personal Blog", url: "#", type: "Link" },
-      { title: "NFT Collection", url: "#", type: "Gift" }
-    ]
-  };
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast({
-      title: "Link Copied!",
-      description: "Profile link copied to clipboard",
-    });
-  };
-
-  const handleShare = (platform: string) => {
-    const url = window.location.href;
-    const text = `Check out ${profile.name}'s AI Avatar on AvatarTalk.bio`;
-    
-    const shareUrls = {
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-      twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
-      instagram: url,
-      pinterest: `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(url)}&description=${encodeURIComponent(text)}`,
-      youtube: url,
-      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`
-    };
-
-    if (shareUrls[platform as keyof typeof shareUrls]) {
-      window.open(shareUrls[platform as keyof typeof shareUrls], '_blank');
-    }
-    
-    toast({
-      title: "Shared!",
-      description: `Shared on ${platform}`,
-    });
-    setShowShareMenu(false);
-  };
-
-  const processWithLlama = async (input: string) => {
-    setIsProcessing(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const responses = [
-        "That's a fascinating question! Based on my training, I'd say...",
-        "I understand what you're asking. Let me break this down for you...",
-        "Great point! Here's my perspective on that topic...",
-        "Thanks for sharing that. Here's what I think about it..."
-      ];
-      
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)] + 
-        " " + input.split(' ').reverse().join(' ').toLowerCase();
-      
-      // Auto voice output if enabled
-      if (isAutoVoiceEnabled) {
-        await playTextAsVoice(randomResponse);
-      }
-      
-      return randomResponse;
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const playTextAsVoice = async (text: string) => {
-    try {
-      // Mock voice synthesis - in production, use Web Speech API or TTS service
-      if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 0.9;
-        utterance.pitch = 1;
-        utterance.volume = 0.8;
-        speechSynthesis.speak(utterance);
-      }
-    } catch (error) {
-      console.error('Voice synthesis error:', error);
-    }
-  };
-
-  const handleSendMessage = async () => {
+  const handleSendMessage = () => {
     if (message.trim()) {
-      const userMessage = message;
+      const newMessage = {
+        id: chatMessages.length + 1,
+        text: message,
+        sender: 'user' as const,
+        timestamp: new Date()
+      };
+      setChatMessages([...chatMessages, newMessage]);
       setMessage('');
-      setShowChatBox(false);
-      clearTranscript();
       
-      const newUserMessage: ChatMessage = {
-        id: Date.now().toString(),
-        message: userMessage,
-        response: '',
-        timestamp: new Date(),
-        isUser: true
-      };
-      
-      setChatMessages(prev => [...prev, newUserMessage]);
-      
-      const response = await processWithLlama(userMessage);
-      
-      const aiResponse: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        message: userMessage,
-        response: response,
-        timestamp: new Date(),
-        isUser: false
-      };
-      
-      setChatMessages(prev => [...prev, aiResponse]);
-      
-      toast({
-        title: "Message Sent!",
-        description: "Your message has been processed by AI",
-      });
+      // Simulate avatar response
+      setTimeout(() => {
+        const avatarResponse = {
+          id: chatMessages.length + 2,
+          text: "Thanks for your message! I'll get back to you soon.",
+          sender: 'avatar' as const,
+          timestamp: new Date()
+        };
+        setChatMessages(prev => [...prev, avatarResponse]);
+      }, 1000);
     }
   };
-
-  const handleVoiceToggle = () => {
-    if (isListening) {
-      stopListening();
-    } else {
-      if (isSupported) {
-        startListening({
-          continuous: false,
-          interimResults: true,
-          language: 'en-US'
-        });
-        toast({
-          title: "Voice Recording",
-          description: "Listening... Speak your message",
-        });
-      } else {
-        toast({
-          title: "Voice Recognition Not Supported",
-          description: "Your browser doesn't support speech recognition",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  const handleMessageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setMessage(value);
-    setShowChatBox(value.length > 0);
-  };
-
-  const addEmoji = (emoji: string) => {
-    setMessage(prev => prev + emoji);
-    setShowEmojiPicker(false);
-    setShowChatBox(true);
-  };
-
-  const commonEmojis = ['😊', '😂', '🤔', '👍', '❤️', '🔥', '💯', '🎉', '👋', '🙏'];
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-gray-800">Loading...</div>
-      </div>
-    );
-  }
-
-  // Show visitor auth if no user or visitor
-  if (!user && !visitor) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">Welcome to AvatarTalk.bio</h1>
-          <p className="text-gray-600 mb-8">Connect with AI avatars and have meaningful conversations</p>
-          <Button 
-            onClick={() => setIsVisitorAuthOpen(true)}
-            className="gradient-button"
-          >
-            <UserPlus className="w-4 h-4 mr-2" />
-            Enter as Visitor
-          </Button>
-        </div>
-        <VisitorAuth 
-          isOpen={isVisitorAuthOpen} 
-          onClose={() => setIsVisitorAuthOpen(false)} 
-        />
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-white text-gray-800">
-      {/* Menu Toggle Button in Top Corner */}
-      <div className="fixed top-4 left-4 z-50">
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-10 h-10 p-0 bg-white/80 backdrop-blur-sm border-gray-200 hover:bg-white shadow-lg"
-        >
-          <Menu className="w-5 h-5 text-gray-700" />
-        </Button>
-      </div>
-
-      {/* Profile Content - Updated without top header */}
-      <div className="relative bg-gradient-to-br from-blue-600 to-purple-600 rounded-b-3xl p-6 pt-16 text-white">
-        {/* Profile Header */}
-        <div className="text-center mb-6">
-          <div className="relative inline-block mb-4">
-            <Avatar className="w-20 h-20 ring-4 ring-white/30 mb-2">
-              <AvatarImage src={profile.avatar} />
-              <AvatarFallback>EP</AvatarFallback>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      {/* Profile Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-4xl mx-auto px-4 py-6">
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <Avatar className="w-24 h-24 border-4 border-white shadow-lg">
+              <AvatarImage src="/placeholder.svg" alt="Profile" />
+              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-2xl font-bold">
+                JD
+              </AvatarFallback>
             </Avatar>
-            {profile.isOnline && (
-              <div className="absolute bottom-2 right-0 w-5 h-5 bg-green-500 rounded-full border-2 border-white"></div>
-            )}
-          </div>
-          
-          <h1 className="text-2xl font-bold mb-1">{profile.name}</h1>
-          <p className="text-blue-200 mb-3">{profile.username}</p>
-          <p className="text-blue-100 text-sm max-w-sm mx-auto">{profile.bio}</p>
-        </div>
-
-        {/* Avatar Display */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 mb-6">
-          <Avatar3D 
-            isLarge={true} 
-            isTalking={isTalking}
-            avatarStyle="realistic"
-            mood="friendly"
-            onInteraction={() => setIsTalking(!isTalking)}
-          />
-        </div>
-
-        {/* Action Buttons - Updated colors for better visibility */}
-        <div className="flex gap-3 mb-6">
-          <Button 
-            className="flex-1 bg-green-500 text-white hover:bg-green-600 px-4 py-3 font-semibold"
-            onClick={() => setIsTalking(!isTalking)}
-          >
-            <MessageSquare className="w-5 h-5" />
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => setIsFollowing(!isFollowing)}
-            className="px-4 py-3 border-2 border-orange-400 text-orange-400 hover:bg-orange-400 hover:text-white font-semibold"
-          >
-            {isFollowing ? <UserCheck className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
-          </Button>
-          <Button
-            variant="outline"
-            className="px-4 py-3 border-white/30 text-white hover:bg-white/20"
-          >
-            <Settings className="w-5 h-5" />
-          </Button>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="text-center">
-            <div className="text-xl font-bold">{profile.conversations}</div>
-            <div className="text-blue-200 text-sm">Total Conversations</div>
-          </div>
-          <div className="text-center">
-            <div className="text-xl font-bold">{profile.followers}</div>
-            <div className="text-blue-200 text-sm">Followers / {profile.following}</div>
-          </div>
-          <div className="text-center">
-            <div className="text-xl font-bold">{profile.engagementScore}</div>
-            <div className="text-blue-200 text-sm">Engagement Score</div>
+            
+            <div className="flex-1 text-center md:text-left">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">John Doe</h1>
+              <p className="text-gray-600 mb-3">@johndoe</p>
+              <p className="text-gray-700 mb-4">
+                Digital creator passionate about technology and innovation. 
+                Let's connect and share ideas!
+              </p>
+              
+              <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800">Tech Enthusiast</Badge>
+                <Badge variant="secondary" className="bg-purple-100 text-purple-800">Creator</Badge>
+                <Badge variant="secondary" className="bg-green-100 text-green-800">Available</Badge>
+              </div>
+            </div>
+            
+            <div className="flex flex-col gap-3">
+              <Button
+                onClick={() => setIsFollowing(!isFollowing)}
+                className={`px-6 py-2 font-semibold transition-all duration-200 ${
+                  isFollowing 
+                    ? 'bg-green-600 hover:bg-green-700 text-white' 
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}
+              >
+                <Heart className={`w-4 h-4 mr-2 ${isFollowing ? 'fill-current' : ''}`} />
+                {isFollowing ? 'Following' : 'Follow'}
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className="px-6 py-2 border-2 border-purple-500 text-purple-600 hover:bg-purple-50 font-semibold transition-all duration-200"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Talk to Me
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="border-gray-300 text-gray-600 hover:bg-gray-50"
+              >
+                <Share2 className="w-4 h-4 mr-2" />
+                Share
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4">
-        {/* Tabs */}
-        <Tabs defaultValue="posts" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-gray-100 mt-6">
-            <TabsTrigger value="posts" className="data-[state=active]:bg-white">
-              Posts
-            </TabsTrigger>
-            <TabsTrigger value="chat" className="data-[state=active]:bg-white">
+      {/* Content Tabs */}
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
+            <TabsTrigger value="chat" className="flex items-center gap-2">
+              <MessageCircle className="w-4 h-4" />
               Chat
             </TabsTrigger>
-            <TabsTrigger value="gifts" className="data-[state=active]:bg-white">
+            <TabsTrigger value="about" className="flex items-center gap-2">
+              About
+            </TabsTrigger>
+            <TabsTrigger value="gifts" className="flex items-center gap-2">
+              <Package className="w-4 h-4" />
               Gifts/Product
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              Settings
             </TabsTrigger>
           </TabsList>
 
-          {/* Posts Tab */}
-          <TabsContent value="posts" className="mt-6 space-y-4">
-            {/* Posts List */}
-            {posts.map((post) => (
-              <Card key={post.id} className="bg-white border-gray-200">
-                <CardContent className="p-4">
-                  <div className="flex items-start space-x-3">
-                    <Avatar className="w-10 h-10">
-                      <AvatarImage src={profile.avatar} />
-                      <AvatarFallback>EP</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <span className="font-medium">{profile.name}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {post.type.toUpperCase()}
-                        </Badge>
-                        <span className="text-sm text-gray-500">
-                          {post.timestamp.toLocaleDateString()}
-                        </span>
-                      </div>
-                      <p className="text-gray-800 mb-3">{post.content}</p>
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
-                        <button className="flex items-center space-x-1 hover:text-red-500">
-                          <Heart className="w-4 h-4" />
-                          <span>{post.likes}</span>
-                        </button>
-                        <button className="flex items-center space-x-1 hover:text-blue-500">
-                          <MessageSquare className="w-4 h-4" />
-                          <span>{post.comments}</span>
-                        </button>
+          <TabsContent value="chat" className="space-y-4">
+            <Card>
+              <CardContent className="p-6">
+                <div className="h-96 overflow-y-auto mb-4 space-y-3 bg-gray-50 rounded-lg p-4">
+                  {chatMessages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                          msg.sender === 'user'
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-white text-gray-800 border'
+                        }`}
+                      >
+                        <p className="text-sm">{msg.text}</p>
+                        <p className="text-xs opacity-70 mt-1">
+                          {msg.timestamp.toLocaleTimeString()}
+                        </p>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </TabsContent>
-
-          {/* Chat Tab */}
-          <TabsContent value="chat" className="mt-6">
-            <Card className="bg-white border-gray-200">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Chat Messages</span>
-                  {isProcessing && (
-                    <Badge variant="outline" className="text-blue-600">
-                      Processing with Llama 4...
-                    </Badge>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 max-h-96 overflow-y-auto">
-                {chatMessages.map((chat) => (
-                  <div key={chat.id} className="space-y-2">
-                    <div className="flex justify-end">
-                      <div className="bg-blue-500 text-white p-3 rounded-lg max-w-xs">
-                        {chat.message}
-                      </div>
-                    </div>
-                    {chat.response && (
-                      <div className="flex justify-start">
-                        <div className="bg-gray-100 text-gray-800 p-3 rounded-lg max-w-xs">
-                          {chat.response}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  ))}
+                </div>
+                
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Type your message..."
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                    className="flex-1"
+                  />
+                  <Button onClick={handleSendMessage} className="bg-blue-500 hover:bg-blue-600">
+                    Send
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Gifts/Product Tab */}
-          <TabsContent value="gifts" className="mt-6">
-            <Card className="bg-white border-gray-200">
-              <CardHeader>
-                <CardTitle>Gifts & Products</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {profile.gifts.map((gift, index) => (
-                    <a
-                      key={index}
-                      href={gift.url}
-                      className="flex items-center justify-between p-4 rounded-lg border border-gray-200 hover:bg-gray-50"
-                    >
-                      <div>
-                        <div className="font-medium text-gray-800">{gift.title}</div>
-                        <div className="text-sm text-gray-600">{gift.type}</div>
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
-                    </a>
-                  ))}
+          <TabsContent value="about" className="space-y-4">
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="text-xl font-semibold mb-4">About Me</h3>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-2">Bio</h4>
+                    <p className="text-gray-700">
+                      I'm a passionate digital creator with expertise in technology and innovation. 
+                      I love connecting with people and sharing knowledge through engaging content.
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-2">Interests</h4>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline">Technology</Badge>
+                      <Badge variant="outline">AI & Machine Learning</Badge>
+                      <Badge variant="outline">Web Development</Badge>
+                      <Badge variant="outline">Digital Marketing</Badge>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-2">Contact</h4>
+                    <p className="text-gray-700">Available for collaborations and partnerships.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="gifts" className="space-y-4">
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <Gift className="w-5 h-5" />
+                  Gifts & Products
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="aspect-square bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg mb-3 flex items-center justify-center">
+                      <Gift className="w-8 h-8 text-blue-500" />
+                    </div>
+                    <h4 className="font-medium mb-2">Digital Course</h4>
+                    <p className="text-sm text-gray-600 mb-3">Learn the fundamentals of web development</p>
+                    <Button size="sm" className="w-full">$29.99</Button>
+                  </div>
+                  
+                  <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="aspect-square bg-gradient-to-br from-green-100 to-blue-100 rounded-lg mb-3 flex items-center justify-center">
+                      <Package className="w-8 h-8 text-green-500" />
+                    </div>
+                    <h4 className="font-medium mb-2">Consultation</h4>
+                    <p className="text-sm text-gray-600 mb-3">1-on-1 tech consultation session</p>
+                    <Button size="sm" className="w-full">$99.99</Button>
+                  </div>
+                  
+                  <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="aspect-square bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg mb-3 flex items-center justify-center">
+                      <Heart className="w-8 h-8 text-purple-500" />
+                    </div>
+                    <h4 className="font-medium mb-2">Support Me</h4>
+                    <p className="text-sm text-gray-600 mb-3">Buy me a coffee to support my work</p>
+                    <Button size="sm" className="w-full">$5.00</Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-4">
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="text-xl font-semibold mb-4">Profile Settings</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Display Name</label>
+                    <Input defaultValue="John Doe" />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Username</label>
+                    <Input defaultValue="johndoe" />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Bio</label>
+                    <Textarea 
+                      defaultValue="Digital creator passionate about technology and innovation. Let's connect and share ideas!"
+                      rows={3}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Social Media Links</label>
+                    <div className="space-y-2">
+                      <Input placeholder="Twitter/X URL" />
+                      <Input placeholder="Instagram URL" />
+                      <Input placeholder="LinkedIn URL" />
+                      <Input placeholder="Website URL" />
+                    </div>
+                  </div>
+                  
+                  <Button className="w-full">Save Changes</Button>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
-
-        {/* Auto-appearing Chat Box */}
-        <AnimatePresence>
-          {showChatBox && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="fixed bottom-28 left-4 right-4 max-w-4xl mx-auto bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-h-64 overflow-y-auto z-40"
-            >
-              <div className="space-y-4">
-                {chatMessages.slice(-3).map((chat) => (
-                  <div key={chat.id} className="space-y-2">
-                    <div className="flex justify-end">
-                      <div className="bg-blue-500 text-white p-2 rounded-lg max-w-xs text-sm">
-                        {chat.message}
-                      </div>
-                    </div>
-                    {chat.response && (
-                      <div className="flex justify-start">
-                        <div className="bg-gray-100 text-gray-800 p-2 rounded-lg max-w-xs text-sm">
-                          {chat.response}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Emoji Picker */}
-        <AnimatePresence>
-          {showEmojiPicker && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="fixed bottom-32 left-4 right-4 max-w-4xl mx-auto bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50"
-            >
-              <div className="grid grid-cols-5 gap-2">
-                {commonEmojis.map((emoji, index) => (
-                  <Button
-                    key={index}
-                    variant="ghost"
-                    className="text-2xl p-2 h-12 w-12 hover:bg-gray-100"
-                    onClick={() => addEmoji(emoji)}
-                  >
-                    {emoji}
-                  </Button>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Fixed Chat Input - Modern UI */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-50">
-          <div className="max-w-4xl mx-auto">
-            {/* Message Input with Modern UI */}
-            <div className="bg-gray-50 rounded-full p-2 mb-4 shadow-sm border border-gray-200">
-              <div className="flex items-center gap-2">
-                <Input
-                  placeholder="Ask me anything..."
-                  value={message}
-                  onChange={handleMessageChange}
-                  className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-4"
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  className="w-10 h-10 p-0 rounded-full hover:bg-gray-200"
-                >
-                  <Smile className="w-5 h-5 text-gray-600" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleVoiceToggle}
-                  className={`w-10 h-10 p-0 rounded-full ${isListening ? 'bg-red-100 text-red-600' : 'hover:bg-gray-200'}`}
-                >
-                  {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5 text-gray-600" />}
-                </Button>
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={!message.trim() || isProcessing}
-                  className="gradient-button w-10 h-10 p-0 rounded-full"
-                >
-                  <Send className="w-5 h-5" />
-                </Button>
-              </div>
-            </div>
-            
-            {/* Modern Social Links Row with Circles */}
-            <div className="flex items-center justify-center bg-gray-50 rounded-full py-3 px-6">
-              {profile.socialLinks.map((social, index) => (
-                <a
-                  key={index}
-                  href={social.url}
-                  className="mx-1 text-gray-600 hover:text-blue-500 transition-colors p-3 rounded-full hover:bg-white shadow-sm border border-gray-200 bg-white"
-                >
-                  <social.icon className="w-5 h-5" />
-                </a>
-              ))}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowShareMenu(true)}
-                className="mx-1 text-gray-600 hover:text-blue-500 p-3 rounded-full hover:bg-white shadow-sm border border-gray-200 bg-white"
-              >
-                <Share2 className="w-5 h-5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Add bottom padding to account for fixed input */}
-        <div className="h-40"></div>
       </div>
-
-      {/* Enhanced Share Menu */}
-      {showShareMenu && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-          <Card className="w-full max-w-sm mx-4 bg-white border-gray-200">
-            <CardHeader>
-              <CardTitle>Share Profile</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button
-                variant="outline"
-                className="w-full justify-start hover:bg-blue-50"
-                onClick={() => handleShare('facebook')}
-              >
-                <Facebook className="w-4 h-4 mr-2 text-blue-600" />
-                Share on Facebook
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start hover:bg-blue-50"
-                onClick={() => handleShare('twitter')}
-              >
-                <Twitter className="w-4 h-4 mr-2 text-blue-400" />
-                Share on Twitter
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start hover:bg-pink-50"
-                onClick={() => handleShare('instagram')}
-              >
-                <Instagram className="w-4 h-4 mr-2 text-pink-600" />
-                Share on Instagram
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start hover:bg-red-50"
-                onClick={() => handleShare('pinterest')}
-              >
-                <Hash className="w-4 h-4 mr-2 text-red-600" />
-                Share on Pinterest
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start hover:bg-red-50"
-                onClick={() => handleShare('youtube')}
-              >
-                <Youtube className="w-4 h-4 mr-2 text-red-600" />
-                Share on YouTube
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start hover:bg-blue-50"
-                onClick={() => handleShare('linkedin')}
-              >
-                <Globe className="w-4 h-4 mr-2 text-blue-700" />
-                Share on LinkedIn
-              </Button>
-              <Separator />
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={handleCopyLink}
-              >
-                <Copy className="w-4 h-4 mr-2" />
-                Copy Link
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-              >
-                <QrCode className="w-4 h-4 mr-2" />
-                QR Code
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={() => setShowShareMenu(false)}
-              >
-                Cancel
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </div>
   );
 };

@@ -17,7 +17,7 @@ const Index = () => {
     return <ProfilePage />;
   }
 
-  // Show dashboard view (with sidebar)
+  // Show dashboard view (no sidebar on landing page)
   if (view === 'dashboard') {
     return (
       <>

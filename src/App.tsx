@@ -22,7 +22,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 const queryClient = new QueryClient();
 
-// Global Layout wrapper component that includes sidebar for all pages
+// Global Layout wrapper component that includes sidebar only for dashboard pages
 const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -54,8 +54,12 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  // Show sidebar only for authenticated users
-  if (!user) {
+  // Check if current path requires sidebar (dashboard routes)
+  const currentPath = window.location.pathname;
+  const isDashboardRoute = ['/dashboard', '/calendar', '/notifications', '/followers', '/feed', '/analytics', '/bookmarks', '/settings'].includes(currentPath);
+
+  // Show sidebar only for authenticated users on dashboard routes
+  if (!user || !isDashboardRoute) {
     return (
       <div className="min-h-screen w-full bg-white">
         {children}
@@ -102,7 +106,7 @@ const App = () => (
               <Route path="/train" element={<AiTraining />} />
               <Route path="/:username" element={<ProfilePage />} />
               
-              {/* All routes now have sidebar for logged-in users */}
+              {/* Dashboard routes with sidebar */}
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
