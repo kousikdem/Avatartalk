@@ -19,12 +19,21 @@ export const useCoquiTTS = () => {
     setIsLoading(true);
     
     try {
-      // For now, we'll use the Web Speech API as a fallback
-      // Coqui TTS would require server-side implementation
+      // Using Web Speech API as Coqui TTS implementation
+      // For production Coqui TTS, you would need server-side setup
       if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.rate = options.speed || 1;
         utterance.lang = options.language || 'en-US';
+        
+        // Set voice if specified
+        if (options.voice) {
+          const voices = speechSynthesis.getVoices();
+          const selectedVoice = voices.find(voice => voice.name.includes(options.voice!));
+          if (selectedVoice) {
+            utterance.voice = selectedVoice;
+          }
+        }
         
         utterance.onstart = () => {
           setIsPlaying(true);
