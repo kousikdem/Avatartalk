@@ -57,9 +57,13 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
   // Check if current path requires sidebar (dashboard routes)
   const currentPath = window.location.pathname;
   const isDashboardRoute = ['/dashboard', '/calendar', '/notifications', '/followers', '/feed', '/analytics', '/bookmarks', '/settings'].includes(currentPath);
+  
+  // Also check for query parameters that indicate dashboard view
+  const urlParams = new URLSearchParams(window.location.search);
+  const isDashboardView = urlParams.get('view') === 'dashboard';
 
-  // Show sidebar only for authenticated users on dashboard routes
-  if (!user || !isDashboardRoute) {
+  // Show sidebar only for authenticated users on dashboard routes OR dashboard view
+  if (!user || (!isDashboardRoute && !isDashboardView)) {
     return (
       <div className="min-h-screen w-full bg-white">
         {children}

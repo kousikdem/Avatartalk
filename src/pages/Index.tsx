@@ -17,14 +17,9 @@ const Index = () => {
     return <ProfilePage />;
   }
 
-  // Show dashboard view (no sidebar on landing page)
+  // Show dashboard view (sidebar will be handled by App.tsx)
   if (view === 'dashboard') {
-    return (
-      <>
-        <Navbar showAuth={true} />
-        <Dashboard />
-      </>
-    );
+    return <Dashboard />;
   }
 
   // Show pricing page
