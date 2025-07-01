@@ -58,7 +58,8 @@ import {
   Instagram,
   Twitter,
   Youtube,
-  Hash
+  Hash,
+  Menu
 } from 'lucide-react';
 
 interface Post {
@@ -386,8 +387,19 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-white text-gray-800">
-      {/* Profile Content - No Header */}
-      <div className="relative bg-gradient-to-br from-blue-600 to-purple-600 rounded-b-3xl p-6 text-white">
+      {/* Menu Toggle Button in Top Corner */}
+      <div className="fixed top-4 left-4 z-50">
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-10 h-10 p-0 bg-white/80 backdrop-blur-sm border-gray-200 hover:bg-white shadow-lg"
+        >
+          <Menu className="w-5 h-5 text-gray-700" />
+        </Button>
+      </div>
+
+      {/* Profile Content - Updated without top header */}
+      <div className="relative bg-gradient-to-br from-blue-600 to-purple-600 rounded-b-3xl p-6 pt-16 text-white">
         {/* Profile Header */}
         <div className="text-center mb-6">
           <div className="relative inline-block mb-4">
@@ -544,7 +556,7 @@ const ProfilePage = () => {
             </Card>
           </TabsContent>
 
-          {/* Gifts/Product Tab - Updated name */}
+          {/* Gifts/Product Tab */}
           <TabsContent value="gifts" className="mt-6">
             <Card className="bg-white border-gray-200">
               <CardHeader>
