@@ -5,276 +5,268 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, Heart, Share2, Gift, Package, Settings, Bell } from 'lucide-react';
+import { MessageCircle, Heart, Users, BarChart3, Smile, Mic } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 
 const ProfilePage = () => {
-  const [activeTab, setActiveTab] = useState('chat');
+  const [activeTab, setActiveTab] = useState('posts');
   const [isFollowing, setIsFollowing] = useState(false);
   const [message, setMessage] = useState('');
-  const [chatMessages, setChatMessages] = useState([
-    { id: 1, text: "Hello! Welcome to my profile!", sender: 'avatar', timestamp: new Date() },
-  ]);
+  const [profileImage, setProfileImage] = useState('/lovable-uploads/fd5c2456-b137-4f5e-92b6-91e67819b497.png');
+  const [displayName, setDisplayName] = useState('Emily Parker');
+  const [username, setUsername] = useState('emily');
+  const [bio, setBio] = useState('Exploring the boundaries of AI conversation. Let\'s create something amazing!');
 
   const handleSendMessage = () => {
     if (message.trim()) {
-      const newMessage = {
-        id: chatMessages.length + 1,
-        text: message,
-        sender: 'user' as const,
-        timestamp: new Date()
-      };
-      setChatMessages([...chatMessages, newMessage]);
       setMessage('');
-      
-      // Simulate avatar response
-      setTimeout(() => {
-        const avatarResponse = {
-          id: chatMessages.length + 2,
-          text: "Thanks for your message! I'll get back to you soon.",
-          sender: 'avatar' as const,
-          timestamp: new Date()
-        };
-        setChatMessages(prev => [...prev, avatarResponse]);
-      }, 1000);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Profile Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex flex-col md:flex-row items-center gap-6">
-            <Avatar className="w-24 h-24 border-4 border-white shadow-lg">
-              <AvatarImage src="/placeholder.svg" alt="Profile" />
-              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-2xl font-bold">
-                JD
-              </AvatarFallback>
-            </Avatar>
-            
-            <div className="flex-1 text-center md:text-left">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">John Doe</h1>
-              <p className="text-gray-600 mb-3">@johndoe</p>
-              <p className="text-gray-700 mb-4">
-                Digital creator passionate about technology and innovation. 
-                Let's connect and share ideas!
-              </p>
-              
-              <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
-                <Badge variant="secondary" className="bg-blue-100 text-blue-800">Tech Enthusiast</Badge>
-                <Badge variant="secondary" className="bg-purple-100 text-purple-800">Creator</Badge>
-                <Badge variant="secondary" className="bg-green-100 text-green-800">Available</Badge>
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800">
+      {/* Main Profile Container */}
+      <div className="max-w-md mx-auto bg-gradient-to-br from-slate-800 to-slate-900 min-h-screen relative overflow-hidden">
+        {/* Header */}
+        <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-10">
+          <h1 className="text-white text-xl font-semibold">AvatarTalk.bio</h1>
+          <div className="flex gap-1">
+            <div className="w-2 h-2 bg-white/50 rounded-full"></div>
+            <div className="w-2 h-2 bg-white/50 rounded-full"></div>
+            <div className="w-2 h-2 bg-white/50 rounded-full"></div>
+          </div>
+        </div>
+
+        {/* Profile Section */}
+        <div className="pt-20 pb-8 px-6 text-center relative">
+          {/* Background Blur Effect */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-800/50 to-slate-900"></div>
+          
+          <div className="relative z-10">
+            {/* Avatar */}
+            <div className="mb-6">
+              <Avatar className="w-32 h-32 mx-auto border-4 border-white/20 shadow-2xl">
+                <AvatarImage src={profileImage} alt="Profile" className="object-cover" />
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-2xl font-bold">
+                  {displayName.split(' ').map(n => n[0]).join('')}
+                </AvatarFallback>
+              </Avatar>
             </div>
-            
-            <div className="flex flex-col gap-3">
+
+            {/* Name and Username */}
+            <div className="mb-4">
+              <h2 className="text-white text-3xl font-bold mb-2">{displayName}</h2>
+              <p className="text-white/70 text-lg">@{username}</p>
+            </div>
+
+            {/* Bio */}
+            <p className="text-white/90 text-base leading-relaxed mb-8 max-w-sm mx-auto">
+              {bio}
+            </p>
+
+            {/* Action Buttons */}
+            <div className="flex gap-4 mb-8 justify-center">
               <Button
-                onClick={() => setIsFollowing(!isFollowing)}
-                className={`px-6 py-2 font-semibold transition-all duration-200 ${
-                  isFollowing 
-                    ? 'bg-green-600 hover:bg-green-700 text-white' 
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
-                }`}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-semibold text-base flex-1 max-w-40"
+                onClick={() => setActiveTab('chat')}
               >
-                <Heart className={`w-4 h-4 mr-2 ${isFollowing ? 'fill-current' : ''}`} />
-                {isFollowing ? 'Following' : 'Follow'}
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                className="px-6 py-2 border-2 border-purple-500 text-purple-600 hover:bg-purple-50 font-semibold transition-all duration-200"
-              >
-                <MessageCircle className="w-4 h-4 mr-2" />
                 Talk to Me
               </Button>
-              
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="border-gray-300 text-gray-600 hover:bg-gray-50"
+              <Button
+                onClick={() => setIsFollowing(!isFollowing)}
+                variant="outline"
+                className={`px-8 py-3 rounded-full font-semibold text-base border-2 flex-1 max-w-32 ${
+                  isFollowing 
+                    ? 'bg-white/10 border-white/30 text-white hover:bg-white/20' 
+                    : 'bg-transparent border-white/30 text-white hover:bg-white/10'
+                }`}
               >
-                <Share2 className="w-4 h-4 mr-2" />
-                Share
+                {isFollowing ? 'Following' : 'Follow'}
               </Button>
+            </div>
+
+            {/* Stats */}
+            <div className="flex justify-center gap-8 mb-8">
+              <div className="text-center">
+                <div className="text-white text-2xl font-bold">352</div>
+                <div className="text-white/60 text-sm">Total Conversations</div>
+              </div>
+              <div className="text-center">
+                <div className="text-white text-2xl font-bold">1.2K</div>
+                <div className="text-white/60 text-sm">Followers</div>
+              </div>
+              <div className="text-center">
+                <div className="text-white text-2xl font-bold">89</div>
+                <div className="text-white/60 text-sm">Engagement Score</div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Content Tabs */}
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
-            <TabsTrigger value="chat" className="flex items-center gap-2">
-              <MessageCircle className="w-4 h-4" />
-              Chat
-            </TabsTrigger>
-            <TabsTrigger value="about" className="flex items-center gap-2">
-              About
-            </TabsTrigger>
-            <TabsTrigger value="gifts" className="flex items-center gap-2">
-              <Package className="w-4 h-4" />
-              Gifts/Product
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" />
-              Settings
-            </TabsTrigger>
-          </TabsList>
+        {/* Tabs Navigation */}
+        <div className="px-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-3 bg-white/10 rounded-full p-1 mb-6">
+              <TabsTrigger 
+                value="posts" 
+                className="rounded-full text-white data-[state=active]:bg-white/20 data-[state=active]:text-white"
+              >
+                Posts
+              </TabsTrigger>
+              <TabsTrigger 
+                value="chat" 
+                className="rounded-full text-white data-[state=active]:bg-white/20 data-[state=active]:text-white"
+              >
+                Chat
+              </TabsTrigger>
+              <TabsTrigger 
+                value="gifts" 
+                className="rounded-full text-white data-[state=active]:bg-white/20 data-[state=active]:text-white"
+              >
+                Projects/Gifts
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="chat" className="space-y-4">
-            <Card>
-              <CardContent className="p-6">
-                <div className="h-96 overflow-y-auto mb-4 space-y-3 bg-gray-50 rounded-lg p-4">
-                  {chatMessages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                          msg.sender === 'user'
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-white text-gray-800 border'
-                        }`}
-                      >
-                        <p className="text-sm">{msg.text}</p>
-                        <p className="text-xs opacity-70 mt-1">
-                          {msg.timestamp.toLocaleTimeString()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Type your message..."
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                    className="flex-1"
-                  />
-                  <Button onClick={handleSendMessage} className="bg-blue-500 hover:bg-blue-600">
-                    Send
+            {/* Chat Input - Always Visible */}
+            <div className="mb-6">
+              <div className="relative">
+                <Input
+                  placeholder="Ask me anything..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  className="bg-white/10 backdrop-blur border-white/20 text-white placeholder:text-white/50 rounded-full pl-4 pr-16 py-3 text-base"
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
+                  <Button
+                    size="sm"
+                    className="bg-yellow-500 hover:bg-yellow-600 rounded-full w-8 h-8 p-0"
+                  >
+                    <Smile className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 rounded-full w-8 h-8 p-0"
+                  >
+                    <Mic className="w-4 h-4" />
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </div>
+            </div>
 
-          <TabsContent value="about" className="space-y-4">
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="text-xl font-semibold mb-4">About Me</h3>
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Bio</h4>
-                    <p className="text-gray-700">
-                      I'm a passionate digital creator with expertise in technology and innovation. 
-                      I love connecting with people and sharing knowledge through engaging content.
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Interests</h4>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline">Technology</Badge>
-                      <Badge variant="outline">AI & Machine Learning</Badge>
-                      <Badge variant="outline">Web Development</Badge>
-                      <Badge variant="outline">Digital Marketing</Badge>
+            {/* Tab Contents */}
+            <TabsContent value="posts" className="space-y-4 pb-6">
+              <Card className="bg-white/10 backdrop-blur border-white/20">
+                <CardContent className="p-4">
+                  <p className="text-white/90 text-sm">
+                    Welcome to my profile! I'm excited to connect and have meaningful conversations about AI and technology.
+                  </p>
+                  <div className="flex justify-between items-center mt-3 text-white/60 text-xs">
+                    <span>2 hours ago</span>
+                    <div className="flex gap-4">
+                      <span className="flex items-center gap-1">
+                        <Heart className="w-3 h-3" />
+                        24
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MessageCircle className="w-3 h-3" />
+                        8
+                      </span>
                     </div>
                   </div>
-                  
-                  <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Contact</h4>
-                    <p className="text-gray-700">Available for collaborations and partnerships.</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          <TabsContent value="gifts" className="space-y-4">
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                  <Gift className="w-5 h-5" />
-                  Gifts & Products
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                    <div className="aspect-square bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg mb-3 flex items-center justify-center">
-                      <Gift className="w-8 h-8 text-blue-500" />
-                    </div>
-                    <h4 className="font-medium mb-2">Digital Course</h4>
-                    <p className="text-sm text-gray-600 mb-3">Learn the fundamentals of web development</p>
-                    <Button size="sm" className="w-full">$29.99</Button>
-                  </div>
-                  
-                  <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                    <div className="aspect-square bg-gradient-to-br from-green-100 to-blue-100 rounded-lg mb-3 flex items-center justify-center">
-                      <Package className="w-8 h-8 text-green-500" />
-                    </div>
-                    <h4 className="font-medium mb-2">Consultation</h4>
-                    <p className="text-sm text-gray-600 mb-3">1-on-1 tech consultation session</p>
-                    <Button size="sm" className="w-full">$99.99</Button>
-                  </div>
-                  
-                  <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                    <div className="aspect-square bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg mb-3 flex items-center justify-center">
-                      <Heart className="w-8 h-8 text-purple-500" />
-                    </div>
-                    <h4 className="font-medium mb-2">Support Me</h4>
-                    <p className="text-sm text-gray-600 mb-3">Buy me a coffee to support my work</p>
-                    <Button size="sm" className="w-full">$5.00</Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+            <TabsContent value="chat" className="space-y-4 pb-6">
+              <Card className="bg-white/10 backdrop-blur border-white/20">
+                <CardContent className="p-4">
+                  <p className="text-white/90 text-sm mb-3">
+                    Hi there! I'm ready to chat. What would you like to talk about today?
+                  </p>
+                  <div className="text-white/60 text-xs">Just now</div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          <TabsContent value="settings" className="space-y-4">
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="text-xl font-semibold mb-4">Profile Settings</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Display Name</label>
-                    <Input defaultValue="John Doe" />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Username</label>
-                    <Input defaultValue="johndoe" />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Bio</label>
-                    <Textarea 
-                      defaultValue="Digital creator passionate about technology and innovation. Let's connect and share ideas!"
-                      rows={3}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Social Media Links</label>
-                    <div className="space-y-2">
-                      <Input placeholder="Twitter/X URL" />
-                      <Input placeholder="Instagram URL" />
-                      <Input placeholder="LinkedIn URL" />
-                      <Input placeholder="Website URL" />
+            <TabsContent value="gifts" className="space-y-4 pb-6">
+              <div className="grid gap-4">
+                <Card className="bg-white/10 backdrop-blur border-white/20">
+                  <CardContent className="p-4 text-center">
+                    <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <MessageCircle className="w-6 h-6 text-blue-400" />
                     </div>
-                  </div>
-                  
-                  <Button className="w-full">Save Changes</Button>
+                    <h4 className="text-white font-medium mb-2">1-on-1 Consultation</h4>
+                    <p className="text-white/70 text-sm mb-3">Personal AI consultation session</p>
+                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white rounded-full">
+                      $99.99
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+
+      {/* Desktop View - Hidden on Mobile */}
+      <div className="hidden lg:block fixed inset-0 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800">
+        <div className="flex items-center justify-center min-h-screen p-8">
+          <div className="max-w-md w-full bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl overflow-hidden shadow-2xl">
+            {/* Desktop content mirrors mobile but in a contained card */}
+            <div className="p-8 text-center">
+              <div className="mb-6">
+                <Avatar className="w-40 h-40 mx-auto border-4 border-white/20 shadow-2xl">
+                  <AvatarImage src={profileImage} alt="Profile" className="object-cover" />
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-3xl font-bold">
+                    {displayName.split(' ').map(n => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+
+              <div className="mb-6">
+                <h2 className="text-white text-4xl font-bold mb-2">{displayName}</h2>
+                <p className="text-white/70 text-xl">@{username}</p>
+              </div>
+
+              <p className="text-white/90 text-lg leading-relaxed mb-8 max-w-sm mx-auto">
+                {bio}
+              </p>
+
+              <div className="flex gap-4 mb-8 justify-center">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-full font-semibold text-lg">
+                  Talk to Me
+                </Button>
+                <Button
+                  onClick={() => setIsFollowing(!isFollowing)}
+                  variant="outline"
+                  className={`px-10 py-4 rounded-full font-semibold text-lg border-2 ${
+                    isFollowing 
+                      ? 'bg-white/10 border-white/30 text-white hover:bg-white/20' 
+                      : 'bg-transparent border-white/30 text-white hover:bg-white/10'
+                  }`}
+                >
+                  {isFollowing ? 'Following' : 'Follow'}
+                </Button>
+              </div>
+
+              <div className="flex justify-center gap-12 mb-8">
+                <div className="text-center">
+                  <div className="text-white text-3xl font-bold">352</div>
+                  <div className="text-white/60">Total Conversations</div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                <div className="text-center">
+                  <div className="text-white text-3xl font-bold">1.2K</div>
+                  <div className="text-white/60">Followers</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-white text-3xl font-bold">89</div>
+                  <div className="text-white/60">Engagement Score</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
