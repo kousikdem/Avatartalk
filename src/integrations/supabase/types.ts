@@ -9,6 +9,50 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      avatar_settings: {
+        Row: {
+          avatar_mood: string | null
+          avatar_type: string | null
+          created_at: string | null
+          head_movement: boolean | null
+          id: string
+          lip_sync: boolean | null
+          updated_at: string | null
+          user_id: string
+          voice_type: string | null
+        }
+        Insert: {
+          avatar_mood?: string | null
+          avatar_type?: string | null
+          created_at?: string | null
+          head_movement?: boolean | null
+          id?: string
+          lip_sync?: boolean | null
+          updated_at?: string | null
+          user_id: string
+          voice_type?: string | null
+        }
+        Update: {
+          avatar_mood?: string | null
+          avatar_type?: string | null
+          created_at?: string | null
+          head_movement?: boolean | null
+          id?: string
+          lip_sync?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+          voice_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avatar_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calendar_events: {
         Row: {
           attendees: Json | null
@@ -243,29 +287,91 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           created_at: string | null
+          display_name: string | null
           email: string | null
           full_name: string | null
           id: string
+          profile_pic_url: string | null
           updated_at: string | null
+          username: string | null
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string | null
+          display_name?: string | null
           email?: string | null
           full_name?: string | null
           id: string
+          profile_pic_url?: string | null
           updated_at?: string | null
+          username?: string | null
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string | null
+          display_name?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
+          profile_pic_url?: string | null
           updated_at?: string | null
+          username?: string | null
         }
         Relationships: []
+      }
+      social_links: {
+        Row: {
+          created_at: string | null
+          facebook: string | null
+          id: string
+          instagram: string | null
+          linkedin: string | null
+          pinterest: string | null
+          twitter: string | null
+          updated_at: string | null
+          user_id: string
+          website: string | null
+          youtube: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          facebook?: string | null
+          id?: string
+          instagram?: string | null
+          linkedin?: string | null
+          pinterest?: string | null
+          twitter?: string | null
+          updated_at?: string | null
+          user_id: string
+          website?: string | null
+          youtube?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          facebook?: string | null
+          id?: string
+          instagram?: string | null
+          linkedin?: string | null
+          pinterest?: string | null
+          twitter?: string | null
+          updated_at?: string | null
+          user_id?: string
+          website?: string | null
+          youtube?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_links_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_analytics: {
         Row: {
@@ -309,6 +415,47 @@ export type Database = {
             foreignKeyName: "user_analytics_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_stats: {
+        Row: {
+          created_at: string | null
+          engagement_score: number | null
+          followers_count: number | null
+          id: string
+          profile_views: number | null
+          total_conversations: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          engagement_score?: number | null
+          followers_count?: number | null
+          id?: string
+          profile_views?: number | null
+          total_conversations?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          engagement_score?: number | null
+          followers_count?: number | null
+          id?: string
+          profile_views?: number | null
+          total_conversations?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_stats_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
