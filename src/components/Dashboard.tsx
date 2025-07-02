@@ -59,33 +59,9 @@ const Dashboard = () => {
 
   return (
     <div className="p-6">
-      {/* Header Section */}
+      {/* Header Section with Share Button */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <Avatar className="w-16 h-16 border-4 border-white shadow-lg">
-                <AvatarImage src={profileImage} alt="Profile" />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-xl font-bold">
-                  {displayName.split(' ').map(n => n[0]).join('')}
-                </AvatarFallback>
-              </Avatar>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                title="Upload profile picture"
-              />
-            </div>
-            
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">{displayName}</h1>
-              <p className="text-gray-600">@{username}</p>
-              <p className="text-sm text-gray-500">Digital Creator & Tech Enthusiast</p>
-            </div>
-          </div>
-
+        <div className="flex items-center justify-end mb-6">
           <Dialog open={isShareOpen} onOpenChange={setIsShareOpen}>
             <DialogTrigger asChild>
               <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
