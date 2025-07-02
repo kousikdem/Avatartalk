@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,10 +22,10 @@ import {
 } from 'lucide-react';
 import Avatar3D from '@/components/Avatar3D';
 import ShareModal from '@/components/ShareModal';
-import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
 
 const ProfilePage = () => {
+  const { username } = useParams();
   const [activeTab, setActiveTab] = useState('posts');
   const [isFollowing, setIsFollowing] = useState(false);
   const [message, setMessage] = useState('');
@@ -32,17 +33,12 @@ const ProfilePage = () => {
   const [isTalking, setIsTalking] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
-
-  // For demo purposes, using a sample user ID
-  const sampleUserId = 'demo-user-id';
-  const { 
-    profile, 
-    avatarSettings, 
-    socialLinks, 
-    userStats, 
-    loading, 
-    updateAvatarSettings 
-  } = useProfile(sampleUserId);
+  const [profileData, setProfileData] = useState<any>(null);
+  const [avatarSettings, setAvatarSettings] = useState<any>(null);
+  const [socialLinks, setSocialLinks] = useState<any>(null);
+  const [userStats, setUserStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -52,12 +48,98 @@ const ProfilePage = () => {
     getCurrentUser();
   }, []);
 
+  useEffect(() => {
+    if (username) {
+      fetchProfileByUsername(username);
+    }
+  }, [username]);
+
+  const fetchProfileByUsername = async (username: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch profile by username
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('username', username)
+        .single();
+
+      if (profileError) {
+        console.error('Profile error:', profileError);
+        // If no profile found, use demo data
+        setProfileData(null);
+        setAvatarSettings({
+          avatar_type: 'realistic',
+          avatar_mood: 'friendly',
+          lip_sync: true,
+          head_movement: true,
+          voice_type: 'neutral'
+        });
+        setSocialLinks({});
+        setUserStats({
+          total_conversations: 352,
+          followers_count: 1200,
+          engagement_score: 89
+        });
+        setLoading(false);
+        return;
+      }
+
+      setProfileData(profile);
+
+      // Fetch related data if profile exists
+      if (profile) {
+        // Fetch avatar settings
+        const { data: avatarData } = await supabase
+          .from('avatar_settings')
+          .select('*')
+          .eq('user_id', profile.id)
+          .single();
+
+        // Fetch social links
+        const { data: socialData } = await supabase
+          .from('social_links')
+          .select('*')
+          .eq('user_id', profile.id)
+          .single();
+
+        // Fetch user stats
+        const { data: statsData } = await supabase
+          .from('user_stats')
+          .select('*')
+          .eq('user_id', profile.id)
+          .single();
+
+        setAvatarSettings(avatarData || {
+          avatar_type: 'realistic',
+          avatar_mood: 'friendly',
+          lip_sync: true,
+          head_movement: true,
+          voice_type: 'neutral'
+        });
+        setSocialLinks(socialData || {});
+        setUserStats(statsData || {
+          total_conversations: 0,
+          followers_count: 0,
+          engagement_score: 0
+        });
+      }
+    } catch (err: any) {
+      console.error('Error fetching profile:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Demo data fallback
   const displayData = {
-    displayName: profile?.display_name || 'Emily Parker',
-    username: profile?.username || 'emily',
-    bio: profile?.bio || 'Exploring the boundaries of AI conversation. Let\'s create something amazing together!',
-    profileImage: profile?.profile_pic_url || '/lovable-uploads/fd5c2456-b137-4f5e-92b6-91e67819b497.png',
+    displayName: profileData?.display_name || profileData?.full_name || 'Emily Parker',
+    username: profileData?.username || username || 'emily',
+    bio: profileData?.bio || 'Exploring the boundaries of AI conversation. Let\'s create something amazing together!',
+    profileImage: profileData?.profile_pic_url || '/lovable-uploads/fd5c2456-b137-4f5e-92b6-91e67819b497.png',
     stats: {
       conversations: userStats?.total_conversations || 352,
       followers: userStats?.followers_count || 1200,
@@ -75,9 +157,24 @@ const ProfilePage = () => {
     }
   };
 
-  const handleAvatarSettingsChange = (setting: string, value: any) => {
-    if (avatarSettings) {
-      updateAvatarSettings({ [setting]: value });
+  const handleAvatarSettingsChange = async (setting: string, value: any) => {
+    if (!profileData?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('avatar_settings')
+        .upsert({
+          user_id: profileData.id,
+          ...avatarSettings,
+          [setting]: value
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      setAvatarSettings(data);
+    } catch (err: any) {
+      console.error('Error updating avatar settings:', err);
     }
   };
 
