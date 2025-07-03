@@ -18,7 +18,8 @@ import {
   Twitter,
   Linkedin,
   Instagram,
-  Youtube
+  Youtube,
+  EllipsisVertical
 } from 'lucide-react';
 import Avatar3D from '@/components/Avatar3D';
 import ShareModal from '@/components/ShareModal';
@@ -29,7 +30,7 @@ const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('posts');
   const [isFollowing, setIsFollowing] = useState(false);
   const [message, setMessage] = useState('');
-  const [showAvatarPreview, setShowAvatarPreview] = useState(false);
+  const [showAvatarPreview, setShowAvatarPreview] = useState(true);
   const [isTalking, setIsTalking] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -202,54 +203,42 @@ const ProfilePage = () => {
       <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-purple-600/5 to-indigo-600/5"></div>
       
       {/* Main Profile Container */}
-      <div className="relative z-10 max-w-md mx-auto min-h-screen bg-slate-900/50 backdrop-blur-xl border-x border-slate-800/50">
+      <div className="relative z-10 max-w-md mx-auto min-h-screen bg-slate-900/50 backdrop-blur-xl border-x border-slate-800/50 rounded-t-3xl md:rounded-none">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 pt-12 border-b border-slate-800/30">
-          <h1 className="text-white text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            AvatarTalk.bio
-          </h1>
+        <div className="flex justify-between items-center p-6 pt-12">
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col items-start">
+              <h2 className="text-white text-xl font-bold mb-1">
+                {displayData.displayName}
+              </h2>
+              <p className="text-blue-300 text-sm">@{displayData.username}</p>
+            </div>
+          </div>
           <div className="flex gap-2 items-center">
+            <div className="relative">
+              <Avatar className="w-16 h-16 border-2 border-blue-400/30">
+                <AvatarImage src={displayData.profileImage} alt="Profile" className="object-cover" />
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-lg font-bold">
+                  {displayData.displayName.split(' ').map(n => n[0]).join('')}
+                </AvatarFallback>
+              </Avatar>
+              {/* Online indicator */}
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-slate-900 flex items-center justify-center">
+                <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+              </div>
+            </div>
             <Button
               size="sm"
               variant="ghost"
-              className="text-white/70 hover:bg-white/10 hover:text-white rounded-full w-10 h-10 p-0 transition-all duration-300"
+              className="text-white/70 hover:bg-white/10 hover:text-white rounded-full w-8 h-8 p-0 transition-all duration-300"
             >
-              <Download className="w-4 h-4" />
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => setIsShareOpen(true)}
-              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white text-xs px-4 py-2 rounded-full shadow-lg transition-all duration-300 hover:shadow-blue-500/25"
-            >
-              <Share2 className="w-3 h-3 mr-1" />
-              Share
+              <EllipsisVertical className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
         {/* Profile Section */}
-        <div className="px-6 py-8 text-center relative">
-          {/* Name and Username */}
-          <div className="mb-6">
-            <div className="flex items-center justify-center mb-3">
-              <div className="relative">
-                <Avatar className="w-20 h-20 border-2 border-blue-400/30">
-                  <AvatarImage src={displayData.profileImage} alt="Profile" className="object-cover" />
-                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-xl font-bold">
-                    {displayData.displayName.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
-                {/* Online indicator */}
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-slate-900 flex items-center justify-center">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
-                </div>
-              </div>
-            </div>
-            <h2 className="text-white text-2xl font-bold mb-1">
-              {displayData.displayName}
-            </h2>
-            <p className="text-blue-300 text-base mb-4">@{displayData.username}</p>
-          </div>
+        <div className="px-6 py-4 relative">
 
           {/* Bio */}
           <p className="text-white/80 text-sm leading-relaxed mb-8 px-4">
@@ -259,60 +248,41 @@ const ProfilePage = () => {
           {/* 3D Avatar Section */}
           <div className="mb-8 relative">
             <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/30 shadow-2xl">
-              {showAvatarPreview ? (
-                <div className="flex flex-col items-center">
-                  <div className="mb-4 relative">
-                    <Avatar3D
-                      isLarge={true}
-                      isTalking={isTalking}
-                      avatarStyle={avatarSettings?.avatar_type as any || 'realistic'}
-                      mood={avatarSettings?.avatar_mood as any || 'friendly'}
-                      onInteraction={() => setIsTalking(!isTalking)}
-                    />
-                  </div>
-                  
-                  {/* Avatar Controls */}
-                  <div className="flex flex-wrap gap-2 mb-4 justify-center">
-                    <select
-                      value={avatarSettings?.avatar_type || 'realistic'}
-                      onChange={(e) => handleAvatarSettingsChange('avatar_type', e.target.value)}
-                      className="bg-slate-800 text-white text-xs py-1 px-2 rounded border border-slate-600"
-                    >
-                      <option value="realistic">Realistic</option>
-                      <option value="cartoon">Cartoon</option>
-                      <option value="anime">Anime</option>
-                      <option value="minimal">Minimal</option>
-                    </select>
-                    
-                    <select
-                      value={avatarSettings?.avatar_mood || 'friendly'}
-                      onChange={(e) => handleAvatarSettingsChange('avatar_mood', e.target.value)}
-                      className="bg-slate-800 text-white text-xs py-1 px-2 rounded border border-slate-600"
-                    >
-                      <option value="professional">Professional</option>
-                      <option value="friendly">Friendly</option>
-                      <option value="mysterious">Mysterious</option>
-                    </select>
-                  </div>
-                  
-                  <Button
-                    size="sm"
-                    className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-4 py-2 rounded-full transition-all duration-300"
-                    onClick={() => setShowAvatarPreview(false)}
+              <div className="flex flex-col items-center">
+                <div className="mb-4 relative">
+                  <Avatar3D
+                    isLarge={true}
+                    isTalking={isTalking}
+                    avatarStyle={avatarSettings?.avatar_type as any || 'realistic'}
+                    mood={avatarSettings?.avatar_mood as any || 'friendly'}
+                    onInteraction={() => setIsTalking(!isTalking)}
+                  />
+                </div>
+                
+                {/* Avatar Controls */}
+                <div className="flex flex-wrap gap-2 mb-4 justify-center">
+                  <select
+                    value={avatarSettings?.avatar_type || 'realistic'}
+                    onChange={(e) => handleAvatarSettingsChange('avatar_type', e.target.value)}
+                    className="bg-slate-800 text-white text-xs py-1 px-2 rounded border border-slate-600"
                   >
-                    Use This Avatar
-                  </Button>
+                    <option value="realistic">Realistic</option>
+                    <option value="cartoon">Cartoon</option>
+                    <option value="anime">Anime</option>
+                    <option value="minimal">Minimal</option>
+                  </select>
+                  
+                  <select
+                    value={avatarSettings?.avatar_mood || 'friendly'}
+                    onChange={(e) => handleAvatarSettingsChange('avatar_mood', e.target.value)}
+                    className="bg-slate-800 text-white text-xs py-1 px-2 rounded border border-slate-600"
+                  >
+                    <option value="professional">Professional</option>
+                    <option value="friendly">Friendly</option>
+                    <option value="mysterious">Mysterious</option>
+                  </select>
                 </div>
-              ) : (
-                <div className="aspect-video bg-gradient-to-br from-blue-900/30 to-purple-900/30 rounded-xl flex items-center justify-center cursor-pointer hover:from-blue-800/40 hover:to-purple-800/40 transition-all duration-300" onClick={() => setShowAvatarPreview(true)}>
-                  <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                      <Users className="w-8 h-8 text-white" />
-                    </div>
-                    <p className="text-white/80 text-sm">Click to view 3D Avatar</p>
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
           </div>
 
@@ -413,22 +383,42 @@ const ProfilePage = () => {
             </TabsContent>
 
             <TabsContent value="chat" className="space-y-4 pb-6">
-              <Card className="neo-card">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
-                      {displayData.displayName.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-white/90 text-sm mb-3">
-                        Hi there! I'm ready to chat. What would you like to talk about today? 
-                        {isTalking && <span className="animate-pulse ml-2">I'm listening...</span>}
-                      </p>
-                      <div className="text-white/60 text-xs">Just now</div>
-                    </div>
+              <div className="bg-slate-800/30 border border-slate-700/30 backdrop-blur-sm rounded-xl p-4 max-h-80 overflow-y-auto space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
+                    {displayData.displayName.split(' ').map(n => n[0]).join('')}
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="flex-1">
+                    <p className="text-white/90 text-sm mb-1">
+                      Hi there! I'm ready to chat. What would you like to talk about today? 
+                      {isTalking && <span className="animate-pulse ml-2">I'm listening...</span>}
+                    </p>
+                    <div className="text-white/60 text-xs">Just now</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-3 justify-end">
+                  <div className="bg-blue-600/20 border border-blue-500/30 rounded-xl p-3 max-w-xs">
+                    <p className="text-white/90 text-sm">Hey! How's your day going?</p>
+                    <div className="text-white/60 text-xs mt-1 text-right">2 mins ago</div>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-white text-sm font-bold">
+                    U
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
+                    {displayData.displayName.split(' ').map(n => n[0]).join('')}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-white/90 text-sm mb-1">
+                      Great! I've been having amazing conversations today. What brings you here?
+                    </p>
+                    <div className="text-white/60 text-xs">1 min ago</div>
+                  </div>
+                </div>
+              </div>
             </TabsContent>
 
             <TabsContent value="gifts" className="space-y-4 pb-6">
@@ -447,8 +437,8 @@ const ProfilePage = () => {
             </TabsContent>
 
             {/* Chat Input - Always Visible */}
-            <div className="mb-6 px-6">
-              <div className="relative">
+            <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-900/95 backdrop-blur-xl border-t border-slate-800/50 p-4 rounded-t-3xl">
+              <div className="relative mb-4">
                 <Input
                   placeholder="Ask me anything..."
                   value={message}
@@ -474,27 +464,37 @@ const ProfilePage = () => {
                   </Button>
                 </div>
               </div>
-            </div>
 
-            {/* Social Media Icons */}
-            <div className="px-6 pb-8">
-              <div className="flex justify-center items-center gap-4 overflow-x-auto pb-2">
+              {/* Social Media Icons */}
+              <div className="flex justify-center items-center gap-3 pb-2">
                 {socialIcons.map(({ icon: Icon, url, color }, index) => (
                   <button
                     key={index}
-                    className={`flex-shrink-0 w-10 h-10 rounded-full bg-slate-800/50 border border-slate-700/50 ${color} hover:bg-slate-700 transition-all duration-200 flex items-center justify-center`}
+                    className={`flex-shrink-0 w-9 h-9 rounded-full bg-slate-800/50 border border-slate-700/50 ${color} hover:bg-slate-700 transition-all duration-200 flex items-center justify-center`}
                     onClick={() => url && window.open(url, '_blank')}
                   >
-                    <Icon className="w-5 h-5" />
+                    <Icon className="w-4 h-4" />
                   </button>
                 ))}
-                <div className="w-8 h-8 rounded-full bg-slate-700/50 flex items-center justify-center">
-                  <div className="w-1 h-1 bg-white/40 rounded-full mx-0.5"></div>
-                  <div className="w-1 h-1 bg-white/40 rounded-full mx-0.5"></div>
-                  <div className="w-1 h-1 bg-white/40 rounded-full mx-0.5"></div>
-                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="rounded-full w-9 h-9 p-0 text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200"
+                >
+                  <EllipsisVertical className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => setIsShareOpen(true)}
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-full w-9 h-9 p-0 shadow-lg transition-all duration-300"
+                >
+                  <Share2 className="w-4 h-4" />
+                </Button>
               </div>
             </div>
+            
+            {/* Add bottom padding to account for fixed footer */}
+            <div className="h-32"></div>
           </Tabs>
         </div>
       </div>
