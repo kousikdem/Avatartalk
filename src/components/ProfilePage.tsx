@@ -195,15 +195,16 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-slate-900/20 to-purple-900/20"></div>
-      <div className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,transparent_0deg,hsl(263_70%_50%/0.1)_360deg)]"></div>
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-blue-950 to-indigo-950 relative overflow-hidden">
+      {/* Animated Background Effects */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_80%_50%,rgba(120,119,198,0.15),rgba(255,255,255,0))]"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-purple-600/5 to-indigo-600/5"></div>
       
       {/* Main Profile Container */}
-      <div className="relative z-10 max-w-sm mx-auto min-h-screen">
+      <div className="relative z-10 max-w-md mx-auto min-h-screen bg-slate-900/50 backdrop-blur-xl border-x border-slate-800/50">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 pt-8">
+        <div className="flex justify-between items-center p-6 pt-12 border-b border-slate-800/30">
           <h1 className="text-white text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
             AvatarTalk.bio
           </h1>
@@ -211,22 +212,14 @@ const ProfilePage = () => {
             <Button
               size="sm"
               variant="ghost"
-              className="text-white/70 hover:bg-white/10 hover:text-white rounded-full w-10 h-10 p-0"
+              className="text-white/70 hover:bg-white/10 hover:text-white rounded-full w-10 h-10 p-0 transition-all duration-300"
             >
               <Download className="w-4 h-4" />
             </Button>
             <Button
               size="sm"
-              variant="ghost"
-              className="text-white/70 hover:bg-white/10 hover:text-white rounded-full w-10 h-10 p-0"
-              onClick={() => setShowAvatarPreview(!showAvatarPreview)}
-            >
-              <Settings className="w-4 h-4" />
-            </Button>
-            <Button
-              size="sm"
               onClick={() => setIsShareOpen(true)}
-              className="neo-button-primary text-xs px-3 h-8"
+              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white text-xs px-4 py-2 rounded-full shadow-lg transition-all duration-300 hover:shadow-blue-500/25"
             >
               <Share2 className="w-3 h-3 mr-1" />
               Share
@@ -235,89 +228,98 @@ const ProfilePage = () => {
         </div>
 
         {/* Profile Section */}
-        <div className="px-6 pb-8 text-center relative">
-          {/* Avatar Section */}
-          <div className="mb-6 relative">
-            {showAvatarPreview ? (
-              <div className="flex flex-col items-center">
-                <div className="mb-4 relative">
-                  <Avatar3D
-                    isLarge={true}
-                    isTalking={isTalking}
-                    avatarStyle={avatarSettings?.avatar_type as any || 'realistic'}
-                    mood={avatarSettings?.avatar_mood as any || 'friendly'}
-                    onInteraction={() => setIsTalking(!isTalking)}
-                  />
-                </div>
-                
-                {/* Avatar Controls */}
-                <div className="flex flex-wrap gap-2 mb-4 justify-center">
-                  <select
-                    value={avatarSettings?.avatar_type || 'realistic'}
-                    onChange={(e) => handleAvatarSettingsChange('avatar_type', e.target.value)}
-                    className="neo-input text-xs py-1 px-2"
-                  >
-                    <option value="realistic" className="text-black">Realistic</option>
-                    <option value="cartoon" className="text-black">Cartoon</option>
-                    <option value="anime" className="text-black">Anime</option>
-                    <option value="minimal" className="text-black">Minimal</option>
-                  </select>
-                  
-                  <select
-                    value={avatarSettings?.avatar_mood || 'friendly'}
-                    onChange={(e) => handleAvatarSettingsChange('avatar_mood', e.target.value)}
-                    className="neo-input text-xs py-1 px-2"
-                  >
-                    <option value="professional" className="text-black">Professional</option>
-                    <option value="friendly" className="text-black">Friendly</option>
-                    <option value="mysterious" className="text-black">Mysterious</option>
-                  </select>
-                </div>
-                
-                <Button
-                  size="sm"
-                  className="neo-button-primary mb-4 text-xs"
-                  onClick={() => setShowAvatarPreview(false)}
-                >
-                  Use This Avatar
-                </Button>
-              </div>
-            ) : (
-              <div className="relative group cursor-pointer" onClick={() => setShowAvatarPreview(true)}>
-                <div className="relative mx-auto w-32 h-32 rounded-full overflow-hidden border-4 border-gradient-to-r from-blue-500 to-purple-500 p-1 avatar-glow floating-animation">
-                  <Avatar className="w-full h-full">
-                    <AvatarImage src={displayData.profileImage} alt="Profile" className="object-cover" />
-                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-2xl font-bold">
-                      {displayData.displayName.split(' ').map(n => n[0]).join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-                
-                {/* 3D Avatar indicator */}
-                <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                </div>
-              </div>
-            )}
-          </div>
-
+        <div className="px-6 py-8 text-center relative">
           {/* Name and Username */}
-          <div className="mb-4">
-            <h2 className="text-white text-3xl font-bold mb-2 gradient-text">
+          <div className="mb-6">
+            <div className="flex items-center justify-center mb-3">
+              <div className="relative">
+                <Avatar className="w-20 h-20 border-2 border-blue-400/30">
+                  <AvatarImage src={displayData.profileImage} alt="Profile" className="object-cover" />
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-xl font-bold">
+                    {displayData.displayName.split(' ').map(n => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
+                {/* Online indicator */}
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-slate-900 flex items-center justify-center">
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                </div>
+              </div>
+            </div>
+            <h2 className="text-white text-2xl font-bold mb-1">
               {displayData.displayName}
             </h2>
-            <p className="text-white/70 text-lg">@{displayData.username}</p>
+            <p className="text-blue-300 text-base mb-4">@{displayData.username}</p>
           </div>
 
           {/* Bio */}
-          <p className="text-white/90 text-base leading-relaxed mb-8 max-w-xs mx-auto">
+          <p className="text-white/80 text-sm leading-relaxed mb-8 px-4">
             {displayData.bio}
           </p>
 
+          {/* 3D Avatar Section */}
+          <div className="mb-8 relative">
+            <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/30 shadow-2xl">
+              {showAvatarPreview ? (
+                <div className="flex flex-col items-center">
+                  <div className="mb-4 relative">
+                    <Avatar3D
+                      isLarge={true}
+                      isTalking={isTalking}
+                      avatarStyle={avatarSettings?.avatar_type as any || 'realistic'}
+                      mood={avatarSettings?.avatar_mood as any || 'friendly'}
+                      onInteraction={() => setIsTalking(!isTalking)}
+                    />
+                  </div>
+                  
+                  {/* Avatar Controls */}
+                  <div className="flex flex-wrap gap-2 mb-4 justify-center">
+                    <select
+                      value={avatarSettings?.avatar_type || 'realistic'}
+                      onChange={(e) => handleAvatarSettingsChange('avatar_type', e.target.value)}
+                      className="bg-slate-800 text-white text-xs py-1 px-2 rounded border border-slate-600"
+                    >
+                      <option value="realistic">Realistic</option>
+                      <option value="cartoon">Cartoon</option>
+                      <option value="anime">Anime</option>
+                      <option value="minimal">Minimal</option>
+                    </select>
+                    
+                    <select
+                      value={avatarSettings?.avatar_mood || 'friendly'}
+                      onChange={(e) => handleAvatarSettingsChange('avatar_mood', e.target.value)}
+                      className="bg-slate-800 text-white text-xs py-1 px-2 rounded border border-slate-600"
+                    >
+                      <option value="professional">Professional</option>
+                      <option value="friendly">Friendly</option>
+                      <option value="mysterious">Mysterious</option>
+                    </select>
+                  </div>
+                  
+                  <Button
+                    size="sm"
+                    className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-4 py-2 rounded-full transition-all duration-300"
+                    onClick={() => setShowAvatarPreview(false)}
+                  >
+                    Use This Avatar
+                  </Button>
+                </div>
+              ) : (
+                <div className="aspect-video bg-gradient-to-br from-blue-900/30 to-purple-900/30 rounded-xl flex items-center justify-center cursor-pointer hover:from-blue-800/40 hover:to-purple-800/40 transition-all duration-300" onClick={() => setShowAvatarPreview(true)}>
+                  <div className="text-center">
+                    <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                      <Users className="w-8 h-8 text-white" />
+                    </div>
+                    <p className="text-white/80 text-sm">Click to view 3D Avatar</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Action Buttons */}
-          <div className="flex gap-3 mb-8 justify-center">
+          <div className="flex gap-3 mb-8 px-4">
             <Button
-              className="neo-button-primary flex-1 max-w-32"
+              className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-3 rounded-full font-medium shadow-lg transition-all duration-300 hover:shadow-blue-500/25"
               onClick={() => {
                 setActiveTab('chat');
                 setIsTalking(true);
@@ -328,27 +330,36 @@ const ProfilePage = () => {
             </Button>
             <Button
               onClick={() => setIsFollowing(!isFollowing)}
-              className={`neo-button-secondary flex-1 max-w-28 ${
-                isFollowing ? 'bg-white/10' : ''
+              className={`flex-1 py-3 rounded-full font-medium transition-all duration-300 ${
+                isFollowing 
+                  ? 'bg-slate-700 text-white border border-slate-600' 
+                  : 'bg-slate-800/50 text-white border border-slate-600 hover:bg-slate-700'
               }`}
             >
               {isFollowing ? 'Following' : 'Follow'}
             </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-12 h-12 rounded-full bg-slate-800/50 text-white hover:bg-slate-700 border border-slate-600"
+            >
+              <Users className="w-5 h-5" />
+            </Button>
           </div>
 
           {/* Stats */}
-          <div className="stats-grid mb-8">
-            <div className="stat-item">
-              <div className="stat-number">{displayData.stats.conversations}</div>
-              <div className="stat-label">Conversations</div>
+          <div className="grid grid-cols-3 gap-4 mb-8 px-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-white mb-1">{displayData.stats.conversations}</div>
+              <div className="text-white/60 text-xs">Total Conversations</div>
             </div>
-            <div className="stat-item">
-              <div className="stat-number">{displayData.stats.followers}</div>
-              <div className="stat-label">Followers</div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-white mb-1">{displayData.stats.followers.toLocaleString()}</div>
+              <div className="text-white/60 text-xs">Followers</div>
             </div>
-            <div className="stat-item">
-              <div className="stat-number">{displayData.stats.engagement}</div>
-              <div className="stat-label">Engagement</div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-white mb-1">{displayData.stats.engagement}</div>
+              <div className="text-white/60 text-xs">Engagement Score</div>
             </div>
           </div>
         </div>
@@ -356,60 +367,26 @@ const ProfilePage = () => {
         {/* Tabs Navigation */}
         <div className="px-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="tab-navigation mb-6">
-              <TabsTrigger value="posts" className="tab-trigger">
+            <TabsList className="grid w-full grid-cols-3 bg-slate-800/50 rounded-lg p-1 mb-6">
+              <TabsTrigger 
+                value="posts" 
+                className="text-white/70 data-[state=active]:bg-slate-700 data-[state=active]:text-white rounded-md transition-all duration-200"
+              >
                 Posts
               </TabsTrigger>
-              <TabsTrigger value="chat" className="tab-trigger">
+              <TabsTrigger 
+                value="chat" 
+                className="text-white/70 data-[state=active]:bg-slate-700 data-[state=active]:text-white rounded-md transition-all duration-200"
+              >
                 Chat
               </TabsTrigger>
-              <TabsTrigger value="gifts" className="tab-trigger">
-                Products
+              <TabsTrigger 
+                value="gifts" 
+                className="text-white/70 data-[state=active]:bg-slate-700 data-[state=active]:text-white rounded-md transition-all duration-200"
+              >
+                Projects/Gifts
               </TabsTrigger>
-            </div>
-
-            {/* Chat Input - Always Visible */}
-            <div className="mb-6">
-              <div className="relative">
-                <Input
-                  placeholder="Ask me anything..."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  className="neo-input pr-20"
-                />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="rounded-full w-8 h-8 p-0 text-white/70 hover:text-white hover:bg-white/10"
-                  >
-                    <Smile className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="rounded-full w-8 h-8 p-0 text-white/70 hover:text-white hover:bg-white/10"
-                    onClick={() => setIsTalking(!isTalking)}
-                  >
-                    <Mic className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Social Media Icons */}
-            <div className="social-icons mb-6">
-              {socialIcons.map(({ icon: Icon, url, color }, index) => (
-                <button
-                  key={index}
-                  className={`social-icon ${color}`}
-                  onClick={() => url && window.open(url, '_blank')}
-                >
-                  <Icon className="w-4 h-4" />
-                </button>
-              ))}
-            </div>
+            </TabsList>
 
             {/* Tab Contents */}
             <TabsContent value="posts" className="space-y-4 pb-6">
@@ -455,19 +432,69 @@ const ProfilePage = () => {
             </TabsContent>
 
             <TabsContent value="gifts" className="space-y-4 pb-6">
-              <Card className="neo-card">
+              <Card className="bg-slate-800/30 border-slate-700/30 backdrop-blur-sm">
                 <CardContent className="p-4 text-center">
                   <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
                     <MessageCircle className="w-6 h-6 text-blue-400" />
                   </div>
                   <h4 className="text-white font-medium mb-2">1-on-1 Consultation</h4>
                   <p className="text-white/70 text-sm mb-3">Personal AI consultation session</p>
-                  <Button className="neo-button-primary text-sm">
+                  <Button className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white text-sm px-6 py-2 rounded-full">
                     $99.99
                   </Button>
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {/* Chat Input - Always Visible */}
+            <div className="mb-6 px-6">
+              <div className="relative">
+                <Input
+                  placeholder="Ask me anything..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  className="bg-slate-800/50 border-slate-700/50 text-white placeholder:text-white/50 rounded-full py-3 pl-4 pr-16 focus:border-blue-500/50 focus:ring-blue-500/20"
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="rounded-full w-8 h-8 p-0 text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200"
+                  >
+                    <Smile className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="rounded-full w-8 h-8 p-0 text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200"
+                    onClick={() => setIsTalking(!isTalking)}
+                  >
+                    <Mic className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Social Media Icons */}
+            <div className="px-6 pb-8">
+              <div className="flex justify-center items-center gap-4 overflow-x-auto pb-2">
+                {socialIcons.map(({ icon: Icon, url, color }, index) => (
+                  <button
+                    key={index}
+                    className={`flex-shrink-0 w-10 h-10 rounded-full bg-slate-800/50 border border-slate-700/50 ${color} hover:bg-slate-700 transition-all duration-200 flex items-center justify-center`}
+                    onClick={() => url && window.open(url, '_blank')}
+                  >
+                    <Icon className="w-5 h-5" />
+                  </button>
+                ))}
+                <div className="w-8 h-8 rounded-full bg-slate-700/50 flex items-center justify-center">
+                  <div className="w-1 h-1 bg-white/40 rounded-full mx-0.5"></div>
+                  <div className="w-1 h-1 bg-white/40 rounded-full mx-0.5"></div>
+                  <div className="w-1 h-1 bg-white/40 rounded-full mx-0.5"></div>
+                </div>
+              </div>
+            </div>
           </Tabs>
         </div>
       </div>
