@@ -19,11 +19,16 @@ import {
   Linkedin,
   Instagram,
   Youtube,
-  EllipsisVertical
+  EllipsisVertical,
+  MicIcon,
+  Send
 } from 'lucide-react';
 import Avatar3D from '@/components/Avatar3D';
 import ShareModal from '@/components/ShareModal';
+import EmojiPicker from '@/components/EmojiPicker';
 import { supabase } from '@/integrations/supabase/client';
+import { useTTS } from '@/hooks/useTTS';
+import { useSTT } from '@/hooks/useSTT';
 
 const ProfilePage = () => {
   const { username } = useParams();
@@ -33,6 +38,7 @@ const ProfilePage = () => {
   const [showAvatarPreview, setShowAvatarPreview] = useState(true);
   const [isTalking, setIsTalking] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [profileData, setProfileData] = useState<any>(null);
   const [avatarSettings, setAvatarSettings] = useState<any>(null);
@@ -40,6 +46,16 @@ const ProfilePage = () => {
   const [userStats, setUserStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // TTS and STT hooks
+  const { speak, stop: stopTTS, isPlaying: isTTSPlaying } = useTTS();
+  const { 
+    startListening, 
+    stopListening, 
+    isListening, 
+    transcript, 
+    clearTranscript 
+  } = useSTT();
 
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -153,8 +169,26 @@ const ProfilePage = () => {
   const handleSendMessage = () => {
     if (message.trim()) {
       setIsTalking(true);
+      // Simulate response with TTS
+      speak(`Thank you for your message: ${message}`);
       setTimeout(() => setIsTalking(false), 3000);
       setMessage('');
+    }
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setMessage(prev => prev + emoji);
+  };
+
+  const handleVoiceInput = () => {
+    if (isListening) {
+      stopListening();
+      if (transcript) {
+        setMessage(transcript);
+        clearTranscript();
+      }
+    } else {
+      startListening({ continuous: false, interimResults: true });
     }
   };
 
@@ -205,102 +239,84 @@ const ProfilePage = () => {
       {/* Main Profile Container */}
       <div className="relative z-10 max-w-md mx-auto min-h-screen bg-slate-900/50 backdrop-blur-xl border-x border-slate-800/50 rounded-t-3xl md:rounded-none">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 pt-12">
-          <div className="flex items-center gap-4">
-            <div className="flex flex-col items-start">
-              <h2 className="text-white text-xl font-bold mb-1">
-                {displayData.displayName}
-              </h2>
-              <p className="text-blue-300 text-sm">@{displayData.username}</p>
-            </div>
-          </div>
-          <div className="flex gap-2 items-center">
+        <div className="flex justify-between items-start p-4 pt-8">
+          <div className="flex items-center gap-3">
             <div className="relative">
-              <Avatar className="w-16 h-16 border-2 border-blue-400/30">
+              <Avatar className="w-14 h-14 border-2 border-blue-400/30">
                 <AvatarImage src={displayData.profileImage} alt="Profile" className="object-cover" />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-lg font-bold">
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-sm font-bold">
                   {displayData.displayName.split(' ').map(n => n[0]).join('')}
                 </AvatarFallback>
               </Avatar>
               {/* Online indicator */}
-              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-slate-900 flex items-center justify-center">
-                <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 flex items-center justify-center">
+                <div className="w-1 h-1 bg-white rounded-full"></div>
               </div>
             </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-white/70 hover:bg-white/10 hover:text-white rounded-full w-8 h-8 p-0 transition-all duration-300"
-            >
-              <EllipsisVertical className="w-4 h-4" />
-            </Button>
+            <div className="flex flex-col">
+              <h2 className="text-white text-lg font-bold leading-tight">
+                {displayData.displayName}
+              </h2>
+              <p className="text-blue-300 text-sm leading-tight">@{displayData.username}</p>
+            </div>
           </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-white/70 hover:bg-white/10 hover:text-white rounded-full w-8 h-8 p-0 transition-all duration-300"
+          >
+            <EllipsisVertical className="w-4 h-4" />
+          </Button>
         </div>
 
         {/* Profile Section */}
-        <div className="px-6 py-4 relative">
+        <div className="px-4 py-2 relative">
 
           {/* Bio */}
-          <p className="text-white/80 text-sm leading-relaxed mb-8 px-4">
+          <p className="text-white/80 text-sm leading-relaxed mb-6 px-2">
             {displayData.bio}
           </p>
 
           {/* 3D Avatar Section */}
-          <div className="mb-8 relative">
-            <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/30 shadow-2xl">
+          <div className="mb-6 relative">
+            <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl p-4 border border-slate-700/30 shadow-2xl">
               <div className="flex flex-col items-center">
-                <div className="mb-4 relative">
+                <div className="mb-3 relative">
                   <Avatar3D
                     isLarge={true}
-                    isTalking={isTalking}
+                    isTalking={isTalking || isTTSPlaying}
                     avatarStyle={avatarSettings?.avatar_type as any || 'realistic'}
                     mood={avatarSettings?.avatar_mood as any || 'friendly'}
                     onInteraction={() => setIsTalking(!isTalking)}
                   />
-                </div>
-                
-                {/* Avatar Controls */}
-                <div className="flex flex-wrap gap-2 mb-4 justify-center">
-                  <select
-                    value={avatarSettings?.avatar_type || 'realistic'}
-                    onChange={(e) => handleAvatarSettingsChange('avatar_type', e.target.value)}
-                    className="bg-slate-800 text-white text-xs py-1 px-2 rounded border border-slate-600"
+                  {/* Talk to Me button on avatar */}
+                  <Button
+                    className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-blue-500/80 hover:bg-blue-600/80 text-white text-xs px-3 py-1 rounded-full backdrop-blur-sm border border-blue-400/30"
+                    onClick={() => {
+                      setActiveTab('chat');
+                      setIsTalking(true);
+                      speak("Hello! I'm ready to chat with you.");
+                      setTimeout(() => setIsTalking(false), 2000);
+                    }}
                   >
-                    <option value="realistic">Realistic</option>
-                    <option value="cartoon">Cartoon</option>
-                    <option value="anime">Anime</option>
-                    <option value="minimal">Minimal</option>
-                  </select>
-                  
-                  <select
-                    value={avatarSettings?.avatar_mood || 'friendly'}
-                    onChange={(e) => handleAvatarSettingsChange('avatar_mood', e.target.value)}
-                    className="bg-slate-800 text-white text-xs py-1 px-2 rounded border border-slate-600"
-                  >
-                    <option value="professional">Professional</option>
-                    <option value="friendly">Friendly</option>
-                    <option value="mysterious">Mysterious</option>
-                  </select>
+                    <MessageCircle className="w-3 h-3 mr-1" />
+                    Talk to Me
+                  </Button>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3 mb-8 px-4">
+          <div className="flex gap-2 mb-6 px-2">
             <Button
-              className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-3 rounded-full font-medium shadow-lg transition-all duration-300 hover:shadow-blue-500/25"
-              onClick={() => {
-                setActiveTab('chat');
-                setIsTalking(true);
-                setTimeout(() => setIsTalking(false), 2000);
-              }}
+              className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-2 rounded-full font-medium shadow-lg transition-all duration-300 text-sm"
             >
-              Talk to Me
+              Subscribe - $9.99/mo
             </Button>
             <Button
               onClick={() => setIsFollowing(!isFollowing)}
-              className={`flex-1 py-3 rounded-full font-medium transition-all duration-300 ${
+              className={`flex-1 py-2 rounded-full font-medium transition-all duration-300 text-sm ${
                 isFollowing 
                   ? 'bg-slate-700 text-white border border-slate-600' 
                   : 'bg-slate-800/50 text-white border border-slate-600 hover:bg-slate-700'
@@ -311,33 +327,33 @@ const ProfilePage = () => {
             <Button
               variant="ghost"
               size="icon"
-              className="w-12 h-12 rounded-full bg-slate-800/50 text-white hover:bg-slate-700 border border-slate-600"
+              className="w-10 h-10 rounded-full bg-slate-800/50 text-white hover:bg-slate-700 border border-slate-600"
             >
-              <Users className="w-5 h-5" />
+              <Users className="w-4 h-4" />
             </Button>
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 mb-8 px-4">
+          <div className="grid grid-cols-3 gap-3 mb-6 px-2">
             <div className="text-center">
-              <div className="text-2xl font-bold text-white mb-1">{displayData.stats.conversations}</div>
+              <div className="text-xl font-bold text-white">{displayData.stats.conversations}</div>
               <div className="text-white/60 text-xs">Total Conversations</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-white mb-1">{displayData.stats.followers.toLocaleString()}</div>
+              <div className="text-xl font-bold text-white">{displayData.stats.followers.toLocaleString()}</div>
               <div className="text-white/60 text-xs">Followers</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-white mb-1">{displayData.stats.engagement}</div>
+              <div className="text-xl font-bold text-white">{displayData.stats.engagement}</div>
               <div className="text-white/60 text-xs">Engagement Score</div>
             </div>
           </div>
         </div>
 
         {/* Tabs Navigation */}
-        <div className="px-6">
+        <div className="px-4">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-slate-800/50 rounded-lg p-1 mb-6">
+            <TabsList className="grid w-full grid-cols-3 bg-slate-800/50 rounded-lg p-1 mb-4">
               <TabsTrigger 
                 value="posts" 
                 className="text-white/70 data-[state=active]:bg-slate-700 data-[state=active]:text-white rounded-md transition-all duration-200"
@@ -354,7 +370,7 @@ const ProfilePage = () => {
                 value="gifts" 
                 className="text-white/70 data-[state=active]:bg-slate-700 data-[state=active]:text-white rounded-md transition-all duration-200"
               >
-                Projects/Gifts
+                Product
               </TabsTrigger>
             </TabsList>
 
@@ -437,64 +453,84 @@ const ProfilePage = () => {
             </TabsContent>
 
             {/* Chat Input - Always Visible */}
-            <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-900/95 backdrop-blur-xl border-t border-slate-800/50 p-4 rounded-t-3xl">
-              <div className="relative mb-4">
+            <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-900/95 backdrop-blur-xl border-t border-slate-800/50 p-4">
+              <div className="relative mb-3">
                 <Input
                   placeholder="Ask me anything..."
-                  value={message}
+                  value={message + (isListening ? ` ${transcript}` : '')}
                   onChange={(e) => setMessage(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  className="bg-slate-800/50 border-slate-700/50 text-white placeholder:text-white/50 rounded-full py-3 pl-4 pr-16 focus:border-blue-500/50 focus:ring-blue-500/20"
+                  className="bg-slate-800/50 border-slate-700/50 text-white placeholder:text-white/50 rounded-full py-2 pl-4 pr-20 focus:border-blue-500/50 focus:ring-blue-500/20"
                 />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1">
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
+                  <div className="relative">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="rounded-full w-8 h-8 p-0 text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200"
+                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    >
+                      <Smile className="w-4 h-4" />
+                    </Button>
+                    <EmojiPicker 
+                      isOpen={showEmojiPicker}
+                      onClose={() => setShowEmojiPicker(false)}
+                      onEmojiSelect={handleEmojiSelect}
+                    />
+                  </div>
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="rounded-full w-8 h-8 p-0 text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200"
+                    className={`rounded-full w-8 h-8 p-0 transition-all duration-200 ${
+                      isListening 
+                        ? 'text-red-500 hover:text-red-400 bg-red-500/20' 
+                        : 'text-white/60 hover:text-white hover:bg-white/10'
+                    }`}
+                    onClick={handleVoiceInput}
                   >
-                    <Smile className="w-4 h-4" />
+                    <Mic className="w-4 h-4" />
                   </Button>
                   <Button
                     size="sm"
                     variant="ghost"
                     className="rounded-full w-8 h-8 p-0 text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200"
-                    onClick={() => setIsTalking(!isTalking)}
+                    onClick={handleSendMessage}
                   >
-                    <Mic className="w-4 h-4" />
+                    <Send className="w-3 h-3" />
                   </Button>
                 </div>
               </div>
 
               {/* Social Media Icons */}
-              <div className="flex justify-center items-center gap-3 pb-2">
+              <div className="flex justify-center items-center gap-3 pb-1">
                 {socialIcons.map(({ icon: Icon, url, color }, index) => (
                   <button
                     key={index}
-                    className={`flex-shrink-0 w-9 h-9 rounded-full bg-slate-800/50 border border-slate-700/50 ${color} hover:bg-slate-700 transition-all duration-200 flex items-center justify-center`}
+                    className={`flex-shrink-0 w-8 h-8 rounded-full bg-slate-800/50 border border-slate-700/50 ${color} hover:bg-slate-700 transition-all duration-200 flex items-center justify-center`}
                     onClick={() => url && window.open(url, '_blank')}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-3 h-3" />
                   </button>
                 ))}
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="rounded-full w-9 h-9 p-0 text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200"
+                  className="rounded-full w-8 h-8 p-0 text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200"
                 >
-                  <EllipsisVertical className="w-4 h-4" />
+                  <EllipsisVertical className="w-3 h-3" />
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => setIsShareOpen(true)}
-                  className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-full w-9 h-9 p-0 shadow-lg transition-all duration-300"
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-full w-8 h-8 p-0 shadow-lg transition-all duration-300"
                 >
-                  <Share2 className="w-4 h-4" />
+                  <Share2 className="w-3 h-3" />
                 </Button>
               </div>
             </div>
             
             {/* Add bottom padding to account for fixed footer */}
-            <div className="h-32"></div>
+            <div className="h-24"></div>
           </Tabs>
         </div>
       </div>
