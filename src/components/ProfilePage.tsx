@@ -21,7 +21,9 @@ import {
   Youtube,
   EllipsisVertical,
   MicIcon,
-  Send
+  Send,
+  Sun,
+  Moon
 } from 'lucide-react';
 import Avatar3D from '@/components/Avatar3D';
 import ShareModal from '@/components/ShareModal';
@@ -46,6 +48,7 @@ const ProfilePage = () => {
   const [userStats, setUserStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDarkTheme, setIsDarkTheme] = useState(true);
 
   // TTS and STT hooks
   const { speak, stop: stopTTS, isPlaying: isTTSPlaying } = useTTS();
@@ -214,30 +217,69 @@ const ProfilePage = () => {
   };
 
   const socialIcons = [
-    { icon: Twitter, url: socialLinks?.twitter, color: 'text-blue-400' },
-    { icon: Linkedin, url: socialLinks?.linkedin, color: 'text-blue-600' },
-    { icon: Facebook, url: socialLinks?.facebook, color: 'text-blue-500' },
-    { icon: Instagram, url: socialLinks?.instagram, color: 'text-pink-500' },
-    { icon: Youtube, url: socialLinks?.youtube, color: 'text-red-500' },
+    { icon: Twitter, url: socialLinks?.twitter, color: isDarkTheme ? 'text-blue-400' : 'text-blue-600' },
+    { icon: Linkedin, url: socialLinks?.linkedin, color: isDarkTheme ? 'text-blue-600' : 'text-blue-700' },
+    { icon: Facebook, url: socialLinks?.facebook, color: isDarkTheme ? 'text-blue-500' : 'text-blue-600' },
+    { icon: Instagram, url: socialLinks?.instagram, color: isDarkTheme ? 'text-pink-500' : 'text-pink-600' },
+    { icon: Youtube, url: socialLinks?.youtube, color: isDarkTheme ? 'text-red-500' : 'text-red-600' },
   ];
+
+  const toggleTheme = () => {
+    setIsDarkTheme(!isDarkTheme);
+  };
+
+  // Theme-based styles
+  const themeStyles = {
+    background: isDarkTheme 
+      ? 'min-h-screen bg-gradient-to-b from-slate-900 via-blue-950 to-indigo-950' 
+      : 'min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50 to-purple-50',
+    container: isDarkTheme 
+      ? 'relative z-10 max-w-md mx-auto min-h-screen bg-slate-900/50 backdrop-blur-xl border-x border-slate-800/50' 
+      : 'relative z-10 max-w-md mx-auto min-h-screen bg-white/80 backdrop-blur-xl border-x border-gray-200/50',
+    text: isDarkTheme ? 'text-white' : 'text-gray-900',
+    textMuted: isDarkTheme ? 'text-white/70' : 'text-gray-600',
+    textSecondary: isDarkTheme ? 'text-blue-300' : 'text-blue-600',
+    bioText: isDarkTheme ? 'text-white/80' : 'text-gray-700',
+    card: isDarkTheme 
+      ? 'bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl p-4 border border-slate-700/30' 
+      : 'bg-gradient-to-br from-white/80 to-gray-50/80 backdrop-blur-sm rounded-2xl p-4 border border-gray-200/50',
+    input: isDarkTheme 
+      ? 'bg-slate-800/50 border-slate-700/50 text-white placeholder:text-white/50' 
+      : 'bg-white/80 border-gray-300/50 text-gray-900 placeholder:text-gray-500',
+    bottomSection: isDarkTheme 
+      ? 'bg-slate-900/95 backdrop-blur-xl border-t border-slate-800/50' 
+      : 'bg-white/95 backdrop-blur-xl border-t border-gray-200/50',
+    socialIcon: isDarkTheme 
+      ? 'bg-slate-800/50 border border-slate-700/50 hover:bg-slate-700' 
+      : 'bg-white/80 border border-gray-200/50 hover:bg-gray-100'
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading profile...</div>
+      <div className={`${themeStyles.background} flex items-center justify-center`}>
+        <div className={`${themeStyles.text} text-xl`}>Loading profile...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-blue-950 to-indigo-950 relative overflow-hidden">
+    <div className={themeStyles.background}>
       {/* Animated Background Effects */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]"></div>
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_80%_50%,rgba(120,119,198,0.15),rgba(255,255,255,0))]"></div>
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-purple-600/5 to-indigo-600/5"></div>
+      {isDarkTheme ? (
+        <>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_80%_50%,rgba(120,119,198,0.15),rgba(255,255,255,0))]"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-purple-600/5 to-indigo-600/5"></div>
+        </>
+      ) : (
+        <>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(59,130,246,0.2),rgba(255,255,255,0))]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_80%_50%,rgba(139,92,246,0.1),rgba(255,255,255,0))]"></div>
+        </>
+      )}
       
       {/* Main Profile Container */}
-      <div className="relative z-10 max-w-md mx-auto min-h-screen bg-slate-900/50 backdrop-blur-xl border-x border-slate-800/50 rounded-t-3xl md:rounded-none">
+      <div className={`${themeStyles.container} rounded-t-3xl md:rounded-none`}>
         {/* Header */}
         <div className="flex justify-between items-start p-4 pt-8">
           <div className="flex items-center gap-3">
@@ -254,19 +296,30 @@ const ProfilePage = () => {
               </div>
             </div>
             <div className="flex flex-col">
-              <h2 className="text-white text-lg font-bold leading-tight">
+              <h2 className={`${themeStyles.text} text-lg font-bold leading-tight`}>
                 {displayData.displayName}
               </h2>
-              <p className="text-blue-300 text-sm leading-tight">@{displayData.username}</p>
+              <p className={`${themeStyles.textSecondary} text-sm leading-tight`}>@{displayData.username}</p>
             </div>
           </div>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-white/70 hover:bg-white/10 hover:text-white rounded-full w-8 h-8 p-0 transition-all duration-300"
-          >
-            <EllipsisVertical className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* Theme Toggle Button */}
+            <Button
+              size="sm"
+              variant="ghost"
+              className={`${themeStyles.textMuted} hover:bg-white/10 hover:text-white rounded-full w-8 h-8 p-0 transition-all duration-300`}
+              onClick={toggleTheme}
+            >
+              {isDarkTheme ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className={`${themeStyles.textMuted} hover:bg-white/10 hover:text-white rounded-full w-8 h-8 p-0 transition-all duration-300`}
+            >
+              <EllipsisVertical className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Scrollable Content Area */}
@@ -274,13 +327,13 @@ const ProfilePage = () => {
           {/* Profile Section */}
           <div className="px-4 pb-2 relative">
             {/* Bio */}
-            <p className="text-white/80 text-sm leading-relaxed mb-4 px-2">
+            <p className={`${themeStyles.bioText} text-sm leading-relaxed mb-4 px-2`}>
               {displayData.bio}
             </p>
 
             {/* 3D Avatar Section */}
             <div className="mb-4 relative">
-              <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl p-4 border border-slate-700/30 shadow-2xl">
+              <div className={themeStyles.card}>
                 <div className="flex flex-col items-center">
                   <div className="mb-3 relative">
                     <Avatar3D
@@ -292,7 +345,11 @@ const ProfilePage = () => {
                     />
                     {/* Talk to Me button on avatar */}
                     <Button
-                      className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-blue-500/80 hover:bg-blue-600/80 text-white text-xs px-3 py-1 rounded-full backdrop-blur-sm border border-blue-400/30"
+                      className={`absolute bottom-2 left-1/2 transform -translate-x-1/2 ${
+                        isDarkTheme 
+                          ? 'bg-blue-500/80 hover:bg-blue-600/80 text-white border border-blue-400/30' 
+                          : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border border-blue-300/50'
+                      } text-xs px-3 py-1 rounded-full backdrop-blur-sm transition-all duration-300`}
                       onClick={() => {
                         setActiveTab('chat');
                         setIsTalking(true);
@@ -311,7 +368,11 @@ const ProfilePage = () => {
             {/* Action Buttons */}
             <div className="flex gap-2 mb-4 px-2">
               <Button
-                className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-2 rounded-full font-medium shadow-lg transition-all duration-300 text-sm"
+                className={`flex-1 ${
+                  isDarkTheme 
+                    ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700' 
+                    : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600'
+                } text-white py-2 rounded-full font-medium shadow-lg transition-all duration-300 text-sm`}
               >
                 Subscribe - $9.99/mo
               </Button>
@@ -319,8 +380,14 @@ const ProfilePage = () => {
                 onClick={() => setIsFollowing(!isFollowing)}
                 className={`flex-1 py-2 rounded-full font-medium transition-all duration-300 text-sm ${
                   isFollowing 
-                    ? 'bg-slate-700 text-white border border-slate-600' 
-                    : 'bg-slate-800/50 text-white border border-slate-600 hover:bg-slate-700'
+                    ? (isDarkTheme 
+                        ? 'bg-slate-700 text-white border border-slate-600' 
+                        : 'bg-gray-200 text-gray-800 border border-gray-300'
+                      )
+                    : (isDarkTheme 
+                        ? 'bg-slate-800/50 text-white border border-slate-600 hover:bg-slate-700' 
+                        : 'bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white border border-indigo-300'
+                      )
                 }`}
               >
                 {isFollowing ? 'Following' : 'Follow'}
@@ -328,7 +395,11 @@ const ProfilePage = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-10 h-10 rounded-full bg-slate-800/50 text-white hover:bg-slate-700 border border-slate-600"
+                className={`w-10 h-10 rounded-full ${
+                  isDarkTheme 
+                    ? 'bg-slate-800/50 text-white hover:bg-slate-700 border border-slate-600' 
+                    : 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white border border-pink-200'
+                }`}
               >
                 <Users className="w-4 h-4" />
               </Button>
@@ -337,16 +408,16 @@ const ProfilePage = () => {
             {/* Stats */}
             <div className="grid grid-cols-3 gap-3 mb-4 px-2">
               <div className="text-center">
-                <div className="text-xl font-bold text-white">{displayData.stats.conversations}</div>
-                <div className="text-white/60 text-xs">Total Conversations</div>
+                <div className={`text-xl font-bold ${themeStyles.text}`}>{displayData.stats.conversations}</div>
+                <div className={`${themeStyles.textMuted} text-xs`}>Total Conversations</div>
               </div>
               <div className="text-center">
-                <div className="text-xl font-bold text-white">{displayData.stats.followers.toLocaleString()}</div>
-                <div className="text-white/60 text-xs">Followers</div>
+                <div className={`text-xl font-bold ${themeStyles.text}`}>{displayData.stats.followers.toLocaleString()}</div>
+                <div className={`${themeStyles.textMuted} text-xs`}>Followers</div>
               </div>
               <div className="text-center">
-                <div className="text-xl font-bold text-white">{displayData.stats.engagement}</div>
-                <div className="text-white/60 text-xs">Engagement Score</div>
+                <div className={`text-xl font-bold ${themeStyles.text}`}>{displayData.stats.engagement}</div>
+                <div className={`${themeStyles.textMuted} text-xs`}>Engagement Score</div>
               </div>
             </div>
           </div>
@@ -354,22 +425,38 @@ const ProfilePage = () => {
           {/* Tabs Navigation */}
           <div className="px-4">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 bg-slate-800/50 rounded-lg p-1 mb-4">
+              <TabsList className={`grid w-full grid-cols-3 ${
+                isDarkTheme 
+                  ? 'bg-slate-800/50' 
+                  : 'bg-white/80 border border-gray-200/50'
+              } rounded-lg p-1 mb-4`}>
                 <TabsTrigger 
                   value="posts" 
-                  className="text-white/70 data-[state=active]:bg-slate-700 data-[state=active]:text-white rounded-md transition-all duration-200"
+                  className={`${
+                    isDarkTheme 
+                      ? 'text-white/70 data-[state=active]:bg-slate-700 data-[state=active]:text-white' 
+                      : 'text-gray-600 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white'
+                  } rounded-md transition-all duration-200`}
                 >
                   Posts
                 </TabsTrigger>
                 <TabsTrigger 
                   value="chat" 
-                  className="text-white/70 data-[state=active]:bg-slate-700 data-[state=active]:text-white rounded-md transition-all duration-200"
+                  className={`${
+                    isDarkTheme 
+                      ? 'text-white/70 data-[state=active]:bg-slate-700 data-[state=active]:text-white' 
+                      : 'text-gray-600 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white'
+                  } rounded-md transition-all duration-200`}
                 >
                   Chat
                 </TabsTrigger>
                 <TabsTrigger 
                   value="product" 
-                  className="text-white/70 data-[state=active]:bg-slate-700 data-[state=active]:text-white rounded-md transition-all duration-200"
+                  className={`${
+                    isDarkTheme 
+                      ? 'text-white/70 data-[state=active]:bg-slate-700 data-[state=active]:text-white' 
+                      : 'text-gray-600 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-teal-500 data-[state=active]:text-white'
+                  } rounded-md transition-all duration-200`}
                 >
                   Product
                 </TabsTrigger>
@@ -377,12 +464,20 @@ const ProfilePage = () => {
 
               {/* Tab Contents */}
               <TabsContent value="posts" className="space-y-4 pb-6">
-                <Card className="bg-slate-800/30 border-slate-700/30 backdrop-blur-sm">
+                <Card className={`${
+                  isDarkTheme 
+                    ? 'bg-slate-800/30 border-slate-700/30' 
+                    : 'bg-white/80 border-gray-200/50'
+                } backdrop-blur-sm`}>
                   <CardContent className="p-4">
-                    <p className="text-white/90 text-sm mb-3">
+                    <p className={`${
+                      isDarkTheme ? 'text-white/90' : 'text-gray-800'
+                    } text-sm mb-3`}>
                       Welcome to my AI avatar profile! I'm excited to connect and have meaningful conversations about technology and innovation.
                     </p>
-                    <div className="flex justify-between items-center text-white/60 text-xs">
+                    <div className={`flex justify-between items-center ${
+                      isDarkTheme ? 'text-white/60' : 'text-gray-500'
+                    } text-xs`}>
                       <span>2 hours ago</span>
                       <div className="flex gap-4">
                         <span className="flex items-center gap-1">
@@ -457,7 +552,7 @@ const ProfilePage = () => {
         </div>
 
         {/* Fixed Bottom Section - Always Visible */}
-        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-slate-900/95 backdrop-blur-xl border-t border-slate-800/50">
+        <div className={`fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md ${themeStyles.bottomSection}`}>
           {/* Chat Input - Always Visible */}
           <div className="p-4 pb-2">
             <div className="relative">
@@ -466,14 +561,18 @@ const ProfilePage = () => {
                 value={message + (isListening ? ` ${transcript}` : '')}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                className="bg-slate-800/50 border-slate-700/50 text-white placeholder:text-white/50 rounded-full py-2 pl-4 pr-20 focus:border-blue-500/50 focus:ring-blue-500/20"
+                className={`${themeStyles.input} rounded-full py-2 pl-4 pr-20 focus:border-blue-500/50 focus:ring-blue-500/20`}
               />
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
                 <div className="relative">
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="rounded-full w-8 h-8 p-0 text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200"
+                    className={`rounded-full w-8 h-8 p-0 ${
+                      isDarkTheme 
+                        ? 'text-white/60 hover:text-white hover:bg-white/10' 
+                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                    } transition-all duration-200`}
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                   >
                     <Smile className="w-4 h-4" />
@@ -490,7 +589,10 @@ const ProfilePage = () => {
                   className={`rounded-full w-8 h-8 p-0 transition-all duration-200 ${
                     isListening 
                       ? 'text-red-500 hover:text-red-400 bg-red-500/20' 
-                      : 'text-white/60 hover:text-white hover:bg-white/10'
+                      : (isDarkTheme 
+                          ? 'text-white/60 hover:text-white hover:bg-white/10' 
+                          : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                        )
                   }`}
                   onClick={handleVoiceInput}
                 >
@@ -499,7 +601,11 @@ const ProfilePage = () => {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="rounded-full w-8 h-8 p-0 text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200"
+                  className={`rounded-full w-8 h-8 p-0 ${
+                    isDarkTheme 
+                      ? 'text-white/60 hover:text-white hover:bg-white/10' 
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  } transition-all duration-200`}
                   onClick={handleSendMessage}
                 >
                   <Send className="w-3 h-3" />
@@ -513,7 +619,7 @@ const ProfilePage = () => {
             {socialIcons.map(({ icon: Icon, url, color }, index) => (
               <button
                 key={index}
-                className={`flex-shrink-0 w-8 h-8 rounded-full bg-slate-800/50 border border-slate-700/50 ${color} hover:bg-slate-700 transition-all duration-200 flex items-center justify-center`}
+                className={`flex-shrink-0 w-8 h-8 rounded-full ${themeStyles.socialIcon} ${color} transition-all duration-200 flex items-center justify-center`}
                 onClick={() => url && window.open(url, '_blank')}
               >
                 <Icon className="w-3 h-3" />
@@ -522,14 +628,22 @@ const ProfilePage = () => {
             <Button
               size="sm"
               variant="ghost"
-              className="rounded-full w-8 h-8 p-0 text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200"
+              className={`rounded-full w-8 h-8 p-0 ${
+                isDarkTheme 
+                  ? 'text-white/60 hover:text-white hover:bg-white/10' 
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              } transition-all duration-200`}
             >
               <EllipsisVertical className="w-3 h-3" />
             </Button>
             <Button
               size="sm"
               onClick={() => setIsShareOpen(true)}
-              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-full w-8 h-8 p-0 shadow-lg transition-all duration-300"
+              className={`${
+                isDarkTheme 
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600' 
+                  : 'bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600'
+              } text-white rounded-full w-8 h-8 p-0 shadow-lg transition-all duration-300`}
             >
               <Share2 className="w-3 h-3" />
             </Button>
