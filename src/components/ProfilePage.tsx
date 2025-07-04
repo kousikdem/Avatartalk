@@ -269,17 +269,17 @@ const ProfilePage = () => {
           </Button>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="pb-32 overflow-y-auto">
+        {/* Scrollable Content Area */}
+        <div className="pb-32 overflow-y-auto max-h-[calc(100vh-250px)]">
           {/* Profile Section */}
           <div className="px-4 pb-2 relative">
             {/* Bio */}
-            <p className="text-white/80 text-sm leading-relaxed mb-6 px-2">
+            <p className="text-white/80 text-sm leading-relaxed mb-4 px-2">
               {displayData.bio}
             </p>
 
             {/* 3D Avatar Section */}
-            <div className="mb-6 relative">
+            <div className="mb-4 relative">
               <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl p-4 border border-slate-700/30 shadow-2xl">
                 <div className="flex flex-col items-center">
                   <div className="mb-3 relative">
@@ -309,7 +309,7 @@ const ProfilePage = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-2 mb-6 px-2">
+            <div className="flex gap-2 mb-4 px-2">
               <Button
                 className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-2 rounded-full font-medium shadow-lg transition-all duration-300 text-sm"
               >
@@ -335,7 +335,7 @@ const ProfilePage = () => {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-3 mb-6 px-2">
+            <div className="grid grid-cols-3 gap-3 mb-4 px-2">
               <div className="text-center">
                 <div className="text-xl font-bold text-white">{displayData.stats.conversations}</div>
                 <div className="text-white/60 text-xs">Total Conversations</div>
@@ -377,7 +377,7 @@ const ProfilePage = () => {
 
               {/* Tab Contents */}
               <TabsContent value="posts" className="space-y-4 pb-6">
-                <Card className="neo-card">
+                <Card className="bg-slate-800/30 border-slate-700/30 backdrop-blur-sm">
                   <CardContent className="p-4">
                     <p className="text-white/90 text-sm mb-3">
                       Welcome to my AI avatar profile! I'm excited to connect and have meaningful conversations about technology and innovation.
@@ -456,9 +456,9 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        {/* Fixed Bottom Section */}
+        {/* Fixed Bottom Section - Always Visible */}
         <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-slate-900/95 backdrop-blur-xl border-t border-slate-800/50">
-          {/* Chat Input */}
+          {/* Chat Input - Always Visible */}
           <div className="p-4 pb-2">
             <div className="relative">
               <Input
@@ -508,7 +508,7 @@ const ProfilePage = () => {
             </div>
           </div>
 
-          {/* Social Media Icons */}
+          {/* Social Media Icons - Always Visible */}
           <div className="flex justify-center items-center gap-3 pb-4 px-4">
             {socialIcons.map(({ icon: Icon, url, color }, index) => (
               <button
