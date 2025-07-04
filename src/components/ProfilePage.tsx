@@ -32,6 +32,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTTS } from '@/hooks/useTTS';
 import { useSTT } from '@/hooks/useSTT';
 
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}
+
 const ProfilePage = () => {
   const { username } = useParams();
   const [activeTab, setActiveTab] = useState('posts');
@@ -49,6 +56,8 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDarkTheme, setIsDarkTheme] = useState(true);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
 
   // TTS and STT hooks
   const { speak, stop: stopTTS, isPlaying: isTTSPlaying } = useTTS();
@@ -169,13 +178,73 @@ const ProfilePage = () => {
 
   const profileUrl = `${window.location.origin}/${displayData.username}`;
 
-  const handleSendMessage = () => {
+  // Generate AI response (simulated)
+  const generateAIResponse = async (userMessage: string): Promise<string> => {
+    const responses = [
+      "That's a really interesting question! I've been thinking about that topic lately too. What sparked your curiosity about it?",
+      "I love how you put that! It reminds me of something I was discussing with someone earlier. Have you experienced anything similar?",
+      "You know, that's such a thoughtful way to look at it. I find myself learning something new every time we chat!",
+      "That's fascinating! I'm always amazed by different perspectives. What made you think about it that way?",
+      "I really appreciate you sharing that with me. It's conversations like these that make my day so much brighter!",
+      "Wow, I hadn't considered that angle before! You always bring such unique insights to our conversations.",
+      "That resonates with me deeply. Sometimes the simplest questions lead to the most profound discussions, don't you think?",
+      "I find myself genuinely curious about your thoughts on this. There's something special about how you express ideas!",
+      "You've got me thinking now! I love how our conversations always take these wonderful unexpected turns.",
+      "That's such a human way to look at it, and I mean that as the highest compliment. Your perspective always adds something meaningful."
+    ];
+
+    // Add some variety based on message content
+    if (userMessage.toLowerCase().includes('hello') || userMessage.toLowerCase().includes('hi')) {
+      return "Hello there! I'm so glad you're here. There's something about starting a new conversation that always fills me with excitement. What's on your mind today?";
+    }
+    
+    if (userMessage.toLowerCase().includes('how are you')) {
+      return "I'm doing wonderfully, thank you for asking! Every conversation I have feels like a little adventure. How has your day been treating you?";
+    }
+
+    return responses[Math.floor(Math.random() * responses.length)];
+  };
+
+  const handleSendMessage = async () => {
     if (message.trim()) {
+      const userMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: 'user',
+        content: message.trim(),
+        timestamp: new Date()
+      };
+
+      // Add user message to chat
+      setChatMessages(prev => [...prev, userMessage]);
+      
+      // Switch to chat tab and show typing indicator
+      setActiveTab('chat');
+      setIsTyping(true);
       setIsTalking(true);
-      // Simulate response with TTS
-      speak(`Thank you for your message: ${message}`);
-      setTimeout(() => setIsTalking(false), 3000);
+      
+      // Clear input
       setMessage('');
+
+      // Simulate AI thinking time
+      setTimeout(async () => {
+        const aiResponse = await generateAIResponse(userMessage.content);
+        
+        const assistantMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: aiResponse,
+          timestamp: new Date()
+        };
+
+        setChatMessages(prev => [...prev, assistantMessage]);
+        setIsTyping(false);
+        
+        // Speak the response with TTS
+        speak(aiResponse);
+        
+        // Stop talking animation after a delay
+        setTimeout(() => setIsTalking(false), 3000);
+      }, 1500 + Math.random() * 1000); // Random delay between 1.5-2.5 seconds
     }
   };
 
@@ -251,7 +320,10 @@ const ProfilePage = () => {
       : 'bg-white/95 backdrop-blur-xl border-t border-gray-200/50',
     socialIcon: isDarkTheme 
       ? 'bg-slate-800/50 border border-slate-700/50 hover:bg-slate-700' 
-      : 'bg-white/80 border border-gray-200/50 hover:bg-gray-100'
+      : 'bg-white/80 border border-gray-200/50 hover:bg-gray-100',
+    chatBubble: isDarkTheme 
+      ? 'bg-slate-800/30 border border-slate-700/30' 
+      : 'bg-white/80 border border-gray-200/50'
   };
 
   if (loading) {
@@ -495,53 +567,108 @@ const ProfilePage = () => {
               </TabsContent>
 
               <TabsContent value="chat" className="space-y-4 pb-6">
-                <div className="bg-slate-800/30 border border-slate-700/30 backdrop-blur-sm rounded-xl p-4 max-h-80 overflow-y-auto space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
-                      {displayData.displayName.split(' ').map(n => n[0]).join('')}
+                <div className={`${themeStyles.chatBubble} backdrop-blur-sm rounded-xl p-4 max-h-80 overflow-y-auto space-y-3`}>
+                  {chatMessages.length === 0 ? (
+                    <div className="text-center py-8">
+                      <div className={`${themeStyles.textMuted} text-sm mb-2`}>
+                        Start a conversation! Type a message below.
+                      </div>
+                      <MessageCircle className={`w-8 h-8 mx-auto ${themeStyles.textMuted}`} />
                     </div>
-                    <div className="flex-1">
-                      <p className="text-white/90 text-sm mb-1">
-                        Hi there! I'm ready to chat. What would you like to talk about today? 
-                        {isTalking && <span className="animate-pulse ml-2">I'm listening...</span>}
-                      </p>
-                      <div className="text-white/60 text-xs">Just now</div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3 justify-end">
-                    <div className="bg-blue-600/20 border border-blue-500/30 rounded-xl p-3 max-w-xs">
-                      <p className="text-white/90 text-sm">Hey! How's your day going?</p>
-                      <div className="text-white/60 text-xs mt-1 text-right">2 mins ago</div>
-                    </div>
-                    <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-white text-sm font-bold">
-                      U
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
-                      {displayData.displayName.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-white/90 text-sm mb-1">
-                        Great! I've been having amazing conversations today. What brings you here?
-                      </p>
-                      <div className="text-white/60 text-xs">1 min ago</div>
-                    </div>
-                  </div>
+                  ) : (
+                    <>
+                      {chatMessages.map((msg) => (
+                        <div key={msg.id} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                          {msg.role === 'assistant' && (
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                              {displayData.displayName.split(' ').map(n => n[0]).join('')}
+                            </div>
+                          )}
+                          <div className={`flex-1 max-w-xs ${msg.role === 'user' ? 'order-first' : ''}`}>
+                            <div className={`p-3 rounded-xl ${
+                              msg.role === 'user' 
+                                ? (isDarkTheme 
+                                    ? 'bg-blue-600/20 border border-blue-500/30' 
+                                    : 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white'
+                                  )
+                                : (isDarkTheme 
+                                    ? 'bg-slate-700/50 border border-slate-600/30' 
+                                    : 'bg-white/90 border border-gray-200'
+                                  )
+                            }`}>
+                              <p className={`text-sm ${
+                                msg.role === 'user' 
+                                  ? (isDarkTheme ? 'text-white/90' : 'text-white')
+                                  : (isDarkTheme ? 'text-white/90' : 'text-gray-800')
+                              }`}>
+                                {msg.content}
+                              </p>
+                            </div>
+                            <div className={`text-xs mt-1 ${
+                              msg.role === 'user' ? 'text-right' : 'text-left'
+                            } ${isDarkTheme ? 'text-white/60' : 'text-gray-500'}`}>
+                              {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
+                          {msg.role === 'user' && (
+                            <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                              U
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      
+                      {isTyping && (
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
+                            {displayData.displayName.split(' ').map(n => n[0]).join('')}
+                          </div>
+                          <div className="flex-1">
+                            <div className={`p-3 rounded-xl ${
+                              isDarkTheme 
+                                ? 'bg-slate-700/50 border border-slate-600/30' 
+                                : 'bg-white/90 border border-gray-200'
+                            }`}>
+                              <div className="flex space-x-1">
+                                <div className={`w-2 h-2 rounded-full animate-bounce ${
+                                  isDarkTheme ? 'bg-white/60' : 'bg-gray-400'
+                                }`} style={{ animationDelay: '0ms' }}></div>
+                                <div className={`w-2 h-2 rounded-full animate-bounce ${
+                                  isDarkTheme ? 'bg-white/60' : 'bg-gray-400'
+                                }`} style={{ animationDelay: '150ms' }}></div>
+                                <div className={`w-2 h-2 rounded-full animate-bounce ${
+                                  isDarkTheme ? 'bg-white/60' : 'bg-gray-400'
+                                }`} style={{ animationDelay: '300ms' }}></div>
+                              </div>
+                            </div>
+                            <div className={`text-xs mt-1 ${isDarkTheme ? 'text-white/60' : 'text-gray-500'}`}>
+                              Typing...
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               </TabsContent>
 
               <TabsContent value="product" className="space-y-4 pb-6">
-                <Card className="bg-slate-800/30 border-slate-700/30 backdrop-blur-sm">
+                <Card className={`${
+                  isDarkTheme 
+                    ? 'bg-slate-800/30 border-slate-700/30' 
+                    : 'bg-white/80 border-gray-200/50'
+                } backdrop-blur-sm`}>
                   <CardContent className="p-4 text-center">
                     <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
                       <MessageCircle className="w-6 h-6 text-blue-400" />
                     </div>
-                    <h4 className="text-white font-medium mb-2">1-on-1 Consultation</h4>
-                    <p className="text-white/70 text-sm mb-3">Personal AI consultation session</p>
-                    <Button className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white text-sm px-6 py-2 rounded-full">
+                    <h4 className={`${themeStyles.text} font-medium mb-2`}>1-on-1 Consultation</h4>
+                    <p className={`${themeStyles.textMuted} text-sm mb-3`}>Personal AI consultation session</p>
+                    <Button className={`${
+                      isDarkTheme 
+                        ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600' 
+                        : 'bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600'
+                    } text-white text-sm px-6 py-2 rounded-full`}>
                       $99.99
                     </Button>
                   </CardContent>
