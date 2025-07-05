@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import Avatar3D from './Avatar3D';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useProfileManager } from '@/hooks/useProfileManager';
+import { useAvatarSettings } from '@/hooks/useAvatarSettings';
 import { 
   User, Palette, Volume2, MessageSquare, Link, BarChart3, Settings,
   Eye, EyeOff, Plus, Youtube, Instagram, Shield, Bell, Globe, Trash2,
@@ -29,17 +29,6 @@ import {
 type AvatarStyle = 'realistic' | 'cartoon' | 'anime' | 'minimal';
 type AvatarMood = 'professional' | 'friendly' | 'mysterious';
 
-interface ProfileData {
-  display_name: string;
-  username: string;
-  bio: string;
-  full_name: string;
-  email: string;
-  gender: string;
-  age: number;
-  profession: string;
-}
-
 const EnhancedDashboard = () => {
   const [isPublic, setIsPublic] = useState(true);
   const [personality, setPersonality] = useState([50]);
@@ -52,19 +41,13 @@ const EnhancedDashboard = () => {
   const [avatarMood, setAvatarMood] = useState<AvatarMood>('friendly');
   const [isVoiceRecording, setIsVoiceRecording] = useState(false);
   const [setupProgress, setSetupProgress] = useState(85);
-  const [profileData, setProfileData] = useState<ProfileData>({
-    display_name: '',
-    username: '',
-    bio: '',
-    full_name: '',
-    email: '',
-    gender: '',
-    age: 18,
-    profession: ''
-  });
   const [customProfession, setCustomProfession] = useState('');
   const [showCustomProfession, setShowCustomProfession] = useState(false);
   const { toast } = useToast();
+
+  // Use the profile manager hook
+  const { profileData, loading, saving, updateField } = useProfileManager();
+  const { settings: avatarSettings, updateSetting } = useAvatarSettings();
 
   const genderOptions = [
     { value: 'male', label: 'Male', icon: UserCheck },
@@ -118,87 +101,39 @@ const EnhancedDashboard = () => {
     { name: 'Mysterious Advisor', icon: Brain, mood: 'mysterious' as AvatarMood },
   ];
 
-  useEffect(() => {
-    loadProfileData();
-  }, []);
-
-  const loadProfileData = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        
-        if (profile) {
-          setProfileData({
-            display_name: profile.display_name || '',
-            username: profile.username || '',
-            bio: profile.bio || '',
-            full_name: profile.full_name || '',
-            email: profile.email || user.email || '',
-            gender: profile.gender || '',
-            age: profile.age || 18,
-            profession: profile.profession || ''
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error loading profile:', error);
-    }
-  };
-
-  const saveProfileData = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const updateData = {
-          ...profileData,
-          profession: showCustomProfession ? customProfession : profileData.profession,
-          updated_at: new Date().toISOString()
-        };
-
-        const { error } = await supabase
-          .from('profiles')
-          .upsert({ id: user.id, ...updateData });
-
-        if (error) throw error;
-
-        toast({
-          title: "Profile Updated",
-          description: "Your profile has been saved successfully.",
-        });
-      }
-    } catch (error) {
-      console.error('Error saving profile:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save profile. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
   const handleVoiceTest = () => {
     setIsTalking(true);
     setTimeout(() => setIsTalking(false), 3000);
   };
 
-  const handleInputChange = (field: keyof ProfileData, value: string | number) => {
-    setProfileData(prev => ({ ...prev, [field]: value }));
-  };
-
   const handleProfessionChange = (value: string) => {
     if (value === 'other') {
       setShowCustomProfession(true);
-      setProfileData(prev => ({ ...prev, profession: '' }));
+      updateField('profession', '');
     } else {
       setShowCustomProfession(false);
-      setProfileData(prev => ({ ...prev, profession: value }));
+      updateField('profession', value);
     }
   };
+
+  const handleCustomProfessionSave = () => {
+    if (customProfession.trim()) {
+      updateField('profession', customProfession.trim());
+      setShowCustomProfession(false);
+      setCustomProfession('');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white pt-20 pb-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white pt-20 pb-8">
@@ -376,7 +311,7 @@ const EnhancedDashboard = () => {
                         <Input 
                           id="fullName" 
                           value={profileData.full_name}
-                          onChange={(e) => handleInputChange('full_name', e.target.value)}
+                          onChange={(e) => updateField('full_name', e.target.value)}
                           className="bg-white border-gray-300 text-gray-800 placeholder-gray-500"
                           placeholder="Enter your full name"
                         />
@@ -386,7 +321,7 @@ const EnhancedDashboard = () => {
                         <Input 
                           id="displayName" 
                           value={profileData.display_name}
-                          onChange={(e) => handleInputChange('display_name', e.target.value)}
+                          onChange={(e) => updateField('display_name', e.target.value)}
                           className="bg-white border-gray-300 text-gray-800 placeholder-gray-500"
                           placeholder="Alex Digital"
                         />
@@ -403,7 +338,7 @@ const EnhancedDashboard = () => {
                           <Input 
                             id="username" 
                             value={profileData.username}
-                            onChange={(e) => handleInputChange('username', e.target.value)}
+                            onChange={(e) => updateField('username', e.target.value)}
                             className="rounded-l-none bg-white border-gray-300 text-gray-800"
                             placeholder="alexdigital"
                           />
@@ -415,7 +350,7 @@ const EnhancedDashboard = () => {
                           id="email" 
                           type="email"
                           value={profileData.email}
-                          onChange={(e) => handleInputChange('email', e.target.value)}
+                          onChange={(e) => updateField('email', e.target.value)}
                           className="bg-white border-gray-300 text-gray-800 placeholder-gray-500"
                           placeholder="alex@example.com"
                         />
@@ -425,7 +360,7 @@ const EnhancedDashboard = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <Label className="text-gray-700 mb-2 block">Gender</Label>
-                        <Select value={profileData.gender} onValueChange={(value) => handleInputChange('gender', value)}>
+                        <Select value={profileData.gender} onValueChange={(value) => updateField('gender', value)}>
                           <SelectTrigger className="bg-white border-gray-300 text-gray-800">
                             <SelectValue placeholder="Select gender" />
                           </SelectTrigger>
@@ -449,7 +384,7 @@ const EnhancedDashboard = () => {
                           min="13"
                           max="120"
                           value={profileData.age}
-                          onChange={(e) => handleInputChange('age', parseInt(e.target.value) || 18)}
+                          onChange={(e) => updateField('age', parseInt(e.target.value) || 18)}
                           className="bg-white border-gray-300 text-gray-800"
                         />
                       </div>
@@ -477,13 +412,20 @@ const EnhancedDashboard = () => {
                       </Select>
                       
                       {showCustomProfession && (
-                        <div className="mt-3">
+                        <div className="mt-3 flex gap-2">
                           <Input 
                             value={customProfession}
                             onChange={(e) => setCustomProfession(e.target.value)}
                             placeholder="Enter your profession"
                             className="bg-white border-gray-300 text-gray-800"
                           />
+                          <Button 
+                            onClick={handleCustomProfessionSave}
+                            disabled={!customProfession.trim()}
+                            className="bg-blue-500 hover:bg-blue-600 text-white"
+                          >
+                            Save
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -493,7 +435,7 @@ const EnhancedDashboard = () => {
                       <Textarea 
                         id="bio" 
                         value={profileData.bio}
-                        onChange={(e) => handleInputChange('bio', e.target.value)}
+                        onChange={(e) => updateField('bio', e.target.value)}
                         className="bg-white border-gray-300 text-gray-800 placeholder-gray-500"
                         rows={3}
                         maxLength={160}
@@ -502,16 +444,6 @@ const EnhancedDashboard = () => {
                       <div className="text-sm text-gray-500 mt-1">
                         {profileData.bio.length}/160 characters
                       </div>
-                    </div>
-
-                    <div className="flex justify-end">
-                      <Button 
-                        onClick={saveProfileData}
-                        className="bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600"
-                      >
-                        <Settings className="w-4 h-4 mr-2" />
-                        Save Profile
-                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -530,9 +462,9 @@ const EnhancedDashboard = () => {
                         {(['realistic', 'cartoon', 'anime', 'minimal'] as AvatarStyle[]).map((style) => (
                           <Button
                             key={style}
-                            variant={avatarStyle === style ? "default" : "outline"}
-                            className={`h-20 ${avatarStyle === style ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
-                            onClick={() => setAvatarStyle(style)}
+                            variant={avatarSettings?.avatar_type === style ? "default" : "outline"}
+                            className={`h-20 ${avatarSettings?.avatar_type === style ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                            onClick={() => updateSetting('avatar_type', style)}
                           >
                             <div className="text-center">
                               <div className="capitalize font-medium">{style}</div>
@@ -548,9 +480,9 @@ const EnhancedDashboard = () => {
                         {personalityTemplates.map((template) => (
                           <Button
                             key={template.name}
-                            variant={avatarMood === template.mood ? "default" : "outline"}
-                            className={`p-4 h-auto justify-start ${avatarMood === template.mood ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
-                            onClick={() => setAvatarMood(template.mood)}
+                            variant={avatarSettings?.avatar_mood === template.mood ? "default" : "outline"}
+                            className={`p-4 h-auto justify-start ${avatarSettings?.avatar_mood === template.mood ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                            onClick={() => updateSetting('avatar_mood', template.mood)}
                           >
                             <template.icon className="w-5 h-5 mr-3" />
                             <div className="text-left">
