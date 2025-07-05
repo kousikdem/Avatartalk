@@ -12,15 +12,33 @@ import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import Avatar3D from './Avatar3D';
 import { motion } from 'framer-motion';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   User, Palette, Volume2, MessageSquare, Link, BarChart3, Settings,
   Eye, EyeOff, Plus, Youtube, Instagram, Shield, Bell, Globe, Trash2,
   Download, Mic, Play, Pause, Copy, QrCode, Share2, Moon, Sun,
-  Zap, Brain, Heart, Smile, Briefcase, Gamepad2, Sparkles, Upload, Image
+  Zap, Brain, Heart, Smile, Briefcase, Gamepad2, Sparkles,
+  Users, Calendar, Clock, MapPin, Phone, Mail, Camera, Video,
+  Music, Book, Palette as PaletteIcon, Code, Wrench, Stethoscope,
+  GraduationCap, Car, Utensils, Scissors, Building, Hammer,
+  Shirt, TreePine, Plane, Home, ShoppingBag, Target, Trophy,
+  PenTool, Calculator, Microscope, Baby, UserCheck
 } from 'lucide-react';
 
 type AvatarStyle = 'realistic' | 'cartoon' | 'anime' | 'minimal';
 type AvatarMood = 'professional' | 'friendly' | 'mysterious';
+
+interface ProfileData {
+  display_name: string;
+  username: string;
+  bio: string;
+  full_name: string;
+  email: string;
+  gender: string;
+  age: number;
+  profession: string;
+}
 
 const EnhancedDashboard = () => {
   const [isPublic, setIsPublic] = useState(true);
@@ -34,7 +52,56 @@ const EnhancedDashboard = () => {
   const [avatarMood, setAvatarMood] = useState<AvatarMood>('friendly');
   const [isVoiceRecording, setIsVoiceRecording] = useState(false);
   const [setupProgress, setSetupProgress] = useState(85);
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [profileData, setProfileData] = useState<ProfileData>({
+    display_name: '',
+    username: '',
+    bio: '',
+    full_name: '',
+    email: '',
+    gender: '',
+    age: 18,
+    profession: ''
+  });
+  const [customProfession, setCustomProfession] = useState('');
+  const [showCustomProfession, setShowCustomProfession] = useState(false);
+  const { toast } = useToast();
+
+  const genderOptions = [
+    { value: 'male', label: 'Male', icon: UserCheck },
+    { value: 'female', label: 'Female', icon: Users },
+    { value: 'non-binary', label: 'Non-binary', icon: User },
+    { value: 'prefer-not-to-say', label: 'Prefer not to say', icon: Shield }
+  ];
+
+  const professionOptions = [
+    { value: 'developer', label: 'Developer', icon: Code },
+    { value: 'designer', label: 'Designer', icon: PaletteIcon },
+    { value: 'doctor', label: 'Doctor', icon: Stethoscope },
+    { value: 'teacher', label: 'Teacher', icon: GraduationCap },
+    { value: 'engineer', label: 'Engineer', icon: Wrench },
+    { value: 'artist', label: 'Artist', icon: Palette },
+    { value: 'musician', label: 'Musician', icon: Music },
+    { value: 'writer', label: 'Writer', icon: Book },
+    { value: 'photographer', label: 'Photographer', icon: Camera },
+    { value: 'filmmaker', label: 'Filmmaker', icon: Video },
+    { value: 'chef', label: 'Chef', icon: Utensils },
+    { value: 'mechanic', label: 'Mechanic', icon: Car },
+    { value: 'hairstylist', label: 'Hairstylist', icon: Scissors },
+    { value: 'architect', label: 'Architect', icon: Building },
+    { value: 'carpenter', label: 'Carpenter', icon: Hammer },
+    { value: 'fashion-designer', label: 'Fashion Designer', icon: Shirt },
+    { value: 'travel-agent', label: 'Travel Agent', icon: Plane },
+    { value: 'real-estate', label: 'Real Estate Agent', icon: Home },
+    { value: 'marketer', label: 'Marketer', icon: Target },
+    { value: 'sales', label: 'Sales Professional', icon: ShoppingBag },
+    { value: 'athlete', label: 'Athlete', icon: Trophy },
+    { value: 'consultant', label: 'Consultant', icon: Briefcase },
+    { value: 'accountant', label: 'Accountant', icon: Calculator },
+    { value: 'scientist', label: 'Scientist', icon: Microscope },
+    { value: 'nurse', label: 'Nurse', icon: Heart },
+    { value: 'childcare', label: 'Childcare Worker', icon: Baby },
+    { value: 'other', label: 'Other', icon: Plus }
+  ];
 
   const socialPlatforms = [
     { name: 'YouTube', icon: Youtube, color: 'text-red-500', url: '' },
@@ -51,25 +118,86 @@ const EnhancedDashboard = () => {
     { name: 'Mysterious Advisor', icon: Brain, mood: 'mysterious' as AvatarMood },
   ];
 
+  useEffect(() => {
+    loadProfileData();
+  }, []);
+
+  const loadProfileData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (profile) {
+          setProfileData({
+            display_name: profile.display_name || '',
+            username: profile.username || '',
+            bio: profile.bio || '',
+            full_name: profile.full_name || '',
+            email: profile.email || user.email || '',
+            gender: profile.gender || '',
+            age: profile.age || 18,
+            profession: profile.profession || ''
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    }
+  };
+
+  const saveProfileData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const updateData = {
+          ...profileData,
+          profession: showCustomProfession ? customProfession : profileData.profession,
+          updated_at: new Date().toISOString()
+        };
+
+        const { error } = await supabase
+          .from('profiles')
+          .upsert({ id: user.id, ...updateData });
+
+        if (error) throw error;
+
+        toast({
+          title: "Profile Updated",
+          description: "Your profile has been saved successfully.",
+        });
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save profile. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleVoiceTest = () => {
     setIsTalking(true);
     setTimeout(() => setIsTalking(false), 3000);
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setUploadedImage(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleInputChange = (field: keyof ProfileData, value: string | number) => {
+    setProfileData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleCreateAvatar = () => {
-    // Avatar creation logic will be implemented here
-    console.log('Creating avatar with uploaded image:', uploadedImage);
+  const handleProfessionChange = (value: string) => {
+    if (value === 'other') {
+      setShowCustomProfession(true);
+      setProfileData(prev => ({ ...prev, profession: '' }));
+    } else {
+      setShowCustomProfession(false);
+      setProfileData(prev => ({ ...prev, profession: value }));
+    }
   };
 
   return (
@@ -165,44 +293,6 @@ const EnhancedDashboard = () => {
                       Share
                     </Button>
                   </div>
-
-                  {/* Avatar Creation Section */}
-                  <div className="mt-4 space-y-3 border-t pt-4">
-                    <div className="space-y-2">
-                      <Label className="text-gray-700 text-sm font-medium">Upload Image to Create Avatar</Label>
-                      <div className="flex items-center space-x-2">
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className="flex-1 text-sm border-gray-300"
-                        />
-                        <Button variant="outline" size="sm" className="border-gray-300">
-                          <Upload className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {uploadedImage && (
-                      <div className="text-center">
-                        <img 
-                          src={uploadedImage} 
-                          alt="Uploaded" 
-                          className="w-16 h-16 rounded-full mx-auto mb-2 object-cover border-2 border-blue-200"
-                        />
-                        <p className="text-xs text-gray-600">Image uploaded successfully</p>
-                      </div>
-                    )}
-                    
-                    <Button 
-                      onClick={handleCreateAvatar}
-                      disabled={!uploadedImage}
-                      className="w-full gradient-button-alt disabled:from-gray-300 disabled:to-gray-400"
-                    >
-                      <Image className="w-4 h-4 mr-2" />
-                      Create Avatar
-                    </Button>
-                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -277,18 +367,33 @@ const EnhancedDashboard = () => {
               <TabsContent value="profile" className="space-y-6">
                 <Card className="bg-white border-2 border-blue-200 shadow-lg">
                   <CardHeader>
-                    <CardTitle className="text-gray-800">Identity & Branding</CardTitle>
+                    <CardTitle className="text-gray-800">Personal Information</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
+                        <Label htmlFor="fullName" className="text-gray-700">Full Name</Label>
+                        <Input 
+                          id="fullName" 
+                          value={profileData.full_name}
+                          onChange={(e) => handleInputChange('full_name', e.target.value)}
+                          className="bg-white border-gray-300 text-gray-800 placeholder-gray-500"
+                          placeholder="Enter your full name"
+                        />
+                      </div>
+                      <div>
                         <Label htmlFor="displayName" className="text-gray-700">Display Name</Label>
                         <Input 
                           id="displayName" 
-                          defaultValue="Alex Digital" 
+                          value={profileData.display_name}
+                          onChange={(e) => handleInputChange('display_name', e.target.value)}
                           className="bg-white border-gray-300 text-gray-800 placeholder-gray-500"
+                          placeholder="Alex Digital"
                         />
                       </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <Label htmlFor="username" className="text-gray-700">Custom URL</Label>
                         <div className="flex">
@@ -297,39 +402,116 @@ const EnhancedDashboard = () => {
                           </span>
                           <Input 
                             id="username" 
-                            defaultValue="alexdigital" 
+                            value={profileData.username}
+                            onChange={(e) => handleInputChange('username', e.target.value)}
                             className="rounded-l-none bg-white border-gray-300 text-gray-800"
+                            placeholder="alexdigital"
                           />
                         </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="email" className="text-gray-700">Email</Label>
+                        <Input 
+                          id="email" 
+                          type="email"
+                          value={profileData.email}
+                          onChange={(e) => handleInputChange('email', e.target.value)}
+                          className="bg-white border-gray-300 text-gray-800 placeholder-gray-500"
+                          placeholder="alex@example.com"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <Label className="text-gray-700 mb-2 block">Gender</Label>
+                        <Select value={profileData.gender} onValueChange={(value) => handleInputChange('gender', value)}>
+                          <SelectTrigger className="bg-white border-gray-300 text-gray-800">
+                            <SelectValue placeholder="Select gender" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white border-gray-300">
+                            {genderOptions.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                <div className="flex items-center">
+                                  <option.icon className="w-4 h-4 mr-2" />
+                                  {option.label}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="age" className="text-gray-700">Age</Label>
+                        <Input 
+                          id="age" 
+                          type="number"
+                          min="13"
+                          max="120"
+                          value={profileData.age}
+                          onChange={(e) => handleInputChange('age', parseInt(e.target.value) || 18)}
+                          className="bg-white border-gray-300 text-gray-800"
+                        />
                       </div>
                     </div>
                     
                     <div>
-                      <Label htmlFor="role" className="text-gray-700">Role/Profession</Label>
-                      <Select defaultValue="creator">
+                      <Label className="text-gray-700 mb-2 block">Profession</Label>
+                      <Select 
+                        value={showCustomProfession ? 'other' : profileData.profession} 
+                        onValueChange={handleProfessionChange}
+                      >
                         <SelectTrigger className="bg-white border-gray-300 text-gray-800">
-                          <SelectValue />
+                          <SelectValue placeholder="Select your profession" />
                         </SelectTrigger>
-                        <SelectContent className="bg-white border-gray-300">
-                          <SelectItem value="creator">Creator</SelectItem>
-                          <SelectItem value="coach">Life Coach</SelectItem>
-                          <SelectItem value="artist">Artist</SelectItem>
-                          <SelectItem value="consultant">Consultant</SelectItem>
-                          <SelectItem value="educator">Educator</SelectItem>
-                          <SelectItem value="influencer">Influencer</SelectItem>
+                        <SelectContent className="bg-white border-gray-300 max-h-60">
+                          {professionOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              <div className="flex items-center">
+                                <option.icon className="w-4 h-4 mr-2" />
+                                {option.label}
+                              </div>
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
+                      
+                      {showCustomProfession && (
+                        <div className="mt-3">
+                          <Input 
+                            value={customProfession}
+                            onChange={(e) => setCustomProfession(e.target.value)}
+                            placeholder="Enter your profession"
+                            className="bg-white border-gray-300 text-gray-800"
+                          />
+                        </div>
+                      )}
                     </div>
                     
                     <div>
                       <Label htmlFor="bio" className="text-gray-700">Bio (160 chars max)</Label>
                       <Textarea 
                         id="bio" 
-                        defaultValue="AI-powered digital creator helping people unlock their potential 🚀"
+                        value={profileData.bio}
+                        onChange={(e) => handleInputChange('bio', e.target.value)}
                         className="bg-white border-gray-300 text-gray-800 placeholder-gray-500"
                         rows={3}
                         maxLength={160}
+                        placeholder="AI-powered digital creator helping people unlock their potential 🚀"
                       />
+                      <div className="text-sm text-gray-500 mt-1">
+                        {profileData.bio.length}/160 characters
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <Button 
+                        onClick={saveProfileData}
+                        className="bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600"
+                      >
+                        <Settings className="w-4 h-4 mr-2" />
+                        Save Profile
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
