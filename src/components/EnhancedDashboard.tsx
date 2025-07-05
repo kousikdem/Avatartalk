@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import Avatar3D from './Avatar3D';
+import ProfilePictureUpload from './ProfilePictureUpload';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { useProfileManager } from '@/hooks/useProfileManager';
@@ -46,7 +47,7 @@ const EnhancedDashboard = () => {
   const { toast } = useToast();
 
   // Use the profile manager hook
-  const { profileData, loading, saving, updateField } = useProfileManager();
+  const { profileData, loading, saving, updateField, updateProfilePicture } = useProfileManager();
   const { settings: avatarSettings, updateSetting } = useAvatarSettings();
 
   const genderOptions = [
@@ -305,6 +306,12 @@ const EnhancedDashboard = () => {
                     <CardTitle className="text-gray-800">Personal Information</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
+                    <ProfilePictureUpload
+                      currentImageUrl={profileData.profile_pic_url}
+                      onImageUpdate={updateProfilePicture}
+                      displayName={profileData.display_name || profileData.full_name}
+                    />
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <Label htmlFor="fullName" className="text-gray-700">Full Name</Label>

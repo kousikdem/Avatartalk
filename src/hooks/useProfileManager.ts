@@ -12,6 +12,7 @@ interface ProfileData {
   gender: string;
   age: number;
   profession: string;
+  profile_pic_url?: string;
 }
 
 export const useProfileManager = () => {
@@ -23,7 +24,8 @@ export const useProfileManager = () => {
     email: '',
     gender: '',
     age: 18,
-    profession: ''
+    profession: '',
+    profile_pic_url: ''
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -49,7 +51,8 @@ export const useProfileManager = () => {
             email: profile.email || user.email || '',
             gender: profile.gender || '',
             age: profile.age || 18,
-            profession: profile.profession || ''
+            profession: profile.profession || '',
+            profile_pic_url: profile.profile_pic_url || ''
           });
         }
       }
@@ -106,6 +109,10 @@ export const useProfileManager = () => {
     saveProfileData(newData);
   };
 
+  const updateProfilePicture = (imageUrl: string) => {
+    updateField('profile_pic_url', imageUrl);
+  };
+
   useEffect(() => {
     loadProfileData();
   }, []);
@@ -117,6 +124,7 @@ export const useProfileManager = () => {
     loadProfileData,
     saveProfileData,
     updateField,
+    updateProfilePicture,
     setProfileData
   };
 };
