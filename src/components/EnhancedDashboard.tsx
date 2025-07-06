@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +44,19 @@ const EnhancedDashboard = () => {
   const { toast } = useToast();
 
   const { profileData, loading, saving, updateProfile, checkUsernameAvailability } = useUserProfile();
+
+  // Debounce function for input updates
+  const debounce = (func: Function, wait: number) => {
+    let timeout: NodeJS.Timeout;
+    return function executedFunction(...args: any[]) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  };
 
   const genderOptions = [
     { value: 'male', label: 'Male', icon: UserCheck },
@@ -135,24 +148,32 @@ const EnhancedDashboard = () => {
     }
   };
 
+  // Optimized update function with debouncing
+  const debouncedUpdate = useCallback(
+    debounce((field: string, value: any) => {
+      const updates: any = {};
+      
+      if (['username', 'display_name', 'full_name', 'email', 'bio', 'profile_pic_url', 'gender', 'age', 'profession'].includes(field)) {
+        updates[field] = value;
+      } else if (field.startsWith('avatar_')) {
+        updates.avatar_data = {
+          ...profileData?.avatar_data,
+          [field.replace('avatar_', '')]: value
+        };
+      } else if (field.startsWith('social_')) {
+        updates.social_links = {
+          ...profileData?.social_links,
+          [field.replace('social_', '')]: value
+        };
+      }
+      
+      updateProfile(updates);
+    }, 500),
+    [profileData, updateProfile]
+  );
+
   const handleProfileUpdate = (field: string, value: any) => {
-    const updates: any = {};
-    
-    if (['username', 'display_name', 'full_name', 'email', 'bio', 'profile_pic_url', 'gender', 'age', 'profession'].includes(field)) {
-      updates[field] = value;
-    } else if (field.startsWith('avatar_')) {
-      updates.avatar_data = {
-        ...profileData?.avatar_data,
-        [field.replace('avatar_', '')]: value
-      };
-    } else if (field.startsWith('social_')) {
-      updates.social_links = {
-        ...profileData?.social_links,
-        [field.replace('social_', '')]: value
-      };
-    }
-    
-    updateProfile(updates);
+    debouncedUpdate(field, value);
   };
 
   if (loading) {
@@ -492,6 +513,13 @@ const EnhancedDashboard = () => {
                         {(profileData?.bio || '').length}/160 characters
                       </div>
                     </div>
+                    
+                    {saving && (
+                      <div className="text-blue-600 text-sm flex items-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                        Saving changes...
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

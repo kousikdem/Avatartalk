@@ -58,76 +58,81 @@ export const useUserProfile = () => {
         return;
       }
 
-      // Load profile data
-      const { data: profile } = await supabase
+      // Load profile data with proper error handling
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Profile error:', profileError);
+        throw profileError;
+      }
 
       // Load avatar settings
       const { data: avatarSettings } = await supabase
         .from('avatar_settings')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       // Load social links
       const { data: socialLinks } = await supabase
         .from('social_links')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       // Load user stats
       const { data: userStats } = await supabase
         .from('user_stats')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (profile) {
-        const completeProfile: UserProfileData = {
-          id: profile.id,
-          username: profile.username || '',
-          display_name: profile.display_name || '',
-          full_name: profile.full_name || '',
-          email: profile.email || user.email || '',
-          bio: profile.bio || '',
-          profile_pic_url: profile.profile_pic_url || '',
-          gender: profile.gender || '',
-          age: profile.age || 18,
-          profession: profile.profession || '',
-          public_link: `${window.location.origin}/${profile.username || user.id}`,
-          avatar_data: {
-            style: avatarSettings?.avatar_type || 'realistic',
-            voice: avatarSettings?.voice_type || 'neutral',
-            preview_url: profile.avatar_url || '',
-            mood: avatarSettings?.avatar_mood || 'friendly',
-            lip_sync: avatarSettings?.lip_sync ?? true,
-            head_movement: avatarSettings?.head_movement ?? true,
-          },
-          social_links: {
-            facebook: socialLinks?.facebook || '',
-            twitter: socialLinks?.twitter || '',
-            instagram: socialLinks?.instagram || '',
-            linkedin: socialLinks?.linkedin || '',
-            youtube: socialLinks?.youtube || '',
-            website: socialLinks?.website || '',
-            pinterest: socialLinks?.pinterest || '',
-          },
-          analytics: {
-            profile_views: userStats?.profile_views || 0,
-            total_conversations: userStats?.total_conversations || 0,
-            engagement_score: userStats?.engagement_score || 0,
-            followers_count: userStats?.followers_count || 0,
-          },
-          created_at: profile.created_at || new Date().toISOString(),
-          updated_at: profile.updated_at || new Date().toISOString(),
-        };
+      // Create complete profile with defaults if no profile exists
+      const completeProfile: UserProfileData = {
+        id: user.id,
+        username: profile?.username || '',
+        display_name: profile?.display_name || '',
+        full_name: profile?.full_name || '',
+        email: profile?.email || user.email || '',
+        bio: profile?.bio || '',
+        profile_pic_url: profile?.profile_pic_url || '',
+        gender: profile?.gender || '',
+        age: profile?.age || 18,
+        profession: profile?.profession || '',
+        public_link: `${window.location.origin}/${profile?.username || user.id}`,
+        avatar_data: {
+          style: avatarSettings?.avatar_type || 'realistic',
+          voice: avatarSettings?.voice_type || 'neutral',
+          preview_url: profile?.avatar_url || '',
+          mood: avatarSettings?.avatar_mood || 'friendly',
+          lip_sync: avatarSettings?.lip_sync ?? true,
+          head_movement: avatarSettings?.head_movement ?? true,
+        },
+        social_links: {
+          facebook: socialLinks?.facebook || '',
+          twitter: socialLinks?.twitter || '',
+          instagram: socialLinks?.instagram || '',
+          linkedin: socialLinks?.linkedin || '',
+          youtube: socialLinks?.youtube || '',
+          website: socialLinks?.website || '',
+          pinterest: socialLinks?.pinterest || '',
+        },
+        analytics: {
+          profile_views: userStats?.profile_views || 0,
+          total_conversations: userStats?.total_conversations || 0,
+          engagement_score: userStats?.engagement_score || 0,
+          followers_count: userStats?.followers_count || 0,
+        },
+        created_at: profile?.created_at || new Date().toISOString(),
+        updated_at: profile?.updated_at || new Date().toISOString(),
+      };
 
-        setProfileData(completeProfile);
-      }
+      setProfileData(completeProfile);
+
     } catch (error) {
       console.error('Error loading complete profile:', error);
       toast({
@@ -149,74 +154,84 @@ export const useUserProfile = () => {
 
       const now = new Date().toISOString();
 
-      // Update profile table
+      // Immediately update local state for instant UI feedback
+      const updatedProfile = {
+        ...profileData,
+        ...updates,
+        updated_at: now,
+        public_link: updates.username ? 
+          `${window.location.origin}/${updates.username}` : 
+          profileData.public_link
+      };
+      setProfileData(updatedProfile);
+
+      // Update profile table if basic profile fields changed
       if (updates.username || updates.display_name || updates.full_name || 
           updates.email || updates.bio || updates.profile_pic_url || 
           updates.gender || updates.age || updates.profession) {
+        
+        const profileUpdates = {
+          username: updates.username ?? profileData.username,
+          display_name: updates.display_name ?? profileData.display_name,
+          full_name: updates.full_name ?? profileData.full_name,
+          email: updates.email ?? profileData.email,
+          bio: updates.bio ?? profileData.bio,
+          profile_pic_url: updates.profile_pic_url ?? profileData.profile_pic_url,
+          gender: updates.gender ?? profileData.gender,
+          age: updates.age ?? profileData.age,
+          profession: updates.profession ?? profileData.profession,
+          updated_at: now,
+        };
+
         const { error: profileError } = await supabase
           .from('profiles')
-          .update({
-            username: updates.username || profileData.username,
-            display_name: updates.display_name || profileData.display_name,
-            full_name: updates.full_name || profileData.full_name,
-            email: updates.email || profileData.email,
-            bio: updates.bio || profileData.bio,
-            profile_pic_url: updates.profile_pic_url || profileData.profile_pic_url,
-            gender: updates.gender || profileData.gender,
-            age: updates.age || profileData.age,
-            profession: updates.profession || profileData.profession,
-            updated_at: now,
-          })
-          .eq('id', user.id);
+          .upsert({
+            id: user.id,
+            ...profileUpdates
+          });
 
         if (profileError) throw profileError;
       }
 
       // Update avatar settings if changed
       if (updates.avatar_data) {
+        const avatarUpdates = {
+          user_id: user.id,
+          avatar_type: updates.avatar_data.style ?? profileData.avatar_data.style,
+          voice_type: updates.avatar_data.voice ?? profileData.avatar_data.voice,
+          avatar_mood: updates.avatar_data.mood ?? profileData.avatar_data.mood,
+          lip_sync: updates.avatar_data.lip_sync ?? profileData.avatar_data.lip_sync,
+          head_movement: updates.avatar_data.head_movement ?? profileData.avatar_data.head_movement,
+          updated_at: now,
+        };
+
         const { error: avatarError } = await supabase
           .from('avatar_settings')
-          .update({
-            avatar_type: updates.avatar_data.style || profileData.avatar_data.style,
-            voice_type: updates.avatar_data.voice || profileData.avatar_data.voice,
-            avatar_mood: updates.avatar_data.mood || profileData.avatar_data.mood,
-            lip_sync: updates.avatar_data.lip_sync ?? profileData.avatar_data.lip_sync,
-            head_movement: updates.avatar_data.head_movement ?? profileData.avatar_data.head_movement,
-            updated_at: now,
-          })
-          .eq('user_id', user.id);
+          .upsert(avatarUpdates);
 
         if (avatarError) throw avatarError;
       }
 
       // Update social links if changed
       if (updates.social_links) {
+        const socialUpdates = {
+          user_id: user.id,
+          facebook: updates.social_links.facebook ?? profileData.social_links.facebook,
+          twitter: updates.social_links.twitter ?? profileData.social_links.twitter,
+          instagram: updates.social_links.instagram ?? profileData.social_links.instagram,
+          linkedin: updates.social_links.linkedin ?? profileData.social_links.linkedin,
+          youtube: updates.social_links.youtube ?? profileData.social_links.youtube,
+          website: updates.social_links.website ?? profileData.social_links.website,
+          pinterest: updates.social_links.pinterest ?? profileData.social_links.pinterest,
+          updated_at: now,
+        };
+
         const { error: socialError } = await supabase
           .from('social_links')
-          .update({
-            facebook: updates.social_links.facebook || profileData.social_links.facebook,
-            twitter: updates.social_links.twitter || profileData.social_links.twitter,
-            instagram: updates.social_links.instagram || profileData.social_links.instagram,
-            linkedin: updates.social_links.linkedin || profileData.social_links.linkedin,
-            youtube: updates.social_links.youtube || profileData.social_links.youtube,
-            website: updates.social_links.website || profileData.social_links.website,
-            pinterest: updates.social_links.pinterest || profileData.social_links.pinterest,
-            updated_at: now,
-          })
-          .eq('user_id', user.id);
+          .upsert(socialUpdates);
 
         if (socialError) throw socialError;
       }
-
-      // Update local state
-      setProfileData(prev => prev ? {
-        ...prev,
-        ...updates,
-        updated_at: now,
-        public_link: updates.username ? 
-          `${window.location.origin}/${updates.username}` : 
-          prev.public_link
-      } : null);
 
       toast({
         title: "Profile Updated",
@@ -226,6 +241,10 @@ export const useUserProfile = () => {
       return true;
     } catch (error) {
       console.error('Error updating profile:', error);
+      
+      // Revert local state on error
+      await loadCompleteProfile();
+      
       toast({
         title: "Error", 
         description: "Failed to update profile. Please try again.",
@@ -259,17 +278,29 @@ export const useUserProfile = () => {
   const incrementProfileViews = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user || !profileData) return;
 
       // Update profile views directly in user_stats table
+      const newViews = (profileData.analytics.profile_views || 0) + 1;
+      
       const { error } = await supabase
         .from('user_stats')
-        .update({ 
-          profile_views: profileData?.analytics.profile_views ? profileData.analytics.profile_views + 1 : 1 
-        })
-        .eq('user_id', user.id);
+        .upsert({ 
+          user_id: user.id,
+          profile_views: newViews 
+        });
 
       if (error) throw error;
+
+      // Update local state
+      setProfileData(prev => prev ? {
+        ...prev,
+        analytics: {
+          ...prev.analytics,
+          profile_views: newViews
+        }
+      } : null);
+
     } catch (error) {
       console.error('Error incrementing profile views:', error);
     }
