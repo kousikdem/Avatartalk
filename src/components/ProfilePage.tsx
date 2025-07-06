@@ -567,25 +567,25 @@ const ProfilePage = () => {
               </TabsContent>
 
               <TabsContent value="chat" className="space-y-4 pb-6">
-                <div className={`${themeStyles.chatBubble} backdrop-blur-sm rounded-xl p-4 max-h-80 overflow-y-auto space-y-3`}>
+                <div className={`${themeStyles.chatBubble} backdrop-blur-sm rounded-xl p-0 max-h-80 overflow-y-auto w-full`}>
                   {chatMessages.length === 0 ? (
-                    <div className="text-center py-8">
+                    <div className="text-center py-8 px-4">
                       <div className={`${themeStyles.textMuted} text-sm mb-2`}>
                         Start a conversation! Type a message below.
                       </div>
                       <MessageCircle className={`w-8 h-8 mx-auto ${themeStyles.textMuted}`} />
                     </div>
                   ) : (
-                    <>
+                    <div className="p-4 space-y-3 w-full">
                       {chatMessages.map((msg) => (
-                        <div key={msg.id} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                        <div key={msg.id} className={`flex items-start gap-3 w-full ${msg.role === 'user' ? 'justify-end' : ''}`}>
                           {msg.role === 'assistant' && (
                             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                               {displayData.displayName.split(' ').map(n => n[0]).join('')}
                             </div>
                           )}
-                          <div className={`flex-1 max-w-xs ${msg.role === 'user' ? 'order-first' : ''}`}>
-                            <div className={`p-3 rounded-xl ${
+                          <div className={`flex-1 max-w-[80%] ${msg.role === 'user' ? 'order-first' : ''}`}>
+                            <div className={`p-3 rounded-xl w-full ${
                               msg.role === 'user' 
                                 ? (isDarkTheme 
                                     ? 'bg-blue-600/20 border border-blue-500/30' 
@@ -596,7 +596,7 @@ const ProfilePage = () => {
                                     : 'bg-white/90 border border-gray-200'
                                   )
                             }`}>
-                              <p className={`text-sm ${
+                              <p className={`text-sm break-words ${
                                 msg.role === 'user' 
                                   ? (isDarkTheme ? 'text-white/90' : 'text-white')
                                   : (isDarkTheme ? 'text-white/90' : 'text-gray-800')
@@ -619,7 +619,7 @@ const ProfilePage = () => {
                       ))}
                       
                       {isTyping && (
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-start gap-3 w-full">
                           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
                             {displayData.displayName.split(' ').map(n => n[0]).join('')}
                           </div>
@@ -647,7 +647,7 @@ const ProfilePage = () => {
                           </div>
                         </div>
                       )}
-                    </>
+                    </div>
                   )}
                 </div>
               </TabsContent>
