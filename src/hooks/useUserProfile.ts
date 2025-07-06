@@ -261,7 +261,15 @@ export const useUserProfile = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      await supabase.rpc('increment_profile_views', { user_id: user.id });
+      // Update profile views directly in user_stats table
+      const { error } = await supabase
+        .from('user_stats')
+        .update({ 
+          profile_views: profileData?.analytics.profile_views ? profileData.analytics.profile_views + 1 : 1 
+        })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
     } catch (error) {
       console.error('Error incrementing profile views:', error);
     }
