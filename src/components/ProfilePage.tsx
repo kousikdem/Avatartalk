@@ -395,7 +395,7 @@ const ProfilePage = () => {
         </div>
 
         {/* Scrollable Content Area */}
-        <div className="pb-32 overflow-y-auto max-h-[calc(100vh-250px)]">
+        <div className={`${activeTab === 'chat' ? 'pb-24' : 'pb-32'} overflow-y-auto`} style={{ maxHeight: activeTab === 'chat' ? 'calc(100vh - 160px)' : 'calc(100vh - 250px)' }}>
           {/* Profile Section */}
           <div className="px-4 pb-2 relative">
             {/* Bio */}
@@ -566,8 +566,8 @@ const ProfilePage = () => {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="chat" className="space-y-4 pb-6">
-                <div className={`${themeStyles.chatBubble} backdrop-blur-sm rounded-xl p-0 max-h-80 overflow-y-auto w-full`}>
+              <TabsContent value="chat" className="space-y-0 pb-6">
+                <div className={`${themeStyles.chatBubble} backdrop-blur-sm rounded-xl p-0 w-full`} style={{ height: 'calc(100vh - 280px)', overflowY: 'auto' }}>
                   {chatMessages.length === 0 ? (
                     <div className="text-center py-8 px-4">
                       <div className={`${themeStyles.textMuted} text-sm mb-2`}>
@@ -678,20 +678,53 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        {/* Fixed Bottom Section - Always Visible */}
-        <div className={`fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md ${themeStyles.bottomSection}`}>
-          {/* Chat Input - Always Visible */}
-          <div className="p-4 pb-2">
-            <div className="relative">
-              <Input
-                placeholder="Ask me anything..."
-                value={message + (isListening ? ` ${transcript}` : '')}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                className={`${themeStyles.input} rounded-full py-2 pl-4 pr-20 focus:border-blue-500/50 focus:ring-blue-500/20`}
-              />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
-                <div className="relative">
+        {/* Fixed Bottom Section - Chat Input Only for Chat Tab */}
+        {activeTab === 'chat' && (
+          <div className={`fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md ${themeStyles.bottomSection}`}>
+            <div className="p-4">
+              <div className="relative">
+                <Input
+                  placeholder="Ask me anything..."
+                  value={message + (isListening ? ` ${transcript}` : '')}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  className={`${themeStyles.input} rounded-full py-2 pl-4 pr-20 focus:border-blue-500/50 focus:ring-blue-500/20`}
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
+                  <div className="relative">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className={`rounded-full w-8 h-8 p-0 ${
+                        isDarkTheme 
+                          ? 'text-white/60 hover:text-white hover:bg-white/10' 
+                          : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                      } transition-all duration-200`}
+                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    >
+                      <Smile className="w-4 h-4" />
+                    </Button>
+                    <EmojiPicker 
+                      isOpen={showEmojiPicker}
+                      onClose={() => setShowEmojiPicker(false)}
+                      onEmojiSelect={handleEmojiSelect}
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className={`rounded-full w-8 h-8 p-0 transition-all duration-200 ${
+                      isListening 
+                        ? 'text-red-500 hover:text-red-400 bg-red-500/20' 
+                        : (isDarkTheme 
+                            ? 'text-white/60 hover:text-white hover:bg-white/10' 
+                            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                          )
+                    }`}
+                    onClick={handleVoiceInput}
+                  >
+                    <Mic className="w-4 h-4" />
+                  </Button>
                   <Button
                     size="sm"
                     variant="ghost"
@@ -700,82 +733,116 @@ const ProfilePage = () => {
                         ? 'text-white/60 hover:text-white hover:bg-white/10' 
                         : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                     } transition-all duration-200`}
-                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    onClick={handleSendMessage}
                   >
-                    <Smile className="w-4 h-4" />
+                    <Send className="w-3 h-3" />
                   </Button>
-                  <EmojiPicker 
-                    isOpen={showEmojiPicker}
-                    onClose={() => setShowEmojiPicker(false)}
-                    onEmojiSelect={handleEmojiSelect}
-                  />
                 </div>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className={`rounded-full w-8 h-8 p-0 transition-all duration-200 ${
-                    isListening 
-                      ? 'text-red-500 hover:text-red-400 bg-red-500/20' 
-                      : (isDarkTheme 
-                          ? 'text-white/60 hover:text-white hover:bg-white/10' 
-                          : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                        )
-                  }`}
-                  onClick={handleVoiceInput}
-                >
-                  <Mic className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className={`rounded-full w-8 h-8 p-0 ${
-                    isDarkTheme 
-                      ? 'text-white/60 hover:text-white hover:bg-white/10' 
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                  } transition-all duration-200`}
-                  onClick={handleSendMessage}
-                >
-                  <Send className="w-3 h-3" />
-                </Button>
               </div>
             </div>
           </div>
+        )}
 
-          {/* Social Media Icons - Always Visible */}
-          <div className="flex justify-center items-center gap-3 pb-4 px-4">
-            {socialIcons.map(({ icon: Icon, url, color }, index) => (
-              <button
-                key={index}
-                className={`flex-shrink-0 w-8 h-8 rounded-full ${themeStyles.socialIcon} ${color} transition-all duration-200 flex items-center justify-center`}
-                onClick={() => url && window.open(url, '_blank')}
+        {/* Fixed Bottom Section - Social Icons and Share (For Non-Chat Tabs) */}
+        {activeTab !== 'chat' && (
+          <div className={`fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md ${themeStyles.bottomSection}`}>
+            {/* Chat Input - Always Visible for non-chat tabs */}
+            <div className="p-4 pb-2">
+              <div className="relative">
+                <Input
+                  placeholder="Ask me anything..."
+                  value={message + (isListening ? ` ${transcript}` : '')}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  className={`${themeStyles.input} rounded-full py-2 pl-4 pr-20 focus:border-blue-500/50 focus:ring-blue-500/20`}
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
+                  <div className="relative">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className={`rounded-full w-8 h-8 p-0 ${
+                        isDarkTheme 
+                          ? 'text-white/60 hover:text-white hover:bg-white/10' 
+                          : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                      } transition-all duration-200`}
+                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    >
+                      <Smile className="w-4 h-4" />
+                    </Button>
+                    <EmojiPicker 
+                      isOpen={showEmojiPicker}
+                      onClose={() => setShowEmojiPicker(false)}
+                      onEmojiSelect={handleEmojiSelect}
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className={`rounded-full w-8 h-8 p-0 transition-all duration-200 ${
+                      isListening 
+                        ? 'text-red-500 hover:text-red-400 bg-red-500/20' 
+                        : (isDarkTheme 
+                            ? 'text-white/60 hover:text-white hover:bg-white/10' 
+                            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                          )
+                    }`}
+                    onClick={handleVoiceInput}
+                  >
+                    <Mic className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className={`rounded-full w-8 h-8 p-0 ${
+                      isDarkTheme 
+                        ? 'text-white/60 hover:text-white hover:bg-white/10' 
+                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                    } transition-all duration-200`}
+                    onClick={handleSendMessage}
+                  >
+                    <Send className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Social Media Icons - Always Visible */}
+            <div className="flex justify-center items-center gap-3 pb-4 px-4">
+              {socialIcons.map(({ icon: Icon, url, color }, index) => (
+                <button
+                  key={index}
+                  className={`flex-shrink-0 w-8 h-8 rounded-full ${themeStyles.socialIcon} ${color} transition-all duration-200 flex items-center justify-center`}
+                  onClick={() => url && window.open(url, '_blank')}
+                >
+                  <Icon className="w-3 h-3" />
+                </button>
+              ))}
+              <Button
+                size="sm"
+                variant="ghost"
+                className={`rounded-full w-8 h-8 p-0 ${
+                  isDarkTheme 
+                    ? 'text-white/60 hover:text-white hover:bg-white/10' 
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                } transition-all duration-200`}
               >
-                <Icon className="w-3 h-3" />
-              </button>
-            ))}
-            <Button
-              size="sm"
-              variant="ghost"
-              className={`rounded-full w-8 h-8 p-0 ${
-                isDarkTheme 
-                  ? 'text-white/60 hover:text-white hover:bg-white/10' 
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-              } transition-all duration-200`}
-            >
-              <EllipsisVertical className="w-3 h-3" />
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => setIsShareOpen(true)}
-              className={`${
-                isDarkTheme 
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600' 
-                  : 'bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600'
-              } text-white rounded-full w-8 h-8 p-0 shadow-lg transition-all duration-300`}
-            >
-              <Share2 className="w-3 h-3" />
-            </Button>
+                <EllipsisVertical className="w-3 h-3" />
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setIsShareOpen(true)}
+                className={`${
+                  isDarkTheme 
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600' 
+                    : 'bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600'
+                } text-white rounded-full w-8 h-8 p-0 shadow-lg transition-all duration-300`}
+              >
+                <Share2 className="w-3 h-3" />
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Share Modal */}
