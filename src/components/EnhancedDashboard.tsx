@@ -13,8 +13,7 @@ import Avatar3D from './Avatar3D';
 import ProfilePictureUpload from './ProfilePictureUpload';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
-import { useProfileManager } from '@/hooks/useProfileManager';
-import { useAvatarSettings } from '@/hooks/useAvatarSettings';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { 
   User, Palette, Volume2, MessageSquare, Link, BarChart3, Settings,
   Eye, EyeOff, Plus, Youtube, Instagram, Shield, Bell, Globe, Trash2,
@@ -38,17 +37,13 @@ const EnhancedDashboard = () => {
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [isTalking, setIsTalking] = useState(false);
-  const [avatarStyle, setAvatarStyle] = useState<AvatarStyle>('realistic');
-  const [avatarMood, setAvatarMood] = useState<AvatarMood>('friendly');
   const [isVoiceRecording, setIsVoiceRecording] = useState(false);
   const [setupProgress, setSetupProgress] = useState(85);
   const [customProfession, setCustomProfession] = useState('');
   const [showCustomProfession, setShowCustomProfession] = useState(false);
   const { toast } = useToast();
 
-  // Use the profile manager hook
-  const { profileData, loading, saving, updateField, updateProfilePicture } = useProfileManager();
-  const { settings: avatarSettings, updateSetting } = useAvatarSettings();
+  const { profileData, loading, saving, updateProfile, checkUsernameAvailability } = useUserProfile();
 
   const genderOptions = [
     { value: 'male', label: 'Male', icon: UserCheck },
@@ -110,19 +105,54 @@ const EnhancedDashboard = () => {
   const handleProfessionChange = (value: string) => {
     if (value === 'other') {
       setShowCustomProfession(true);
-      updateField('profession', '');
+      updateProfile({ profession: '' });
     } else {
       setShowCustomProfession(false);
-      updateField('profession', value);
+      updateProfile({ profession: value });
     }
   };
 
   const handleCustomProfessionSave = () => {
     if (customProfession.trim()) {
-      updateField('profession', customProfession.trim());
+      updateProfile({ profession: customProfession.trim() });
       setShowCustomProfession(false);
       setCustomProfession('');
     }
+  };
+
+  const handleUsernameChange = async (newUsername: string) => {
+    if (newUsername && newUsername !== profileData?.username) {
+      const isAvailable = await checkUsernameAvailability(newUsername);
+      if (isAvailable) {
+        await updateProfile({ username: newUsername });
+      } else {
+        toast({
+          title: "Username Taken",
+          description: "This username is already taken. Please choose another one.",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
+  const handleProfileUpdate = (field: string, value: any) => {
+    const updates: any = {};
+    
+    if (['username', 'display_name', 'full_name', 'email', 'bio', 'profile_pic_url', 'gender', 'age', 'profession'].includes(field)) {
+      updates[field] = value;
+    } else if (field.startsWith('avatar_')) {
+      updates.avatar_data = {
+        ...profileData?.avatar_data,
+        [field.replace('avatar_', '')]: value
+      };
+    } else if (field.startsWith('social_')) {
+      updates.social_links = {
+        ...profileData?.social_links,
+        [field.replace('social_', '')]: value
+      };
+    }
+    
+    updateProfile(updates);
   };
 
   if (loading) {
@@ -152,6 +182,11 @@ const EnhancedDashboard = () => {
                 Avatar Studio
               </h1>
               <p className="text-gray-600 mt-2">Build your AI personality and interactive profile</p>
+              {profileData?.public_link && (
+                <p className="text-sm text-blue-600 mt-1">
+                  Your profile: <a href={profileData.public_link} target="_blank" rel="noopener noreferrer" className="underline">{profileData.public_link}</a>
+                </p>
+              )}
             </div>
             <div className="flex items-center space-x-4">
               <Badge variant="outline" className="border-blue-400 text-blue-600 bg-blue-50">
@@ -205,8 +240,8 @@ const EnhancedDashboard = () => {
                 <Avatar3D 
                   isLarge={true} 
                   isTalking={isTalking}
-                  avatarStyle={avatarStyle}
-                  mood={avatarMood}
+                  avatarStyle={profileData?.avatar_data.style as any || 'realistic'}
+                  mood={profileData?.avatar_data.mood as any || 'friendly'}
                   onInteraction={() => setIsTalking(!isTalking)}
                 />
                 
@@ -220,7 +255,12 @@ const EnhancedDashboard = () => {
                   </Button>
                   
                   <div className="flex space-x-2">
-                    <Button variant="outline" size="sm" className="flex-1 border-blue-400 text-blue-600 hover:bg-blue-50">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1 border-blue-400 text-blue-600 hover:bg-blue-50"
+                      onClick={() => navigator.clipboard.writeText(profileData?.public_link || '')}
+                    >
                       <Copy className="w-4 h-4 mr-1" />
                       Copy Link
                     </Button>
@@ -244,20 +284,20 @@ const EnhancedDashboard = () => {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center p-3 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
-                    <div className="text-2xl font-bold text-blue-600">1,432</div>
+                    <div className="text-2xl font-bold text-blue-600">{profileData?.analytics.total_conversations || 0}</div>
                     <div className="text-sm text-blue-500">Total Chats</div>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-gradient-to-br from-green-50 to-green-100 border border-green-200">
-                    <div className="text-2xl font-bold text-green-600">289</div>
+                    <div className="text-2xl font-bold text-green-600">{profileData?.analytics.followers_count || 0}</div>
                     <div className="text-sm text-green-500">Followers</div>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200">
-                    <div className="text-2xl font-bold text-purple-600">87%</div>
+                    <div className="text-2xl font-bold text-purple-600">{Math.round(profileData?.analytics.engagement_score || 0)}%</div>
                     <div className="text-sm text-purple-500">Engagement</div>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200">
-                    <div className="text-2xl font-bold text-orange-600">4.8</div>
-                    <div className="text-sm text-orange-500">Rating</div>
+                    <div className="text-2xl font-bold text-orange-600">{profileData?.analytics.profile_views || 0}</div>
+                    <div className="text-sm text-orange-500">Profile Views</div>
                   </div>
                 </div>
               </CardContent>
@@ -307,9 +347,9 @@ const EnhancedDashboard = () => {
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <ProfilePictureUpload
-                      currentImageUrl={profileData.profile_pic_url}
-                      onImageUpdate={updateProfilePicture}
-                      displayName={profileData.display_name || profileData.full_name}
+                      currentImageUrl={profileData?.profile_pic_url}
+                      onImageUpdate={(url) => handleProfileUpdate('profile_pic_url', url)}
+                      displayName={profileData?.display_name || profileData?.full_name}
                     />
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -317,8 +357,8 @@ const EnhancedDashboard = () => {
                         <Label htmlFor="fullName" className="text-gray-700">Full Name</Label>
                         <Input 
                           id="fullName" 
-                          value={profileData.full_name}
-                          onChange={(e) => updateField('full_name', e.target.value)}
+                          value={profileData?.full_name || ''}
+                          onChange={(e) => handleProfileUpdate('full_name', e.target.value)}
                           className="bg-white border-gray-300 text-gray-800 placeholder-gray-500"
                           placeholder="Enter your full name"
                         />
@@ -327,8 +367,8 @@ const EnhancedDashboard = () => {
                         <Label htmlFor="displayName" className="text-gray-700">Display Name</Label>
                         <Input 
                           id="displayName" 
-                          value={profileData.display_name}
-                          onChange={(e) => updateField('display_name', e.target.value)}
+                          value={profileData?.display_name || ''}
+                          onChange={(e) => handleProfileUpdate('display_name', e.target.value)}
                           className="bg-white border-gray-300 text-gray-800 placeholder-gray-500"
                           placeholder="Alex Digital"
                         />
@@ -344,8 +384,8 @@ const EnhancedDashboard = () => {
                           </span>
                           <Input 
                             id="username" 
-                            value={profileData.username}
-                            onChange={(e) => updateField('username', e.target.value)}
+                            value={profileData?.username || ''}
+                            onChange={(e) => handleUsernameChange(e.target.value)}
                             className="rounded-l-none bg-white border-gray-300 text-gray-800"
                             placeholder="alexdigital"
                           />
@@ -356,8 +396,8 @@ const EnhancedDashboard = () => {
                         <Input 
                           id="email" 
                           type="email"
-                          value={profileData.email}
-                          onChange={(e) => updateField('email', e.target.value)}
+                          value={profileData?.email || ''}
+                          onChange={(e) => handleProfileUpdate('email', e.target.value)}
                           className="bg-white border-gray-300 text-gray-800 placeholder-gray-500"
                           placeholder="alex@example.com"
                         />
@@ -367,7 +407,7 @@ const EnhancedDashboard = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <Label className="text-gray-700 mb-2 block">Gender</Label>
-                        <Select value={profileData.gender} onValueChange={(value) => updateField('gender', value)}>
+                        <Select value={profileData?.gender || ''} onValueChange={(value) => handleProfileUpdate('gender', value)}>
                           <SelectTrigger className="bg-white border-gray-300 text-gray-800">
                             <SelectValue placeholder="Select gender" />
                           </SelectTrigger>
@@ -388,10 +428,10 @@ const EnhancedDashboard = () => {
                         <Input 
                           id="age" 
                           type="number"
-                          min="13"
-                          max="120"
-                          value={profileData.age}
-                          onChange={(e) => updateField('age', parseInt(e.target.value) || 18)}
+                          min={13}
+                          max={120}
+                          value={profileData?.age || 18}
+                          onChange={(e) => handleProfileUpdate('age', parseInt(e.target.value) || 18)}
                           className="bg-white border-gray-300 text-gray-800"
                         />
                       </div>
@@ -400,7 +440,7 @@ const EnhancedDashboard = () => {
                     <div>
                       <Label className="text-gray-700 mb-2 block">Profession</Label>
                       <Select 
-                        value={showCustomProfession ? 'other' : profileData.profession} 
+                        value={showCustomProfession ? 'other' : profileData?.profession || ''} 
                         onValueChange={handleProfessionChange}
                       >
                         <SelectTrigger className="bg-white border-gray-300 text-gray-800">
@@ -441,15 +481,15 @@ const EnhancedDashboard = () => {
                       <Label htmlFor="bio" className="text-gray-700">Bio (160 chars max)</Label>
                       <Textarea 
                         id="bio" 
-                        value={profileData.bio}
-                        onChange={(e) => updateField('bio', e.target.value)}
+                        value={profileData?.bio || ''}
+                        onChange={(e) => handleProfileUpdate('bio', e.target.value)}
                         className="bg-white border-gray-300 text-gray-800 placeholder-gray-500"
                         rows={3}
                         maxLength={160}
                         placeholder="AI-powered digital creator helping people unlock their potential 🚀"
                       />
                       <div className="text-sm text-gray-500 mt-1">
-                        {profileData.bio.length}/160 characters
+                        {(profileData?.bio || '').length}/160 characters
                       </div>
                     </div>
                   </CardContent>
@@ -469,9 +509,9 @@ const EnhancedDashboard = () => {
                         {(['realistic', 'cartoon', 'anime', 'minimal'] as AvatarStyle[]).map((style) => (
                           <Button
                             key={style}
-                            variant={avatarSettings?.avatar_type === style ? "default" : "outline"}
-                            className={`h-20 ${avatarSettings?.avatar_type === style ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
-                            onClick={() => updateSetting('avatar_type', style)}
+                            variant={profileData?.avatar_data.style === style ? "default" : "outline"}
+                            className={`h-20 ${profileData?.avatar_data.style === style ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                            onClick={() => handleProfileUpdate('avatar_style', style)}
                           >
                             <div className="text-center">
                               <div className="capitalize font-medium">{style}</div>
@@ -487,9 +527,9 @@ const EnhancedDashboard = () => {
                         {personalityTemplates.map((template) => (
                           <Button
                             key={template.name}
-                            variant={avatarSettings?.avatar_mood === template.mood ? "default" : "outline"}
-                            className={`p-4 h-auto justify-start ${avatarSettings?.avatar_mood === template.mood ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
-                            onClick={() => updateSetting('avatar_mood', template.mood)}
+                            variant={profileData?.avatar_data.mood === template.mood ? "default" : "outline"}
+                            className={`p-4 h-auto justify-start ${profileData?.avatar_data.mood === template.mood ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                            onClick={() => handleProfileUpdate('avatar_mood', template.mood)}
                           >
                             <template.icon className="w-5 h-5 mr-3" />
                             <div className="text-left">
@@ -513,7 +553,10 @@ const EnhancedDashboard = () => {
                   <CardContent className="space-y-6">
                     <div>
                       <Label className="text-gray-700">Voice Type</Label>
-                      <Select defaultValue="female-professional">
+                      <Select 
+                        value={profileData?.avatar_data.voice || 'neutral'} 
+                        onValueChange={(value) => handleProfileUpdate('avatar_voice', value)}
+                      >
                         <SelectTrigger className="bg-white border-gray-300 text-gray-800">
                           <SelectValue />
                         </SelectTrigger>
@@ -522,7 +565,7 @@ const EnhancedDashboard = () => {
                           <SelectItem value="male-friendly">Male Friendly</SelectItem>
                           <SelectItem value="female-energetic">Female Energetic</SelectItem>
                           <SelectItem value="male-calm">Male Calm</SelectItem>
-                          <SelectItem value="neutral-ai">Neutral AI</SelectItem>
+                          <SelectItem value="neutral">Neutral AI</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -680,9 +723,11 @@ const EnhancedDashboard = () => {
                           <platform.icon className={`w-5 h-5 ${platform.color}`} />
                           <Input
                             placeholder={`${platform.name} Profile URL`}
+                            value={profileData?.social_links[platform.name.toLowerCase() as keyof typeof profileData.social_links] || ''}
+                            onChange={(e) => handleProfileUpdate(`social_${platform.name.toLowerCase()}`, e.target.value)}
                             className="bg-white border-gray-300 text-gray-800 flex-1"
                           />
-                          <Button size="sm" variant="outline" className="border-indigo-400 text-indigo-600 hover:bg-indigo-100">Remove</Button>
+                          <Button size="sm" variant="outline" className="border-indigo-400 text-indigo-600 hover:bg-indigo-100" onClick={() => handleProfileUpdate(`social_${platform.name.toLowerCase()}`, '')}>Remove</Button>
                         </div>
                       ))}
                     </div>
