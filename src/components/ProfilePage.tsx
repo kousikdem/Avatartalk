@@ -31,6 +31,7 @@ import EmojiPicker from '@/components/EmojiPicker';
 import { supabase } from '@/integrations/supabase/client';
 import { useTTS } from '@/hooks/useTTS';
 import { useSTT } from '@/hooks/useSTT';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 interface ChatMessage {
   id: string;
@@ -49,15 +50,12 @@ const ProfilePage = () => {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [profileData, setProfileData] = useState<any>(null);
-  const [avatarSettings, setAvatarSettings] = useState<any>(null);
-  const [socialLinks, setSocialLinks] = useState<any>(null);
-  const [userStats, setUserStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isDarkTheme, setIsDarkTheme] = useState(true);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+
+  // Use the profile hook for real data
+  const { profileData, loading: profileLoading, incrementProfileViews } = useUserProfile();
 
   // TTS and STT hooks
   const { speak, stop: stopTTS, isPlaying: isTTSPlaying } = useTTS();
@@ -77,102 +75,49 @@ const ProfilePage = () => {
     getCurrentUser();
   }, []);
 
+  // Increment profile views when component mounts
   useEffect(() => {
-    if (username) {
-      fetchProfileByUsername(username);
+    if (profileData && !profileLoading) {
+      incrementProfileViews();
     }
-  }, [username]);
+  }, [profileData, profileLoading, incrementProfileViews]);
 
-  const fetchProfileByUsername = async (username: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Fetch profile by username
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('username', username)
-        .single();
+  // Real-time sync - listen for profile updates
+  useEffect(() => {
+    if (!profileData?.id) return;
 
-      if (profileError) {
-        console.error('Profile error:', profileError);
-        // If no profile found, use demo data
-        setProfileData(null);
-        setAvatarSettings({
-          avatar_type: 'realistic',
-          avatar_mood: 'friendly',
-          lip_sync: true,
-          head_movement: true,
-          voice_type: 'neutral'
-        });
-        setSocialLinks({});
-        setUserStats({
-          total_conversations: 352,
-          followers_count: 1200,
-          engagement_score: 89
-        });
-        setLoading(false);
-        return;
-      }
+    const channel = supabase
+      .channel('profile-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${profileData.id}`
+        },
+        () => {
+          // Profile updated, the useUserProfile hook will handle the refresh
+          console.log('Profile updated in real-time');
+        }
+      )
+      .subscribe();
 
-      setProfileData(profile);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profileData?.id]);
 
-      // Fetch related data if profile exists
-      if (profile) {
-        // Fetch avatar settings
-        const { data: avatarData } = await supabase
-          .from('avatar_settings')
-          .select('*')
-          .eq('user_id', profile.id)
-          .single();
-
-        // Fetch social links
-        const { data: socialData } = await supabase
-          .from('social_links')
-          .select('*')
-          .eq('user_id', profile.id)
-          .single();
-
-        // Fetch user stats
-        const { data: statsData } = await supabase
-          .from('user_stats')
-          .select('*')
-          .eq('user_id', profile.id)
-          .single();
-
-        setAvatarSettings(avatarData || {
-          avatar_type: 'realistic',
-          avatar_mood: 'friendly',
-          lip_sync: true,
-          head_movement: true,
-          voice_type: 'neutral'
-        });
-        setSocialLinks(socialData || {});
-        setUserStats(statsData || {
-          total_conversations: 0,
-          followers_count: 0,
-          engagement_score: 0
-        });
-      }
-    } catch (err: any) {
-      console.error('Error fetching profile:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Demo data fallback
+  // Use real profile data or fallback
   const displayData = {
-    displayName: profileData?.display_name || profileData?.full_name || 'Emily Parker',
-    username: profileData?.username || username || 'emily',
-    bio: profileData?.bio || 'Exploring the boundaries of AI conversation. Let\'s create something amazing together!',
+    displayName: profileData?.display_name || profileData?.full_name || 'User',
+    username: profileData?.username || username || 'user',
+    bio: profileData?.bio || 'Welcome to my profile! Let\'s connect and have great conversations.',
     profileImage: profileData?.profile_pic_url || '/lovable-uploads/fd5c2456-b137-4f5e-92b6-91e67819b497.png',
     stats: {
-      conversations: userStats?.total_conversations || 352,
-      followers: userStats?.followers_count || 1200,
-      engagement: userStats?.engagement_score || 89
+      conversations: profileData?.analytics?.total_conversations || 0,
+      followers: profileData?.analytics?.followers_count || 0,
+      engagement: Math.round(profileData?.analytics?.engagement_score || 0)
     }
   };
 
@@ -264,33 +209,12 @@ const ProfilePage = () => {
     }
   };
 
-  const handleAvatarSettingsChange = async (setting: string, value: any) => {
-    if (!profileData?.id) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('avatar_settings')
-        .upsert({
-          user_id: profileData.id,
-          ...avatarSettings,
-          [setting]: value
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      setAvatarSettings(data);
-    } catch (err: any) {
-      console.error('Error updating avatar settings:', err);
-    }
-  };
-
   const socialIcons = [
-    { icon: Twitter, url: socialLinks?.twitter, color: isDarkTheme ? 'text-blue-400' : 'text-blue-600' },
-    { icon: Linkedin, url: socialLinks?.linkedin, color: isDarkTheme ? 'text-blue-600' : 'text-blue-700' },
-    { icon: Facebook, url: socialLinks?.facebook, color: isDarkTheme ? 'text-blue-500' : 'text-blue-600' },
-    { icon: Instagram, url: socialLinks?.instagram, color: isDarkTheme ? 'text-pink-500' : 'text-pink-600' },
-    { icon: Youtube, url: socialLinks?.youtube, color: isDarkTheme ? 'text-red-500' : 'text-red-600' },
+    { icon: Twitter, url: profileData?.social_links?.twitter, color: isDarkTheme ? 'text-blue-400' : 'text-blue-600' },
+    { icon: Linkedin, url: profileData?.social_links?.linkedin, color: isDarkTheme ? 'text-blue-600' : 'text-blue-700' },
+    { icon: Facebook, url: profileData?.social_links?.facebook, color: isDarkTheme ? 'text-blue-500' : 'text-blue-600' },
+    { icon: Instagram, url: profileData?.social_links?.instagram, color: isDarkTheme ? 'text-pink-500' : 'text-pink-600' },
+    { icon: Youtube, url: profileData?.social_links?.youtube, color: isDarkTheme ? 'text-red-500' : 'text-red-600' },
   ];
 
   const toggleTheme = () => {
@@ -326,7 +250,7 @@ const ProfilePage = () => {
       : 'bg-white/80 border border-gray-200/50'
   };
 
-  if (loading) {
+  if (profileLoading) {
     return (
       <div className={`${themeStyles.background} flex items-center justify-center`}>
         <div className={`${themeStyles.text} text-xl`}>Loading profile...</div>
@@ -411,8 +335,8 @@ const ProfilePage = () => {
                     <Avatar3D
                       isLarge={true}
                       isTalking={isTalking || isTTSPlaying}
-                      avatarStyle={avatarSettings?.avatar_type as any || 'realistic'}
-                      mood={avatarSettings?.avatar_mood as any || 'friendly'}
+                      avatarStyle={profileData?.avatar_data?.style as any || 'realistic'}
+                      mood={profileData?.avatar_data?.mood as any || 'friendly'}
                       onInteraction={() => setIsTalking(!isTalking)}
                     />
                     {/* Talk to Me button on avatar */}
@@ -545,7 +469,7 @@ const ProfilePage = () => {
                     <p className={`${
                       isDarkTheme ? 'text-white/90' : 'text-gray-800'
                     } text-sm mb-3`}>
-                      Welcome to my AI avatar profile! I'm excited to connect and have meaningful conversations about technology and innovation.
+                      {displayData.bio}
                     </p>
                     <div className={`flex justify-between items-center ${
                       isDarkTheme ? 'text-white/60' : 'text-gray-500'
