@@ -30,29 +30,38 @@ export const useComments = (itemId?: string, itemType?: 'post' | 'profile') => {
 
     try {
       const column = itemType === 'post' ? 'post_id' : 'profile_id';
-      const { data, error } = await supabase
+      
+      // First get comments
+      const { data: commentsData, error: commentsError } = await supabase
         .from('comments')
-        .select(`
-          *,
-          profiles!comments_user_id_fkey (
-            full_name,
-            avatar_url,
-            display_name
-          )
-        `)
+        .select('*')
         .eq(column, itemId)
         .eq('comment_type', itemType)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (commentsError) throw commentsError;
 
-      // Type assertion to ensure correct types
-      const typedData = (data || []).map(item => ({
-        ...item,
-        comment_type: item.comment_type as 'post' | 'profile'
-      }));
+      // Then get profiles for those comments
+      if (commentsData && commentsData.length > 0) {
+        const userIds = commentsData.map(comment => comment.user_id);
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url, display_name')
+          .in('id', userIds);
 
-      setComments(typedData);
+        if (profilesError) throw profilesError;
+
+        // Combine comments with profiles
+        const commentsWithProfiles = commentsData.map(comment => ({
+          ...comment,
+          comment_type: comment.comment_type as 'post' | 'profile',
+          profiles: profilesData?.find(profile => profile.id === comment.user_id)
+        }));
+
+        setComments(commentsWithProfiles);
+      } else {
+        setComments([]);
+      }
     } catch (error) {
       console.error('Error fetching comments:', error);
       toast({
