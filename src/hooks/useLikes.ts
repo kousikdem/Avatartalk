@@ -32,13 +32,19 @@ export const useLikes = (itemId?: string, itemType?: 'post' | 'profile') => {
 
       if (error) throw error;
 
-      setLikes(data || []);
-      setLikesCount(data?.length || 0);
+      // Type assertion to ensure correct types
+      const typedData = (data || []).map(item => ({
+        ...item,
+        like_type: item.like_type as 'post' | 'profile'
+      }));
+
+      setLikes(typedData);
+      setLikesCount(typedData.length);
 
       // Check if current user has liked this item
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const userLike = data?.find(like => like.user_id === user.id);
+        const userLike = typedData.find(like => like.user_id === user.id);
         setIsLiked(!!userLike);
       }
     } catch (error) {

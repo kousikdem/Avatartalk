@@ -34,8 +34,14 @@ export const useSubscriptions = () => {
 
       if (error) throw error;
 
-      setSubscriptions(data || []);
-      setSubscriberCount(data?.length || 0);
+      // Type assertion to ensure correct types
+      const typedData = (data || []).map(item => ({
+        ...item,
+        status: item.status as 'active' | 'cancelled' | 'expired'
+      }));
+
+      setSubscriptions(typedData);
+      setSubscriberCount(typedData.length);
     } catch (error) {
       console.error('Error fetching subscriptions:', error);
       toast({

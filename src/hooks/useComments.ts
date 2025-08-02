@@ -45,7 +45,14 @@ export const useComments = (itemId?: string, itemType?: 'post' | 'profile') => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setComments(data || []);
+
+      // Type assertion to ensure correct types
+      const typedData = (data || []).map(item => ({
+        ...item,
+        comment_type: item.comment_type as 'post' | 'profile'
+      }));
+
+      setComments(typedData);
     } catch (error) {
       console.error('Error fetching comments:', error);
       toast({
