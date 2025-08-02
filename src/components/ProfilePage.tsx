@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -41,11 +41,15 @@ interface ProfileData {
 }
 
 const ProfilePage = () => {
-  const { username } = useParams<{ username: string }>();
+  const { username: urlUsername } = useParams<{ username: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { profileData: currentUserProfile } = useUserProfile();
   const { followUser, unfollowUser } = useFollows();
+  
+  // Get username from either URL params or search params
+  const username = urlUsername || searchParams.get('username');
   
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,16 +68,28 @@ const ProfilePage = () => {
     try {
       setLoading(true);
 
-      // Load profile data
+      // Load profile data - use maybeSingle to avoid errors when no profile found
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('username', username)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Profile error:', error);
-        navigate('/404');
+        toast({
+          title: "Error",
+          description: "Failed to load profile data",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // If no profile found, show not found state
+      if (!profile) {
+        setProfileData(null);
+        setLoading(false);
         return;
       }
 
@@ -90,7 +106,7 @@ const ProfilePage = () => {
           .select('id')
           .eq('follower_id', user.id)
           .eq('following_id', profile.id)
-          .single();
+          .maybeSingle();
 
         setIsFollowing(!!followData);
       }
