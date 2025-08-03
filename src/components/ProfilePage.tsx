@@ -67,6 +67,7 @@ const ProfilePage = () => {
   const loadProfile = async () => {
     try {
       setLoading(true);
+      console.log('Loading profile for username:', username);
 
       // Load profile data - use maybeSingle to avoid errors when no profile found
       const { data: profile, error } = await supabase
@@ -74,6 +75,8 @@ const ProfilePage = () => {
         .select('*')
         .eq('username', username)
         .maybeSingle();
+
+      console.log('Profile query result:', { profile, error });
 
       if (error) {
         console.error('Profile error:', error);
@@ -88,6 +91,7 @@ const ProfilePage = () => {
 
       // If no profile found, show not found state
       if (!profile) {
+        console.log('No profile found for username:', username);
         setProfileData(null);
         setLoading(false);
         return;
