@@ -56,7 +56,7 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
 
   // Check if current path requires sidebar (dashboard routes)
   const currentPath = window.location.pathname;
-  const isDashboardRoute = ['/dashboard', '/calendar', '/notifications', '/followers', '/feed', '/analytics', '/bookmarks', '/settings'].includes(currentPath);
+  const isDashboardRoute = ['/dashboard', '/calendar', '/notifications', '/followers', '/profiles', '/feed', '/analytics', '/bookmarks', '/settings'].includes(currentPath);
   
   // Also check for query parameters that indicate dashboard view
   const urlParams = new URLSearchParams(window.location.search);
@@ -115,6 +115,25 @@ const App = () => (
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/followers" element={<FollowersPage />} />
+              <Route path="/profiles" element={
+                <div className="p-4 md:p-6 w-full">
+                  <h1 className="text-2xl font-bold mb-4">Browse Profiles</h1>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {['fosik', 'emily', 'alex', 'sarah', 'john', 'demo'].map((username) => (
+                      <div key={username} className="bg-white rounded-lg border p-4 hover:shadow-md transition-shadow">
+                        <h3 className="font-semibold text-lg mb-2">@{username}</h3>
+                        <p className="text-gray-600 text-sm mb-3">Visit this profile to see their content</p>
+                        <a 
+                          href={`/${username}`} 
+                          className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
+                        >
+                          View Profile
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              } />
               <Route path="/feed" element={
                 <div className="p-4 md:p-6 w-full">
                   <h1 className="text-2xl font-bold">Feed</h1>

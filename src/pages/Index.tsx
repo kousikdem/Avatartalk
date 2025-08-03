@@ -12,11 +12,6 @@ const Index = () => {
   const view = searchParams.get('view');
   const username = searchParams.get('username');
 
-  // If accessing a specific username profile
-  if (username) {
-    return <ProfilePage />;
-  }
-
   // Show dashboard view (sidebar will be handled by App.tsx)
   if (view === 'dashboard') {
     return <Dashboard />;
@@ -25,11 +20,6 @@ const Index = () => {
   // Show pricing page
   if (view === 'pricing') {
     return <PricingPage />;
-  }
-
-  // Show profile view (visitor perspective)
-  if (view === 'profile') {
-    return <ProfilePage />;
   }
 
   // Default landing page (no sidebar)

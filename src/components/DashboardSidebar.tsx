@@ -33,6 +33,7 @@ const navigationItems = [
   { title: "Feed", icon: MessageSquare, url: "/feed" },
   { title: "Analytics", icon: BarChart3, url: "/analytics" },
   { title: "Followers", icon: Users, url: "/followers" },
+  { title: "Profiles", icon: Users, url: "/profiles" },
   { title: "Notifications", icon: Bell, url: "/notifications" },
   { title: "Bookmarks", icon: Bookmark, url: "/bookmarks" },
   { title: "Calendar", icon: Calendar, url: "/calendar" },
