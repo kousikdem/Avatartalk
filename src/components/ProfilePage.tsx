@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
 import { 
   MessageSquare, 
   Users, 
@@ -17,8 +18,17 @@ import {
   UserPlus,
   UserMinus,
   Crown,
-  Verified
+  Verified,
+  Mic,
+  Smile,
+  Twitter,
+  Linkedin,
+  Facebook,
+  Instagram,
+  Youtube,
+  ExternalLink
 } from 'lucide-react';
+import Avatar3D from './Avatar3D';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -172,175 +182,184 @@ const ProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="relative">
+          <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-r-2 border-primary"></div>
+          <div className="absolute inset-0 rounded-full bg-primary/20 animate-pulse"></div>
+        </div>
       </div>
     );
   }
 
   if (!profileData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Profile not found</h1>
-          <p className="text-gray-600">The profile you're looking for doesn't exist.</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="text-center neo-card p-8">
+          <h1 className="text-2xl font-bold text-foreground mb-2">Profile not found</h1>
+          <p className="text-muted-foreground">The profile you're looking for doesn't exist.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto p-6">
-        {/* Profile Header */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row items-start space-y-4 md:space-y-0 md:space-x-6">
-              {/* Avatar */}
-              <Avatar className="w-32 h-32">
-                <AvatarImage src={profileData.profile_pic_url || profileData.avatar_url} />
-                <AvatarFallback className="text-2xl">
-                  {profileData.display_name?.substring(0, 2) || profileData.full_name?.substring(0, 2) || 'U'}
-                </AvatarFallback>
-              </Avatar>
-
-              {/* Profile Info */}
-              <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-2">
-                  <h1 className="text-3xl font-bold">
-                    {profileData.display_name || profileData.full_name || profileData.username}
-                  </h1>
-                  <Verified className="w-5 h-5 text-blue-500" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+      {/* Background Effects */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-slate-900/5 to-transparent"></div>
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+      
+      <div className="relative z-10 min-h-screen flex flex-col">
+        {/* Main Profile Container */}
+        <div className="flex-1 flex items-center justify-center p-4 md:p-8">
+          <div className="w-full max-w-md mx-auto">
+            {/* Profile Card */}
+            <div className="neo-card p-8 text-center space-y-6">
+              {/* 3D Avatar */}
+              <div className="relative mx-auto w-48 h-48 md:w-56 md:h-56">
+                <div className="avatar-glow">
+                  <Avatar3D 
+                    isLarge={true}
+                    avatarStyle="realistic"
+                    mood="friendly"
+                    onInteraction={() => {}}
+                  />
                 </div>
+              </div>
 
-                <p className="text-gray-600 text-lg mb-2">@{profileData.username}</p>
-                
-                {profileData.bio && (
-                  <p className="text-gray-700 mb-4 max-w-2xl">{profileData.bio}</p>
+              {/* Name and Username */}
+              <div className="space-y-2">
+                <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+                  {profileData.display_name || profileData.full_name || profileData.username}
+                </h1>
+                <p className="text-lg text-muted-foreground">@{profileData.username}</p>
+              </div>
+
+              {/* Bio */}
+              {profileData.bio && (
+                <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                  {profileData.bio}
+                </p>
+              )}
+
+              {/* Action Buttons */}
+              <div className="space-y-3">
+                {!isCurrentUser && (
+                  <div className="flex gap-3">
+                    <Button
+                      size="lg"
+                      className="flex-1 neo-button-primary"
+                    >
+                      <MessageSquare className="w-5 h-5 mr-2" />
+                      Talk to Me
+                    </Button>
+                    <Button
+                      onClick={handleFollowToggle}
+                      variant="outline"
+                      size="lg"
+                      className="flex-1 neo-button-secondary"
+                    >
+                      {isFollowing ? (
+                        <>
+                          <UserMinus className="w-5 h-5 mr-2" />
+                          Following
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="w-5 h-5 mr-2" />
+                          Follow
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 )}
+              </div>
 
-                {/* Stats */}
-                <div className="flex space-x-6 mb-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">{followerCount}</div>
-                    <div className="text-sm text-gray-600">Followers</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">{followingCount}</div>
-                    <div className="text-sm text-gray-600">Following</div>
-                  </div>
+              {/* Stats Grid */}
+              <div className="stats-grid">
+                <div className="stat-item">
+                  <div className="stat-number">352</div>
+                  <div className="stat-label">Total Conversations</div>
                 </div>
+                <div className="stat-item">
+                  <div className="stat-number">{followerCount > 999 ? `${(followerCount / 1000).toFixed(1)}K` : followerCount}</div>
+                  <div className="stat-label">Followers</div>
+                </div>
+                <div className="stat-item">
+                  <div className="stat-number">89</div>
+                  <div className="stat-label">Engagement Score</div>
+                </div>
+              </div>
 
-                {/* Action Buttons */}
-                <div className="flex space-x-3">
-                  {!isCurrentUser && (
-                    <>
-                      <Button
-                        onClick={handleFollowToggle}
-                        variant={isFollowing ? "outline" : "default"}
-                        className="flex items-center space-x-2"
-                      >
-                        {isFollowing ? (
-                          <>
-                            <UserMinus className="w-4 h-4" />
-                            <span>Unfollow</span>
-                          </>
-                        ) : (
-                          <>
-                            <UserPlus className="w-4 h-4" />
-                            <span>Follow</span>
-                          </>
-                        )}
-                      </Button>
+              {/* Tabs */}
+              <Tabs defaultValue="posts" className="w-full">
+                <TabsList className="tab-navigation">
+                  <TabsTrigger value="posts" className="tab-trigger">Posts</TabsTrigger>
+                  <TabsTrigger value="chat" className="tab-trigger">Chat</TabsTrigger>
+                  <TabsTrigger value="products" className="tab-trigger">Products/Gifts</TabsTrigger>
+                </TabsList>
 
-                      <Button variant="outline" className="flex items-center space-x-2">
-                        <MessageSquare className="w-4 h-4" />
-                        <span>Message</span>
-                      </Button>
+                <TabsContent value="posts" className="mt-6">
+                  <div className="text-center py-8">
+                    <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                    <p className="text-muted-foreground">No posts yet</p>
+                  </div>
+                </TabsContent>
 
-                      <Button variant="outline" className="flex items-center space-x-2">
-                        <Crown className="w-4 h-4" />
-                        <span>Subscribe</span>
-                      </Button>
-                    </>
-                  )}
+                <TabsContent value="chat" className="mt-6">
+                  <div className="neo-card p-4 h-64 overflow-hidden">
+                    <ChatTab />
+                  </div>
+                </TabsContent>
 
-                  <Button variant="outline" size="icon">
-                    <Share2 className="w-4 h-4" />
+                <TabsContent value="products" className="mt-6">
+                  <div className="text-center py-8">
+                    <Crown className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                    <p className="text-muted-foreground">No products available</p>
+                  </div>
+                </TabsContent>
+              </Tabs>
+
+              {/* Chat Input */}
+              <div className="relative">
+                <Input
+                  placeholder="Ask me anything..."
+                  className="neo-input pr-20 py-3 text-center"
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:bg-primary/20">
+                    <Smile className="w-4 h-4" />
+                  </Button>
+                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:bg-primary/20">
+                    <Mic className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
+
+              {/* Social Media Icons */}
+              <div className="social-icons">
+                <Button variant="ghost" size="sm" className="social-icon">
+                  <Twitter className="w-5 h-5" />
+                </Button>
+                <Button variant="ghost" size="sm" className="social-icon">
+                  <Linkedin className="w-5 h-5" />
+                </Button>
+                <Button variant="ghost" size="sm" className="social-icon">
+                  <Facebook className="w-5 h-5" />
+                </Button>
+                <Button variant="ghost" size="sm" className="social-icon">
+                  <Instagram className="w-5 h-5" />
+                </Button>
+                <Button variant="ghost" size="sm" className="social-icon">
+                  <Youtube className="w-5 h-5" />
+                </Button>
+                <Button variant="ghost" size="sm" className="social-icon">
+                  <ExternalLink className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Tabs */}
-        <Tabs defaultValue="posts" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="posts">Posts</TabsTrigger>
-            <TabsTrigger value="chat">Chat</TabsTrigger>
-            <TabsTrigger value="about">About</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="posts" className="space-y-6">
-            {/* Like and Comment Section for Profile */}
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <LikeButton 
-                      itemId={profileData.id} 
-                      itemType="profile"
-                      className="hover:bg-red-50"
-                    />
-                    <CommentSection 
-                      itemId={profileData.id} 
-                      itemType="profile"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Posts would go here - currently empty */}
-            <Card>
-              <CardContent className="text-center py-12">
-                <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">No posts yet</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="chat">
-            <Card className="h-[600px]">
-              <ChatTab />
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="about" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <h3 className="text-xl font-semibold">About</h3>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Bio</h4>
-                  <p className="text-gray-700">
-                    {profileData.bio || "No bio available"}
-                  </p>
-                </div>
-
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Member Since</h4>
-                  <p className="text-gray-700 flex items-center">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    {formatDistanceToNow(new Date(profileData.created_at), { addSuffix: true })}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </div>
     </div>
   );
