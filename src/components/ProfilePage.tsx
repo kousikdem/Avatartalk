@@ -69,11 +69,11 @@ const ProfilePage = () => {
       setLoading(true);
       console.log('Loading profile for username:', username);
 
-      // Load profile data - use trim and case-insensitive matching for better reliability
+      // Load profile data - use exact matching now that usernames are clean
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
-        .ilike('username', username?.trim())
+        .eq('username', username?.trim())
         .maybeSingle();
 
       console.log('Profile query result:', { profile, error });
