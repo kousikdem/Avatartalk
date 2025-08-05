@@ -1,24 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { 
   MessageSquare, 
   Users, 
-  Eye, 
-  Calendar,
-  MapPin,
-  Link as LinkIcon,
+  Heart,
   Share2,
   UserPlus,
   UserMinus,
   Crown,
-  Verified,
   Mic,
   Smile,
   Twitter,
@@ -26,7 +19,8 @@ import {
   Facebook,
   Instagram,
   Youtube,
-  ExternalLink
+  ExternalLink,
+  Send
 } from 'lucide-react';
 import Avatar3D from './Avatar3D';
 import { supabase } from '@/integrations/supabase/client';
@@ -203,160 +197,209 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-slate-900/5 to-transparent"></div>
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+    <div className="min-h-screen bg-gradient-to-br from-background via-accent/5 to-background dark:from-slate-900 dark:via-purple-900 dark:to-slate-900 relative overflow-hidden">
+      {/* Animated Background Effects */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent"></div>
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
       
-      <div className="relative z-10 min-h-screen flex flex-col">
-        {/* Main Profile Container */}
-        <div className="flex-1 flex items-center justify-center p-4 md:p-8">
-          <div className="w-full max-w-md mx-auto">
-            {/* Profile Card */}
-            <div className="neo-card p-8 text-center space-y-6">
-              {/* 3D Avatar */}
-              <div className="relative mx-auto w-48 h-48 md:w-56 md:h-56">
-                <div className="avatar-glow">
-                  <Avatar3D 
-                    isLarge={true}
-                    avatarStyle="realistic"
-                    mood="friendly"
-                    onInteraction={() => {}}
-                  />
-                </div>
+      {/* Floating particles effect */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-20 w-2 h-2 bg-primary/30 rounded-full animate-pulse"></div>
+        <div className="absolute top-40 right-32 w-1 h-1 bg-accent/40 rounded-full animate-pulse delay-500"></div>
+        <div className="absolute bottom-32 left-1/3 w-1.5 h-1.5 bg-primary/20 rounded-full animate-pulse delay-1000"></div>
+      </div>
+      
+      <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-lg mx-auto">
+          {/* Main Profile Card */}
+          <div className="neo-card p-6 md:p-8 text-center space-y-6 animate-fade-in">
+            
+            {/* 3D Avatar with Enhanced Effects */}
+            <div className="relative mx-auto w-40 h-40 md:w-48 md:h-48 mb-6">
+              {/* Pulse ring effect */}
+              <div className="absolute inset-0 rounded-full bg-primary/20 animate-pulse-ring"></div>
+              <div className="relative avatar-glow rounded-full overflow-hidden">
+                <Avatar3D 
+                  isLarge={true}
+                  avatarStyle="realistic"
+                  mood="friendly"
+                  onInteraction={() => {}}
+                />
               </div>
+              {/* Status indicator */}
+              <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-500 rounded-full border-2 border-card animate-glow">
+                <div className="w-full h-full bg-green-400 rounded-full animate-pulse"></div>
+              </div>
+            </div>
 
-              {/* Name and Username */}
-              <div className="space-y-2">
-                <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+            {/* Profile Info */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-center gap-2">
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground">
                   {profileData.display_name || profileData.full_name || profileData.username}
                 </h1>
-                <p className="text-lg text-muted-foreground">@{profileData.username}</p>
+                <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                  <div className="w-2 h-2 bg-primary-foreground rounded-full"></div>
+                </div>
               </div>
+              <p className="text-base text-muted-foreground font-medium">@{profileData.username}</p>
+            </div>
 
-              {/* Bio */}
-              {profileData.bio && (
-                <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed">
+            {/* Bio */}
+            {profileData.bio && (
+              <div className="bg-muted/30 rounded-lg p-4 backdrop-blur-sm">
+                <p className="text-muted-foreground text-sm leading-relaxed">
                   {profileData.bio}
                 </p>
-              )}
-
-              {/* Action Buttons */}
-              <div className="space-y-3">
-                {!isCurrentUser && (
-                  <div className="flex gap-3">
-                    <Button
-                      size="lg"
-                      className="flex-1 neo-button-primary"
-                    >
-                      <MessageSquare className="w-5 h-5 mr-2" />
-                      Talk to Me
-                    </Button>
-                    <Button
-                      onClick={handleFollowToggle}
-                      variant="outline"
-                      size="lg"
-                      className="flex-1 neo-button-secondary"
-                    >
-                      {isFollowing ? (
-                        <>
-                          <UserMinus className="w-5 h-5 mr-2" />
-                          Following
-                        </>
-                      ) : (
-                        <>
-                          <UserPlus className="w-5 h-5 mr-2" />
-                          Follow
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                )}
               </div>
+            )}
 
-              {/* Stats Grid */}
-              <div className="stats-grid">
-                <div className="stat-item">
-                  <div className="stat-number">352</div>
-                  <div className="stat-label">Total Conversations</div>
-                </div>
-                <div className="stat-item">
-                  <div className="stat-number">{followerCount > 999 ? `${(followerCount / 1000).toFixed(1)}K` : followerCount}</div>
-                  <div className="stat-label">Followers</div>
-                </div>
-                <div className="stat-item">
-                  <div className="stat-number">89</div>
-                  <div className="stat-label">Engagement Score</div>
-                </div>
+            {/* Action Buttons */}
+            {!isCurrentUser && (
+              <div className="flex gap-3 mt-6">
+                <Button
+                  size="lg"
+                  className="flex-1 neo-button-primary h-12 rounded-full font-semibold"
+                >
+                  <MessageSquare className="w-5 h-5 mr-2" />
+                  Talk to Me
+                </Button>
+                <Button
+                  onClick={handleFollowToggle}
+                  variant="outline"
+                  size="lg"
+                  className="flex-1 neo-button-secondary h-12 rounded-full font-semibold"
+                >
+                  {isFollowing ? (
+                    <>
+                      <UserMinus className="w-5 h-5 mr-2" />
+                      Following
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-5 h-5 mr-2" />
+                      Follow
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  className="h-12 w-12 rounded-full border border-border/50 hover:border-primary/50 hover:bg-primary/10"
+                >
+                  <Share2 className="w-5 h-5" />
+                </Button>
               </div>
+            )}
 
-              {/* Tabs */}
-              <Tabs defaultValue="posts" className="w-full">
-                <TabsList className="tab-navigation">
-                  <TabsTrigger value="posts" className="tab-trigger">Posts</TabsTrigger>
-                  <TabsTrigger value="chat" className="tab-trigger">Chat</TabsTrigger>
-                  <TabsTrigger value="products" className="tab-trigger">Products/Gifts</TabsTrigger>
-                </TabsList>
+            {/* Stats Grid */}
+            <div className="stats-grid mt-8">
+              <div className="stat-item bg-card/30 rounded-lg p-4 backdrop-blur-sm hover:bg-card/50 transition-colors">
+                <div className="stat-number">352</div>
+                <div className="stat-label">Conversations</div>
+              </div>
+              <div className="stat-item bg-card/30 rounded-lg p-4 backdrop-blur-sm hover:bg-card/50 transition-colors">
+                <div className="stat-number">{followerCount > 999 ? `${(followerCount / 1000).toFixed(1)}K` : followerCount}</div>
+                <div className="stat-label">Followers</div>
+              </div>
+              <div className="stat-item bg-card/30 rounded-lg p-4 backdrop-blur-sm hover:bg-card/50 transition-colors">
+                <div className="stat-number">89</div>
+                <div className="stat-label">Engagement</div>
+              </div>
+            </div>
 
-                <TabsContent value="posts" className="mt-6">
-                  <div className="text-center py-8">
-                    <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                    <p className="text-muted-foreground">No posts yet</p>
+            {/* Navigation Tabs */}
+            <Tabs defaultValue="posts" className="w-full mt-8">
+              <TabsList className="tab-navigation w-full">
+                <TabsTrigger value="posts" className="tab-trigger flex-1">Posts</TabsTrigger>
+                <TabsTrigger value="chat" className="tab-trigger flex-1">Chat</TabsTrigger>
+                <TabsTrigger value="products" className="tab-trigger flex-1">Gifts</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="posts" className="mt-6">
+                <div className="bg-card/20 rounded-lg p-8 backdrop-blur-sm">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <MessageSquare className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="font-semibold text-foreground mb-2">No posts yet</h3>
+                    <p className="text-sm text-muted-foreground">Share your first thought with the world</p>
                   </div>
-                </TabsContent>
+                </div>
+              </TabsContent>
 
-                <TabsContent value="chat" className="mt-6">
-                  <div className="neo-card p-4 h-64 overflow-hidden">
-                    <ChatTab />
+              <TabsContent value="chat" className="mt-6">
+                <div className="bg-card/20 rounded-lg p-4 backdrop-blur-sm h-64">
+                  <ChatTab />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="products" className="mt-6">
+                <div className="bg-card/20 rounded-lg p-8 backdrop-blur-sm">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Crown className="w-8 h-8 text-yellow-500" />
+                    </div>
+                    <h3 className="font-semibold text-foreground mb-2">Premium Gifts</h3>
+                    <p className="text-sm text-muted-foreground">Exclusive gifts coming soon</p>
                   </div>
-                </TabsContent>
+                </div>
+              </TabsContent>
+            </Tabs>
 
-                <TabsContent value="products" className="mt-6">
-                  <div className="text-center py-8">
-                    <Crown className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                    <p className="text-muted-foreground">No products available</p>
-                  </div>
-                </TabsContent>
-              </Tabs>
-
-              {/* Chat Input */}
-              <div className="relative">
+            {/* Interactive Chat Input */}
+            <div className="relative mt-8">
+              <div className="neo-input relative flex items-center pr-16">
                 <Input
                   placeholder="Ask me anything..."
-                  className="neo-input pr-20 py-3 text-center"
+                  className="border-0 bg-transparent text-center flex-1 text-sm placeholder:text-muted-foreground/70 focus:outline-none"
                 />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:bg-primary/20">
+                <div className="absolute right-3 flex items-center gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="h-8 w-8 p-0 hover:bg-primary/20 rounded-full"
+                  >
                     <Smile className="w-4 h-4" />
                   </Button>
-                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:bg-primary/20">
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="h-8 w-8 p-0 hover:bg-primary/20 rounded-full"
+                  >
                     <Mic className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    className="h-8 w-8 p-0 bg-primary hover:bg-primary/90 rounded-full"
+                  >
+                    <Send className="w-3 h-3" />
                   </Button>
                 </div>
               </div>
+            </div>
 
-              {/* Social Media Icons */}
-              <div className="social-icons">
-                <Button variant="ghost" size="sm" className="social-icon">
-                  <Twitter className="w-5 h-5" />
-                </Button>
-                <Button variant="ghost" size="sm" className="social-icon">
-                  <Linkedin className="w-5 h-5" />
-                </Button>
-                <Button variant="ghost" size="sm" className="social-icon">
-                  <Facebook className="w-5 h-5" />
-                </Button>
-                <Button variant="ghost" size="sm" className="social-icon">
-                  <Instagram className="w-5 h-5" />
-                </Button>
-                <Button variant="ghost" size="sm" className="social-icon">
-                  <Youtube className="w-5 h-5" />
-                </Button>
-                <Button variant="ghost" size="sm" className="social-icon">
-                  <ExternalLink className="w-5 h-5" />
-                </Button>
-              </div>
+            {/* Social Media Links */}
+            <div className="social-icons mt-6">
+              <Button variant="ghost" size="sm" className="social-icon hover:text-blue-400">
+                <Twitter className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="sm" className="social-icon hover:text-blue-600">
+                <Linkedin className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="sm" className="social-icon hover:text-blue-500">
+                <Facebook className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="sm" className="social-icon hover:text-pink-500">
+                <Instagram className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="sm" className="social-icon hover:text-red-500">
+                <Youtube className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="sm" className="social-icon hover:text-green-500">
+                <ExternalLink className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </div>
