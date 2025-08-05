@@ -197,96 +197,93 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-accent/5 to-background dark:from-slate-900 dark:via-purple-900 dark:to-slate-900 relative overflow-hidden">
-      {/* Animated Background Effects */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent"></div>
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
-      
-      {/* Floating particles effect */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-20 w-2 h-2 bg-primary/30 rounded-full animate-pulse"></div>
-        <div className="absolute top-40 right-32 w-1 h-1 bg-accent/40 rounded-full animate-pulse delay-500"></div>
-        <div className="absolute bottom-32 left-1/3 w-1.5 h-1.5 bg-primary/20 rounded-full animate-pulse delay-1000"></div>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Futuristic Space Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-900 to-blue-900">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-600/10 via-purple-600/5 to-transparent"></div>
+        <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        
+        {/* Floating particles */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-20 w-1 h-1 bg-blue-400/60 rounded-full animate-pulse"></div>
+          <div className="absolute top-40 right-32 w-1 h-1 bg-purple-400/60 rounded-full animate-pulse delay-700"></div>
+          <div className="absolute bottom-32 left-1/3 w-1 h-1 bg-blue-300/40 rounded-full animate-pulse delay-1500"></div>
+          <div className="absolute top-1/2 right-20 w-1 h-1 bg-purple-300/50 rounded-full animate-pulse delay-300"></div>
+        </div>
       </div>
       
+      {/* Profile Container */}
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <div className="w-full max-w-lg mx-auto">
-          {/* Main Profile Card */}
-          <div className="neo-card p-6 md:p-8 text-center space-y-6 animate-fade-in">
-            
-            {/* 3D Avatar with Enhanced Effects */}
-            <div className="relative mx-auto w-40 h-40 md:w-48 md:h-48 mb-6">
-              {/* Pulse ring effect */}
-              <div className="absolute inset-0 rounded-full bg-primary/20 animate-pulse-ring"></div>
-              <div className="relative avatar-glow rounded-full overflow-hidden">
-                <Avatar3D 
-                  isLarge={true}
-                  avatarStyle="realistic"
-                  mood="friendly"
-                  onInteraction={() => {}}
-                />
-              </div>
-              {/* Status indicator */}
-              <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-500 rounded-full border-2 border-card animate-glow">
-                <div className="w-full h-full bg-green-400 rounded-full animate-pulse"></div>
+        <div className="w-full max-w-md mx-auto">
+          
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8 px-2">
+            <h1 className="text-xl font-bold text-white">AvatarTalk.bio</h1>
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="sm" className="text-white/70 hover:text-white">
+                <Share2 className="w-5 h-5" />
+              </Button>
+              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                <div className="w-6 h-6 bg-blue-400 rounded-full"></div>
               </div>
             </div>
+          </div>
 
-            {/* Profile Info */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-center gap-2">
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-                  {profileData.display_name || profileData.full_name || profileData.username}
-                </h1>
-                <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                  <div className="w-2 h-2 bg-primary-foreground rounded-full"></div>
-                </div>
+          {/* Main Profile Card */}
+          <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-6 space-y-6 shadow-2xl">
+            
+            {/* Profile Header */}
+            <div className="text-center space-y-2">
+              <h1 className="text-2xl font-bold text-white">
+                {profileData.display_name || profileData.full_name || profileData.username}
+              </h1>
+              <p className="text-blue-300 font-medium">@{profileData.username}</p>
+              <div className="flex items-center justify-center">
+                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
               </div>
-              <p className="text-base text-muted-foreground font-medium">@{profileData.username}</p>
             </div>
 
             {/* Bio */}
             {profileData.bio && (
-              <div className="bg-muted/30 rounded-lg p-4 backdrop-blur-sm">
-                <p className="text-muted-foreground text-sm leading-relaxed">
+              <div className="text-center">
+                <p className="text-slate-300 text-sm leading-relaxed">
                   {profileData.bio}
                 </p>
               </div>
             )}
 
+            {/* 3D Avatar Preview */}
+            <div className="relative mx-auto w-full max-w-sm">
+              <div className="aspect-video bg-gradient-to-br from-slate-800/50 to-blue-900/30 rounded-2xl border border-slate-600/30 overflow-hidden">
+                <div className="w-full h-full flex items-center justify-center">
+                  <Avatar3D 
+                    isLarge={true}
+                    avatarStyle="realistic"
+                    mood="friendly"
+                    onInteraction={() => {}}
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Action Buttons */}
             {!isCurrentUser && (
-              <div className="flex gap-3 mt-6">
-                <Button
-                  size="lg"
-                  className="flex-1 neo-button-primary h-12 rounded-full font-semibold"
-                >
-                  <MessageSquare className="w-5 h-5 mr-2" />
+              <div className="flex gap-3">
+                <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-full h-12 font-semibold border-0">
                   Talk to Me
                 </Button>
                 <Button
                   onClick={handleFollowToggle}
                   variant="outline"
-                  size="lg"
-                  className="flex-1 neo-button-secondary h-12 rounded-full font-semibold"
+                  className="flex-1 border-slate-600 text-white hover:bg-slate-800 rounded-full h-12 font-semibold"
                 >
-                  {isFollowing ? (
-                    <>
-                      <UserMinus className="w-5 h-5 mr-2" />
-                      Following
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="w-5 h-5 mr-2" />
-                      Follow
-                    </>
-                  )}
+                  {isFollowing ? 'Following' : 'Follow'}
                 </Button>
                 <Button
                   variant="ghost"
                   size="lg"
-                  className="h-12 w-12 rounded-full border border-border/50 hover:border-primary/50 hover:bg-primary/10"
+                  className="h-12 w-12 rounded-full text-white hover:bg-slate-800"
                 >
                   <Share2 className="w-5 h-5" />
                 </Button>
@@ -294,113 +291,111 @@ const ProfilePage = () => {
             )}
 
             {/* Stats Grid */}
-            <div className="stats-grid mt-8">
-              <div className="stat-item bg-card/30 rounded-lg p-4 backdrop-blur-sm hover:bg-card/50 transition-colors">
-                <div className="stat-number">352</div>
-                <div className="stat-label">Conversations</div>
+            <div className="grid grid-cols-3 gap-4 py-4">
+              <div className="text-center p-3 bg-slate-800/40 rounded-xl border border-slate-700/30">
+                <div className="text-2xl font-bold text-white">352</div>
+                <div className="text-xs text-slate-400 mt-1">Total Conversations</div>
               </div>
-              <div className="stat-item bg-card/30 rounded-lg p-4 backdrop-blur-sm hover:bg-card/50 transition-colors">
-                <div className="stat-number">{followerCount > 999 ? `${(followerCount / 1000).toFixed(1)}K` : followerCount}</div>
-                <div className="stat-label">Followers</div>
+              <div className="text-center p-3 bg-slate-800/40 rounded-xl border border-slate-700/30">
+                <div className="text-2xl font-bold text-white">
+                  {followerCount > 999 ? `${(followerCount / 1000).toFixed(1)}K` : followerCount}
+                </div>
+                <div className="text-xs text-slate-400 mt-1">Followers</div>
               </div>
-              <div className="stat-item bg-card/30 rounded-lg p-4 backdrop-blur-sm hover:bg-card/50 transition-colors">
-                <div className="stat-number">89</div>
-                <div className="stat-label">Engagement</div>
+              <div className="text-center p-3 bg-slate-800/40 rounded-xl border border-slate-700/30">
+                <div className="text-2xl font-bold text-white">89</div>
+                <div className="text-xs text-slate-400 mt-1">Engagement Score</div>
               </div>
             </div>
 
             {/* Navigation Tabs */}
-            <Tabs defaultValue="posts" className="w-full mt-8">
-              <TabsList className="tab-navigation w-full">
-                <TabsTrigger value="posts" className="tab-trigger flex-1">Posts</TabsTrigger>
-                <TabsTrigger value="chat" className="tab-trigger flex-1">Chat</TabsTrigger>
-                <TabsTrigger value="products" className="tab-trigger flex-1">Gifts</TabsTrigger>
+            <Tabs defaultValue="posts" className="w-full">
+              <TabsList className="bg-slate-800/50 border border-slate-700/50 rounded-full p-1 w-full grid grid-cols-3">
+                <TabsTrigger value="posts" className="rounded-full text-slate-300 data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                  Posts
+                </TabsTrigger>
+                <TabsTrigger value="chat" className="rounded-full text-slate-300 data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                  Chat
+                </TabsTrigger>
+                <TabsTrigger value="products" className="rounded-full text-slate-300 data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                  Projects/Gifts
+                </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="posts" className="mt-6">
-                <div className="bg-card/20 rounded-lg p-8 backdrop-blur-sm">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <MessageSquare className="w-8 h-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="font-semibold text-foreground mb-2">No posts yet</h3>
-                    <p className="text-sm text-muted-foreground">Share your first thought with the world</p>
+              <TabsContent value="posts" className="mt-4">
+                <div className="bg-slate-800/30 rounded-xl p-6 border border-slate-700/30 text-center">
+                  <div className="w-12 h-12 bg-slate-700/50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <MessageSquare className="w-6 h-6 text-slate-400" />
                   </div>
+                  <p className="text-slate-400 text-sm">No posts yet</p>
                 </div>
               </TabsContent>
 
-              <TabsContent value="chat" className="mt-6">
-                <div className="bg-card/20 rounded-lg p-4 backdrop-blur-sm h-64">
+              <TabsContent value="chat" className="mt-4">
+                <div className="bg-slate-800/30 rounded-xl p-4 border border-slate-700/30 h-48">
                   <ChatTab />
                 </div>
               </TabsContent>
 
-              <TabsContent value="products" className="mt-6">
-                <div className="bg-card/20 rounded-lg p-8 backdrop-blur-sm">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Crown className="w-8 h-8 text-yellow-500" />
-                    </div>
-                    <h3 className="font-semibold text-foreground mb-2">Premium Gifts</h3>
-                    <p className="text-sm text-muted-foreground">Exclusive gifts coming soon</p>
+              <TabsContent value="products" className="mt-4">
+                <div className="bg-slate-800/30 rounded-xl p-6 border border-slate-700/30 text-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Crown className="w-6 h-6 text-yellow-400" />
                   </div>
+                  <p className="text-slate-400 text-sm">Premium Gifts</p>
                 </div>
               </TabsContent>
             </Tabs>
+          </div>
 
-            {/* Interactive Chat Input */}
-            <div className="relative mt-8">
-              <div className="neo-input relative flex items-center pr-16">
-                <Input
-                  placeholder="Ask me anything..."
-                  className="border-0 bg-transparent text-center flex-1 text-sm placeholder:text-muted-foreground/70 focus:outline-none"
-                />
-                <div className="absolute right-3 flex items-center gap-2">
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="h-8 w-8 p-0 hover:bg-primary/20 rounded-full"
-                  >
-                    <Smile className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="h-8 w-8 p-0 hover:bg-primary/20 rounded-full"
-                  >
-                    <Mic className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    className="h-8 w-8 p-0 bg-primary hover:bg-primary/90 rounded-full"
-                  >
-                    <Send className="w-3 h-3" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Social Media Links */}
-            <div className="social-icons mt-6">
-              <Button variant="ghost" size="sm" className="social-icon hover:text-blue-400">
-                <Twitter className="w-4 h-4" />
+          {/* Chat Input */}
+          <div className="mt-6 relative">
+            <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/50 rounded-full p-3 flex items-center gap-3">
+              <Input
+                placeholder="Ask me anything..."
+                className="border-0 bg-transparent text-white placeholder:text-slate-400 flex-1 focus-visible:ring-0"
+              />
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="h-8 w-8 p-0 hover:bg-slate-800 rounded-full text-slate-400"
+              >
+                <Smile className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="sm" className="social-icon hover:text-blue-600">
-                <Linkedin className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="social-icon hover:text-blue-500">
-                <Facebook className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="social-icon hover:text-pink-500">
-                <Instagram className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="social-icon hover:text-red-500">
-                <Youtube className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="social-icon hover:text-green-500">
-                <ExternalLink className="w-4 h-4" />
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="h-8 w-8 p-0 hover:bg-slate-800 rounded-full text-slate-400"
+              >
+                <Mic className="w-4 h-4" />
               </Button>
             </div>
+          </div>
+
+          {/* Social Media Icons */}
+          <div className="flex justify-center items-center gap-4 mt-6 px-4">
+            <Button variant="ghost" size="sm" className="h-10 w-10 rounded-full text-slate-400 hover:text-blue-400 hover:bg-slate-800">
+              <Twitter className="w-5 h-5" />
+            </Button>
+            <Button variant="ghost" size="sm" className="h-10 w-10 rounded-full text-slate-400 hover:text-blue-600 hover:bg-slate-800">
+              <Linkedin className="w-5 h-5" />
+            </Button>
+            <Button variant="ghost" size="sm" className="h-10 w-10 rounded-full text-slate-400 hover:text-red-500 hover:bg-slate-800">
+              <Youtube className="w-5 h-5" />
+            </Button>
+            <Button variant="ghost" size="sm" className="h-10 w-10 rounded-full text-slate-400 hover:text-blue-500 hover:bg-slate-800">
+              <Facebook className="w-5 h-5" />
+            </Button>
+            <Button variant="ghost" size="sm" className="h-10 w-10 rounded-full text-slate-400 hover:text-pink-500 hover:bg-slate-800">
+              <Instagram className="w-5 h-5" />
+            </Button>
+            <Button variant="ghost" size="sm" className="h-10 w-10 rounded-full text-slate-400 hover:text-green-500 hover:bg-slate-800">
+              <ExternalLink className="w-5 h-5" />
+            </Button>
+            <div className="w-px h-6 bg-slate-700"></div>
+            <Button variant="ghost" size="sm" className="h-10 w-10 rounded-full text-slate-400 hover:text-white hover:bg-slate-800">
+              <Share2 className="w-5 h-5" />
+            </Button>
           </div>
         </div>
       </div>
