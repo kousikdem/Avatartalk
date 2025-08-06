@@ -13,27 +13,26 @@ import {
   UserMinus,
   Crown,
   Mic,
+  MicOff,
   Smile,
   Twitter,
   Linkedin,
-  Facebook,
   Instagram,
   Youtube,
   ExternalLink,
   Send,
-  Download,
-  ArrowLeft,
+  Play,
+  Volume2,
   MoreVertical
 } from 'lucide-react';
 import Avatar3D from './Avatar3D';
+import EmojiPicker from './EmojiPicker';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useFollows } from '@/hooks/useFollows';
+import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { formatDistanceToNow } from 'date-fns';
-import LikeButton from './LikeButton';
-import CommentSection from './CommentSection';
-import ChatTab from './ChatTab';
 
 interface ProfileData {
   id: string;
@@ -76,6 +75,38 @@ const ProfilePage = () => {
     engagement_score: 0
   });
   const [chatMessage, setChatMessage] = useState('');
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [lastSpokenMessage, setLastSpokenMessage] = useState('');
+  
+  // Voice input hook
+  const { 
+    isListening, 
+    transcript, 
+    interimTranscript, 
+    startListening, 
+    stopListening, 
+    resetTranscript,
+    isSupported: voiceSupported 
+  } = useVoiceInput();
+  
+  // Simple TTS using browser API
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  
+  const speak = (text: string) => {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+  
+  const stopTTS = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+  };
 
   useEffect(() => {
     if (username) {
@@ -207,9 +238,42 @@ const ProfilePage = () => {
   const handleSendMessage = () => {
     if (chatMessage.trim()) {
       // Handle sending message logic here
+      setLastSpokenMessage(chatMessage);
       setChatMessage('');
     }
   };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setChatMessage(prev => prev + emoji);
+  };
+
+  const toggleVoiceInput = () => {
+    if (isListening) {
+      stopListening();
+      if (transcript) {
+        setChatMessage(prev => prev + transcript);
+        resetTranscript();
+      }
+    } else {
+      startListening({ continuous: false, interimResults: true });
+    }
+  };
+
+  const handleTalkToAvatar = () => {
+    if (lastSpokenMessage) {
+      speak(`Hello! You said: ${lastSpokenMessage}. How can I help you today?`);
+    } else {
+      speak("Hello! I'm excited to talk with you. What would you like to discuss?");
+    }
+  };
+
+  // Update chat message with voice input
+  useEffect(() => {
+    if (transcript && !isListening) {
+      setChatMessage(prev => prev + transcript);
+      resetTranscript();
+    }
+  }, [transcript, isListening, resetTranscript]);
 
   if (loading) {
     return (
@@ -233,29 +297,11 @@ const ProfilePage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
+      <div className="flex items-center justify-between p-4">
+        {/* Profile Header - Moved to top left */}
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-            <ArrowLeft className="w-5 h-5 text-muted-foreground" />
-          </Button>
-          <h1 className="text-lg font-semibold text-foreground">AvatarTalk.bio</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm">
-            <Download className="w-5 h-5 text-muted-foreground" />
-          </Button>
-          <Button variant="ghost" size="sm">
-            <MoreVertical className="w-5 h-5 text-muted-foreground" />
-          </Button>
-        </div>
-      </div>
-      
-      {/* Profile Content */}
-      <div className="max-w-md mx-auto px-4 py-6 space-y-6">
-        {/* Profile Header */}
-        <div className="flex items-center gap-4">
           <div className="relative">
-            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-slate-600">
+            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-slate-600">
               <Avatar3D 
                 isLarge={false}
                 avatarStyle="realistic"
@@ -263,15 +309,24 @@ const ProfilePage = () => {
                 onInteraction={() => {}}
               />
             </div>
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900"></div>
+            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-900"></div>
           </div>
-          <div className="flex-1">
-            <h2 className="text-2xl font-bold text-white">
+          <div>
+            <h2 className="text-lg font-bold text-white">
               {profileData.display_name || profileData.full_name || profileData.username}
             </h2>
-            <p className="text-slate-400">@{profileData.username}</p>
+            <p className="text-slate-400 text-sm">@{profileData.username}</p>
           </div>
         </div>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+            <MoreVertical className="w-4 h-4 text-slate-400" />
+          </Button>
+        </div>
+      </div>
+      
+      {/* Profile Content */}
+      <div className="max-w-md mx-auto px-4 py-2 space-y-6">
 
         {/* Bio */}
         {profileData.bio && (
@@ -280,24 +335,33 @@ const ProfilePage = () => {
           </p>
         )}
 
-        {/* Main Avatar Preview */}
+        {/* Main Avatar Preview - Increased height */}
         <div className="relative">
-          <div className="aspect-[4/3] bg-gradient-to-br from-slate-800/80 to-blue-900/50 rounded-2xl overflow-hidden border border-slate-600/50">
-            <div className="w-full h-full flex items-center justify-center">
+          <div className="h-96 bg-gradient-to-br from-slate-800/80 to-blue-900/50 rounded-2xl overflow-hidden border border-slate-600/50">
+            <div className="w-full h-full flex items-center justify-center relative">
               <Avatar3D 
                 isLarge={true}
                 avatarStyle="realistic"
                 mood="friendly"
                 onInteraction={() => {}}
               />
+              {/* Talk to Me button on avatar preview */}
+              <Button 
+                onClick={handleTalkToAvatar}
+                className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-blue-600/90 hover:bg-blue-700/90 text-white rounded-full px-4 py-2 backdrop-blur-sm border border-blue-500/30"
+                size="sm"
+              >
+                <Play className="w-4 h-4 mr-2" />
+                Talk to Me
+              </Button>
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="flex gap-3">
-          <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-full h-12 font-medium">
-            Talk to Me
+          <Button className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full h-12 font-medium shadow-lg">
+            Subscribe - $9.99/mo
           </Button>
           <Button
             onClick={handleFollowToggle}
@@ -309,9 +373,6 @@ const ProfilePage = () => {
             }`}
           >
             {isFollowing ? 'Following' : 'Follow'}
-          </Button>
-          <Button variant="outline" size="sm" className="h-12 w-12 rounded-full border-slate-600">
-            <UserPlus className="w-5 h-5 text-slate-400" />
           </Button>
         </div>
 
@@ -358,7 +419,7 @@ const ProfilePage = () => {
               value="products" 
               className="rounded-lg data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400"
             >
-              Projects/Gifts
+              Products
             </TabsTrigger>
           </TabsList>
 
@@ -408,7 +469,7 @@ const ProfilePage = () => {
         <div className="relative">
           <div className="bg-slate-800/50 rounded-2xl border border-slate-600/50 px-4 py-3 flex items-center gap-3">
             <Input
-              value={chatMessage}
+              value={chatMessage + (isListening ? interimTranscript : '')}
               onChange={(e) => setChatMessage(e.target.value)}
               placeholder="Ask me anything..."
               className="border-0 bg-transparent text-white placeholder:text-slate-400 flex-1 focus-visible:ring-0 p-0"
@@ -417,36 +478,66 @@ const ProfilePage = () => {
             <Button 
               size="sm" 
               variant="ghost" 
+              onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
               className="h-8 w-8 p-0 hover:bg-slate-700 rounded-full"
             >
-              <Mic className="w-4 h-4 text-slate-400" />
+              <Smile className="w-4 h-4 text-slate-400" />
+            </Button>
+            {voiceSupported && (
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                onClick={toggleVoiceInput}
+                className={`h-8 w-8 p-0 hover:bg-slate-700 rounded-full ${
+                  isListening ? 'bg-red-600/20 text-red-400' : ''
+                }`}
+              >
+                {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4 text-slate-400" />}
+              </Button>
+            )}
+            {isSpeaking && (
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                onClick={stopTTS}
+                className="h-8 w-8 p-0 hover:bg-slate-700 rounded-full text-blue-400"
+              >
+                <Volume2 className="w-4 h-4" />
+              </Button>
+            )}
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              onClick={handleSendMessage}
+              className="h-8 w-8 p-0 hover:bg-slate-700 rounded-full"
+            >
+              <Send className="w-4 h-4 text-slate-400" />
             </Button>
           </div>
+          <EmojiPicker 
+            isOpen={isEmojiPickerOpen}
+            onClose={() => setIsEmojiPickerOpen(false)}
+            onEmojiSelect={handleEmojiSelect}
+          />
         </div>
 
-        {/* Social Media Icons */}
-        <div className="flex items-center justify-center gap-4 pb-6">
-          <Button variant="ghost" size="sm" className="h-10 w-10 rounded-full hover:bg-slate-700">
-            <Twitter className="w-4 h-4 text-slate-400" />
+        {/* Social Media Icons - Reduced and larger */}
+        <div className="flex items-center justify-center gap-6 pb-6 border-t border-slate-700/30 pt-6">
+          <Button variant="ghost" size="sm" className="h-12 w-12 rounded-full hover:bg-slate-700">
+            <Twitter className="w-6 h-6 text-slate-400" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-10 w-10 rounded-full hover:bg-slate-700">
-            <Linkedin className="w-4 h-4 text-slate-400" />
+          <Button variant="ghost" size="sm" className="h-12 w-12 rounded-full hover:bg-slate-700">
+            <Linkedin className="w-6 h-6 text-slate-400" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-10 w-10 rounded-full hover:bg-slate-700">
-            <Youtube className="w-4 h-4 text-slate-400" />
+          <Button variant="ghost" size="sm" className="h-12 w-12 rounded-full hover:bg-slate-700">
+            <Instagram className="w-6 h-6 text-slate-400" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-10 w-10 rounded-full hover:bg-slate-700">
-            <Facebook className="w-4 h-4 text-slate-400" />
+          <Button variant="ghost" size="sm" className="h-12 w-12 rounded-full hover:bg-slate-700">
+            <Youtube className="w-6 h-6 text-slate-400" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-10 w-10 rounded-full hover:bg-slate-700">
-            <Instagram className="w-4 h-4 text-slate-400" />
-          </Button>
-          <Button variant="ghost" size="sm" className="h-10 w-10 rounded-full hover:bg-slate-700">
-            <ExternalLink className="w-4 h-4 text-slate-400" />
-          </Button>
-          <div className="w-px h-6 bg-slate-600"></div>
-          <Button variant="ghost" size="sm" className="h-10 w-10 rounded-full hover:bg-slate-700">
-            <Share2 className="w-4 h-4 text-slate-400" />
+          <div className="w-px h-8 bg-slate-600"></div>
+          <Button variant="ghost" size="sm" className="h-12 w-12 rounded-full hover:bg-slate-700">
+            <Share2 className="w-6 h-6 text-slate-400" />
           </Button>
         </div>
       </div>
