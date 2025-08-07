@@ -23,7 +23,10 @@ import {
   Send,
   Play,
   Volume2,
-  MoreVertical
+  MoreVertical,
+  Facebook,
+  Github,
+  Globe
 } from 'lucide-react';
 import Avatar3D from './Avatar3D';
 import EmojiPicker from './EmojiPicker';
@@ -77,6 +80,8 @@ const ProfilePage = () => {
   const [chatMessage, setChatMessage] = useState('');
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [lastSpokenMessage, setLastSpokenMessage] = useState('');
+  const [socialLinks, setSocialLinks] = useState<any>(null);
+  const [voiceConversations, setVoiceConversations] = useState<Array<{message: string, timestamp: Date, type: 'user' | 'avatar'}>>([]);
   
   // Voice input hook
   const { 
@@ -165,8 +170,8 @@ const ProfilePage = () => {
         setIsFollowing(!!followData);
       }
 
-      // Load follower and following counts and user stats
-      const [followersResult, followingResult, statsResult] = await Promise.all([
+      // Load follower and following counts, user stats, and social links
+      const [followersResult, followingResult, statsResult, socialLinksResult] = await Promise.all([
         supabase
           .from('follows')
           .select('id', { count: 'exact' })
@@ -177,6 +182,11 @@ const ProfilePage = () => {
           .eq('follower_id', profile.id),
         supabase
           .from('user_stats')
+          .select('*')
+          .eq('user_id', profile.id)
+          .maybeSingle(),
+        supabase
+          .from('social_links')
           .select('*')
           .eq('user_id', profile.id)
           .maybeSingle()
@@ -191,6 +201,10 @@ const ProfilePage = () => {
           followers_count: followersResult.count || 0,
           engagement_score: Math.round(statsResult.data.engagement_score || 0)
         });
+      }
+
+      if (socialLinksResult.data) {
+        setSocialLinks(socialLinksResult.data);
       }
 
       // Increment profile views
@@ -237,7 +251,27 @@ const ProfilePage = () => {
 
   const handleSendMessage = () => {
     if (chatMessage.trim()) {
-      // Handle sending message logic here
+      // Add to voice conversations
+      const newUserMessage = {
+        message: chatMessage,
+        timestamp: new Date(),
+        type: 'user' as const
+      };
+      setVoiceConversations(prev => [...prev, newUserMessage]);
+      
+      // Generate avatar response
+      const avatarResponse = `Thank you for saying: "${chatMessage}". How can I help you further?`;
+      const newAvatarMessage = {
+        message: avatarResponse,
+        timestamp: new Date(),
+        type: 'avatar' as const
+      };
+      
+      setTimeout(() => {
+        setVoiceConversations(prev => [...prev, newAvatarMessage]);
+        speak(avatarResponse);
+      }, 1000);
+      
       setLastSpokenMessage(chatMessage);
       setChatMessage('');
     }
@@ -302,12 +336,20 @@ const ProfilePage = () => {
         <div className="flex items-center gap-3">
           <div className="relative">
             <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-slate-600">
-              <Avatar3D 
-                isLarge={false}
-                avatarStyle="realistic"
-                mood="friendly"
-                onInteraction={() => {}}
-              />
+              {profileData.profile_pic_url ? (
+                <img 
+                  src={profileData.profile_pic_url} 
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Avatar3D 
+                  isLarge={false}
+                  avatarStyle="realistic"
+                  mood="friendly"
+                  onInteraction={() => {}}
+                />
+              )}
             </div>
             <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-900"></div>
           </div>
@@ -433,24 +475,41 @@ const ProfilePage = () => {
           </TabsContent>
 
           <TabsContent value="chat" className="mt-4">
-            <div className="bg-slate-800/30 rounded-xl p-4 min-h-[200px] border border-slate-700/50">
+            <div className="bg-slate-800/30 rounded-xl p-4 min-h-[200px] max-h-[300px] overflow-y-auto border border-slate-700/50">
               <div className="space-y-3">
-                <div className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-slate-700 flex-shrink-0"></div>
-                  <div className="bg-slate-700/70 rounded-2xl rounded-tl-md px-4 py-2 max-w-[80%]">
-                    <p className="text-slate-200 text-sm">
-                      Hi! I'm excited to chat with you. What would you like to talk about?
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-3 justify-end">
-                  <div className="bg-blue-600 rounded-2xl rounded-tr-md px-4 py-2 max-w-[80%]">
-                    <p className="text-white text-sm">
-                      Tell me about your experience in AI!
-                    </p>
-                  </div>
-                  <div className="w-8 h-8 rounded-full bg-blue-600 flex-shrink-0"></div>
-                </div>
+                {voiceConversations.length === 0 ? (
+                  <>
+                    <div className="flex gap-3">
+                      <div className="w-8 h-8 rounded-full bg-slate-700 flex-shrink-0"></div>
+                      <div className="bg-slate-700/70 rounded-2xl rounded-tl-md px-4 py-2 max-w-[80%]">
+                        <p className="text-slate-200 text-sm">
+                          Hi! I'm excited to chat with you. What would you like to talk about?
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  voiceConversations.map((conversation, index) => (
+                    <div key={index} className={`flex gap-3 ${conversation.type === 'user' ? 'justify-end' : ''}`}>
+                      {conversation.type === 'avatar' && (
+                        <div className="w-8 h-8 rounded-full bg-slate-700 flex-shrink-0"></div>
+                      )}
+                      <div className={`rounded-2xl px-4 py-2 max-w-[80%] ${
+                        conversation.type === 'user' 
+                          ? 'bg-blue-600 rounded-tr-md text-white' 
+                          : 'bg-slate-700/70 rounded-tl-md text-slate-200'
+                      }`}>
+                        <p className="text-sm">{conversation.message}</p>
+                        <p className="text-xs opacity-60 mt-1">
+                          {formatDistanceToNow(conversation.timestamp, { addSuffix: true })}
+                        </p>
+                      </div>
+                      {conversation.type === 'user' && (
+                        <div className="w-8 h-8 rounded-full bg-blue-600 flex-shrink-0"></div>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </TabsContent>
@@ -521,23 +580,75 @@ const ProfilePage = () => {
           />
         </div>
 
-        {/* Social Media Icons - Reduced and larger */}
-        <div className="flex items-center justify-center gap-6 pb-6 border-t border-slate-700/30 pt-6">
-          <Button variant="ghost" size="sm" className="h-12 w-12 rounded-full hover:bg-slate-700">
-            <Twitter className="w-6 h-6 text-slate-400" />
-          </Button>
-          <Button variant="ghost" size="sm" className="h-12 w-12 rounded-full hover:bg-slate-700">
-            <Linkedin className="w-6 h-6 text-slate-400" />
-          </Button>
-          <Button variant="ghost" size="sm" className="h-12 w-12 rounded-full hover:bg-slate-700">
-            <Instagram className="w-6 h-6 text-slate-400" />
-          </Button>
-          <Button variant="ghost" size="sm" className="h-12 w-12 rounded-full hover:bg-slate-700">
-            <Youtube className="w-6 h-6 text-slate-400" />
-          </Button>
-          <div className="w-px h-8 bg-slate-600"></div>
-          <Button variant="ghost" size="sm" className="h-12 w-12 rounded-full hover:bg-slate-700">
-            <Share2 className="w-6 h-6 text-slate-400" />
+        {/* Social Media Icons */}
+        <div className="flex items-center justify-center gap-3 pb-4">
+          {socialLinks?.twitter && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-10 w-10 rounded-full hover:bg-slate-700"
+              onClick={() => window.open(socialLinks.twitter, '_blank')}
+            >
+              <Twitter className="w-5 h-5 text-slate-400" />
+            </Button>
+          )}
+          {socialLinks?.linkedin && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-10 w-10 rounded-full hover:bg-slate-700"
+              onClick={() => window.open(socialLinks.linkedin, '_blank')}
+            >
+              <Linkedin className="w-5 h-5 text-slate-400" />
+            </Button>
+          )}
+          {socialLinks?.facebook && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-10 w-10 rounded-full hover:bg-slate-700"
+              onClick={() => window.open(socialLinks.facebook, '_blank')}
+            >
+              <Facebook className="w-5 h-5 text-slate-400" />
+            </Button>
+          )}
+          {socialLinks?.instagram && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-10 w-10 rounded-full hover:bg-slate-700"
+              onClick={() => window.open(socialLinks.instagram, '_blank')}
+            >
+              <Instagram className="w-5 h-5 text-slate-400" />
+            </Button>
+          )}
+          {socialLinks?.youtube && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-10 w-10 rounded-full hover:bg-slate-700"
+              onClick={() => window.open(socialLinks.youtube, '_blank')}
+            >
+              <Youtube className="w-5 h-5 text-slate-400" />
+            </Button>
+          )}
+          {socialLinks?.website && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-10 w-10 rounded-full hover:bg-slate-700"
+              onClick={() => window.open(socialLinks.website, '_blank')}
+            >
+              <Globe className="w-5 h-5 text-slate-400" />
+            </Button>
+          )}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-10 w-10 rounded-full hover:bg-slate-700"
+            onClick={() => navigator.share?.({ url: window.location.href })}
+          >
+            <Share2 className="w-5 h-5 text-slate-400" />
           </Button>
         </div>
       </div>
