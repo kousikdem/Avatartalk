@@ -23,10 +23,11 @@ import {
   Send,
   Play,
   Volume2,
-  MoreVertical,
   Facebook,
-  Github,
-  Globe
+  Globe,
+  X,
+  MoreVertical,
+  Github
 } from 'lucide-react';
 import Avatar3D from './Avatar3D';
 import EmojiPicker from './EmojiPicker';
@@ -580,76 +581,141 @@ const ProfilePage = () => {
           />
         </div>
 
-        {/* Social Media Icons */}
-        <div className="flex items-center justify-center gap-3 pb-4">
-          {socialLinks?.twitter && (
+        {/* Social Media and Share Section */}
+        <div className="space-y-4">
+          {/* Social Media Links */}
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            {socialLinks?.twitter && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-12 w-12 rounded-full hover:bg-slate-700"
+                onClick={() => window.open(socialLinks.twitter, '_blank')}
+              >
+                <X className="w-6 h-6 text-slate-400" />
+              </Button>
+            )}
+            {socialLinks?.facebook && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-12 w-12 rounded-full hover:bg-slate-700"
+                onClick={() => window.open(socialLinks.facebook, '_blank')}
+              >
+                <Facebook className="w-6 h-6 text-slate-400" />
+              </Button>
+            )}
+            {socialLinks?.instagram && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-12 w-12 rounded-full hover:bg-slate-700"
+                onClick={() => window.open(socialLinks.instagram, '_blank')}
+              >
+                <Instagram className="w-6 h-6 text-slate-400" />
+              </Button>
+            )}
+            {socialLinks?.youtube && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-12 w-12 rounded-full hover:bg-slate-700"
+                onClick={() => window.open(socialLinks.youtube, '_blank')}
+              >
+                <Youtube className="w-6 h-6 text-slate-400" />
+              </Button>
+            )}
+            {socialLinks?.linkedin && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-12 w-12 rounded-full hover:bg-slate-700"
+                onClick={() => window.open(socialLinks.linkedin, '_blank')}
+              >
+                <Linkedin className="w-6 h-6 text-slate-400" />
+              </Button>
+            )}
+            {socialLinks?.pinterest && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-12 w-12 rounded-full hover:bg-slate-700"
+                onClick={() => window.open(socialLinks.pinterest, '_blank')}
+              >
+                <svg className="w-6 h-6 text-slate-400" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 0C5.373 0 0 5.372 0 12s5.373 12 12 12 12-5.372 12-12S18.627 0 12 0zm0 19c-.721 0-1.418-.109-2.073-.312.286-.465.713-1.227.87-1.835l.437-1.664c.229.436.895.803 1.604.803 2.111 0 3.633-1.941 3.633-4.354 0-2.312-1.888-4.042-4.316-4.042-3.021 0-4.625 2.003-4.625 4.137 0 .695.366 1.56.951 1.836.096-.084.14-.221.105-.343-.084-.307-.273-1.072-.273-1.224 0-.12.061-.232.199-.232.113 0 .168.069.168.162 0 .479-.304 1.124-.304 1.913 0 1.186.909 2.142 2.343 2.142 1.086 0 1.684-.638 1.684-1.524 0-.585-.34-1.264-.34-1.264-.229-.479-.229-1.072 0-1.551.229-.479.799-.479 1.028 0 .229.479.229 1.072 0 1.551 0 0-.34.679-.34 1.264 0 .886.598 1.524 1.684 1.524 1.434 0 2.343-.956 2.343-2.142 0-.789-.304-1.434-.304-1.913 0-.093.055-.162.168-.162.138 0 .199.112.199.232 0 .152-.189.917-.273 1.224-.035.122.009.259.105.343.585-.276.951-1.141.951-1.836 0-2.134-1.604-4.137-4.625-4.137-2.428 0-4.316 1.73-4.316 4.042 0 2.413 1.522 4.354 3.633 4.354.709 0 1.375-.367 1.604-.803l.437 1.664c.157.608.584 1.37.87 1.835A11.936 11.936 0 0 1 12 19z"/>
+                </svg>
+              </Button>
+            )}
+            {socialLinks?.website && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-12 w-12 rounded-full hover:bg-slate-700"
+                onClick={() => window.open(socialLinks.website, '_blank')}
+              >
+                <Globe className="w-6 h-6 text-slate-400" />
+              </Button>
+            )}
+          </div>
+
+          {/* Share Options */}
+          <div className="flex items-center justify-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-10 px-3 rounded-full hover:bg-slate-700 text-xs text-slate-400"
+              onClick={() => {
+                const url = encodeURIComponent(window.location.href);
+                const text = encodeURIComponent(`Check out ${profileData?.display_name || profileData?.username}'s AI Avatar on AvatarTalk.bio`);
+                window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+              }}
+            >
+              Share on X
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-10 px-3 rounded-full hover:bg-slate-700 text-xs text-slate-400"
+              onClick={() => {
+                const url = encodeURIComponent(window.location.href);
+                window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+              }}
+            >
+              Share on Facebook
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-10 px-3 rounded-full hover:bg-slate-700 text-xs text-slate-400"
+              onClick={() => {
+                const url = encodeURIComponent(window.location.href);
+                const text = encodeURIComponent(`Check out this amazing AI Avatar: ${profileData?.display_name || profileData?.username}`);
+                window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank');
+              }}
+            >
+              Share on LinkedIn
+            </Button>
             <Button 
               variant="ghost" 
               size="sm" 
               className="h-10 w-10 rounded-full hover:bg-slate-700"
-              onClick={() => window.open(socialLinks.twitter, '_blank')}
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({
+                    title: `${profileData?.display_name || profileData?.username} - AvatarTalk.bio`,
+                    text: 'Check out this amazing AI Avatar!',
+                    url: window.location.href
+                  });
+                } else {
+                  navigator.clipboard.writeText(window.location.href);
+                  toast({ title: "Link copied to clipboard!" });
+                }
+              }}
             >
-              <Twitter className="w-5 h-5 text-slate-400" />
+              <Share2 className="w-5 h-5 text-slate-400" />
             </Button>
-          )}
-          {socialLinks?.linkedin && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-10 w-10 rounded-full hover:bg-slate-700"
-              onClick={() => window.open(socialLinks.linkedin, '_blank')}
-            >
-              <Linkedin className="w-5 h-5 text-slate-400" />
-            </Button>
-          )}
-          {socialLinks?.facebook && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-10 w-10 rounded-full hover:bg-slate-700"
-              onClick={() => window.open(socialLinks.facebook, '_blank')}
-            >
-              <Facebook className="w-5 h-5 text-slate-400" />
-            </Button>
-          )}
-          {socialLinks?.instagram && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-10 w-10 rounded-full hover:bg-slate-700"
-              onClick={() => window.open(socialLinks.instagram, '_blank')}
-            >
-              <Instagram className="w-5 h-5 text-slate-400" />
-            </Button>
-          )}
-          {socialLinks?.youtube && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-10 w-10 rounded-full hover:bg-slate-700"
-              onClick={() => window.open(socialLinks.youtube, '_blank')}
-            >
-              <Youtube className="w-5 h-5 text-slate-400" />
-            </Button>
-          )}
-          {socialLinks?.website && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-10 w-10 rounded-full hover:bg-slate-700"
-              onClick={() => window.open(socialLinks.website, '_blank')}
-            >
-              <Globe className="w-5 h-5 text-slate-400" />
-            </Button>
-          )}
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-10 w-10 rounded-full hover:bg-slate-700"
-            onClick={() => navigator.share?.({ url: window.location.href })}
-          >
-            <Share2 className="w-5 h-5 text-slate-400" />
-          </Button>
+          </div>
         </div>
       </div>
     </div>
