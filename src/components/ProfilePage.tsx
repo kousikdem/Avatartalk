@@ -27,7 +27,9 @@ import {
   Globe,
   X,
   MoreVertical,
-  Github
+  Github,
+  MessageCircle,
+  Link
 } from 'lucide-react';
 import Avatar3D from './Avatar3D';
 import EmojiPicker from './EmojiPicker';
@@ -36,6 +38,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useFollows } from '@/hooks/useFollows';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
+import { useCoquiTTS } from '@/hooks/useCoquiTTS';
+import { usePosts } from '@/hooks/usePosts';
+import { LinkCard } from '@/components/LinkCard';
 import { formatDistanceToNow } from 'date-fns';
 
 interface ProfileData {
@@ -63,11 +68,13 @@ const ProfilePage = () => {
   const { toast } = useToast();
   const { profileData: currentUserProfile } = useUserProfile();
   const { followUser, unfollowUser } = useFollows();
+  const { synthesizeSpeech, stopSpeech, isPlaying: isSpeaking } = useCoquiTTS();
   
   // Get username from either URL params or search params
   const username = urlUsername || searchParams.get('username');
   
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const { posts, isLoading: isLoadingPosts } = usePosts(profileData?.id);
   const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
@@ -82,7 +89,8 @@ const ProfilePage = () => {
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [lastSpokenMessage, setLastSpokenMessage] = useState('');
   const [socialLinks, setSocialLinks] = useState<any>(null);
-  const [voiceConversations, setVoiceConversations] = useState<Array<{message: string, timestamp: Date, type: 'user' | 'avatar'}>>([]);
+  const [voiceConversations, setVoiceConversations] = useState<Array<{ type: 'user' | 'avatar', message: string, timestamp: Date, isLink?: boolean, linkData?: any }>>([]);
+  const [suggestedLinks, setSuggestedLinks] = useState<Array<{ url: string, title: string, description?: string, image?: string }>>([]);
   
   // Voice input hook
   const { 
@@ -95,23 +103,8 @@ const ProfilePage = () => {
     isSupported: voiceSupported 
   } = useVoiceInput();
   
-  // Simple TTS using browser API
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  
-  const speak = (text: string) => {
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      window.speechSynthesis.speak(utterance);
-    }
-  };
-  
   const stopTTS = () => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-    }
+    stopSpeech();
   };
 
   useEffect(() => {
@@ -270,7 +263,7 @@ const ProfilePage = () => {
       
       setTimeout(() => {
         setVoiceConversations(prev => [...prev, newAvatarMessage]);
-        speak(avatarResponse);
+        synthesizeSpeech(avatarResponse);
       }, 1000);
       
       setLastSpokenMessage(chatMessage);
@@ -296,9 +289,9 @@ const ProfilePage = () => {
 
   const handleTalkToAvatar = () => {
     if (lastSpokenMessage) {
-      speak(`Hello! You said: ${lastSpokenMessage}. How can I help you today?`);
+      synthesizeSpeech(`Hello! You said: ${lastSpokenMessage}. How can I help you today?`);
     } else {
-      speak("Hello! I'm excited to talk with you. What would you like to discuss?");
+      synthesizeSpeech("Hello! I'm excited to talk with you. What would you like to discuss?");
     }
   };
 
@@ -467,11 +460,70 @@ const ProfilePage = () => {
           </TabsList>
 
           <TabsContent value="posts" className="mt-4">
-            <div className="bg-slate-800/30 rounded-xl p-6 text-center border border-slate-700/50">
-              <div className="w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-3">
-                <MessageSquare className="w-6 h-6 text-slate-400" />
-              </div>
-              <p className="text-slate-400 text-sm">No posts yet</p>
+            <div className="space-y-4">
+              {isLoadingPosts ? (
+                <div className="bg-slate-800/30 rounded-xl p-6 text-center border border-slate-700/50">
+                  <div className="w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse">
+                    <MessageSquare className="w-6 h-6 text-slate-400" />
+                  </div>
+                  <p className="text-slate-400 text-sm">Loading posts...</p>
+                </div>
+              ) : posts.length === 0 ? (
+                <div className="bg-slate-800/30 rounded-xl p-6 text-center border border-slate-700/50">
+                  <div className="w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <MessageSquare className="w-6 h-6 text-slate-400" />
+                  </div>
+                  <p className="text-slate-400 text-sm">No posts yet</p>
+                </div>
+              ) : (
+                posts.map((post) => (
+                  <div key={post.id} className="bg-slate-800/30 rounded-xl p-4 border border-slate-700/50">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                        <img 
+                          src={profileData?.profile_pic_url || profileData?.avatar_url || '/placeholder.svg'} 
+                          alt={profileData?.display_name || 'Profile'} 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-white font-medium text-sm">
+                            {profileData?.display_name || profileData?.username}
+                          </span>
+                          <span className="text-slate-400 text-xs">
+                            {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                          </span>
+                        </div>
+                        <p className="text-slate-200 text-sm mb-3">{post.content}</p>
+                        {post.media_url && (
+                          <div className="mb-3 rounded-lg overflow-hidden">
+                            {post.media_type?.startsWith('image/') ? (
+                              <img src={post.media_url} alt="Post media" className="w-full max-h-64 object-cover" />
+                            ) : post.media_type?.startsWith('video/') ? (
+                              <video src={post.media_url} controls className="w-full max-h-64" />
+                            ) : null}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-4 text-slate-400">
+                          <button className="flex items-center gap-1 hover:text-red-400 transition-colors">
+                            <Heart className="w-4 h-4" />
+                            <span className="text-xs">{post.likes_count}</span>
+                          </button>
+                          <button className="flex items-center gap-1 hover:text-blue-400 transition-colors">
+                            <MessageCircle className="w-4 h-4" />
+                            <span className="text-xs">{post.comments_count}</span>
+                          </button>
+                          <button className="flex items-center gap-1 hover:text-green-400 transition-colors">
+                            <Share2 className="w-4 h-4" />
+                            <span className="text-xs">Share</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </TabsContent>
 
@@ -501,6 +553,25 @@ const ProfilePage = () => {
                           : 'bg-slate-700/70 rounded-tl-md text-slate-200'
                       }`}>
                         <p className="text-sm">{conversation.message}</p>
+                        {conversation.isLink && conversation.linkData && (
+                          <div className="mt-2">
+                            <LinkCard 
+                              url={conversation.linkData.url}
+                              title={conversation.linkData.title}
+                              description={conversation.linkData.description}
+                              image={conversation.linkData.image}
+                              onShare={() => {
+                                if (navigator.share) {
+                                  navigator.share({
+                                    title: conversation.linkData.title,
+                                    text: conversation.linkData.description,
+                                    url: conversation.linkData.url,
+                                  });
+                                }
+                              }}
+                            />
+                          </div>
+                        )}
                         <p className="text-xs opacity-60 mt-1">
                           {formatDistanceToNow(conversation.timestamp, { addSuffix: true })}
                         </p>
@@ -574,6 +645,93 @@ const ProfilePage = () => {
               <Send className="w-4 h-4 text-slate-400" />
             </Button>
           </div>
+
+          {/* Social Media Icons Row */}
+          <div className="flex items-center justify-center gap-1 mt-2">
+            {socialLinks?.facebook && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 rounded-full hover:bg-slate-700 p-0"
+                onClick={() => window.open(socialLinks.facebook, '_blank')}
+              >
+                <Facebook className="w-4 h-4 text-slate-400" />
+              </Button>
+            )}
+            {socialLinks?.twitter && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 rounded-full hover:bg-slate-700 p-0"
+                onClick={() => window.open(socialLinks.twitter, '_blank')}
+              >
+                <X className="w-4 h-4 text-slate-400" />
+              </Button>
+            )}
+            {socialLinks?.instagram && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 rounded-full hover:bg-slate-700 p-0"
+                onClick={() => window.open(socialLinks.instagram, '_blank')}
+              >
+                <Instagram className="w-4 h-4 text-slate-400" />
+              </Button>
+            )}
+            {socialLinks?.youtube && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 rounded-full hover:bg-slate-700 p-0"
+                onClick={() => window.open(socialLinks.youtube, '_blank')}
+              >
+                <Youtube className="w-4 h-4 text-slate-400" />
+              </Button>
+            )}
+            {socialLinks?.linkedin && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 rounded-full hover:bg-slate-700 p-0"
+                onClick={() => window.open(socialLinks.linkedin, '_blank')}
+              >
+                <Linkedin className="w-4 h-4 text-slate-400" />
+              </Button>
+            )}
+            {socialLinks?.pinterest && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 rounded-full hover:bg-slate-700 p-0"
+                onClick={() => window.open(socialLinks.pinterest, '_blank')}
+              >
+                <svg className="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 0C5.373 0 0 5.372 0 12s5.373 12 12 12 12-5.372 12-12S18.627 0 12 0zm0 19c-.721 0-1.418-.109-2.073-.312.286-.465.713-1.227.87-1.835l.437-1.664c.229.436.895.803 1.604.803 2.111 0 3.633-1.941 3.633-4.354 0-2.312-1.888-4.042-4.316-4.042-3.021 0-4.625 2.003-4.625 4.137 0 .695.366 1.56.951 1.836.096-.084.14-.221.105-.343-.084-.307-.273-1.072-.273-1.224 0-.12.061-.232.199-.232.113 0 .168.069.168.162 0 .479-.304 1.124-.304 1.913 0 1.186.909 2.142 2.343 2.142 1.086 0 1.684-.638 1.684-1.524 0-.585-.34-1.264-.34-1.264-.229-.479-.229-1.072 0-1.551.229-.479.799-.479 1.028 0 .229.479.229 1.072 0 1.551 0 0-.34.679-.34 1.264 0 .886.598 1.524 1.684 1.524 1.434 0 2.343-.956 2.343-2.142 0-.789-.304-1.434-.304-1.913 0-.093.055-.162.168-.162.138 0 .199.112.199.232 0 .152-.189.917-.273 1.224-.035.122.009.259.105.343.585-.276.951-1.141.951-1.836 0-2.134-1.604-4.137-4.625-4.137-2.428 0-4.316 1.73-4.316 4.042 0 2.413 1.522 4.354 3.633 4.354.709 0 1.375-.367 1.604-.803l.437 1.664c.157.608.584 1.37.87 1.835A11.936 11.936 0 0 1 12 19z"/>
+                </svg>
+              </Button>
+            )}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 rounded-full hover:bg-slate-700 p-0"
+              onClick={() => window.open('https://reddit.com', '_blank')}
+            >
+              <svg className="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
+              </svg>
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 rounded-full hover:bg-slate-700 p-0"
+              onClick={() => window.open('https://discord.com', '_blank')}
+            >
+              <svg className="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419-.0002 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1568 2.4189Z"/>
+              </svg>
+            </Button>
+          </div>
+
           <EmojiPicker 
             isOpen={isEmojiPickerOpen}
             onClose={() => setIsEmojiPickerOpen(false)}
