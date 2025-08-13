@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -95,6 +94,7 @@ const ProfilePage = () => {
   const [socialLinks, setSocialLinks] = useState<any>(null);
   const [voiceConversations, setVoiceConversations] = useState<Array<{ type: 'user' | 'avatar', message: string, timestamp: Date, isLink?: boolean, linkData?: any }>>([]);
   const [suggestedLinks, setSuggestedLinks] = useState<Array<{ url: string, title: string, description?: string, image?: string }>>([]);
+  const [activeTab, setActiveTab] = useState<'chat' | 'posts' | 'products'>('chat');
   
   // Voice input hook
   const { 
@@ -452,216 +452,268 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        {/* Posts Content - moved up without tabs */}
+        {/* Bottom Tabs */}
+        <div className="flex bg-card/30 rounded-full p-1 border border-border/50 backdrop-blur-sm">
+          <button
+            onClick={() => setActiveTab('chat')}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-full transition-all duration-300 ${
+              activeTab === 'chat'
+                ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+            }`}
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span className="text-sm font-medium">Chat</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('posts')}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-full transition-all duration-300 ${
+              activeTab === 'posts'
+                ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span className="text-sm font-medium">Posts</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('products')}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-full transition-all duration-300 ${
+              activeTab === 'products'
+                ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+            }`}
+          >
+            <Crown className="w-4 h-4" />
+            <span className="text-sm font-medium">Products</span>
+          </button>
+        </div>
+
+        {/* Tab Content */}
         <div className="space-y-4">
-          {isLoadingPosts ? (
-            <div className="bg-card/30 rounded-xl p-6 text-center border border-border/50">
-              <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse">
-                <MessageSquare className="w-6 h-6 text-muted-foreground" />
-              </div>
-              <p className="text-muted-foreground text-sm">Loading posts...</p>
-            </div>
-          ) : posts.length === 0 ? (
+          {activeTab === 'posts' && (
+            <>
+              {isLoadingPosts ? (
+                <div className="bg-card/30 rounded-xl p-6 text-center border border-border/50">
+                  <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse">
+                    <MessageSquare className="w-6 h-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-muted-foreground text-sm">Loading posts...</p>
+                </div>
+              ) : posts.length === 0 ? (
+                <div className="bg-card/30 rounded-xl p-6 text-center border border-border/50">
+                  <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                    <MessageSquare className="w-6 h-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-muted-foreground text-sm">No posts yet</p>
+                </div>
+              ) : (
+                posts.map((post) => (
+                  <div key={post.id} className="bg-card/30 rounded-xl p-4 border border-border/50">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                        <img 
+                          src={profileData?.profile_pic_url || profileData?.avatar_url || '/placeholder.svg'} 
+                          alt={profileData?.display_name || 'Profile'} 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-foreground font-medium text-sm">
+                            {profileData?.display_name || profileData?.username}
+                          </span>
+                          <span className="text-muted-foreground text-xs">
+                            {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                          </span>
+                        </div>
+                        <p className="text-foreground text-sm mb-3">{post.content}</p>
+                        {post.media_url && (
+                          <div className="mb-3 rounded-lg overflow-hidden">
+                            {post.media_type?.startsWith('image/') ? (
+                              <img src={post.media_url} alt="Post media" className="w-full max-h-64 object-cover" />
+                            ) : post.media_type?.startsWith('video/') ? (
+                              <video src={post.media_url} controls className="w-full max-h-64" />
+                            ) : null}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-4 text-muted-foreground text-xs">
+                          <button className="flex items-center gap-1 hover:text-foreground transition-colors">
+                            <Heart className="w-3 h-3" />
+                            <span>{post.likes_count || 0}</span>
+                          </button>
+                          <button className="flex items-center gap-1 hover:text-foreground transition-colors">
+                            <MessageSquare className="w-3 h-3" />
+                            <span>{post.comments_count || 0}</span>
+                          </button>
+                          <button className="flex items-center gap-1 hover:text-foreground transition-colors">
+                            <Share2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </>
+          )}
+
+          {activeTab === 'products' && (
             <div className="bg-card/30 rounded-xl p-6 text-center border border-border/50">
               <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
-                <MessageSquare className="w-6 h-6 text-muted-foreground" />
+                <Crown className="w-6 h-6 text-muted-foreground" />
               </div>
-              <p className="text-muted-foreground text-sm">No posts yet</p>
+              <p className="text-muted-foreground text-sm">No products available yet</p>
             </div>
-          ) : (
-            posts.map((post) => (
-              <div key={post.id} className="bg-card/30 rounded-xl p-4 border border-border/50">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                    <img 
-                      src={profileData?.profile_pic_url || profileData?.avatar_url || '/placeholder.svg'} 
-                      alt={profileData?.display_name || 'Profile'} 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-foreground font-medium text-sm">
-                        {profileData?.display_name || profileData?.username}
-                      </span>
-                      <span className="text-muted-foreground text-xs">
-                        {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-                      </span>
-                    </div>
-                    <p className="text-foreground text-sm mb-3">{post.content}</p>
-                    {post.media_url && (
-                      <div className="mb-3 rounded-lg overflow-hidden">
-                        {post.media_type?.startsWith('image/') ? (
-                          <img src={post.media_url} alt="Post media" className="w-full max-h-64 object-cover" />
-                        ) : post.media_type?.startsWith('video/') ? (
-                          <video src={post.media_url} controls className="w-full max-h-64" />
-                        ) : null}
+          )}
+
+          {activeTab === 'chat' && (
+            <>
+              {/* Voice Conversations */}
+              {voiceConversations.length > 0 && (
+                <div className="space-y-3 max-h-60 overflow-y-auto">
+                  {voiceConversations.map((conversation, index) => (
+                    <div key={index} className={`flex ${conversation.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[80%] p-3 rounded-xl ${
+                        conversation.type === 'user' 
+                          ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground ml-4' 
+                          : 'bg-card/50 text-foreground mr-4 border border-border/50'
+                      }`}>
+                        {conversation.isLink && conversation.linkData ? (
+                          <LinkCard {...conversation.linkData} />
+                        ) : (
+                          <p className="text-sm">{conversation.message}</p>
+                        )}
+                        <p className="text-xs opacity-70 mt-1">
+                          {conversation.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
                       </div>
-                    )}
-                    <div className="flex items-center gap-4 text-muted-foreground">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-auto p-1 bg-gradient-to-r from-red-500/10 to-pink-500/10 hover:from-red-500/20 hover:to-pink-500/20 hover:text-red-400 transition-all duration-300 rounded-full"
-                      >
-                        <Heart className="w-4 h-4 mr-1" />
-                        <span className="text-xs">{post.likes_count}</span>
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-auto p-1 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 hover:from-blue-500/20 hover:to-cyan-500/20 hover:text-blue-400 transition-all duration-300 rounded-full"
-                      >
-                        <MessageCircle className="w-4 h-4 mr-1" />
-                        <span className="text-xs">{post.comments_count}</span>
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-auto p-1 bg-gradient-to-r from-green-500/10 to-emerald-500/10 hover:from-green-500/20 hover:to-emerald-500/20 hover:text-green-400 transition-all duration-300 rounded-full"
-                      >
-                        <Share2 className="w-4 h-4 mr-1" />
-                        <span className="text-xs">Share</span>
-                      </Button>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              </div>
-            ))
+              )}
+            </>
           )}
         </div>
 
         {/* Chat Input */}
-        <div className="relative">
-          <div className="bg-card/50 rounded-2xl border border-border/50 px-4 py-3 flex items-center gap-3">
+        <div className="bg-card/30 rounded-2xl p-4 border border-border/50 backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleVoiceInput}
+              disabled={!voiceSupported}
+              className={`h-10 w-10 p-0 rounded-xl transition-all duration-300 ${
+                isListening 
+                  ? 'bg-destructive/20 hover:bg-destructive/30 text-destructive' 
+                  : 'hover:bg-background/50 text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+            </Button>
             <Input
-              value={chatMessage + (isListening ? interimTranscript : '')}
+              value={chatMessage + (interimTranscript ? ` ${interimTranscript}` : '')}
               onChange={(e) => setChatMessage(e.target.value)}
-              placeholder="Ask me anything..."
-              className="border-0 bg-transparent text-foreground placeholder:text-muted-foreground flex-1 focus-visible:ring-0 p-0"
+              placeholder="Type a message..."
+              className="flex-1 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl"
               onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
             />
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
-              className="h-8 w-8 p-0 bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 rounded-full transition-all duration-300"
-            >
-              <Smile className="w-4 h-4 text-muted-foreground" />
-            </Button>
-            {voiceSupported && (
-              <Button 
-                size="sm" 
-                variant="ghost" 
-                onClick={toggleVoiceInput}
-                className={`h-8 w-8 p-0 rounded-full transition-all duration-300 ${
-                  isListening 
-                    ? 'bg-gradient-to-r from-red-500/20 to-red-600/20 text-red-400' 
-                    : 'bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10'
-                }`}
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
+                className="h-10 w-10 p-0 hover:bg-background/50 rounded-xl"
               >
-                {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4 text-muted-foreground" />}
+                <Smile className="w-5 h-5 text-muted-foreground" />
               </Button>
-            )}
-            {isSpeaking && (
-              <Button 
-                size="sm" 
-                variant="ghost" 
-                onClick={stopTTS}
-                className="h-8 w-8 p-0 bg-gradient-to-r from-blue-500/20 to-blue-600/20 hover:from-blue-500/30 hover:to-blue-600/30 rounded-full text-blue-400 transition-all duration-300"
-              >
-                <Volume2 className="w-4 h-4" />
-              </Button>
-            )}
-            <Button 
-              size="sm" 
-              variant="ghost" 
+              {isEmojiPickerOpen && (
+                <div className="absolute bottom-full right-0 mb-2 z-50">
+                  <EmojiPicker 
+                    isOpen={isEmojiPickerOpen}
+                    onClose={() => setIsEmojiPickerOpen(false)}
+                    onEmojiSelect={handleEmojiSelect} 
+                  />
+                </div>
+              )}
+            </div>
+            <Button
               onClick={handleSendMessage}
-              className="h-8 w-8 p-0 bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 rounded-full transition-all duration-300"
+              disabled={!chatMessage.trim()}
+              className="h-10 px-4 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-xl transition-all duration-300 hover:scale-105"
             >
-              <Send className="w-4 h-4 text-muted-foreground" />
+              <Send className="w-4 h-4" />
             </Button>
           </div>
+        </div>
 
-          {/* Social Media Icons Row */}
-          <div className="flex items-center justify-center gap-1 mt-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500/10 to-blue-600/10 hover:from-blue-500/20 hover:to-blue-600/20 hover:text-blue-400 p-0 transition-all duration-300"
-              onClick={() => socialLinks?.facebook ? window.open(socialLinks.facebook, '_blank') : window.open('https://facebook.com', '_blank')}
-            >
-              <Facebook className="w-4 h-4 text-muted-foreground" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 rounded-full bg-gradient-to-r from-slate-500/10 to-slate-600/10 hover:from-slate-500/20 hover:to-slate-600/20 hover:text-slate-200 p-0 transition-all duration-300"
-              onClick={() => socialLinks?.twitter ? window.open(socialLinks.twitter, '_blank') : window.open('https://x.com', '_blank')}
-            >
-              <X className="w-4 h-4 text-muted-foreground" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 rounded-full bg-gradient-to-r from-pink-500/10 to-purple-600/10 hover:from-pink-500/20 hover:to-purple-600/20 hover:text-pink-400 p-0 transition-all duration-300"
-              onClick={() => socialLinks?.instagram ? window.open(socialLinks.instagram, '_blank') : window.open('https://instagram.com', '_blank')}
-            >
-              <Instagram className="w-4 h-4 text-muted-foreground" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 rounded-full bg-gradient-to-r from-red-500/10 to-red-600/10 hover:from-red-500/20 hover:to-red-600/20 hover:text-red-400 p-0 transition-all duration-300"
-              onClick={() => socialLinks?.youtube ? window.open(socialLinks.youtube, '_blank') : window.open('https://youtube.com', '_blank')}
-            >
-              <Youtube className="w-4 h-4 text-muted-foreground" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-600/10 to-blue-700/10 hover:from-blue-600/20 hover:to-blue-700/20 hover:text-blue-400 p-0 transition-all duration-300"
-              onClick={() => socialLinks?.linkedin ? window.open(socialLinks.linkedin, '_blank') : window.open('https://linkedin.com', '_blank')}
-            >
-              <Linkedin className="w-4 h-4 text-muted-foreground" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 rounded-full bg-gradient-to-r from-red-600/10 to-red-700/10 hover:from-red-600/20 hover:to-red-700/20 hover:text-red-400 p-0 transition-all duration-300"
-              onClick={() => socialLinks?.pinterest ? window.open(socialLinks.pinterest, '_blank') : window.open('https://pinterest.com', '_blank')}
-            >
-              <svg className="w-4 h-4 text-muted-foreground" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 0C5.373 0 0 5.372 0 12s5.373 12 12 12 12-5.372 12-12S18.627 0 12 0zm0 19c-.721 0-1.418-.109-2.073-.312.286-.465.713-1.227.87-1.835l.437-1.664c.229.436.895.803 1.604.803 2.111 0 3.633-1.941 3.633-4.354 0-2.312-1.888-4.042-4.316-4.042-3.021 0-4.625 2.003-4.625 4.137 0 .695.366 1.56.951 1.836.096-.084.14-.221.105-.343-.084-.307-.273-1.072-.273-1.224 0-.12.061-.232.199-.232.113 0 .168.069.168.162 0 .479-.304 1.124-.304 1.913 0 1.186.909 2.142 2.343 2.142 1.086 0 1.684-.638 1.684-1.524 0-.585-.34-1.264-.34-1.264-.229-.479-.229-1.072 0-1.551.229-.479.799-.479 1.028 0 .229.479.229 1.072 0 1.551 0 0-.34.679-.34 1.264 0 .886.598 1.524 1.684 1.524 1.434 0 2.343-.956 2.343-2.142 0-.789-.304-1.434-.304-1.913 0-.093.055-.162.168-.162.138 0 .199.112.199.232 0 .152-.189.917-.273 1.224-.035.122.009.259.105.343.585-.276.951-1.141.951-1.836 0-2.134-1.604-4.137-4.625-4.137-2.428 0-4.316 1.73-4.316 4.042 0 2.413 1.522 4.354 3.633 4.354.709 0 1.375-.367 1.604-.803l.437 1.664c.157.608.584 1.37.87 1.835A11.936 11.936 0 0 1 12 19z"/>
-              </svg>
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 rounded-full bg-gradient-to-r from-orange-500/10 to-orange-600/10 hover:from-orange-500/20 hover:to-orange-600/20 hover:text-orange-400 p-0 transition-all duration-300"
-              onClick={() => window.open('https://reddit.com', '_blank')}
-            >
-              <svg className="w-4 h-4 text-muted-foreground" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
-              </svg>
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 rounded-full bg-gradient-to-r from-indigo-500/10 to-purple-600/10 hover:from-indigo-500/20 hover:to-purple-600/20 hover:text-indigo-400 p-0 transition-all duration-300"
-              onClick={() => window.open('https://discord.com', '_blank')}
-            >
-              <svg className="w-4 h-4 text-muted-foreground" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419-.0002 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1568 2.4189Z"/>
-              </svg>
-            </Button>
-          </div>
-
-          <EmojiPicker 
-            isOpen={isEmojiPickerOpen}
-            onClose={() => setIsEmojiPickerOpen(false)}
-            onEmojiSelect={handleEmojiSelect}
-          />
+        {/* Social Media Links Row */}
+        <div className="flex justify-center gap-3 pt-2">
+          <a 
+            href={socialLinks?.facebook || 'https://facebook.com'} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
+          >
+            <Facebook className="w-4 h-4" />
+          </a>
+          <a 
+            href={socialLinks?.twitter || 'https://x.com'} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
+          >
+            <X className="w-4 h-4" />
+          </a>
+          <a 
+            href={socialLinks?.instagram || 'https://instagram.com'} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
+          >
+            <Instagram className="w-4 h-4" />
+          </a>
+          <a 
+            href={socialLinks?.youtube || 'https://youtube.com'} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
+          >
+            <Youtube className="w-4 h-4" />
+          </a>
+          <a 
+            href={socialLinks?.linkedin || 'https://linkedin.com'} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
+          >
+            <Linkedin className="w-4 h-4" />
+          </a>
+          <a 
+            href={socialLinks?.github || 'https://github.com'} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
+          >
+            <Github className="w-4 h-4" />
+          </a>
+          <a 
+            href={socialLinks?.discord || 'https://discord.com'} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
+          >
+            <MessageCircle className="w-4 h-4" />
+          </a>
+          <a 
+            href={socialLinks?.website || 'https://reddit.com'} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
+          >
+            <Globe className="w-4 h-4" />
+          </a>
         </div>
       </div>
     </div>
