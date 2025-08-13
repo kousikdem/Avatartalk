@@ -30,7 +30,8 @@ import {
   MoreVertical,
   Github,
   MessageCircle,
-  Link
+  Link,
+  Calendar
 } from 'lucide-react';
 import Avatar3D from './Avatar3D';
 import EmojiPicker from './EmojiPicker';
