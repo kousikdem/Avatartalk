@@ -112,6 +112,10 @@ const ProfilePage = () => {
   const [socialLinks, setSocialLinks] = useState<any>(null);
   const [conversations, setConversations] = useState<ChatMessage[]>([]);
   const [activeTab, setActiveTab] = useState<'posts' | 'chat' | 'products'>('chat');
+  
+  // New states for social menu and share functionality
+  const [isSocialMenuOpen, setIsSocialMenuOpen] = useState(false);
+  const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
 
   const loadProfile = async () => {
     try {
@@ -283,10 +287,6 @@ const ProfilePage = () => {
     
     if (isListening) {
       stopListening();
-      if (transcript) {
-        setChatMessage(prev => prev + transcript);
-        resetTranscript();
-      }
     } else {
       if (!voiceSupported) {
         toast({
@@ -298,6 +298,7 @@ const ProfilePage = () => {
       }
       
       console.log('Starting voice input...');
+      resetTranscript();
       startListening({ 
         continuous: false, 
         interimResults: true,
@@ -318,13 +319,42 @@ const ProfilePage = () => {
     stopSpeech();
   };
 
+  // Share functionality
+  const handleShare = (platform: string) => {
+    const url = window.location.href;
+    const text = `Check out ${profileData?.display_name || profileData?.username}'s profile`;
+    
+    const shareUrls: { [key: string]: string } = {
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+      twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
+      pinterest: `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(url)}&description=${encodeURIComponent(text)}`,
+      reddit: `https://reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(text)}`,
+      instagram: 'https://www.instagram.com',
+      youtube: 'https://www.youtube.com',
+      whatsapp: `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`
+    };
+
+    if (shareUrls[platform]) {
+      window.open(shareUrls[platform], '_blank', 'width=600,height=400');
+    }
+    setIsShareMenuOpen(false);
+  };
+
   // Update chat message with voice input
   useEffect(() => {
     if (transcript && !isListening) {
-      setChatMessage(prev => prev + transcript);
+      setChatMessage(prev => (prev + ' ' + transcript).trim());
       resetTranscript();
     }
   }, [transcript, isListening, resetTranscript]);
+
+  // Handle interim transcript display
+  useEffect(() => {
+    if (interimTranscript && isListening) {
+      // This will show the interim results in real-time
+    }
+  }, [interimTranscript, isListening]);
 
   useEffect(() => {
     if (username) {
@@ -334,7 +364,7 @@ const ProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
       </div>
     );
@@ -342,7 +372,7 @@ const ProfilePage = () => {
 
   if (!profileData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background">
         <div className="text-center p-8">
           <h1 className="text-xl font-bold text-foreground mb-2">Profile not found</h1>
           <p className="text-muted-foreground">The profile you're looking for doesn't exist.</p>
@@ -633,9 +663,9 @@ const ProfilePage = () => {
           <div className="bg-card/30 rounded-2xl p-4 border border-border/50 backdrop-blur-sm">
             <div className="flex items-center gap-3">
               <Input
-                value={chatMessage + (interimTranscript ? ` ${interimTranscript}` : '')}
+                value={chatMessage + (isListening && interimTranscript ? ` ${interimTranscript}` : '')}
                 onChange={(e) => setChatMessage(e.target.value)}
-                placeholder="Type a message..."
+                placeholder={isListening ? 'Listening...' : 'Type a message...'}
                 className="flex-1 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl"
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
               />
@@ -665,7 +695,7 @@ const ProfilePage = () => {
                 disabled={!voiceSupported}
                 className={`h-10 w-10 p-0 rounded-xl transition-all duration-300 ${
                   isListening 
-                    ? 'bg-destructive/20 hover:bg-destructive/30 text-destructive' 
+                    ? 'bg-destructive/20 hover:bg-destructive/30 text-destructive animate-pulse' 
                     : 'hover:bg-background/50 text-muted-foreground hover:text-foreground'
                 }`}
                 title={!voiceSupported ? 'Voice input not supported' : isListening ? 'Stop recording' : 'Start recording'}
@@ -693,8 +723,8 @@ const ProfilePage = () => {
           </div>
         )}
 
-        {/* Social Media Links Row */}
-        <div className="flex justify-center gap-3 pt-2">
+        {/* Social Media Links Row with Three Dots and Share Button */}
+        <div className="flex justify-center items-center gap-3 pt-2 relative">
           <a 
             href={socialLinks?.facebook || 'https://facebook.com'} 
             target="_blank" 
@@ -735,30 +765,111 @@ const ProfilePage = () => {
           >
             <Linkedin className="w-4 h-4" />
           </a>
-          <a 
-            href={socialLinks?.github || 'https://github.com'} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
-          >
-            <Github className="w-4 h-4" />
-          </a>
-          <a 
-            href={socialLinks?.discord || 'https://discord.com'} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
-          >
-            <MessageCircle className="w-4 h-4" />
-          </a>
-          <a 
-            href={socialLinks?.website || 'https://reddit.com'} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
-          >
-            <Globe className="w-4 h-4" />
-          </a>
+
+          {/* Three Dots Menu Button */}
+          <div className="relative">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsSocialMenuOpen(!isSocialMenuOpen)}
+              className="w-10 h-10 p-0 rounded-full bg-card/30 border border-border/50 text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </Button>
+            {isSocialMenuOpen && (
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-card/90 backdrop-blur-sm border border-border/50 rounded-lg p-2 z-50">
+                <div className="flex flex-col gap-1">
+                  <a 
+                    href={socialLinks?.github || 'https://github.com'} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
+                  >
+                    <Github className="w-4 h-4" />
+                    <span className="text-sm">GitHub</span>
+                  </a>
+                  <a 
+                    href={socialLinks?.discord || 'https://discord.com'} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    <span className="text-sm">Discord</span>
+                  </a>
+                  <a 
+                    href={socialLinks?.website || 'https://reddit.com'} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
+                  >
+                    <Globe className="w-4 h-4" />
+                    <span className="text-sm">Website</span>
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Share Button */}
+          <div className="relative">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsShareMenuOpen(!isShareMenuOpen)}
+              className="w-10 h-10 p-0 rounded-full bg-card/30 border border-border/50 text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
+            >
+              <Share2 className="w-4 h-4" />
+            </Button>
+            {isShareMenuOpen && (
+              <div className="absolute bottom-full right-0 mb-2 bg-card/90 backdrop-blur-sm border border-border/50 rounded-lg p-2 z-50">
+                <div className="grid grid-cols-2 gap-1 min-w-48">
+                  <button 
+                    onClick={() => handleShare('facebook')}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
+                  >
+                    <Facebook className="w-4 h-4" />
+                    <span className="text-sm">Facebook</span>
+                  </button>
+                  <button 
+                    onClick={() => handleShare('twitter')}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                    <span className="text-sm">Twitter</span>
+                  </button>
+                  <button 
+                    onClick={() => handleShare('linkedin')}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
+                  >
+                    <Linkedin className="w-4 h-4" />
+                    <span className="text-sm">LinkedIn</span>
+                  </button>
+                  <button 
+                    onClick={() => handleShare('pinterest')}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
+                  >
+                    <Link className="w-4 h-4" />
+                    <span className="text-sm">Pinterest</span>
+                  </button>
+                  <button 
+                    onClick={() => handleShare('reddit')}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    <span className="text-sm">Reddit</span>
+                  </button>
+                  <button 
+                    onClick={() => handleShare('whatsapp')}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    <span className="text-sm">WhatsApp</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
