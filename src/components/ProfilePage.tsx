@@ -278,6 +278,9 @@ const ProfilePage = () => {
   };
 
   const toggleVoiceInput = () => {
+    console.log('Voice input toggled, isListening:', isListening);
+    console.log('Voice supported:', voiceSupported);
+    
     if (isListening) {
       stopListening();
       if (transcript) {
@@ -285,7 +288,21 @@ const ProfilePage = () => {
         resetTranscript();
       }
     } else {
-      startListening({ continuous: false, interimResults: true });
+      if (!voiceSupported) {
+        toast({
+          title: "Voice Input Not Supported",
+          description: "Speech recognition is not supported in this browser",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      console.log('Starting voice input...');
+      startListening({ 
+        continuous: false, 
+        interimResults: true,
+        language: 'en-US'
+      });
     }
   };
 
@@ -460,7 +477,7 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        {/* Bottom Tabs - Rearranged: Posts, Chat, Products */}
+        {/* Bottom Tabs - Posts, Chat, Products */}
         <div className="flex bg-card/30 rounded-full p-1 border border-border/50 backdrop-blur-sm">
           <button
             onClick={() => setActiveTab('posts')}
@@ -651,6 +668,7 @@ const ProfilePage = () => {
                     ? 'bg-destructive/20 hover:bg-destructive/30 text-destructive' 
                     : 'hover:bg-background/50 text-muted-foreground hover:text-foreground'
                 }`}
+                title={!voiceSupported ? 'Voice input not supported' : isListening ? 'Stop recording' : 'Start recording'}
               >
                 {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
               </Button>
