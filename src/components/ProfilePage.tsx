@@ -63,6 +63,13 @@ interface UserStats {
   engagement_score: number;
 }
 
+interface ChatMessage {
+  id: string;
+  message: string;
+  timestamp: Date;
+  type: 'user' | 'avatar';
+}
+
 const ProfilePage = () => {
   const { username: urlUsername } = useParams<{ username: string }>();
   const [searchParams] = useSearchParams();
@@ -72,6 +79,17 @@ const ProfilePage = () => {
   const { followUser, unfollowUser } = useFollows();
   const { synthesizeSpeech, stopSpeech, isPlaying: isSpeaking } = useCoquiTTS();
   const { theme, setTheme } = useTheme();
+  
+  // Voice input hook
+  const { 
+    isListening, 
+    transcript, 
+    interimTranscript, 
+    startListening, 
+    stopListening, 
+    resetTranscript,
+    isSupported: voiceSupported 
+  } = useVoiceInput();
   
   // Get username from either URL params or search params
   const username = urlUsername || searchParams.get('username');
@@ -92,30 +110,8 @@ const ProfilePage = () => {
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [lastSpokenMessage, setLastSpokenMessage] = useState('');
   const [socialLinks, setSocialLinks] = useState<any>(null);
-  const [voiceConversations, setVoiceConversations] = useState<Array<{ type: 'user' | 'avatar', message: string, timestamp: Date, isLink?: boolean, linkData?: any }>>([]);
-  const [suggestedLinks, setSuggestedLinks] = useState<Array<{ url: string, title: string, description?: string, image?: string }>>([]);
-  const [activeTab, setActiveTab] = useState<'chat' | 'posts' | 'products'>('chat');
-  
-  // Voice input hook
-  const { 
-    isListening, 
-    transcript, 
-    interimTranscript, 
-    startListening, 
-    stopListening, 
-    resetTranscript,
-    isSupported: voiceSupported 
-  } = useVoiceInput();
-  
-  const stopTTS = () => {
-    stopSpeech();
-  };
-
-  useEffect(() => {
-    if (username) {
-      loadProfile();
-    }
-  }, [username]);
+  const [conversations, setConversations] = useState<ChatMessage[]>([]);
+  const [activeTab, setActiveTab] = useState<'posts' | 'chat' | 'products'>('chat');
 
   const loadProfile = async () => {
     try {
@@ -249,24 +245,26 @@ const ProfilePage = () => {
 
   const handleSendMessage = () => {
     if (chatMessage.trim()) {
-      // Add to voice conversations
-      const newUserMessage = {
+      // Add user message to conversations
+      const newUserMessage: ChatMessage = {
+        id: Date.now().toString(),
         message: chatMessage,
         timestamp: new Date(),
-        type: 'user' as const
+        type: 'user'
       };
-      setVoiceConversations(prev => [...prev, newUserMessage]);
+      setConversations(prev => [...prev, newUserMessage]);
       
       // Generate avatar response
       const avatarResponse = `Thank you for saying: "${chatMessage}". How can I help you further?`;
-      const newAvatarMessage = {
+      const newAvatarMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
         message: avatarResponse,
         timestamp: new Date(),
-        type: 'avatar' as const
+        type: 'avatar'
       };
       
       setTimeout(() => {
-        setVoiceConversations(prev => [...prev, newAvatarMessage]);
+        setConversations(prev => [...prev, newAvatarMessage]);
         synthesizeSpeech(avatarResponse);
       }, 1000);
       
@@ -299,6 +297,10 @@ const ProfilePage = () => {
     }
   };
 
+  const stopTTS = () => {
+    stopSpeech();
+  };
+
   // Update chat message with voice input
   useEffect(() => {
     if (transcript && !isListening) {
@@ -306,6 +308,12 @@ const ProfilePage = () => {
       resetTranscript();
     }
   }, [transcript, isListening, resetTranscript]);
+
+  useEffect(() => {
+    if (username) {
+      loadProfile();
+    }
+  }, [username]);
 
   if (loading) {
     return (
@@ -327,13 +335,13 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
       {/* Header */}
       <div className="flex items-center justify-between p-4">
         {/* Profile Header - Moved to top left */}
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-slate-600">
+            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-border">
               {profileData.profile_pic_url ? (
                 <img 
                   src={profileData.profile_pic_url} 
@@ -349,30 +357,30 @@ const ProfilePage = () => {
                 />
               )}
             </div>
-            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-900"></div>
+            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-background"></div>
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white">
+            <h2 className="text-lg font-bold text-foreground">
               {profileData.display_name || profileData.full_name || profileData.username}
             </h2>
-            <p className="text-slate-400 text-sm">@{profileData.username}</p>
+            <p className="text-muted-foreground text-sm">@{profileData.username}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <Button 
             variant="ghost" 
             size="sm" 
-            className="h-8 w-8 p-0 hover:bg-white/10" 
+            className="h-8 w-8 p-0 hover:bg-accent" 
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           >
             {theme === 'dark' ? (
-              <Sun className="w-4 h-4 text-slate-400" />
+              <Sun className="w-4 h-4 text-muted-foreground" />
             ) : (
-              <Moon className="w-4 h-4 text-slate-400" />
+              <Moon className="w-4 h-4 text-muted-foreground" />
             )}
           </Button>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-white/10">
-            <MoreVertical className="w-4 h-4 text-slate-400" />
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-accent">
+            <MoreVertical className="w-4 h-4 text-muted-foreground" />
           </Button>
         </div>
       </div>
@@ -382,14 +390,14 @@ const ProfilePage = () => {
 
         {/* Bio */}
         {profileData.bio && (
-          <p className="text-slate-300 leading-relaxed">
+          <p className="text-foreground leading-relaxed">
             {profileData.bio}
           </p>
         )}
 
         {/* Main Avatar Preview - Increased height */}
         <div className="relative">
-          <div className="h-96 bg-gradient-to-br from-slate-800/80 to-blue-900/50 rounded-2xl overflow-hidden border border-slate-600/50">
+          <div className="h-96 bg-gradient-to-br from-card/80 to-primary/10 rounded-2xl overflow-hidden border border-border/50">
             <div className="w-full h-full flex items-center justify-center relative">
               <Avatar3D 
                 isLarge={true}
@@ -400,7 +408,7 @@ const ProfilePage = () => {
               {/* Talk to Me button on avatar preview */}
               <Button 
                 onClick={handleTalkToAvatar}
-                className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-blue-600/90 hover:bg-blue-700/90 text-white rounded-full px-4 py-2 backdrop-blur-sm border border-blue-500/30"
+                className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-full px-4 py-2 backdrop-blur-sm border border-primary/30"
                 size="sm"
               >
                 <Play className="w-4 h-4 mr-2" />
@@ -431,40 +439,29 @@ const ProfilePage = () => {
         {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-bold text-foreground">
               {userStats.total_conversations}
             </div>
-            <div className="text-sm text-slate-400">Total Conversations</div>
+            <div className="text-sm text-muted-foreground">Total Conversations</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-bold text-foreground">
               {userStats.followers_count > 999 
                 ? `${(userStats.followers_count / 1000).toFixed(1)}K` 
                 : userStats.followers_count}
             </div>
-            <div className="text-sm text-slate-400">Followers</div>
+            <div className="text-sm text-muted-foreground">Followers</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-bold text-foreground">
               {userStats.engagement_score}
             </div>
-            <div className="text-sm text-slate-400">Engagement Score</div>
+            <div className="text-sm text-muted-foreground">Engagement Score</div>
           </div>
         </div>
 
-        {/* Bottom Tabs */}
+        {/* Bottom Tabs - Rearranged: Posts, Chat, Products */}
         <div className="flex bg-card/30 rounded-full p-1 border border-border/50 backdrop-blur-sm">
-          <button
-            onClick={() => setActiveTab('chat')}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-full transition-all duration-300 ${
-              activeTab === 'chat'
-                ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-            }`}
-          >
-            <MessageSquare className="w-4 h-4" />
-            <span className="text-sm font-medium">Chat</span>
-          </button>
           <button
             onClick={() => setActiveTab('posts')}
             className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-full transition-all duration-300 ${
@@ -475,6 +472,17 @@ const ProfilePage = () => {
           >
             <Users className="w-4 h-4" />
             <span className="text-sm font-medium">Posts</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('chat')}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-full transition-all duration-300 ${
+              activeTab === 'chat'
+                ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+            }`}
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span className="text-sm font-medium">Chat</span>
           </button>
           <button
             onClick={() => setActiveTab('products')}
@@ -569,84 +577,103 @@ const ProfilePage = () => {
 
           {activeTab === 'chat' && (
             <>
-              {/* Voice Conversations */}
-              {voiceConversations.length > 0 && (
-                <div className="space-y-3 max-h-60 overflow-y-auto">
-                  {voiceConversations.map((conversation, index) => (
-                    <div key={index} className={`flex ${conversation.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[80%] p-3 rounded-xl ${
-                        conversation.type === 'user' 
-                          ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground ml-4' 
-                          : 'bg-card/50 text-foreground mr-4 border border-border/50'
-                      }`}>
-                        {conversation.isLink && conversation.linkData ? (
-                          <LinkCard {...conversation.linkData} />
-                        ) : (
+              {/* Chat Messages - Flexible conversation box */}
+              <div className="bg-card/30 border border-border/50 rounded-lg p-4 min-h-64 max-h-96 overflow-y-auto">
+                {conversations.length > 0 ? (
+                  <div className="space-y-3">
+                    {conversations.map((conversation) => (
+                      <div
+                        key={conversation.id}
+                        className={`flex ${conversation.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-[80%] p-3 rounded-lg ${
+                            conversation.type === 'user'
+                              ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground'
+                              : 'bg-muted text-foreground'
+                          }`}
+                        >
                           <p className="text-sm">{conversation.message}</p>
-                        )}
-                        <p className="text-xs opacity-70 mt-1">
-                          {conversation.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
+                          <p className="text-xs opacity-70 mt-1">
+                            {conversation.timestamp.toLocaleTimeString()}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Start a conversation with the AI avatar</p>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>
 
-        {/* Chat Input */}
-        <div className="bg-card/30 rounded-2xl p-4 border border-border/50 backdrop-blur-sm">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleVoiceInput}
-              disabled={!voiceSupported}
-              className={`h-10 w-10 p-0 rounded-xl transition-all duration-300 ${
-                isListening 
-                  ? 'bg-destructive/20 hover:bg-destructive/30 text-destructive' 
-                  : 'hover:bg-background/50 text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-            </Button>
-            <Input
-              value={chatMessage + (interimTranscript ? ` ${interimTranscript}` : '')}
-              onChange={(e) => setChatMessage(e.target.value)}
-              placeholder="Type a message..."
-              className="flex-1 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl"
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-            />
-            <div className="relative">
+        {/* Chat Input - Only show when chat tab is active */}
+        {activeTab === 'chat' && (
+          <div className="bg-card/30 rounded-2xl p-4 border border-border/50 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <Input
+                value={chatMessage + (interimTranscript ? ` ${interimTranscript}` : '')}
+                onChange={(e) => setChatMessage(e.target.value)}
+                placeholder="Type a message..."
+                className="flex-1 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl"
+                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+              />
+              <div className="relative">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
+                  className="h-10 w-10 p-0 hover:bg-background/50 rounded-xl"
+                >
+                  <Smile className="w-5 h-5 text-muted-foreground" />
+                </Button>
+                {isEmojiPickerOpen && (
+                  <div className="absolute bottom-full right-0 mb-2 z-50">
+                    <EmojiPicker 
+                      isOpen={isEmojiPickerOpen}
+                      onClose={() => setIsEmojiPickerOpen(false)}
+                      onEmojiSelect={handleEmojiSelect} 
+                    />
+                  </div>
+                )}
+              </div>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
-                className="h-10 w-10 p-0 hover:bg-background/50 rounded-xl"
+                onClick={toggleVoiceInput}
+                disabled={!voiceSupported}
+                className={`h-10 w-10 p-0 rounded-xl transition-all duration-300 ${
+                  isListening 
+                    ? 'bg-destructive/20 hover:bg-destructive/30 text-destructive' 
+                    : 'hover:bg-background/50 text-muted-foreground hover:text-foreground'
+                }`}
               >
-                <Smile className="w-5 h-5 text-muted-foreground" />
+                {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
               </Button>
-              {isEmojiPickerOpen && (
-                <div className="absolute bottom-full right-0 mb-2 z-50">
-                  <EmojiPicker 
-                    isOpen={isEmojiPickerOpen}
-                    onClose={() => setIsEmojiPickerOpen(false)}
-                    onEmojiSelect={handleEmojiSelect} 
-                  />
-                </div>
+              {isSpeaking && (
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  onClick={stopTTS}
+                  className="h-10 w-10 p-0 hover:bg-background/50 rounded-xl text-primary"
+                >
+                  <Volume2 className="w-5 h-5" />
+                </Button>
               )}
+              <Button
+                onClick={handleSendMessage}
+                disabled={!chatMessage.trim()}
+                className="h-10 px-4 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-xl transition-all duration-300 hover:scale-105"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
             </div>
-            <Button
-              onClick={handleSendMessage}
-              disabled={!chatMessage.trim()}
-              className="h-10 px-4 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-xl transition-all duration-300 hover:scale-105"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
           </div>
-        </div>
+        )}
 
         {/* Social Media Links Row */}
         <div className="flex justify-center gap-3 pt-2">
