@@ -1,86 +1,50 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useState, useRef } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { useTheme } from 'next-themes';
-import { 
-  MessageSquare, 
-  Users, 
-  Heart,
-  Share2,
-  UserPlus,
-  UserMinus,
-  Crown,
-  Mic,
-  MicOff,
-  Smile,
-  Twitter,
-  Linkedin,
-  Instagram,
-  Youtube,
-  ExternalLink,
-  Send,
-  Play,
-  Volume2,
-  Facebook,
-  Globe,
-  X,
-  MoreVertical,
-  Github,
-  MessageCircle,
-  Link,
-  Calendar,
-  Sun,
-  Moon
-} from 'lucide-react';
-import Avatar3D from './Avatar3D';
-import EmojiPicker from './EmojiPicker';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useUserProfile } from '@/hooks/useUserProfile';
-import { useFollows } from '@/hooks/useFollows';
+import { Textarea } from '@/components/ui/textarea';
+import { useProfile } from '@/hooks/useProfile';
+import { useProfileManager } from '@/hooks/useProfileManager';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { useCoquiTTS } from '@/hooks/useCoquiTTS';
-import { usePosts } from '@/hooks/usePosts';
-import { LinkCard } from '@/components/LinkCard';
-import { formatDistanceToNow } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  Heart, 
+  MessageCircle, 
+  Share2, 
+  MoreHorizontal,
+  Twitter,
+  Linkedin,
+  Facebook,
+  Instagram,
+  Youtube,
+  Globe,
+  Send,
+  Smile,
+  Mic,
+  MicOff,
+  ChevronUp,
+  ChevronDown
+} from 'lucide-react';
+import { FaPinterest, FaReddit, FaTiktok, FaSnapchat, FaWhatsapp, FaTelegram, FaDiscord } from 'react-icons/fa';
 
-interface ProfileData {
-  id: string;
-  username: string;
-  display_name: string;
-  full_name: string;
-  email: string;
-  bio: string;
-  profile_pic_url: string;
-  avatar_url: string;
-  created_at: string;
+interface ProfilePageProps {
+  userId?: string;
 }
 
-interface UserStats {
-  total_conversations: number;
-  followers_count: number;
-  engagement_score: number;
-}
+const ProfilePage: React.FC<ProfilePageProps> = ({ userId = "demo-user" }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [chatMessage, setChatMessage] = useState('');
+  const [messages, setMessages] = useState<Array<{id: number, text: string, sender: 'user' | 'ai', timestamp: Date}>>([]);
+  const [showMoreSocial, setShowMoreSocial] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
-interface ChatMessage {
-  id: string;
-  message: string;
-  timestamp: Date;
-  type: 'user' | 'avatar';
-}
-
-const ProfilePage = () => {
-  const { username: urlUsername } = useParams<{ username: string }>();
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const { profileData: currentUserProfile } = useUserProfile();
-  const { followUser, unfollowUser } = useFollows();
-  const { synthesizeSpeech, stopSpeech, isPlaying: isSpeaking } = useCoquiTTS();
-  const { theme, setTheme } = useTheme();
-  
-  // Voice input hook
+  const { profile, socialLinks, userStats, loading } = useProfile(userId);
+  const { profileData, updateField } = useProfileManager();
   const { 
     isListening, 
     transcript, 
@@ -88,784 +52,362 @@ const ProfilePage = () => {
     startListening, 
     stopListening, 
     resetTranscript,
-    isSupported: voiceSupported 
+    isSupported 
   } = useVoiceInput();
-  
-  // Get username from either URL params or search params
-  const username = urlUsername || searchParams.get('username');
-  
-  const [profileData, setProfileData] = useState<ProfileData | null>(null);
-  const { posts, isLoading: isLoadingPosts } = usePosts(profileData?.id);
-  const [loading, setLoading] = useState(true);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [followerCount, setFollowerCount] = useState(0);
-  const [followingCount, setFollowingCount] = useState(0);
-  const [isCurrentUser, setIsCurrentUser] = useState(false);
-  const [userStats, setUserStats] = useState<UserStats>({
-    total_conversations: 0,
-    followers_count: 0,
-    engagement_score: 0
-  });
-  const [chatMessage, setChatMessage] = useState('');
-  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
-  const [lastSpokenMessage, setLastSpokenMessage] = useState('');
-  const [socialLinks, setSocialLinks] = useState<any>(null);
-  const [conversations, setConversations] = useState<ChatMessage[]>([]);
-  const [activeTab, setActiveTab] = useState<'posts' | 'chat' | 'products'>('chat');
-  
-  // New states for social menu and share functionality
-  const [isSocialMenuOpen, setIsSocialMenuOpen] = useState(false);
-  const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
+  const { synthesizeSpeech, isPlaying } = useCoquiTTS();
+  const { toast } = useToast();
 
-  const loadProfile = async () => {
-    try {
-      setLoading(true);
-      console.log('Loading profile for username:', username);
+  React.useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-      // Load profile data - use exact matching now that usernames are clean
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('username', username?.trim())
-        .maybeSingle();
+  const toggleEdit = () => {
+    setIsEditing(!isEditing);
+  };
 
-      console.log('Profile query result:', { profile, error });
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    updateField(name as keyof typeof profileData, value);
+  };
 
-      if (error) {
-        console.error('Profile error:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load profile data",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-
-      // If no profile found, show not found state
-      if (!profile) {
-        console.log('No profile found for username:', username);
-        setProfileData(null);
-        setLoading(false);
-        return;
-      }
-
-      setProfileData(profile);
-
-      // Check if this is the current user's profile
-      const { data: { user } } = await supabase.auth.getUser();
-      setIsCurrentUser(user?.id === profile.id);
-
-      // Load follow status and counts
-      if (user && user.id !== profile.id) {
-        const { data: followData } = await supabase
-          .from('follows')
-          .select('id')
-          .eq('follower_id', user.id)
-          .eq('following_id', profile.id)
-          .maybeSingle();
-
-        setIsFollowing(!!followData);
-      }
-
-      // Load follower and following counts, user stats, and social links
-      const [followersResult, followingResult, statsResult, socialLinksResult] = await Promise.all([
-        supabase
-          .from('follows')
-          .select('id', { count: 'exact' })
-          .eq('following_id', profile.id),
-        supabase
-          .from('follows')
-          .select('id', { count: 'exact' })
-          .eq('follower_id', profile.id),
-        supabase
-          .from('user_stats')
-          .select('*')
-          .eq('user_id', profile.id)
-          .maybeSingle(),
-        supabase
-          .from('social_links')
-          .select('*')
-          .eq('user_id', profile.id)
-          .maybeSingle()
-      ]);
-
-      setFollowerCount(followersResult.count || 0);
-      setFollowingCount(followingResult.count || 0);
-      
-      if (statsResult.data) {
-        setUserStats({
-          total_conversations: statsResult.data.total_conversations || 0,
-          followers_count: followersResult.count || 0,
-          engagement_score: Math.round(statsResult.data.engagement_score || 0)
-        });
-      }
-
-      if (socialLinksResult.data) {
-        setSocialLinks(socialLinksResult.data);
-      }
-
-      // Increment profile views
-      if (user && user.id !== profile.id) {
-        await supabase
-          .from('profile_visitors')
-          .insert([{
-            visitor_id: user.id,
-            visited_profile_id: profile.id
-          }]);
-      }
-
-    } catch (error) {
-      console.error('Error loading profile:', error);
+  const handleVoiceInput = () => {
+    if (!isSupported) {
       toast({
-        title: "Error",
-        description: "Failed to load profile",
+        title: "Voice Input Not Supported",
+        description: "Your browser doesn't support voice input",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
+      return;
     }
-  };
 
-  const handleFollowToggle = async () => {
-    if (!profileData) return;
-
-    try {
-      if (isFollowing) {
-        await unfollowUser(profileData.id);
-        setIsFollowing(false);
-        setFollowerCount(prev => prev - 1);
-        setUserStats(prev => ({ ...prev, followers_count: prev.followers_count - 1 }));
-      } else {
-        await followUser(profileData.id);
-        setIsFollowing(true);
-        setFollowerCount(prev => prev + 1);
-        setUserStats(prev => ({ ...prev, followers_count: prev.followers_count + 1 }));
-      }
-    } catch (error) {
-      console.error('Error toggling follow:', error);
-    }
-  };
-
-  const handleSendMessage = () => {
-    if (chatMessage.trim()) {
-      // Add user message to conversations
-      const newUserMessage: ChatMessage = {
-        id: Date.now().toString(),
-        message: chatMessage,
-        timestamp: new Date(),
-        type: 'user'
-      };
-      setConversations(prev => [...prev, newUserMessage]);
-      
-      // Generate avatar response
-      const avatarResponse = `Thank you for saying: "${chatMessage}". How can I help you further?`;
-      const newAvatarMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        message: avatarResponse,
-        timestamp: new Date(),
-        type: 'avatar'
-      };
-      
-      setTimeout(() => {
-        setConversations(prev => [...prev, newAvatarMessage]);
-        synthesizeSpeech(avatarResponse);
-      }, 1000);
-      
-      setLastSpokenMessage(chatMessage);
-      setChatMessage('');
-    }
-  };
-
-  const handleEmojiSelect = (emoji: string) => {
-    setChatMessage(prev => prev + emoji);
-  };
-
-  const toggleVoiceInput = () => {
-    console.log('Voice input toggled, isListening:', isListening);
-    console.log('Voice supported:', voiceSupported);
-    
     if (isListening) {
       stopListening();
     } else {
-      if (!voiceSupported) {
-        toast({
-          title: "Voice Input Not Supported",
-          description: "Speech recognition is not supported in this browser",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      console.log('Starting voice input...');
       resetTranscript();
-      startListening({ 
-        continuous: false, 
+      startListening({
+        continuous: false,
         interimResults: true,
         language: 'en-US'
       });
     }
   };
 
-  const handleTalkToAvatar = () => {
-    if (lastSpokenMessage) {
-      synthesizeSpeech(`Hello! You said: ${lastSpokenMessage}. How can I help you today?`);
-    } else {
-      synthesizeSpeech("Hello! I'm excited to talk with you. What would you like to discuss?");
+  // Update chat message when transcript changes
+  React.useEffect(() => {
+    if (transcript) {
+      setChatMessage(transcript);
     }
-  };
+  }, [transcript]);
 
-  const stopTTS = () => {
-    stopSpeech();
-  };
+  const handleSendMessage = async () => {
+    const messageText = chatMessage.trim();
+    if (!messageText) return;
 
-  // Share functionality
-  const handleShare = (platform: string) => {
-    const url = window.location.href;
-    const text = `Check out ${profileData?.display_name || profileData?.username}'s profile`;
-    
-    const shareUrls: { [key: string]: string } = {
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-      twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
-      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
-      pinterest: `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(url)}&description=${encodeURIComponent(text)}`,
-      reddit: `https://reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(text)}`,
-      instagram: 'https://www.instagram.com',
-      youtube: 'https://www.youtube.com',
-      whatsapp: `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`
+    const newMessage = {
+      id: Date.now(),
+      text: messageText,
+      sender: 'user' as const,
+      timestamp: new Date()
     };
 
-    if (shareUrls[platform]) {
-      window.open(shareUrls[platform], '_blank', 'width=600,height=400');
-    }
-    setIsShareMenuOpen(false);
+    setMessages(prev => [...prev, newMessage]);
+    setChatMessage('');
+
+    // AI response simulation
+    setTimeout(() => {
+      const aiResponse = {
+        id: Date.now() + 1,
+        text: `Thanks for your message: "${messageText}". I'm here to help!`,
+        sender: 'ai' as const,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, aiResponse]);
+      synthesizeSpeech(aiResponse.text);
+    }, 1000);
   };
 
-  // Update chat message with voice input
-  useEffect(() => {
-    if (transcript && !isListening) {
-      setChatMessage(prev => (prev + ' ' + transcript).trim());
-      resetTranscript();
-    }
-  }, [transcript, isListening, resetTranscript]);
+  const shareOptions = [
+    { name: 'Facebook', icon: Facebook, url: 'https://facebook.com/sharer/sharer.php?u=' },
+    { name: 'Twitter', icon: Twitter, url: 'https://twitter.com/intent/tweet?url=' },
+    { name: 'LinkedIn', icon: Linkedin, url: 'https://linkedin.com/sharing/share-offsite/?url=' },
+    { name: 'Pinterest', icon: FaPinterest, url: 'https://pinterest.com/pin/create/button/?url=' },
+    { name: 'Reddit', icon: FaReddit, url: 'https://reddit.com/submit?url=' },
+    { name: 'Instagram', icon: Instagram, url: 'https://instagram.com/' },
+    { name: 'YouTube', icon: Youtube, url: 'https://youtube.com/' },
+    { name: 'TikTok', icon: FaTiktok, url: 'https://tiktok.com/' },
+    { name: 'Snapchat', icon: FaSnapchat, url: 'https://snapchat.com/' },
+    { name: 'WhatsApp', icon: FaWhatsapp, url: 'https://wa.me/?text=' },
+    { name: 'Telegram', icon: FaTelegram, url: 'https://t.me/share/url?url=' },
+    { name: 'Discord', icon: FaDiscord, url: 'https://discord.com/' },
+  ];
 
-  // Handle interim transcript display
-  useEffect(() => {
-    if (interimTranscript && isListening) {
-      // This will show the interim results in real-time
-    }
-  }, [interimTranscript, isListening]);
-
-  useEffect(() => {
-    if (username) {
-      loadProfile();
-    }
-  }, [username]);
+  const handleShare = (platform: string, url: string) => {
+    const shareUrl = `${url}${encodeURIComponent(window.location.href)}`;
+    window.open(shareUrl, '_blank', 'width=600,height=400');
+    setShowShareMenu(false);
+  };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (!profileData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background">
-        <div className="text-center p-8">
-          <h1 className="text-xl font-bold text-foreground mb-2">Profile not found</h1>
-          <p className="text-muted-foreground">The profile you're looking for doesn't exist.</p>
-        </div>
-      </div>
-    );
+    return <div className="flex justify-center items-center h-screen">Loading...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4">
-        {/* Profile Header - Moved to top left */}
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-border">
-              {profileData.profile_pic_url ? (
-                <img 
-                  src={profileData.profile_pic_url} 
-                  alt="Profile"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <Avatar3D 
-                  isLarge={false}
-                  avatarStyle="realistic"
-                  mood="friendly"
-                  onInteraction={() => {}}
-                />
-              )}
-            </div>
-            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-background"></div>
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-foreground">
-              {profileData.display_name || profileData.full_name || profileData.username}
-            </h2>
-            <p className="text-muted-foreground text-sm">@{profileData.username}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-8 w-8 p-0 hover:bg-accent" 
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          >
-            {theme === 'dark' ? (
-              <Sun className="w-4 h-4 text-muted-foreground" />
-            ) : (
-              <Moon className="w-4 h-4 text-muted-foreground" />
-            )}
-          </Button>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-accent">
-            <MoreVertical className="w-4 h-4 text-muted-foreground" />
-          </Button>
-        </div>
-      </div>
-      
-      {/* Profile Content */}
-      <div className="max-w-md mx-auto px-4 py-2 space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background/90 p-4">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Profile Header */}
+        <Card className="neo-card border-2">
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+              <Avatar className="w-32 h-32 border-4 border-primary/30 shadow-2xl">
+                <AvatarImage src={profile?.profile_pic_url || "/placeholder.svg"} />
+                <AvatarFallback className="text-2xl bg-gradient-to-br from-primary to-secondary text-primary-foreground">
+                  {profile?.display_name?.[0] || 'U'}
+                </AvatarFallback>
+              </Avatar>
 
-        {/* Bio */}
-        {profileData.bio && (
-          <p className="text-foreground leading-relaxed">
-            {profileData.bio}
-          </p>
-        )}
-
-        {/* Main Avatar Preview - Increased height */}
-        <div className="relative">
-          <div className="h-96 bg-gradient-to-br from-card/80 to-primary/10 rounded-2xl overflow-hidden border border-border/50">
-            <div className="w-full h-full flex items-center justify-center relative">
-              <Avatar3D 
-                isLarge={true}
-                avatarStyle="realistic"
-                mood="friendly"
-                onInteraction={() => {}}
-              />
-              {/* Talk to Me button on avatar preview */}
-              <Button 
-                onClick={handleTalkToAvatar}
-                className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-full px-4 py-2 backdrop-blur-sm border border-primary/30"
-                size="sm"
-              >
-                <Play className="w-4 h-4 mr-2" />
-                Talk to Me
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-3">
-          <Button className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-full h-12 font-medium shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-            Subscribe - $9.99/mo
-          </Button>
-          <Button
-            onClick={handleFollowToggle}
-            variant="outline"
-            className={`px-6 h-12 rounded-full font-medium transition-all duration-300 hover:scale-105 ${
-              isFollowing 
-                ? 'bg-gradient-to-r from-primary/20 to-primary/10 border-primary/30 text-primary hover:bg-gradient-to-r hover:from-primary/30 hover:to-primary/20' 
-                : 'bg-gradient-to-r from-transparent to-transparent border-border hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:border-primary/30'
-            }`}
-          >
-            {isFollowing ? 'Following' : 'Follow'}
-          </Button>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-foreground">
-              {userStats.total_conversations}
-            </div>
-            <div className="text-sm text-muted-foreground">Total Conversations</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-foreground">
-              {userStats.followers_count > 999 
-                ? `${(userStats.followers_count / 1000).toFixed(1)}K` 
-                : userStats.followers_count}
-            </div>
-            <div className="text-sm text-muted-foreground">Followers</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-foreground">
-              {userStats.engagement_score}
-            </div>
-            <div className="text-sm text-muted-foreground">Engagement Score</div>
-          </div>
-        </div>
-
-        {/* Bottom Tabs - Posts, Chat, Products */}
-        <div className="flex bg-card/30 rounded-full p-1 border border-border/50 backdrop-blur-sm">
-          <button
-            onClick={() => setActiveTab('posts')}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-full transition-all duration-300 ${
-              activeTab === 'posts'
-                ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span className="text-sm font-medium">Posts</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('chat')}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-full transition-all duration-300 ${
-              activeTab === 'chat'
-                ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-            }`}
-          >
-            <MessageSquare className="w-4 h-4" />
-            <span className="text-sm font-medium">Chat</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('products')}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-full transition-all duration-300 ${
-              activeTab === 'products'
-                ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-            }`}
-          >
-            <Crown className="w-4 h-4" />
-            <span className="text-sm font-medium">Products</span>
-          </button>
-        </div>
-
-        {/* Tab Content */}
-        <div className="space-y-4">
-          {activeTab === 'posts' && (
-            <>
-              {isLoadingPosts ? (
-                <div className="bg-card/30 rounded-xl p-6 text-center border border-border/50">
-                  <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse">
-                    <MessageSquare className="w-6 h-6 text-muted-foreground" />
-                  </div>
-                  <p className="text-muted-foreground text-sm">Loading posts...</p>
+              <div className="flex-1 text-center md:text-left space-y-4">
+                <div>
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+                    {profile?.display_name || 'User Name'}
+                  </h1>
+                  <p className="text-muted-foreground">@{profile?.username || 'username'}</p>
                 </div>
-              ) : posts.length === 0 ? (
-                <div className="bg-card/30 rounded-xl p-6 text-center border border-border/50">
-                  <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
-                    <MessageSquare className="w-6 h-6 text-muted-foreground" />
+
+                <p className="text-foreground/80 max-w-2xl">
+                  {profile?.bio || 'This user hasn\'t added a bio yet.'}
+                </p>
+
+                {/* Stats Grid */}
+                <div className="stats-grid">
+                  <div className="stat-item">
+                    <div className="stat-number">{userStats?.total_conversations || 0}</div>
+                    <div className="stat-label">Conversations</div>
                   </div>
-                  <p className="text-muted-foreground text-sm">No posts yet</p>
+                  <div className="stat-item">
+                    <div className="stat-number">{userStats?.followers_count || 0}</div>
+                    <div className="stat-label">Followers</div>
+                  </div>
+                  <div className="stat-item">
+                    <div className="stat-number">{userStats?.engagement_score || 0}%</div>
+                    <div className="stat-label">Engagement</div>
+                  </div>
                 </div>
-              ) : (
-                posts.map((post) => (
-                  <div key={post.id} className="bg-card/30 rounded-xl p-4 border border-border/50">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                        <img 
-                          src={profileData?.profile_pic_url || profileData?.avatar_url || '/placeholder.svg'} 
-                          alt={profileData?.display_name || 'Profile'} 
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-foreground font-medium text-sm">
-                            {profileData?.display_name || profileData?.username}
-                          </span>
-                          <span className="text-muted-foreground text-xs">
-                            {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-                          </span>
-                        </div>
-                        <p className="text-foreground text-sm mb-3">{post.content}</p>
-                        {post.media_url && (
-                          <div className="mb-3 rounded-lg overflow-hidden">
-                            {post.media_type?.startsWith('image/') ? (
-                              <img src={post.media_url} alt="Post media" className="w-full max-h-64 object-cover" />
-                            ) : post.media_type?.startsWith('video/') ? (
-                              <video src={post.media_url} controls className="w-full max-h-64" />
-                            ) : null}
-                          </div>
-                        )}
-                        <div className="flex items-center gap-4 text-muted-foreground text-xs">
-                          <button className="flex items-center gap-1 hover:text-foreground transition-colors">
-                            <Heart className="w-3 h-3" />
-                            <span>{post.likes_count || 0}</span>
-                          </button>
-                          <button className="flex items-center gap-1 hover:text-foreground transition-colors">
-                            <MessageSquare className="w-3 h-3" />
-                            <span>{post.comments_count || 0}</span>
-                          </button>
-                          <button className="flex items-center gap-1 hover:text-foreground transition-colors">
-                            <Share2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Enhanced Tabs */}
+        <Tabs defaultValue="posts" className="space-y-6">
+          <TabsList className="tab-navigation w-full">
+            <TabsTrigger value="posts" className="tab-trigger">Posts</TabsTrigger>
+            <TabsTrigger value="chat" className="tab-trigger">Chat</TabsTrigger>
+            <TabsTrigger value="products" className="tab-trigger">Products</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="posts" className="space-y-4">
+            {/* Sample Posts */}
+            {[1, 2].map((i) => (
+              <Card key={i} className="neo-card">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage src="/placeholder.svg" />
+                      <AvatarFallback>U</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-semibold">{profile?.display_name || 'User'}</p>
+                      <p className="text-sm text-muted-foreground">2 hours ago</p>
                     </div>
                   </div>
-                ))
-              )}
-            </>
-          )}
+                  <p className="mb-4">This is a sample post #{i}. Great to connect with everyone!</p>
+                  <div className="flex items-center gap-4">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="neo-button-secondary hover:bg-gradient-to-r hover:from-red-500/10 hover:to-pink-500/10 hover:text-red-500 transition-all duration-300"
+                    >
+                      <Heart className="w-4 h-4 mr-2" />
+                      {12 + i}
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="neo-button-secondary hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-cyan-500/10 hover:text-blue-500 transition-all duration-300"
+                    >
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      {3 + i}
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="neo-button-secondary hover:bg-gradient-to-r hover:from-green-500/10 hover:to-emerald-500/10 hover:text-green-500 transition-all duration-300"
+                    >
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Share
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </TabsContent>
 
-          {activeTab === 'products' && (
-            <div className="bg-card/30 rounded-xl p-6 text-center border border-border/50">
-              <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
-                <Crown className="w-6 h-6 text-muted-foreground" />
-              </div>
-              <p className="text-muted-foreground text-sm">No products available yet</p>
-            </div>
-          )}
-
-          {activeTab === 'chat' && (
-            <>
-              {/* Chat Messages - Flexible conversation box */}
-              <div className="bg-card/30 border border-border/50 rounded-lg p-4 min-h-64 max-h-96 overflow-y-auto">
-                {conversations.length > 0 ? (
-                  <div className="space-y-3">
-                    {conversations.map((conversation) => (
+          <TabsContent value="chat" className="space-y-4">
+            <Card className="neo-card h-96">
+              <CardContent className="p-4 flex flex-col h-full">
+                <div className="flex-1 space-y-4 overflow-y-auto mb-4">
+                  {messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
                       <div
-                        key={conversation.id}
-                        className={`flex ${conversation.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                          message.sender === 'user'
+                            ? 'bg-gradient-to-r from-primary to-secondary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground'
+                        }`}
                       >
-                        <div
-                          className={`max-w-[80%] p-3 rounded-lg ${
-                            conversation.type === 'user'
-                              ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground'
-                              : 'bg-muted text-foreground'
-                          }`}
-                        >
-                          <p className="text-sm">{conversation.message}</p>
-                          <p className="text-xs opacity-70 mt-1">
-                            {conversation.timestamp.toLocaleTimeString()}
-                          </p>
-                        </div>
+                        <p className="text-sm">{message.text}</p>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">Start a conversation with the AI avatar</p>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Chat Input - Only show when chat tab is active */}
-        {activeTab === 'chat' && (
-          <div className="bg-card/30 rounded-2xl p-4 border border-border/50 backdrop-blur-sm">
-            <div className="flex items-center gap-3">
-              <Input
-                value={chatMessage + (isListening && interimTranscript ? ` ${interimTranscript}` : '')}
-                onChange={(e) => setChatMessage(e.target.value)}
-                placeholder={isListening ? 'Listening...' : 'Type a message...'}
-                className="flex-1 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl"
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              />
-              <div className="relative">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
-                  className="h-10 w-10 p-0 hover:bg-background/50 rounded-xl"
-                >
-                  <Smile className="w-5 h-5 text-muted-foreground" />
-                </Button>
-                {isEmojiPickerOpen && (
-                  <div className="absolute bottom-full right-0 mb-2 z-50">
-                    <EmojiPicker 
-                      isOpen={isEmojiPickerOpen}
-                      onClose={() => setIsEmojiPickerOpen(false)}
-                      onEmojiSelect={handleEmojiSelect} 
+                    </div>
+                  ))}
+                  <div ref={chatEndRef} />
+                </div>
+                
+                {/* Compact Chat Input */}
+                <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-background/50 to-muted/50 rounded-full border border-border/50 backdrop-blur-sm">
+                  <div className="flex-1 relative">
+                    <Input
+                      value={chatMessage || interimTranscript}
+                      onChange={(e) => setChatMessage(e.target.value)}
+                      placeholder="Type a message..."
+                      className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 pr-2 pl-3"
+                      onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                     />
                   </div>
-                )}
-              </div>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="rounded-full h-8 w-8 p-0 hover:bg-gradient-to-r hover:from-yellow-500/20 hover:to-orange-500/20 hover:text-yellow-600"
+                  >
+                    <Smile className="h-4 w-4" />
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleVoiceInput}
+                    className={`rounded-full h-8 w-8 p-0 transition-all duration-300 ${
+                      isListening 
+                        ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white hover:from-red-600 hover:to-pink-600' 
+                        : 'hover:bg-gradient-to-r hover:from-blue-500/20 hover:to-purple-500/20 hover:text-blue-600'
+                    }`}
+                  >
+                    {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                  </Button>
+                  
+                  <Button
+                    onClick={handleSendMessage}
+                    size="sm"
+                    className="rounded-full h-8 w-8 p-0 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 hover:scale-105 transition-all duration-300"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="products">
+            <Card className="neo-card">
+              <CardContent className="p-6">
+                <h3 className="text-xl font-semibold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  Featured Products
+                </h3>
+                <p className="text-muted-foreground">No products available yet.</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Enhanced Social Links */}
+        <div className="flex flex-wrap justify-center gap-3 relative">
+          {/* Main Social Icons */}
+          <div className="flex gap-3">
+            {[
+              { icon: Twitter, url: socialLinks?.twitter, gradient: 'from-blue-400 to-blue-600' },
+              { icon: Linkedin, url: socialLinks?.linkedin, gradient: 'from-blue-600 to-blue-800' },
+              { icon: Facebook, url: socialLinks?.facebook, gradient: 'from-blue-500 to-blue-700' },
+              { icon: Instagram, url: socialLinks?.instagram, gradient: 'from-pink-500 to-purple-600' },
+              { icon: Globe, url: socialLinks?.website, gradient: 'from-green-500 to-emerald-600' }
+            ].map(({ icon: Icon, url, gradient }, index) => (
               <Button
+                key={index}
                 variant="ghost"
                 size="sm"
-                onClick={toggleVoiceInput}
-                disabled={!voiceSupported}
-                className={`h-10 w-10 p-0 rounded-xl transition-all duration-300 ${
-                  isListening 
-                    ? 'bg-destructive/20 hover:bg-destructive/30 text-destructive animate-pulse' 
-                    : 'hover:bg-background/50 text-muted-foreground hover:text-foreground'
-                }`}
-                title={!voiceSupported ? 'Voice input not supported' : isListening ? 'Stop recording' : 'Start recording'}
+                className={`social-icon bg-gradient-to-r ${gradient} text-white hover:scale-110 hover:shadow-lg transition-all duration-300`}
+                onClick={() => url && window.open(url, '_blank')}
               >
-                {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                <Icon className="w-4 h-4" />
               </Button>
-              {isSpeaking && (
-                <Button 
-                  size="sm" 
-                  variant="ghost" 
-                  onClick={stopTTS}
-                  className="h-10 w-10 p-0 hover:bg-background/50 rounded-xl text-primary"
-                >
-                  <Volume2 className="w-5 h-5" />
-                </Button>
-              )}
-              <Button
-                onClick={handleSendMessage}
-                disabled={!chatMessage.trim()}
-                className="h-10 px-4 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-xl transition-all duration-300 hover:scale-105"
-              >
-                <Send className="w-4 h-4" />
-              </Button>
-            </div>
+            ))}
           </div>
-        )}
 
-        {/* Social Media Links Row with Three Dots and Share Button */}
-        <div className="flex justify-center items-center gap-3 pt-2 relative">
-          <a 
-            href={socialLinks?.facebook || 'https://facebook.com'} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
-          >
-            <Facebook className="w-4 h-4" />
-          </a>
-          <a 
-            href={socialLinks?.twitter || 'https://x.com'} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
-          >
-            <X className="w-4 h-4" />
-          </a>
-          <a 
-            href={socialLinks?.instagram || 'https://instagram.com'} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
-          >
-            <Instagram className="w-4 h-4" />
-          </a>
-          <a 
-            href={socialLinks?.youtube || 'https://youtube.com'} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
-          >
-            <Youtube className="w-4 h-4" />
-          </a>
-          <a 
-            href={socialLinks?.linkedin || 'https://linkedin.com'} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
-          >
-            <Linkedin className="w-4 h-4" />
-          </a>
-
-          {/* Three Dots Menu Button */}
+          {/* More Options Button */}
           <div className="relative">
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setIsSocialMenuOpen(!isSocialMenuOpen)}
-              className="w-10 h-10 p-0 rounded-full bg-card/30 border border-border/50 text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
+              onClick={() => setShowMoreSocial(!showMoreSocial)}
+              className="social-icon bg-gradient-to-r from-gray-500 to-gray-700 text-white hover:scale-110 hover:shadow-lg transition-all duration-300"
             >
-              <MoreVertical className="w-4 h-4" />
+              <MoreHorizontal className="w-4 h-4" />
             </Button>
-            {isSocialMenuOpen && (
-              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-card/90 backdrop-blur-sm border border-border/50 rounded-lg p-2 z-50">
-                <div className="flex flex-col gap-1">
-                  <a 
-                    href={socialLinks?.github || 'https://github.com'} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
-                  >
-                    <Github className="w-4 h-4" />
-                    <span className="text-sm">GitHub</span>
-                  </a>
-                  <a 
-                    href={socialLinks?.discord || 'https://discord.com'} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    <span className="text-sm">Discord</span>
-                  </a>
-                  <a 
-                    href={socialLinks?.website || 'https://reddit.com'} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
-                  >
-                    <Globe className="w-4 h-4" />
-                    <span className="text-sm">Website</span>
-                  </a>
+            
+            {showMoreSocial && (
+              <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-card/95 backdrop-blur-sm border border-border/50 rounded-lg p-2 shadow-xl z-10">
+                <div className="flex flex-col gap-2 min-w-[120px]">
+                  <Button variant="ghost" size="sm" className="justify-start gap-2 text-sm hover:bg-gradient-to-r hover:from-pink-500/20 hover:to-purple-500/20">
+                    <Youtube className="w-4 h-4" />
+                    YouTube
+                  </Button>
+                  <Button variant="ghost" size="sm" className="justify-start gap-2 text-sm hover:bg-gradient-to-r hover:from-red-500/20 hover:to-pink-500/20">
+                    <FaPinterest className="w-4 h-4" />
+                    Pinterest
+                  </Button>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Share Button */}
+          {/* Enhanced Share Button */}
           <div className="relative">
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setIsShareMenuOpen(!isShareMenuOpen)}
-              className="w-10 h-10 p-0 rounded-full bg-card/30 border border-border/50 text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
+              onClick={() => setShowShareMenu(!showShareMenu)}
+              className="social-icon bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:scale-110 hover:shadow-xl hover:shadow-purple-500/25 transition-all duration-300 transform hover:rotate-3"
             >
               <Share2 className="w-4 h-4" />
             </Button>
-            {isShareMenuOpen && (
-              <div className="absolute bottom-full right-0 mb-2 bg-card/90 backdrop-blur-sm border border-border/50 rounded-lg p-2 z-50">
-                <div className="grid grid-cols-2 gap-1 min-w-48">
-                  <button 
-                    onClick={() => handleShare('facebook')}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
-                  >
-                    <Facebook className="w-4 h-4" />
-                    <span className="text-sm">Facebook</span>
-                  </button>
-                  <button 
-                    onClick={() => handleShare('twitter')}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                    <span className="text-sm">Twitter</span>
-                  </button>
-                  <button 
-                    onClick={() => handleShare('linkedin')}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
-                  >
-                    <Linkedin className="w-4 h-4" />
-                    <span className="text-sm">LinkedIn</span>
-                  </button>
-                  <button 
-                    onClick={() => handleShare('pinterest')}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
-                  >
-                    <Link className="w-4 h-4" />
-                    <span className="text-sm">Pinterest</span>
-                  </button>
-                  <button 
-                    onClick={() => handleShare('reddit')}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    <span className="text-sm">Reddit</span>
-                  </button>
-                  <button 
-                    onClick={() => handleShare('whatsapp')}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    <span className="text-sm">WhatsApp</span>
-                  </button>
+            
+            {showShareMenu && (
+              <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-card/95 backdrop-blur-sm border border-border/50 rounded-xl p-3 shadow-2xl z-20 min-w-[200px]">
+                <div className="grid grid-cols-3 gap-2">
+                  {shareOptions.map(({ name, icon: Icon, url }) => (
+                    <Button
+                      key={name}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleShare(name, url)}
+                      className="flex flex-col items-center gap-1 p-2 h-auto hover:bg-gradient-to-br hover:from-primary/10 hover:to-secondary/10 transition-all duration-300 hover:scale-105"
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span className="text-xs">{name}</span>
+                    </Button>
+                  ))}
                 </div>
               </div>
             )}
