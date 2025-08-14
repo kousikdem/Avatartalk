@@ -127,18 +127,18 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ userId = "demo-user" }) => {
   };
 
   const shareOptions = [
-    { name: 'Facebook', icon: Facebook, url: 'https://facebook.com/sharer/sharer.php?u=' },
-    { name: 'Twitter', icon: Twitter, url: 'https://twitter.com/intent/tweet?url=' },
-    { name: 'LinkedIn', icon: Linkedin, url: 'https://linkedin.com/sharing/share-offsite/?url=' },
-    { name: 'Pinterest', icon: FaPinterest, url: 'https://pinterest.com/pin/create/button/?url=' },
-    { name: 'Reddit', icon: FaReddit, url: 'https://reddit.com/submit?url=' },
-    { name: 'Instagram', icon: Instagram, url: 'https://instagram.com/' },
-    { name: 'YouTube', icon: Youtube, url: 'https://youtube.com/' },
-    { name: 'TikTok', icon: FaTiktok, url: 'https://tiktok.com/' },
-    { name: 'Snapchat', icon: FaSnapchat, url: 'https://snapchat.com/' },
-    { name: 'WhatsApp', icon: FaWhatsapp, url: 'https://wa.me/?text=' },
-    { name: 'Telegram', icon: FaTelegram, url: 'https://t.me/share/url?url=' },
-    { name: 'Discord', icon: FaDiscord, url: 'https://discord.com/' },
+    { name: 'Facebook', icon: Facebook, url: 'https://facebook.com/sharer/sharer.php?u=', gradient: 'from-blue-500 to-blue-700' },
+    { name: 'Twitter', icon: Twitter, url: 'https://twitter.com/intent/tweet?url=', gradient: 'from-blue-400 to-blue-600' },
+    { name: 'LinkedIn', icon: Linkedin, url: 'https://linkedin.com/sharing/share-offsite/?url=', gradient: 'from-blue-600 to-blue-800' },
+    { name: 'Pinterest', icon: FaPinterest, url: 'https://pinterest.com/pin/create/button/?url=', gradient: 'from-red-500 to-pink-600' },
+    { name: 'Reddit', icon: FaReddit, url: 'https://reddit.com/submit?url=', gradient: 'from-orange-500 to-red-600' },
+    { name: 'Instagram', icon: Instagram, url: 'https://instagram.com/', gradient: 'from-pink-500 via-purple-500 to-orange-400' },
+    { name: 'YouTube', icon: Youtube, url: 'https://youtube.com/', gradient: 'from-red-600 to-red-700' },
+    { name: 'TikTok', icon: FaTiktok, url: 'https://tiktok.com/', gradient: 'from-gray-800 to-gray-900' },
+    { name: 'Snapchat', icon: FaSnapchat, url: 'https://snapchat.com/', gradient: 'from-yellow-400 to-yellow-500' },
+    { name: 'WhatsApp', icon: FaWhatsapp, url: 'https://wa.me/?text=', gradient: 'from-green-500 to-green-600' },
+    { name: 'Telegram', icon: FaTelegram, url: 'https://t.me/share/url?url=', gradient: 'from-blue-400 to-blue-500' },
+    { name: 'Discord', icon: FaDiscord, url: 'https://discord.com/', gradient: 'from-indigo-500 to-purple-600' },
   ];
 
   const handleShare = (platform: string, url: string) => {
@@ -225,7 +225,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ userId = "demo-user" }) => {
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="neo-button-secondary hover:bg-gradient-to-r hover:from-red-500/10 hover:to-pink-500/10 hover:text-red-500 transition-all duration-300"
+                      className="bg-gradient-to-r from-red-500/20 to-pink-500/20 hover:from-red-500 hover:to-pink-500 hover:text-white hover:scale-105 transition-all duration-300 border border-red-500/30"
                     >
                       <Heart className="w-4 h-4 mr-2" />
                       {12 + i}
@@ -233,7 +233,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ userId = "demo-user" }) => {
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="neo-button-secondary hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-cyan-500/10 hover:text-blue-500 transition-all duration-300"
+                      className="bg-gradient-to-r from-blue-500/20 to-cyan-500/20 hover:from-blue-500 hover:to-cyan-500 hover:text-white hover:scale-105 transition-all duration-300 border border-blue-500/30"
                     >
                       <MessageCircle className="w-4 h-4 mr-2" />
                       {3 + i}
@@ -241,7 +241,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ userId = "demo-user" }) => {
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="neo-button-secondary hover:bg-gradient-to-r hover:from-green-500/10 hover:to-emerald-500/10 hover:text-green-500 transition-all duration-300"
+                      className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 hover:from-green-500 hover:to-emerald-500 hover:text-white hover:scale-105 transition-all duration-300 border border-green-500/30"
                     >
                       <Share2 className="w-4 h-4 mr-2" />
                       Share
@@ -275,14 +275,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ userId = "demo-user" }) => {
                   <div ref={chatEndRef} />
                 </div>
                 
-                {/* Compact Chat Input */}
-                <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-background/50 to-muted/50 rounded-full border border-border/50 backdrop-blur-sm">
+                {/* Ultra Compact Chat Input */}
+                <div className="flex items-center gap-1 p-1 bg-gradient-to-r from-background/50 to-muted/50 rounded-full border border-border/50 backdrop-blur-sm">
                   <div className="flex-1 relative">
                     <Input
                       value={chatMessage || interimTranscript}
                       onChange={(e) => setChatMessage(e.target.value)}
                       placeholder="Type a message..."
-                      className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 pr-2 pl-3"
+                      className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 pr-1 pl-4 h-9"
                       onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                     />
                   </div>
@@ -290,30 +290,30 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ userId = "demo-user" }) => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="rounded-full h-8 w-8 p-0 hover:bg-gradient-to-r hover:from-yellow-500/20 hover:to-orange-500/20 hover:text-yellow-600"
+                    className="rounded-full h-7 w-7 p-0 hover:bg-gradient-to-r hover:from-yellow-500/20 hover:to-orange-500/20 hover:text-yellow-600 hover:scale-110 transition-all duration-300"
                   >
-                    <Smile className="h-4 w-4" />
+                    <Smile className="h-3 w-3" />
                   </Button>
                   
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleVoiceInput}
-                    className={`rounded-full h-8 w-8 p-0 transition-all duration-300 ${
+                    className={`rounded-full h-7 w-7 p-0 transition-all duration-300 hover:scale-110 ${
                       isListening 
-                        ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white hover:from-red-600 hover:to-pink-600' 
+                        ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white hover:from-red-600 hover:to-pink-600 shadow-lg' 
                         : 'hover:bg-gradient-to-r hover:from-blue-500/20 hover:to-purple-500/20 hover:text-blue-600'
                     }`}
                   >
-                    {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                    {isListening ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
                   </Button>
                   
                   <Button
                     onClick={handleSendMessage}
                     size="sm"
-                    className="rounded-full h-8 w-8 p-0 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 hover:scale-105 transition-all duration-300"
+                    className="rounded-full h-7 w-7 p-0 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 hover:scale-110 transition-all duration-300 shadow-md"
                   >
-                    <Send className="h-4 w-4" />
+                    <Send className="h-3 w-3" />
                   </Button>
                 </div>
               </CardContent>
@@ -332,25 +332,25 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ userId = "demo-user" }) => {
           </TabsContent>
         </Tabs>
 
-        {/* Enhanced Social Links */}
-        <div className="flex flex-wrap justify-center gap-3 relative">
+        {/* Enhanced Social Links with reduced spacing */}
+        <div className="flex flex-wrap justify-center gap-2 relative mt-2">
           {/* Main Social Icons */}
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             {[
               { icon: Twitter, url: socialLinks?.twitter, gradient: 'from-blue-400 to-blue-600' },
               { icon: Linkedin, url: socialLinks?.linkedin, gradient: 'from-blue-600 to-blue-800' },
               { icon: Facebook, url: socialLinks?.facebook, gradient: 'from-blue-500 to-blue-700' },
-              { icon: Instagram, url: socialLinks?.instagram, gradient: 'from-pink-500 to-purple-600' },
+              { icon: Instagram, url: socialLinks?.instagram, gradient: 'from-pink-500 via-purple-500 to-orange-400' },
               { icon: Globe, url: socialLinks?.website, gradient: 'from-green-500 to-emerald-600' }
             ].map(({ icon: Icon, url, gradient }, index) => (
               <Button
                 key={index}
                 variant="ghost"
                 size="sm"
-                className={`social-icon bg-gradient-to-r ${gradient} text-white hover:scale-110 hover:shadow-lg transition-all duration-300`}
+                className={`w-8 h-8 rounded-full bg-gradient-to-r ${gradient} text-white hover:scale-110 hover:shadow-lg transition-all duration-300 p-0`}
                 onClick={() => url && window.open(url, '_blank')}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-3 h-3" />
               </Button>
             ))}
           </div>
@@ -361,51 +361,59 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ userId = "demo-user" }) => {
               variant="ghost"
               size="sm"
               onClick={() => setShowMoreSocial(!showMoreSocial)}
-              className="social-icon bg-gradient-to-r from-gray-500 to-gray-700 text-white hover:scale-110 hover:shadow-lg transition-all duration-300"
+              className="w-8 h-8 rounded-full bg-gradient-to-r from-gray-500 to-gray-700 text-white hover:scale-110 hover:shadow-lg transition-all duration-300 p-0"
             >
-              <MoreHorizontal className="w-4 h-4" />
+              <MoreHorizontal className="w-3 h-3" />
             </Button>
             
             {showMoreSocial && (
               <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-card/95 backdrop-blur-sm border border-border/50 rounded-lg p-2 shadow-xl z-10">
                 <div className="flex flex-col gap-2 min-w-[120px]">
-                  <Button variant="ghost" size="sm" className="justify-start gap-2 text-sm hover:bg-gradient-to-r hover:from-pink-500/20 hover:to-purple-500/20">
+                  <Button variant="ghost" size="sm" className="justify-start gap-2 text-sm hover:bg-gradient-to-r hover:from-red-600/20 hover:to-red-700/20 hover:text-red-500">
                     <Youtube className="w-4 h-4" />
                     YouTube
                   </Button>
-                  <Button variant="ghost" size="sm" className="justify-start gap-2 text-sm hover:bg-gradient-to-r hover:from-red-500/20 hover:to-pink-500/20">
+                  <Button variant="ghost" size="sm" className="justify-start gap-2 text-sm hover:bg-gradient-to-r hover:from-red-500/20 hover:to-pink-600/20 hover:text-pink-500">
                     <FaPinterest className="w-4 h-4" />
                     Pinterest
+                  </Button>
+                  <Button variant="ghost" size="sm" className="justify-start gap-2 text-sm hover:bg-gradient-to-r hover:from-orange-500/20 hover:to-red-600/20 hover:text-orange-500">
+                    <FaReddit className="w-4 h-4" />
+                    Reddit
+                  </Button>
+                  <Button variant="ghost" size="sm" className="justify-start gap-2 text-sm hover:bg-gradient-to-r hover:from-gray-800/20 hover:to-gray-900/20 hover:text-gray-300">
+                    <FaTiktok className="w-4 h-4" />
+                    TikTok
                   </Button>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Enhanced Share Button */}
+          {/* Enhanced Share Button with Zoom Effect */}
           <div className="relative">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowShareMenu(!showShareMenu)}
-              className="social-icon bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:scale-110 hover:shadow-xl hover:shadow-purple-500/25 transition-all duration-300 transform hover:rotate-3"
+              className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:scale-125 hover:shadow-xl hover:shadow-purple-500/40 transition-all duration-300 transform hover:rotate-6 p-0"
             >
-              <Share2 className="w-4 h-4" />
+              <Share2 className="w-3 h-3" />
             </Button>
             
             {showShareMenu && (
-              <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-card/95 backdrop-blur-sm border border-border/50 rounded-xl p-3 shadow-2xl z-20 min-w-[200px]">
-                <div className="grid grid-cols-3 gap-2">
-                  {shareOptions.map(({ name, icon: Icon, url }) => (
+              <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-card/95 backdrop-blur-sm border border-border/50 rounded-xl p-3 shadow-2xl z-20 min-w-[240px]">
+                <div className="grid grid-cols-4 gap-2">
+                  {shareOptions.map(({ name, icon: Icon, url, gradient }) => (
                     <Button
                       key={name}
                       variant="ghost"
                       size="sm"
                       onClick={() => handleShare(name, url)}
-                      className="flex flex-col items-center gap-1 p-2 h-auto hover:bg-gradient-to-br hover:from-primary/10 hover:to-secondary/10 transition-all duration-300 hover:scale-105"
+                      className={`flex flex-col items-center gap-1 p-2 h-auto rounded-lg bg-gradient-to-r ${gradient} text-white hover:scale-105 transition-all duration-300 hover:shadow-md`}
                     >
                       <Icon className="w-4 h-4" />
-                      <span className="text-xs">{name}</span>
+                      <span className="text-xs font-medium">{name}</span>
                     </Button>
                   ))}
                 </div>
