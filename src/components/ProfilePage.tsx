@@ -14,15 +14,10 @@ import {
   Mic,
   MicOff,
   Smile,
-  Twitter,
-  Linkedin,
-  Instagram,
-  Youtube,
   ExternalLink,
   Send,
   Play,
   Volume2,
-  Facebook,
   Globe,
   X,
   MoreVertical,
@@ -33,6 +28,19 @@ import {
   Sun,
   Moon
 } from 'lucide-react';
+import { 
+  FaFacebook, 
+  FaTwitter, 
+  FaInstagram, 
+  FaLinkedin, 
+  FaYoutube, 
+  FaPinterest, 
+  FaReddit,
+  FaWhatsapp,
+  FaTiktok,
+  FaSnapchat,
+  FaTelegram
+} from 'react-icons/fa';
 import Avatar3D from './Avatar3D';
 import EmojiPicker from './EmojiPicker';
 import { supabase } from '@/integrations/supabase/client';
@@ -660,24 +668,22 @@ const ProfilePage = () => {
 
         {/* Chat Input - Only show when chat tab is active */}
         {activeTab === 'chat' && (
-          <div className="bg-card/30 rounded-2xl p-4 border border-border/50 backdrop-blur-sm">
-            <div className="flex items-center gap-3">
+          <div className="bg-card/30 rounded-2xl p-3 border border-border/50 backdrop-blur-sm">
+            <div className="flex items-center gap-2">
               <Input
                 value={chatMessage + (isListening && interimTranscript ? ` ${interimTranscript}` : '')}
                 onChange={(e) => setChatMessage(e.target.value)}
                 placeholder={isListening ? 'Listening...' : 'Type a message...'}
-                className="flex-1 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl"
+                className="flex-1 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl text-sm"
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
               />
-              <div className="relative">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
-                  className="h-10 w-10 p-0 hover:bg-background/50 rounded-xl"
-                >
-                  <Smile className="w-5 h-5 text-muted-foreground" />
-                </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
+                className="h-8 w-8 p-0 hover:bg-background/50 rounded-lg relative"
+              >
+                <Smile className="w-4 h-4 text-muted-foreground" />
                 {isEmojiPickerOpen && (
                   <div className="absolute bottom-full right-0 mb-2 z-50">
                     <EmojiPicker 
@@ -687,57 +693,57 @@ const ProfilePage = () => {
                     />
                   </div>
                 )}
-              </div>
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={toggleVoiceInput}
                 disabled={!voiceSupported}
-                className={`h-10 w-10 p-0 rounded-xl transition-all duration-300 ${
+                className={`h-8 w-8 p-0 rounded-lg transition-all duration-300 ${
                   isListening 
                     ? 'bg-destructive/20 hover:bg-destructive/30 text-destructive animate-pulse' 
                     : 'hover:bg-background/50 text-muted-foreground hover:text-foreground'
                 }`}
                 title={!voiceSupported ? 'Voice input not supported' : isListening ? 'Stop recording' : 'Start recording'}
               >
-                {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </Button>
               {isSpeaking && (
                 <Button 
                   size="sm" 
                   variant="ghost" 
                   onClick={stopTTS}
-                  className="h-10 w-10 p-0 hover:bg-background/50 rounded-xl text-primary"
+                  className="h-8 w-8 p-0 hover:bg-background/50 rounded-lg text-primary"
                 >
-                  <Volume2 className="w-5 h-5" />
+                  <Volume2 className="w-4 h-4" />
                 </Button>
               )}
               <Button
                 onClick={handleSendMessage}
                 disabled={!chatMessage.trim()}
-                className="h-10 px-4 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-xl transition-all duration-300 hover:scale-105"
+                className="h-8 px-3 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-lg transition-all duration-300 hover:scale-105"
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-3 h-3" />
               </Button>
             </div>
           </div>
         )}
 
-        {/* Social Media Links Row with Three Dots and Share Button */}
-        <div className="flex justify-center items-center gap-3 pt-2 relative">
+        {/* Social Media Links Row with Gradients */}
+        <div className="flex justify-center items-center gap-2 mt-1 relative">
           <a 
             href={socialLinks?.facebook || 'https://facebook.com'} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
+            className="w-9 h-9 rounded-full bg-gradient-to-r from-blue-600 to-blue-500 flex items-center justify-center text-white transition-all duration-300 hover:scale-110 hover:shadow-lg"
           >
-            <Facebook className="w-4 h-4" />
+            <FaFacebook className="w-4 h-4" />
           </a>
           <a 
             href={socialLinks?.twitter || 'https://x.com'} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
+            className="w-9 h-9 rounded-full bg-gradient-to-r from-gray-800 to-black flex items-center justify-center text-white transition-all duration-300 hover:scale-110 hover:shadow-lg"
           >
             <X className="w-4 h-4" />
           </a>
@@ -745,45 +751,45 @@ const ProfilePage = () => {
             href={socialLinks?.instagram || 'https://instagram.com'} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
+            className="w-9 h-9 rounded-full bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 flex items-center justify-center text-white transition-all duration-300 hover:scale-110 hover:shadow-lg"
           >
-            <Instagram className="w-4 h-4" />
+            <FaInstagram className="w-4 h-4" />
           </a>
           <a 
             href={socialLinks?.youtube || 'https://youtube.com'} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
+            className="w-9 h-9 rounded-full bg-gradient-to-r from-red-600 to-red-500 flex items-center justify-center text-white transition-all duration-300 hover:scale-110 hover:shadow-lg"
           >
-            <Youtube className="w-4 h-4" />
+            <FaYoutube className="w-4 h-4" />
           </a>
           <a 
             href={socialLinks?.linkedin || 'https://linkedin.com'} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
+            className="w-9 h-9 rounded-full bg-gradient-to-r from-blue-700 to-blue-600 flex items-center justify-center text-white transition-all duration-300 hover:scale-110 hover:shadow-lg"
           >
-            <Linkedin className="w-4 h-4" />
+            <FaLinkedin className="w-4 h-4" />
           </a>
 
-          {/* Three Dots Menu Button */}
+          {/* More Social Networks Button */}
           <div className="relative">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setIsSocialMenuOpen(!isSocialMenuOpen)}
-              className="w-10 h-10 p-0 rounded-full bg-card/30 border border-border/50 text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
+              className="w-9 h-9 p-0 rounded-full bg-gradient-to-r from-gray-600 to-gray-500 text-white transition-all duration-300 hover:scale-110 hover:shadow-lg"
             >
               <MoreVertical className="w-4 h-4" />
             </Button>
             {isSocialMenuOpen && (
-              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-card/90 backdrop-blur-sm border border-border/50 rounded-lg p-2 z-50">
-                <div className="flex flex-col gap-1">
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-card/95 backdrop-blur-md border border-border/50 rounded-xl p-3 z-50 min-w-52">
+                <div className="grid grid-cols-2 gap-2">
                   <a 
                     href={socialLinks?.github || 'https://github.com'} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-gray-800 to-gray-700 text-white hover:from-gray-700 hover:to-gray-600 transition-all duration-300 hover:scale-105"
                   >
                     <Github className="w-4 h-4" />
                     <span className="text-sm">GitHub</span>
@@ -792,16 +798,43 @@ const ProfilePage = () => {
                     href={socialLinks?.discord || 'https://discord.com'} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-500 hover:to-purple-500 transition-all duration-300 hover:scale-105"
                   >
                     <MessageCircle className="w-4 h-4" />
                     <span className="text-sm">Discord</span>
                   </a>
                   <a 
-                    href={socialLinks?.website || 'https://reddit.com'} 
+                    href={socialLinks?.pinterest || 'https://pinterest.com'} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-red-600 to-red-500 text-white hover:from-red-500 hover:to-red-400 transition-all duration-300 hover:scale-105"
+                  >
+                    <FaPinterest className="w-4 h-4" />
+                    <span className="text-sm">Pinterest</span>
+                  </a>
+                  <a 
+                    href={socialLinks?.reddit || 'https://reddit.com'} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-orange-600 to-orange-500 text-white hover:from-orange-500 hover:to-orange-400 transition-all duration-300 hover:scale-105"
+                  >
+                    <FaReddit className="w-4 h-4" />
+                    <span className="text-sm">Reddit</span>
+                  </a>
+                  <a 
+                    href={socialLinks?.tiktok || 'https://tiktok.com'} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-black to-gray-800 text-white hover:from-gray-800 hover:to-gray-700 transition-all duration-300 hover:scale-105"
+                  >
+                    <FaTiktok className="w-4 h-4" />
+                    <span className="text-sm">TikTok</span>
+                  </a>
+                  <a 
+                    href={socialLinks?.website || 'https://example.com'} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-green-600 to-green-500 text-white hover:from-green-500 hover:to-green-400 transition-all duration-300 hover:scale-105"
                   >
                     <Globe className="w-4 h-4" />
                     <span className="text-sm">Website</span>
@@ -811,60 +844,74 @@ const ProfilePage = () => {
             )}
           </div>
 
-          {/* Share Button */}
+          {/* Enhanced Share Button with Gradient and Animation */}
           <div className="relative">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setIsShareMenuOpen(!isShareMenuOpen)}
-              className="w-10 h-10 p-0 rounded-full bg-card/30 border border-border/50 text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
+              className="w-10 h-10 p-0 rounded-full bg-gradient-to-r from-primary via-purple-500 to-pink-500 text-white transition-all duration-300 hover:scale-110 hover:shadow-xl animate-share-pulse"
             >
-              <Share2 className="w-4 h-4" />
+              <Share2 className="w-4 h-4 animate-zoom-in" />
             </Button>
             {isShareMenuOpen && (
-              <div className="absolute bottom-full right-0 mb-2 bg-card/90 backdrop-blur-sm border border-border/50 rounded-lg p-2 z-50">
-                <div className="grid grid-cols-2 gap-1 min-w-48">
+              <div className="absolute bottom-full right-0 mb-2 bg-card/95 backdrop-blur-md border border-border/50 rounded-xl p-3 z-50 min-w-60">
+                <div className="grid grid-cols-2 gap-2">
                   <button 
                     onClick={() => handleShare('facebook')}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400 transition-all duration-300 hover:scale-105"
                   >
-                    <Facebook className="w-4 h-4" />
+                    <FaFacebook className="w-4 h-4" />
                     <span className="text-sm">Facebook</span>
                   </button>
                   <button 
                     onClick={() => handleShare('twitter')}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-gray-800 to-black text-white hover:from-gray-700 hover:to-gray-800 transition-all duration-300 hover:scale-105"
                   >
-                    <X className="w-4 h-4" />
-                    <span className="text-sm">Twitter</span>
+                    <FaTwitter className="w-4 h-4" />
+                    <span className="text-sm">X/Twitter</span>
                   </button>
                   <button 
                     onClick={() => handleShare('linkedin')}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-700 to-blue-600 text-white hover:from-blue-600 hover:to-blue-500 transition-all duration-300 hover:scale-105"
                   >
-                    <Linkedin className="w-4 h-4" />
+                    <FaLinkedin className="w-4 h-4" />
                     <span className="text-sm">LinkedIn</span>
                   </button>
                   <button 
                     onClick={() => handleShare('pinterest')}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-red-600 to-red-500 text-white hover:from-red-500 hover:to-red-400 transition-all duration-300 hover:scale-105"
                   >
-                    <Link className="w-4 h-4" />
+                    <FaPinterest className="w-4 h-4" />
                     <span className="text-sm">Pinterest</span>
                   </button>
                   <button 
                     onClick={() => handleShare('reddit')}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-orange-600 to-orange-500 text-white hover:from-orange-500 hover:to-orange-400 transition-all duration-300 hover:scale-105"
                   >
-                    <MessageCircle className="w-4 h-4" />
+                    <FaReddit className="w-4 h-4" />
                     <span className="text-sm">Reddit</span>
                   </button>
                   <button 
                     onClick={() => handleShare('whatsapp')}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-green-600 to-green-500 text-white hover:from-green-500 hover:to-green-400 transition-all duration-300 hover:scale-105"
                   >
-                    <MessageSquare className="w-4 h-4" />
+                    <FaWhatsapp className="w-4 h-4" />
                     <span className="text-sm">WhatsApp</span>
+                  </button>
+                  <button 
+                    onClick={() => handleShare('instagram')}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 text-white hover:from-pink-400 hover:via-red-400 hover:to-yellow-400 transition-all duration-300 hover:scale-105"
+                  >
+                    <FaInstagram className="w-4 h-4" />
+                    <span className="text-sm">Instagram</span>
+                  </button>
+                  <button 
+                    onClick={() => handleShare('telegram')}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-400 hover:to-cyan-400 transition-all duration-300 hover:scale-105"
+                  >
+                    <FaTelegram className="w-4 h-4" />
+                    <span className="text-sm">Telegram</span>
                   </button>
                 </div>
               </div>
