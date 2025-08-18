@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { 
   X, 
   Image, 
@@ -23,7 +24,9 @@ import {
   Hash,
   Calendar,
   Globe,
-  Users
+  Users,
+  Plus,
+  DollarSign
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -91,86 +94,105 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-3xl bg-card max-h-[95vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-4xl bg-card shadow-2xl max-h-[95vh] overflow-hidden flex flex-col border-0 rounded-2xl">
         {/* Header */}
-        <CardHeader className="flex flex-row items-center justify-between border-b">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10">
+        <CardHeader className="flex flex-row items-center justify-between p-6 border-b border-border/50">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-12 w-12 ring-2 ring-primary/20">
               <AvatarImage src="/placeholder.svg" />
-              <AvatarFallback>U</AvatarFallback>
+              <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-primary-foreground font-semibold">
+                JD
+              </AvatarFallback>
             </Avatar>
             <div>
-              <CardTitle className="text-lg">Create Post</CardTitle>
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                <Globe className="h-3 w-3" />
-                <span>Public</span>
+              <CardTitle className="text-xl font-bold">Create Post</CardTitle>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                <Badge variant="secondary" className="px-2 py-0.5 text-xs">
+                  <Globe className="h-3 w-3 mr-1" />
+                  Public
+                </Badge>
               </div>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="w-4 h-4" />
+          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-destructive/10 hover:text-destructive">
+            <X className="w-5 h-5" />
           </Button>
         </CardHeader>
 
         <CardContent className="flex-1 overflow-y-auto p-0">
-          <div className="p-6 space-y-4">
-            {/* Title Input */}
-            <Input
-              placeholder="Add a compelling title..."
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="text-lg font-semibold border-none shadow-none p-0 placeholder:text-muted-foreground focus-visible:ring-0"
-            />
+          <div className="p-6 space-y-6">
+            {/* Enhanced Title Input */}
+            <div className="space-y-2">
+              <Input
+                placeholder="Write a captivating title that grabs attention..."
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="text-2xl font-bold border-none shadow-none p-0 placeholder:text-muted-foreground/70 focus-visible:ring-0 bg-transparent"
+              />
+              <div className="h-px bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20"></div>
+            </div>
 
-            {/* Content Editor */}
-            <Textarea
-              placeholder="What's on your mind? Share your thoughts, experiences, or anything interesting..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="min-h-[200px] border-none shadow-none p-0 resize-none text-base placeholder:text-muted-foreground focus-visible:ring-0"
-            />
+            {/* Enhanced Content Editor */}
+            <div className="space-y-3">
+              <Textarea
+                placeholder="Share your thoughts, experiences, or insights... Make it engaging and authentic!"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                className="min-h-[240px] border-none shadow-none p-0 resize-none text-lg leading-relaxed placeholder:text-muted-foreground/70 focus-visible:ring-0 bg-transparent"
+              />
+            </div>
 
-            {/* Link Input (conditionally shown) */}
+            {/* Enhanced Link Preview */}
             {showLinkInput && (
-              <div className="bg-muted/50 rounded-lg p-4 border">
-                <div className="flex items-center gap-2 mb-2">
-                  <LinkIcon className="h-4 w-4" />
-                  <span className="text-sm font-medium">Add Link</span>
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-4 border border-blue-200/50 dark:border-blue-800/50">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 bg-blue-500/10 rounded-lg">
+                    <LinkIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <span className="font-semibold text-blue-900 dark:text-blue-100">Add Link</span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setShowLinkInput(false)}
+                    className="ml-auto h-8 w-8 p-0 hover:bg-blue-500/10"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
                 <Input
-                  placeholder="Paste or type a link..."
+                  placeholder="https://example.com"
                   value={linkUrl}
                   onChange={(e) => setLinkUrl(e.target.value)}
-                  className="mb-2"
+                  className="bg-white/50 dark:bg-gray-900/50 border-blue-200/50 dark:border-blue-800/50"
                 />
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setShowLinkInput(false)}
-                  className="text-xs"
-                >
-                  Remove Link
-                </Button>
               </div>
             )}
 
-            {/* File Previews */}
+            {/* Enhanced File Previews */}
             {selectedFiles.length > 0 && (
-              <div className="space-y-2">
-                <div className="text-sm font-medium text-muted-foreground">Attached Files</div>
-                <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-muted-foreground" />
+                  <span className="font-semibold text-muted-foreground">Attached Files ({selectedFiles.length})</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
                   {selectedFiles.map((file, index) => (
-                    <div key={index} className="bg-muted/50 rounded-lg p-3 flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      <span className="text-sm truncate flex-1">{file.name}</span>
+                    <div key={index} className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl p-4 border border-gray-200/50 dark:border-gray-700/50 flex items-center gap-3">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        <FileText className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{file.name}</p>
+                        <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</p>
+                      </div>
                       <Button 
                         variant="ghost" 
                         size="sm" 
                         onClick={() => removeFile(index)}
-                        className="h-6 w-6 p-0"
+                        className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
                       >
-                        <X className="h-3 w-3" />
+                        <X className="h-4 w-4" />
                       </Button>
                     </div>
                   ))}
@@ -178,30 +200,35 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
               </div>
             )}
 
-            {/* Integration Selection */}
+            {/* Enhanced Integration Display */}
             {integrationApp && (
-              <div className="bg-muted/50 rounded-lg p-4 border">
-                <div className="flex items-center gap-2 mb-2">
-                  <Zap className="h-4 w-4" />
-                  <span className="text-sm font-medium">Integration: {integrationApp}</span>
+              <div className="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30 rounded-xl p-4 border border-yellow-200/50 dark:border-yellow-800/50">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-yellow-500/10 rounded-lg">
+                    <Zap className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                  </div>
+                  <span className="font-semibold text-yellow-900 dark:text-yellow-100">Connected: {integrationApp}</span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setIntegrationApp('')}
+                    className="ml-auto h-8 w-8 p-0 hover:bg-yellow-500/10"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setIntegrationApp('')}
-                  className="text-xs"
-                >
-                  Remove Integration
-                </Button>
               </div>
             )}
 
-            {/* Pricing Options */}
+            {/* Enhanced Pricing Options */}
             {showPricingOptions && (
-              <div className="bg-muted/50 rounded-lg p-4 border">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Monetization</span>
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-xl p-4 border border-green-200/50 dark:border-green-800/50">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-500/10 rounded-lg">
+                      <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    </div>
+                    <span className="font-semibold text-green-900 dark:text-green-100">Monetization</span>
                   </div>
                   <Button 
                     variant="ghost" 
@@ -211,29 +238,30 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
                       setIsPaid(false);
                       setPrice('');
                     }}
+                    className="h-8 w-8 p-0 hover:bg-green-500/10"
                   >
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
                 <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3">
                     <Switch
                       id="paid-post"
                       checked={isPaid}
                       onCheckedChange={setIsPaid}
                     />
-                    <Label htmlFor="paid-post">Paid Content</Label>
+                    <Label htmlFor="paid-post" className="font-medium">Paid Content</Label>
                   </div>
                   {isPaid && (
                     <div className="flex items-center space-x-2">
-                      <Label htmlFor="price" className="text-sm">$</Label>
+                      <Label htmlFor="price" className="text-sm font-medium">$</Label>
                       <Input
                         id="price"
                         type="number"
                         placeholder="9.99"
                         value={price}
                         onChange={(e) => setPrice(e.target.value)}
-                        className="w-20 h-8"
+                        className="w-24 h-9 bg-white/50 dark:bg-gray-900/50"
                         step="0.01"
                         min="0"
                       />
@@ -245,13 +273,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
           </div>
         </CardContent>
 
-        <Separator />
+        <Separator className="bg-gradient-to-r from-transparent via-border to-transparent" />
 
-        {/* Bottom Action Bar */}
-        <div className="p-4 bg-muted/30">
+        {/* Enhanced Bottom Action Bar */}
+        <div className="p-6 bg-gradient-to-r from-muted/30 via-muted/20 to-muted/30">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1">
-              {/* Media Upload Buttons */}
+            {/* Media Options */}
+            <div className="flex items-center gap-2">
+              {/* Photo Upload */}
               <input
                 id="photo-upload"
                 type="file"
@@ -264,11 +293,13 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
                 variant="ghost"
                 size="sm"
                 onClick={() => document.getElementById('photo-upload')?.click()}
-                className="h-9 w-9 p-0 hover:bg-accent"
+                className="h-11 px-4 hover:bg-green-500/10 hover:text-green-600 transition-all duration-200 group"
               >
-                <Image className="h-4 w-4 text-green-600" />
+                <Image className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
+                <span className="hidden sm:inline font-medium">Photo</span>
               </Button>
 
+              {/* Video Upload */}
               <input
                 id="video-upload"
                 type="file"
@@ -280,11 +311,13 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
                 variant="ghost"
                 size="sm"
                 onClick={() => document.getElementById('video-upload')?.click()}
-                className="h-9 w-9 p-0 hover:bg-accent"
+                className="h-11 px-4 hover:bg-blue-500/10 hover:text-blue-600 transition-all duration-200 group"
               >
-                <Video className="h-4 w-4 text-blue-600" />
+                <Video className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
+                <span className="hidden sm:inline font-medium">Video</span>
               </Button>
 
+              {/* Document Upload */}
               <input
                 id="document-upload"
                 type="file"
@@ -296,82 +329,71 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
                 variant="ghost"
                 size="sm"
                 onClick={() => document.getElementById('document-upload')?.click()}
-                className="h-9 w-9 p-0 hover:bg-accent"
+                className="h-11 px-4 hover:bg-purple-500/10 hover:text-purple-600 transition-all duration-200 group"
               >
-                <Paperclip className="h-4 w-4 text-purple-600" />
+                <Paperclip className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
+                <span className="hidden sm:inline font-medium">File</span>
               </Button>
 
+              {/* Link */}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowLinkInput(!showLinkInput)}
-                className="h-9 w-9 p-0 hover:bg-accent"
+                className="h-11 px-4 hover:bg-orange-500/10 hover:text-orange-600 transition-all duration-200 group"
               >
-                <LinkIcon className="h-4 w-4 text-orange-600" />
+                <LinkIcon className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
+                <span className="hidden sm:inline font-medium">Link</span>
               </Button>
 
-              {/* Integration Select */}
+              {/* Integration */}
               <Select value={integrationApp} onValueChange={setIntegrationApp}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-9 w-9 p-0 hover:bg-accent"
-                  asChild
-                >
-                  <SelectTrigger className="border-none shadow-none">
-                    <Zap className="h-4 w-4 text-yellow-600" />
-                  </SelectTrigger>
-                </Button>
+                <SelectTrigger className="h-11 px-4 border-none bg-transparent hover:bg-yellow-500/10 hover:text-yellow-600 transition-all duration-200">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-5 w-5" />
+                    <span className="hidden sm:inline font-medium">Apps</span>
+                  </div>
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">None</SelectItem>
-                  <SelectItem value="spotify">Spotify</SelectItem>
-                  <SelectItem value="youtube">YouTube</SelectItem>
-                  <SelectItem value="github">GitHub</SelectItem>
-                  <SelectItem value="twitter">Twitter</SelectItem>
-                  <SelectItem value="instagram">Instagram</SelectItem>
+                  <SelectItem value="spotify">🎵 Spotify</SelectItem>
+                  <SelectItem value="youtube">📺 YouTube</SelectItem>
+                  <SelectItem value="github">💻 GitHub</SelectItem>
+                  <SelectItem value="twitter">🐦 Twitter</SelectItem>
+                  <SelectItem value="instagram">📸 Instagram</SelectItem>
                 </SelectContent>
               </Select>
 
-              <Separator orientation="vertical" className="h-6 mx-2" />
+              <Separator orientation="vertical" className="h-8 mx-3" />
 
-              {/* Additional Options */}
+              {/* Monetization */}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowPricingOptions(!showPricingOptions)}
-                className="h-9 px-3 text-sm hover:bg-accent"
+                className="h-11 px-4 hover:bg-green-500/10 hover:text-green-600 transition-all duration-200 group"
               >
-                💰
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-9 px-3 text-sm hover:bg-accent"
-              >
-                <Smile className="h-4 w-4" />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-9 px-3 text-sm hover:bg-accent"
-              >
-                <Hash className="h-4 w-4" />
+                <DollarSign className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
+                <span className="hidden sm:inline font-medium">Monetize</span>
               </Button>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" onClick={onClose} size="sm">
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline" 
+                onClick={onClose} 
+                className="h-11 px-6 border-2 hover:bg-muted/50"
+              >
                 Cancel
               </Button>
               <Button 
                 onClick={handleCreatePost}
-                className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-primary-foreground"
-                size="sm"
+                className="h-11 px-8 bg-gradient-to-r from-primary via-primary to-secondary hover:from-primary/90 hover:via-primary/90 hover:to-secondary/90 text-primary-foreground font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                disabled={!content.trim() && selectedFiles.length === 0}
               >
-                Publish
+                <Plus className="h-5 w-5 mr-2" />
+                Publish Post
               </Button>
             </div>
           </div>
