@@ -17,25 +17,22 @@ import {
   FileText, 
   Link as LinkIcon, 
   Zap,
-  Upload,
   Paperclip,
-  MapPin,
-  Smile,
-  Hash,
-  Calendar,
   Globe,
-  Users,
   Plus,
   DollarSign
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { usePosts } from '@/hooks/usePosts';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CreatePostModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onPostCreated?: () => void;
 }
 
-const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) => {
+const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPostCreated }) => {
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
   const [isPaid, setIsPaid] = useState(false);
@@ -45,9 +42,11 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
   const [integrationApp, setIntegrationApp] = useState('');
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [showPricingOptions, setShowPricingOptions] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { createPost } = usePosts();
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>, type: string) => {
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     if (files.length > 0) {
       setSelectedFiles(prev => [...prev, ...files]);
@@ -62,33 +61,105 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleCreatePost = () => {
-    if (!content.trim() && selectedFiles.length === 0) {
+  const uploadFiles = async () => {
+    if (selectedFiles.length === 0) return { mediaUrl: null, mediaType: null };
+
+    try {
+      const file = selectedFiles[0]; // For simplicity, take the first file
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `posts/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('profile-pictures')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('profile-pictures')
+        .getPublicUrl(filePath);
+
+      const mediaType = file.type.startsWith('image/') ? 'image' : 
+                       file.type.startsWith('video/') ? 'video' : 'document';
+
+      return { mediaUrl: publicUrl, mediaType };
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      throw error;
+    }
+  };
+
+  const handleCreatePost = async () => {
+    if (!content.trim() && selectedFiles.length === 0 && !linkUrl.trim()) {
       toast({
         title: "Error",
-        description: "Please add content or upload a file",
+        description: "Please add content, upload a file, or add a link",
         variant: "destructive",
       });
       return;
     }
 
-    // Here you would typically send the post data to your backend
-    toast({
-      title: "Post Created!",
-      description: "Your post has been published successfully",
-    });
+    setIsLoading(true);
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to create a post",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    // Reset form
-    setContent('');
-    setTitle('');
-    setSelectedFiles([]);
-    setLinkUrl('');
-    setIntegrationApp('');
-    setIsPaid(false);
-    setPrice('');
-    setShowLinkInput(false);
-    setShowPricingOptions(false);
-    onClose();
+      // Upload files if any
+      const { mediaUrl, mediaType } = await uploadFiles();
+
+      // Prepare post data
+      const postData = {
+        user_id: user.id,
+        content: content.trim(),
+        post_type: mediaType || (linkUrl ? 'link' : 'text'),
+        media_url: mediaUrl,
+        media_type: mediaType,
+        is_paid: isPaid,
+        price: isPaid ? parseFloat(price) || 0 : null,
+        likes_count: 0,
+        comments_count: 0,
+        views_count: 0,
+        metadata: {
+          title: title.trim() || null,
+          link_url: linkUrl.trim() || null,
+          integration_app: integrationApp || null,
+        }
+      };
+
+      await createPost(postData);
+      
+      // Reset form
+      setContent('');
+      setTitle('');
+      setSelectedFiles([]);
+      setLinkUrl('');
+      setIntegrationApp('');
+      setIsPaid(false);
+      setPrice('');
+      setShowLinkInput(false);
+      setShowPricingOptions(false);
+      
+      onPostCreated?.();
+      onClose();
+    } catch (error) {
+      console.error('Error creating post:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create post. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -122,7 +193,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
 
         <CardContent className="flex-1 overflow-y-auto p-0">
           <div className="p-6 space-y-6">
-            {/* Enhanced Title Input */}
+            {/* Title Input */}
             <div className="space-y-2">
               <Input
                 placeholder="Write a captivating title that grabs attention..."
@@ -133,7 +204,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
               <div className="h-px bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20"></div>
             </div>
 
-            {/* Enhanced Content Editor */}
+            {/* Content Editor */}
             <div className="space-y-3">
               <Textarea
                 placeholder="Share your thoughts, experiences, or insights... Make it engaging and authentic!"
@@ -143,7 +214,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
               />
             </div>
 
-            {/* Enhanced Link Preview */}
+            {/* Link Preview */}
             {showLinkInput && (
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-4 border border-blue-200/50 dark:border-blue-800/50">
                 <div className="flex items-center gap-3 mb-3">
@@ -169,7 +240,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
               </div>
             )}
 
-            {/* Enhanced File Previews */}
+            {/* File Previews */}
             {selectedFiles.length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
@@ -200,7 +271,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
               </div>
             )}
 
-            {/* Enhanced Integration Display */}
+            {/* Integration Display */}
             {integrationApp && (
               <div className="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30 rounded-xl p-4 border border-yellow-200/50 dark:border-yellow-800/50">
                 <div className="flex items-center gap-3">
@@ -220,7 +291,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
               </div>
             )}
 
-            {/* Enhanced Pricing Options */}
+            {/* Pricing Options */}
             {showPricingOptions && (
               <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-xl p-4 border border-green-200/50 dark:border-green-800/50">
                 <div className="flex items-center justify-between mb-4">
@@ -275,64 +346,28 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
 
         <Separator className="bg-gradient-to-r from-transparent via-border to-transparent" />
 
-        {/* Enhanced Bottom Action Bar */}
+        {/* Bottom Action Bar */}
         <div className="p-6 bg-gradient-to-r from-muted/30 via-muted/20 to-muted/30">
           <div className="flex items-center justify-between">
             {/* Media Options */}
             <div className="flex items-center gap-2">
-              {/* Photo Upload */}
+              {/* Photo/Video/Document Upload */}
               <input
-                id="photo-upload"
+                id="file-upload"
                 type="file"
-                accept="image/*"
+                accept="image/*,video/*,.pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx"
                 multiple
-                onChange={(e) => handleFileUpload(e, 'image')}
+                onChange={handleFileUpload}
                 className="hidden"
               />
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => document.getElementById('photo-upload')?.click()}
+                onClick={() => document.getElementById('file-upload')?.click()}
                 className="h-11 px-4 hover:bg-green-500/10 hover:text-green-600 transition-all duration-200 group"
               >
                 <Image className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
-                <span className="hidden sm:inline font-medium">Photo</span>
-              </Button>
-
-              {/* Video Upload */}
-              <input
-                id="video-upload"
-                type="file"
-                accept="video/*"
-                onChange={(e) => handleFileUpload(e, 'video')}
-                className="hidden"
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => document.getElementById('video-upload')?.click()}
-                className="h-11 px-4 hover:bg-blue-500/10 hover:text-blue-600 transition-all duration-200 group"
-              >
-                <Video className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
-                <span className="hidden sm:inline font-medium">Video</span>
-              </Button>
-
-              {/* Document Upload */}
-              <input
-                id="document-upload"
-                type="file"
-                accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx"
-                onChange={(e) => handleFileUpload(e, 'document')}
-                className="hidden"
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => document.getElementById('document-upload')?.click()}
-                className="h-11 px-4 hover:bg-purple-500/10 hover:text-purple-600 transition-all duration-200 group"
-              >
-                <Paperclip className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
-                <span className="hidden sm:inline font-medium">File</span>
+                <span className="hidden sm:inline font-medium">Media</span>
               </Button>
 
               {/* Link */}
@@ -384,16 +419,17 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
                 variant="outline" 
                 onClick={onClose} 
                 className="h-11 px-6 border-2 hover:bg-muted/50"
+                disabled={isLoading}
               >
                 Cancel
               </Button>
               <Button 
                 onClick={handleCreatePost}
                 className="h-11 px-8 bg-gradient-to-r from-primary via-primary to-secondary hover:from-primary/90 hover:via-primary/90 hover:to-secondary/90 text-primary-foreground font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
-                disabled={!content.trim() && selectedFiles.length === 0}
+                disabled={(!content.trim() && selectedFiles.length === 0 && !linkUrl.trim()) || isLoading}
               >
                 <Plus className="h-5 w-5 mr-2" />
-                Publish Post
+                {isLoading ? 'Publishing...' : 'Publish Post'}
               </Button>
             </div>
           </div>
