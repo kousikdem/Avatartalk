@@ -7,7 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
 import { 
   X, 
   Image, 
@@ -16,7 +17,13 @@ import {
   Link as LinkIcon, 
   Zap,
   Upload,
-  Paperclip
+  Paperclip,
+  MapPin,
+  Smile,
+  Hash,
+  Calendar,
+  Globe,
+  Users
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -26,29 +33,34 @@ interface CreatePostModalProps {
 }
 
 const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) => {
-  const [postType, setPostType] = useState<'text' | 'image' | 'video' | 'document' | 'link' | 'integration'>('text');
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
   const [isPaid, setIsPaid] = useState(false);
   const [price, setPrice] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [linkUrl, setLinkUrl] = useState('');
   const [integrationApp, setIntegrationApp] = useState('');
+  const [showLinkInput, setShowLinkInput] = useState(false);
+  const [showPricingOptions, setShowPricingOptions] = useState(false);
   const { toast } = useToast();
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>, type: string) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length > 0) {
+      setSelectedFiles(prev => [...prev, ...files]);
       toast({
-        title: "File Selected",
-        description: `${file.name} selected for upload`,
+        title: "Files Selected",
+        description: `${files.length} file(s) selected for upload`,
       });
     }
   };
 
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleCreatePost = () => {
-    if (!content.trim() && !selectedFile) {
+    if (!content.trim() && selectedFiles.length === 0) {
       toast({
         title: "Error",
         description: "Please add content or upload a file",
@@ -66,11 +78,13 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
     // Reset form
     setContent('');
     setTitle('');
-    setSelectedFile(null);
+    setSelectedFiles([]);
     setLinkUrl('');
     setIntegrationApp('');
     setIsPaid(false);
     setPrice('');
+    setShowLinkInput(false);
+    setShowPricingOptions(false);
     onClose();
   };
 
@@ -78,269 +92,290 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl bg-white max-h-[90vh] overflow-y-auto">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Create New Post</CardTitle>
+      <Card className="w-full max-w-3xl bg-card max-h-[95vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <CardHeader className="flex flex-row items-center justify-between border-b">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10">
+              <AvatarImage src="/placeholder.svg" />
+              <AvatarFallback>U</AvatarFallback>
+            </Avatar>
+            <div>
+              <CardTitle className="text-lg">Create Post</CardTitle>
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <Globe className="h-3 w-3" />
+                <span>Public</span>
+              </div>
+            </div>
+          </div>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="w-4 h-4" />
           </Button>
         </CardHeader>
-        
-        <CardContent className="space-y-6">
-          {/* Post Type Selection */}
-          <Tabs value={postType} onValueChange={(value: any) => setPostType(value)}>
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="text" className="flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                Text
-              </TabsTrigger>
-              <TabsTrigger value="image" className="flex items-center gap-2">
-                <Image className="w-4 h-4" />
-                Image
-              </TabsTrigger>
-              <TabsTrigger value="video" className="flex items-center gap-2">
-                <Video className="w-4 h-4" />
-                Video
-              </TabsTrigger>
-            </TabsList>
-            
-            {/* Additional tabs in a second row */}
-            <TabsList className="grid w-full grid-cols-3 mt-2">
-              <TabsTrigger value="document" className="flex items-center gap-2">
-                <Paperclip className="w-4 h-4" />
-                Document
-              </TabsTrigger>
-              <TabsTrigger value="link" className="flex items-center gap-2">
-                <LinkIcon className="w-4 h-4" />
-                Link
-              </TabsTrigger>
-              <TabsTrigger value="integration" className="flex items-center gap-2">
-                <Zap className="w-4 h-4" />
-                Integration
-              </TabsTrigger>
-            </TabsList>
 
+        <CardContent className="flex-1 overflow-y-auto p-0">
+          <div className="p-6 space-y-4">
             {/* Title Input */}
-            <div className="mt-4">
-              <Label htmlFor="title">Title (Optional)</Label>
-              <Input
-                id="title"
-                placeholder="Enter post title..."
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="mt-1"
-              />
-            </div>
+            <Input
+              placeholder="Add a compelling title..."
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="text-lg font-semibold border-none shadow-none p-0 placeholder:text-muted-foreground focus-visible:ring-0"
+            />
 
-            {/* Content based on post type */}
-            <TabsContent value="text" className="space-y-4">
-              <div>
-                <Label htmlFor="content">Content</Label>
-                <Textarea
-                  id="content"
-                  placeholder="What's on your mind?"
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  className="min-h-[120px] mt-1"
-                />
-              </div>
-            </TabsContent>
+            {/* Content Editor */}
+            <Textarea
+              placeholder="What's on your mind? Share your thoughts, experiences, or anything interesting..."
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="min-h-[200px] border-none shadow-none p-0 resize-none text-base placeholder:text-muted-foreground focus-visible:ring-0"
+            />
 
-            <TabsContent value="image" className="space-y-4">
-              <div>
-                <Label htmlFor="image-upload">Upload Image</Label>
-                <div className="mt-1 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                  <input
-                    id="image-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={() => document.getElementById('image-upload')?.click()}
-                  >
-                    Choose Image
-                  </Button>
-                  {selectedFile && (
-                    <p className="mt-2 text-sm text-gray-600">{selectedFile.name}</p>
-                  )}
+            {/* Link Input (conditionally shown) */}
+            {showLinkInput && (
+              <div className="bg-muted/50 rounded-lg p-4 border">
+                <div className="flex items-center gap-2 mb-2">
+                  <LinkIcon className="h-4 w-4" />
+                  <span className="text-sm font-medium">Add Link</span>
                 </div>
-              </div>
-              <div>
-                <Label htmlFor="image-caption">Caption</Label>
-                <Textarea
-                  id="image-caption"
-                  placeholder="Add a caption..."
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="video" className="space-y-4">
-              <div>
-                <Label htmlFor="video-upload">Upload Video</Label>
-                <div className="mt-1 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                  <input
-                    id="video-upload"
-                    type="file"
-                    accept="video/*"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={() => document.getElementById('video-upload')?.click()}
-                  >
-                    Choose Video
-                  </Button>
-                  {selectedFile && (
-                    <p className="mt-2 text-sm text-gray-600">{selectedFile.name}</p>
-                  )}
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="video-description">Description</Label>
-                <Textarea
-                  id="video-description"
-                  placeholder="Describe your video..."
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="document" className="space-y-4">
-              <div>
-                <Label htmlFor="doc-upload">Upload Document</Label>
-                <div className="mt-1 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                  <input
-                    id="doc-upload"
-                    type="file"
-                    accept=".pdf,.doc,.docx,.txt"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={() => document.getElementById('doc-upload')?.click()}
-                  >
-                    Choose Document
-                  </Button>
-                  {selectedFile && (
-                    <p className="mt-2 text-sm text-gray-600">{selectedFile.name}</p>
-                  )}
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="doc-description">Description</Label>
-                <Textarea
-                  id="doc-description"
-                  placeholder="Describe your document..."
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="link" className="space-y-4">
-              <div>
-                <Label htmlFor="link-url">URL</Label>
                 <Input
-                  id="link-url"
-                  placeholder="https://example.com"
+                  placeholder="Paste or type a link..."
                   value={linkUrl}
                   onChange={(e) => setLinkUrl(e.target.value)}
-                  className="mt-1"
+                  className="mb-2"
                 />
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setShowLinkInput(false)}
+                  className="text-xs"
+                >
+                  Remove Link
+                </Button>
               </div>
-              <div>
-                <Label htmlFor="link-description">Description</Label>
-                <Textarea
-                  id="link-description"
-                  placeholder="Tell us about this link..."
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-            </TabsContent>
+            )}
 
-            <TabsContent value="integration" className="space-y-4">
-              <div>
-                <Label htmlFor="integration-app">Select App</Label>
-                <Select value={integrationApp} onValueChange={setIntegrationApp}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Choose an app to integrate" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="spotify">Spotify</SelectItem>
-                    <SelectItem value="youtube">YouTube</SelectItem>
-                    <SelectItem value="github">GitHub</SelectItem>
-                    <SelectItem value="twitter">Twitter</SelectItem>
-                    <SelectItem value="instagram">Instagram</SelectItem>
-                  </SelectContent>
-                </Select>
+            {/* File Previews */}
+            {selectedFiles.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-sm font-medium text-muted-foreground">Attached Files</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {selectedFiles.map((file, index) => (
+                    <div key={index} className="bg-muted/50 rounded-lg p-3 flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      <span className="text-sm truncate flex-1">{file.name}</span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => removeFile(index)}
+                        className="h-6 w-6 p-0"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div>
-                <Label htmlFor="integration-description">Description</Label>
-                <Textarea
-                  id="integration-description"
-                  placeholder="Describe this integration..."
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-            </TabsContent>
-          </Tabs>
+            )}
 
-          {/* Paid/Free Toggle */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="paid-post"
-                checked={isPaid}
-                onCheckedChange={setIsPaid}
-              />
-              <Label htmlFor="paid-post">Paid Post</Label>
-            </div>
-            {isPaid && (
-              <div className="flex items-center space-x-2">
-                <Label htmlFor="price">Price ($)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  placeholder="0.00"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  className="w-20"
-                />
+            {/* Integration Selection */}
+            {integrationApp && (
+              <div className="bg-muted/50 rounded-lg p-4 border">
+                <div className="flex items-center gap-2 mb-2">
+                  <Zap className="h-4 w-4" />
+                  <span className="text-sm font-medium">Integration: {integrationApp}</span>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setIntegrationApp('')}
+                  className="text-xs"
+                >
+                  Remove Integration
+                </Button>
+              </div>
+            )}
+
+            {/* Pricing Options */}
+            {showPricingOptions && (
+              <div className="bg-muted/50 rounded-lg p-4 border">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Monetization</span>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => {
+                      setShowPricingOptions(false);
+                      setIsPaid(false);
+                      setPrice('');
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="paid-post"
+                      checked={isPaid}
+                      onCheckedChange={setIsPaid}
+                    />
+                    <Label htmlFor="paid-post">Paid Content</Label>
+                  </div>
+                  {isPaid && (
+                    <div className="flex items-center space-x-2">
+                      <Label htmlFor="price" className="text-sm">$</Label>
+                      <Input
+                        id="price"
+                        type="number"
+                        placeholder="9.99"
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                        className="w-20 h-8"
+                        step="0.01"
+                        min="0"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-3 pt-4 border-t">
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleCreatePost}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            >
-              Create Post
-            </Button>
-          </div>
         </CardContent>
+
+        <Separator />
+
+        {/* Bottom Action Bar */}
+        <div className="p-4 bg-muted/30">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              {/* Media Upload Buttons */}
+              <input
+                id="photo-upload"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => handleFileUpload(e, 'image')}
+                className="hidden"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => document.getElementById('photo-upload')?.click()}
+                className="h-9 w-9 p-0 hover:bg-accent"
+              >
+                <Image className="h-4 w-4 text-green-600" />
+              </Button>
+
+              <input
+                id="video-upload"
+                type="file"
+                accept="video/*"
+                onChange={(e) => handleFileUpload(e, 'video')}
+                className="hidden"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => document.getElementById('video-upload')?.click()}
+                className="h-9 w-9 p-0 hover:bg-accent"
+              >
+                <Video className="h-4 w-4 text-blue-600" />
+              </Button>
+
+              <input
+                id="document-upload"
+                type="file"
+                accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx"
+                onChange={(e) => handleFileUpload(e, 'document')}
+                className="hidden"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => document.getElementById('document-upload')?.click()}
+                className="h-9 w-9 p-0 hover:bg-accent"
+              >
+                <Paperclip className="h-4 w-4 text-purple-600" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowLinkInput(!showLinkInput)}
+                className="h-9 w-9 p-0 hover:bg-accent"
+              >
+                <LinkIcon className="h-4 w-4 text-orange-600" />
+              </Button>
+
+              {/* Integration Select */}
+              <Select value={integrationApp} onValueChange={setIntegrationApp}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 w-9 p-0 hover:bg-accent"
+                  asChild
+                >
+                  <SelectTrigger className="border-none shadow-none">
+                    <Zap className="h-4 w-4 text-yellow-600" />
+                  </SelectTrigger>
+                </Button>
+                <SelectContent>
+                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="spotify">Spotify</SelectItem>
+                  <SelectItem value="youtube">YouTube</SelectItem>
+                  <SelectItem value="github">GitHub</SelectItem>
+                  <SelectItem value="twitter">Twitter</SelectItem>
+                  <SelectItem value="instagram">Instagram</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Separator orientation="vertical" className="h-6 mx-2" />
+
+              {/* Additional Options */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowPricingOptions(!showPricingOptions)}
+                className="h-9 px-3 text-sm hover:bg-accent"
+              >
+                💰
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 px-3 text-sm hover:bg-accent"
+              >
+                <Smile className="h-4 w-4" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 px-3 text-sm hover:bg-accent"
+              >
+                <Hash className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" onClick={onClose} size="sm">
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleCreatePost}
+                className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-primary-foreground"
+                size="sm"
+              >
+                Publish
+              </Button>
+            </div>
+          </div>
+        </div>
       </Card>
     </div>
   );
