@@ -9,7 +9,6 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
 import { 
   X, 
   Image, 
@@ -17,22 +16,23 @@ import {
   FileText, 
   Link as LinkIcon, 
   Zap,
+  Upload,
   Paperclip,
+  MapPin,
+  Smile,
+  Hash,
+  Calendar,
   Globe,
-  Plus,
-  DollarSign
+  Users
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { usePosts } from '@/hooks/usePosts';
-import { supabase } from '@/integrations/supabase/client';
 
 interface CreatePostModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onPostCreated?: () => void;
 }
 
-const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPostCreated }) => {
+const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) => {
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
   const [isPaid, setIsPaid] = useState(false);
@@ -42,11 +42,9 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
   const [integrationApp, setIntegrationApp] = useState('');
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [showPricingOptions, setShowPricingOptions] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { createPost } = usePosts();
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>, type: string) => {
     const files = Array.from(event.target.files || []);
     if (files.length > 0) {
       setSelectedFiles(prev => [...prev, ...files]);
@@ -61,209 +59,118 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const uploadFiles = async () => {
-    if (selectedFiles.length === 0) return { mediaUrl: null, mediaType: null };
-
-    try {
-      const file = selectedFiles[0]; // For simplicity, take the first file
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `posts/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('profile-pictures')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('profile-pictures')
-        .getPublicUrl(filePath);
-
-      const mediaType = file.type.startsWith('image/') ? 'image' : 
-                       file.type.startsWith('video/') ? 'video' : 'document';
-
-      return { mediaUrl: publicUrl, mediaType };
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      throw error;
-    }
-  };
-
-  const handleCreatePost = async () => {
-    if (!content.trim() && selectedFiles.length === 0 && !linkUrl.trim()) {
+  const handleCreatePost = () => {
+    if (!content.trim() && selectedFiles.length === 0) {
       toast({
         title: "Error",
-        description: "Please add content, upload a file, or add a link",
+        description: "Please add content or upload a file",
         variant: "destructive",
       });
       return;
     }
 
-    setIsLoading(true);
-    try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Error",
-          description: "You must be logged in to create a post",
-          variant: "destructive",
-        });
-        return;
-      }
+    // Here you would typically send the post data to your backend
+    toast({
+      title: "Post Created!",
+      description: "Your post has been published successfully",
+    });
 
-      // Upload files if any
-      const { mediaUrl, mediaType } = await uploadFiles();
-
-      // Prepare post data
-      const postData = {
-        user_id: user.id,
-        content: content.trim(),
-        post_type: mediaType || (linkUrl ? 'link' : 'text'),
-        media_url: mediaUrl,
-        media_type: mediaType,
-        is_paid: isPaid,
-        price: isPaid ? parseFloat(price) || 0 : null,
-        likes_count: 0,
-        comments_count: 0,
-        views_count: 0,
-        metadata: {
-          title: title.trim() || null,
-          link_url: linkUrl.trim() || null,
-          integration_app: integrationApp || null,
-        }
-      };
-
-      await createPost(postData);
-      
-      // Reset form
-      setContent('');
-      setTitle('');
-      setSelectedFiles([]);
-      setLinkUrl('');
-      setIntegrationApp('');
-      setIsPaid(false);
-      setPrice('');
-      setShowLinkInput(false);
-      setShowPricingOptions(false);
-      
-      onPostCreated?.();
-      onClose();
-    } catch (error) {
-      console.error('Error creating post:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create post. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    // Reset form
+    setContent('');
+    setTitle('');
+    setSelectedFiles([]);
+    setLinkUrl('');
+    setIntegrationApp('');
+    setIsPaid(false);
+    setPrice('');
+    setShowLinkInput(false);
+    setShowPricingOptions(false);
+    onClose();
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-4xl bg-card shadow-2xl max-h-[95vh] overflow-hidden flex flex-col border-0 rounded-2xl">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-3xl bg-card max-h-[95vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <CardHeader className="flex flex-row items-center justify-between p-6 border-b border-border/50">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-12 w-12 ring-2 ring-primary/20">
+        <CardHeader className="flex flex-row items-center justify-between border-b">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10">
               <AvatarImage src="/placeholder.svg" />
-              <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-primary-foreground font-semibold">
-                JD
-              </AvatarFallback>
+              <AvatarFallback>U</AvatarFallback>
             </Avatar>
             <div>
-              <CardTitle className="text-xl font-bold">Create Post</CardTitle>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                <Badge variant="secondary" className="px-2 py-0.5 text-xs">
-                  <Globe className="h-3 w-3 mr-1" />
-                  Public
-                </Badge>
+              <CardTitle className="text-lg">Create Post</CardTitle>
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <Globe className="h-3 w-3" />
+                <span>Public</span>
               </div>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-destructive/10 hover:text-destructive">
-            <X className="w-5 h-5" />
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="w-4 h-4" />
           </Button>
         </CardHeader>
 
         <CardContent className="flex-1 overflow-y-auto p-0">
-          <div className="p-6 space-y-6">
+          <div className="p-6 space-y-4">
             {/* Title Input */}
-            <div className="space-y-2">
-              <Input
-                placeholder="Write a captivating title that grabs attention..."
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="text-2xl font-bold border-none shadow-none p-0 placeholder:text-muted-foreground/70 focus-visible:ring-0 bg-transparent"
-              />
-              <div className="h-px bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20"></div>
-            </div>
+            <Input
+              placeholder="Add a compelling title..."
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="text-lg font-semibold border-none shadow-none p-0 placeholder:text-muted-foreground focus-visible:ring-0"
+            />
 
             {/* Content Editor */}
-            <div className="space-y-3">
-              <Textarea
-                placeholder="Share your thoughts, experiences, or insights... Make it engaging and authentic!"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                className="min-h-[240px] border-none shadow-none p-0 resize-none text-lg leading-relaxed placeholder:text-muted-foreground/70 focus-visible:ring-0 bg-transparent"
-              />
-            </div>
+            <Textarea
+              placeholder="What's on your mind? Share your thoughts, experiences, or anything interesting..."
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="min-h-[200px] border-none shadow-none p-0 resize-none text-base placeholder:text-muted-foreground focus-visible:ring-0"
+            />
 
-            {/* Link Preview */}
+            {/* Link Input (conditionally shown) */}
             {showLinkInput && (
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-4 border border-blue-200/50 dark:border-blue-800/50">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-blue-500/10 rounded-lg">
-                    <LinkIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <span className="font-semibold text-blue-900 dark:text-blue-100">Add Link</span>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setShowLinkInput(false)}
-                    className="ml-auto h-8 w-8 p-0 hover:bg-blue-500/10"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+              <div className="bg-muted/50 rounded-lg p-4 border">
+                <div className="flex items-center gap-2 mb-2">
+                  <LinkIcon className="h-4 w-4" />
+                  <span className="text-sm font-medium">Add Link</span>
                 </div>
                 <Input
-                  placeholder="https://example.com"
+                  placeholder="Paste or type a link..."
                   value={linkUrl}
                   onChange={(e) => setLinkUrl(e.target.value)}
-                  className="bg-white/50 dark:bg-gray-900/50 border-blue-200/50 dark:border-blue-800/50"
+                  className="mb-2"
                 />
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setShowLinkInput(false)}
+                  className="text-xs"
+                >
+                  Remove Link
+                </Button>
               </div>
             )}
 
             {/* File Previews */}
             {selectedFiles.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-muted-foreground" />
-                  <span className="font-semibold text-muted-foreground">Attached Files ({selectedFiles.length})</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <div className="text-sm font-medium text-muted-foreground">Attached Files</div>
+                <div className="grid grid-cols-2 gap-2">
                   {selectedFiles.map((file, index) => (
-                    <div key={index} className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl p-4 border border-gray-200/50 dark:border-gray-700/50 flex items-center gap-3">
-                      <div className="p-2 bg-primary/10 rounded-lg">
-                        <FileText className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{file.name}</p>
-                        <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</p>
-                      </div>
+                    <div key={index} className="bg-muted/50 rounded-lg p-3 flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      <span className="text-sm truncate flex-1">{file.name}</span>
                       <Button 
                         variant="ghost" 
                         size="sm" 
                         onClick={() => removeFile(index)}
-                        className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                        className="h-6 w-6 p-0"
                       >
-                        <X className="h-4 w-4" />
+                        <X className="h-3 w-3" />
                       </Button>
                     </div>
                   ))}
@@ -271,35 +178,30 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
               </div>
             )}
 
-            {/* Integration Display */}
+            {/* Integration Selection */}
             {integrationApp && (
-              <div className="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30 rounded-xl p-4 border border-yellow-200/50 dark:border-yellow-800/50">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-yellow-500/10 rounded-lg">
-                    <Zap className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                  </div>
-                  <span className="font-semibold text-yellow-900 dark:text-yellow-100">Connected: {integrationApp}</span>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setIntegrationApp('')}
-                    className="ml-auto h-8 w-8 p-0 hover:bg-yellow-500/10"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+              <div className="bg-muted/50 rounded-lg p-4 border">
+                <div className="flex items-center gap-2 mb-2">
+                  <Zap className="h-4 w-4" />
+                  <span className="text-sm font-medium">Integration: {integrationApp}</span>
                 </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setIntegrationApp('')}
+                  className="text-xs"
+                >
+                  Remove Integration
+                </Button>
               </div>
             )}
 
             {/* Pricing Options */}
             {showPricingOptions && (
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-xl p-4 border border-green-200/50 dark:border-green-800/50">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-500/10 rounded-lg">
-                      <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
-                    </div>
-                    <span className="font-semibold text-green-900 dark:text-green-100">Monetization</span>
+              <div className="bg-muted/50 rounded-lg p-4 border">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Monetization</span>
                   </div>
                   <Button 
                     variant="ghost" 
@@ -309,30 +211,29 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
                       setIsPaid(false);
                       setPrice('');
                     }}
-                    className="h-8 w-8 p-0 hover:bg-green-500/10"
                   >
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
                 <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2">
                     <Switch
                       id="paid-post"
                       checked={isPaid}
                       onCheckedChange={setIsPaid}
                     />
-                    <Label htmlFor="paid-post" className="font-medium">Paid Content</Label>
+                    <Label htmlFor="paid-post">Paid Content</Label>
                   </div>
                   {isPaid && (
                     <div className="flex items-center space-x-2">
-                      <Label htmlFor="price" className="text-sm font-medium">$</Label>
+                      <Label htmlFor="price" className="text-sm">$</Label>
                       <Input
                         id="price"
                         type="number"
                         placeholder="9.99"
                         value={price}
                         onChange={(e) => setPrice(e.target.value)}
-                        className="w-24 h-9 bg-white/50 dark:bg-gray-900/50"
+                        className="w-20 h-8"
                         step="0.01"
                         min="0"
                       />
@@ -344,92 +245,133 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
           </div>
         </CardContent>
 
-        <Separator className="bg-gradient-to-r from-transparent via-border to-transparent" />
+        <Separator />
 
         {/* Bottom Action Bar */}
-        <div className="p-6 bg-gradient-to-r from-muted/30 via-muted/20 to-muted/30">
+        <div className="p-4 bg-muted/30">
           <div className="flex items-center justify-between">
-            {/* Media Options */}
-            <div className="flex items-center gap-2">
-              {/* Photo/Video/Document Upload */}
+            <div className="flex items-center gap-1">
+              {/* Media Upload Buttons */}
               <input
-                id="file-upload"
+                id="photo-upload"
                 type="file"
-                accept="image/*,video/*,.pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx"
+                accept="image/*"
                 multiple
-                onChange={handleFileUpload}
+                onChange={(e) => handleFileUpload(e, 'image')}
                 className="hidden"
               />
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => document.getElementById('file-upload')?.click()}
-                className="h-11 px-4 hover:bg-green-500/10 hover:text-green-600 transition-all duration-200 group"
+                onClick={() => document.getElementById('photo-upload')?.click()}
+                className="h-9 w-9 p-0 hover:bg-accent"
               >
-                <Image className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
-                <span className="hidden sm:inline font-medium">Media</span>
+                <Image className="h-4 w-4 text-green-600" />
               </Button>
 
-              {/* Link */}
+              <input
+                id="video-upload"
+                type="file"
+                accept="video/*"
+                onChange={(e) => handleFileUpload(e, 'video')}
+                className="hidden"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => document.getElementById('video-upload')?.click()}
+                className="h-9 w-9 p-0 hover:bg-accent"
+              >
+                <Video className="h-4 w-4 text-blue-600" />
+              </Button>
+
+              <input
+                id="document-upload"
+                type="file"
+                accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx"
+                onChange={(e) => handleFileUpload(e, 'document')}
+                className="hidden"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => document.getElementById('document-upload')?.click()}
+                className="h-9 w-9 p-0 hover:bg-accent"
+              >
+                <Paperclip className="h-4 w-4 text-purple-600" />
+              </Button>
+
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowLinkInput(!showLinkInput)}
-                className="h-11 px-4 hover:bg-orange-500/10 hover:text-orange-600 transition-all duration-200 group"
+                className="h-9 w-9 p-0 hover:bg-accent"
               >
-                <LinkIcon className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
-                <span className="hidden sm:inline font-medium">Link</span>
+                <LinkIcon className="h-4 w-4 text-orange-600" />
               </Button>
 
-              {/* Integration */}
+              {/* Integration Select */}
               <Select value={integrationApp} onValueChange={setIntegrationApp}>
-                <SelectTrigger className="h-11 px-4 border-none bg-transparent hover:bg-yellow-500/10 hover:text-yellow-600 transition-all duration-200">
-                  <div className="flex items-center gap-2">
-                    <Zap className="h-5 w-5" />
-                    <span className="hidden sm:inline font-medium">Apps</span>
-                  </div>
-                </SelectTrigger>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 w-9 p-0 hover:bg-accent"
+                  asChild
+                >
+                  <SelectTrigger className="border-none shadow-none">
+                    <Zap className="h-4 w-4 text-yellow-600" />
+                  </SelectTrigger>
+                </Button>
                 <SelectContent>
                   <SelectItem value="">None</SelectItem>
-                  <SelectItem value="spotify">🎵 Spotify</SelectItem>
-                  <SelectItem value="youtube">📺 YouTube</SelectItem>
-                  <SelectItem value="github">💻 GitHub</SelectItem>
-                  <SelectItem value="twitter">🐦 Twitter</SelectItem>
-                  <SelectItem value="instagram">📸 Instagram</SelectItem>
+                  <SelectItem value="spotify">Spotify</SelectItem>
+                  <SelectItem value="youtube">YouTube</SelectItem>
+                  <SelectItem value="github">GitHub</SelectItem>
+                  <SelectItem value="twitter">Twitter</SelectItem>
+                  <SelectItem value="instagram">Instagram</SelectItem>
                 </SelectContent>
               </Select>
 
-              <Separator orientation="vertical" className="h-8 mx-3" />
+              <Separator orientation="vertical" className="h-6 mx-2" />
 
-              {/* Monetization */}
+              {/* Additional Options */}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowPricingOptions(!showPricingOptions)}
-                className="h-11 px-4 hover:bg-green-500/10 hover:text-green-600 transition-all duration-200 group"
+                className="h-9 px-3 text-sm hover:bg-accent"
               >
-                <DollarSign className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
-                <span className="hidden sm:inline font-medium">Monetize</span>
+                💰
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 px-3 text-sm hover:bg-accent"
+              >
+                <Smile className="h-4 w-4" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 px-3 text-sm hover:bg-accent"
+              >
+                <Hash className="h-4 w-4" />
               </Button>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-3">
-              <Button 
-                variant="outline" 
-                onClick={onClose} 
-                className="h-11 px-6 border-2 hover:bg-muted/50"
-                disabled={isLoading}
-              >
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" onClick={onClose} size="sm">
                 Cancel
               </Button>
               <Button 
                 onClick={handleCreatePost}
-                className="h-11 px-8 bg-gradient-to-r from-primary via-primary to-secondary hover:from-primary/90 hover:via-primary/90 hover:to-secondary/90 text-primary-foreground font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
-                disabled={(!content.trim() && selectedFiles.length === 0 && !linkUrl.trim()) || isLoading}
+                className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-primary-foreground"
+                size="sm"
               >
-                <Plus className="h-5 w-5 mr-2" />
-                {isLoading ? 'Publishing...' : 'Publish Post'}
+                Publish
               </Button>
             </div>
           </div>
