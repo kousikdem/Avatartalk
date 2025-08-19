@@ -1,11 +1,9 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
 import DashboardSidebar from "./components/DashboardSidebar";
 import CreatePostModal from "./components/CreatePostModal";
 import Index from "./pages/Index";
@@ -50,8 +48,8 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -67,7 +65,7 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
   // Show sidebar only for authenticated users on dashboard routes OR dashboard view
   if (!user || (!isDashboardRoute && !isDashboardView)) {
     return (
-      <div className="min-h-screen w-full bg-white">
+      <div className="min-h-screen w-full bg-background">
         {children}
       </div>
     );
@@ -75,15 +73,15 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <SidebarProvider defaultOpen={!isMobile}>
-      <div className="min-h-screen flex w-full bg-white">
+      <div className="min-h-screen flex w-full bg-background">
         <DashboardSidebar onCreatePost={() => setIsCreatePostOpen(true)} />
         
         <SidebarInset className="flex-1 w-full">
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b border-gray-200 px-4 bg-white sticky top-0 z-50 w-full shadow-sm">
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 bg-background sticky top-0 z-50 w-full">
             <SidebarTrigger className="h-8 w-8 p-1" />
           </header>
           
-          <main className="flex-1 overflow-auto w-full bg-white">
+          <main className="flex-1 overflow-auto w-full bg-background">
             <div className="w-full max-w-full">
               {children}
             </div>
@@ -102,7 +100,7 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <div className="w-full min-h-screen bg-white">
+      <div className="w-full min-h-screen bg-background">
         <Toaster />
         <Sonner />
         <BrowserRouter>
@@ -118,39 +116,40 @@ const App = () => (
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/followers" element={<FollowersPage />} />
               <Route path="/profiles" element={
-                <div className="p-4 md:p-6 w-full bg-white min-h-screen">
-                  <h1 className="text-2xl font-bold mb-4 text-gray-900">Browse Profiles</h1>
+                <div className="p-4 md:p-6 w-full">
+                  <h1 className="text-2xl font-bold mb-4">Browse Profiles</h1>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {['fosik', 'emily', 'alex', 'sarah', 'john', 'demo'].map((username) => (
-                      <div key={username} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-shadow">
-                        <h3 className="font-semibold text-lg mb-2 text-gray-900">@{username}</h3>
-                        <p className="text-gray-600 text-sm mb-3">Visit this profile to see their content</p>
-                        <Button variant="default" asChild>
-                          <a href={`/${username}`}>
-                            View Profile
-                          </a>
-                        </Button>
+                      <div key={username} className="bg-card rounded-lg border p-4 hover:shadow-md transition-shadow">
+                        <h3 className="font-semibold text-lg mb-2">@{username}</h3>
+                        <p className="text-muted-foreground text-sm mb-3">Visit this profile to see their content</p>
+                        <a 
+                          href={`/${username}`} 
+                          className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-md transition-all duration-200"
+                        >
+                          View Profile
+                        </a>
                       </div>
                     ))}
                   </div>
                 </div>
               } />
               <Route path="/feed" element={
-                <div className="p-4 md:p-6 w-full bg-white min-h-screen">
-                  <h1 className="text-2xl font-bold text-gray-900">Feed</h1>
-                  <p className="text-gray-600 mt-2">Your social feed will be displayed here.</p>
+                <div className="p-4 md:p-6 w-full">
+                  <h1 className="text-2xl font-bold">Feed</h1>
+                  <p className="text-muted-foreground mt-2">Your social feed will be displayed here.</p>
                 </div>
               } />
               <Route path="/analytics" element={
-                <div className="p-4 md:p-6 w-full bg-white min-h-screen">
-                  <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
-                  <p className="text-gray-600 mt-2">Your analytics data will be displayed here.</p>
+                <div className="p-4 md:p-6 w-full">
+                  <h1 className="text-2xl font-bold">Analytics</h1>
+                  <p className="text-muted-foreground mt-2">Your analytics data will be displayed here.</p>
                 </div>
               } />
               <Route path="/bookmarks" element={
-                <div className="p-4 md:p-6 w-full bg-white min-h-screen">
-                  <h1 className="text-2xl font-bold text-gray-900">Bookmarks</h1>
-                  <p className="text-gray-600 mt-2">Your saved bookmarks will be displayed here.</p>
+                <div className="p-4 md:p-6 w-full">
+                  <h1 className="text-2xl font-bold">Bookmarks</h1>
+                  <p className="text-muted-foreground mt-2">Your saved bookmarks will be displayed here.</p>
                 </div>
               } />
               <Route path="/settings" element={<SettingsPage />} />
