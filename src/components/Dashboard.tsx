@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { DashboardSidebar } from '@/components/DashboardSidebar';
+import DashboardSidebar from '@/components/DashboardSidebar';
 import { useProfile } from '@/hooks/useProfile';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import {
@@ -15,16 +16,15 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Bell } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useEffect } from 'react';
-import { CalendarPage } from './CalendarPage';
-import { ProfilePage } from './ProfilePage';
+import CalendarPage from './CalendarPage';
+import ProfilePage from './ProfilePage';
 import CreatePostModal from './CreatePostModal';
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showCreatePost, setShowCreatePost] = useState(false);
-  const { profile, isLoading: profileLoading } = useProfile();
-  const { userProfile, isLoading: userProfileLoading } = useUserProfile();
+  const { profile, loading: profileLoading } = useProfile();
+  const { profileData, loading: userProfileLoading } = useUserProfile();
 
   const { toast } = useToast();
 
@@ -45,8 +45,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardSidebar activeTab={activeTab} onTabChange={setActiveTab} />
-      
       <div className="lg:ml-64">
         <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b">
           <div className="flex items-center justify-between px-6 py-4">
@@ -81,21 +79,6 @@ const Dashboard = () => {
                   <DropdownMenuLabel>Notifications</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem>
-                    {/* Notification Item */}
-                    <div className="flex items-center space-x-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src="/placeholder.svg" alt="Avatar" />
-                        <AvatarFallback>JF</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium leading-none">Jane Doe liked your post</p>
-                        <p className="text-sm text-muted-foreground">2 hours ago</p>
-                      </div>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    {/* Notification Item */}
                     <div className="flex items-center space-x-2">
                       <Avatar className="h-8 w-8">
                         <AvatarImage src="/placeholder.svg" alt="Avatar" />
@@ -114,7 +97,7 @@ const Dashboard = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="h-8 w-8 p-0 rounded-full">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={profile?.avatar_url || profile?.profile_pic_url} alt={profile?.full_name} />
+                      <AvatarImage src={profile?.profile_pic_url} alt={profile?.full_name} />
                       <AvatarFallback>{profile?.full_name?.slice(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                   </Button>
@@ -129,14 +112,14 @@ const Dashboard = () => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem >
+                  <DropdownMenuItem>
                     Settings
                   </DropdownMenuItem>
-                  <DropdownMenuItem >
+                  <DropdownMenuItem>
                     Support
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem >
+                  <DropdownMenuItem>
                     Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -175,7 +158,6 @@ const Dashboard = () => {
         </main>
       </div>
 
-      {/* Create Post Modal */}
       <CreatePostModal 
         isOpen={showCreatePost} 
         onClose={() => setShowCreatePost(false)} 
@@ -183,3 +165,5 @@ const Dashboard = () => {
     </div>
   );
 };
+
+export default Dashboard;

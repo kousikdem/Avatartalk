@@ -11,14 +11,12 @@ import {
   Share2, 
   Eye, 
   ExternalLink,
-  Play,
   Download,
   MoreHorizontal
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Post } from '@/hooks/usePosts';
 import { useLikes } from '@/hooks/useLikes';
-import { useComments } from '@/hooks/useComments';
 
 interface PostCardProps {
   post: Post;
@@ -27,15 +25,10 @@ interface PostCardProps {
 
 const PostCard: React.FC<PostCardProps> = ({ post, showAuthor = true }) => {
   const [showComments, setShowComments] = useState(false);
-  const { likePost, unlikePost, isLiked, likesCount } = useLikes('post', post.id);
-  const { comments, addComment } = useComments('post', post.id);
+  const { likesCount, isLiked, toggleLike } = useLikes(post.id, 'post');
 
   const handleLike = async () => {
-    if (isLiked) {
-      await unlikePost();
-    } else {
-      await likePost();
-    }
+    await toggleLike();
   };
 
   const renderMedia = () => {
@@ -220,7 +213,6 @@ const PostCard: React.FC<PostCardProps> = ({ post, showAuthor = true }) => {
         {showComments && (
           <div className="mt-4 pt-4 border-t">
             <div className="text-sm font-medium mb-2">Comments ({post.comments_count})</div>
-            {/* Comments would be rendered here */}
             <div className="text-xs text-muted-foreground">
               Comment functionality will be implemented in the next iteration.
             </div>
