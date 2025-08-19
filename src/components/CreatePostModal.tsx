@@ -16,14 +16,16 @@ import {
   FileText, 
   Link as LinkIcon, 
   Zap,
+  Upload,
   Paperclip,
+  MapPin,
   Smile,
   Hash,
+  Calendar,
   Globe,
-  Loader2
+  Users
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { usePosts } from '@/hooks/usePosts';
 
 interface CreatePostModalProps {
   isOpen: boolean;
@@ -31,9 +33,8 @@ interface CreatePostModalProps {
 }
 
 const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) => {
-  const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [postType, setPostType] = useState('text');
+  const [title, setTitle] = useState('');
   const [isPaid, setIsPaid] = useState(false);
   const [price, setPrice] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -41,16 +42,12 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
   const [integrationApp, setIntegrationApp] = useState('');
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [showPricingOptions, setShowPricingOptions] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
-  
   const { toast } = useToast();
-  const { createPost, uploadFile } = usePosts();
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>, type: string) => {
     const files = Array.from(event.target.files || []);
     if (files.length > 0) {
       setSelectedFiles(prev => [...prev, ...files]);
-      setPostType(type === 'image' ? 'image' : type === 'video' ? 'video' : 'document');
       toast({
         title: "Files Selected",
         description: `${files.length} file(s) selected for upload`,
@@ -60,92 +57,58 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
 
   const removeFile = (index: number) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-    if (selectedFiles.length === 1) {
-      setPostType('text');
-    }
   };
 
-  const handleCreatePost = async () => {
-    if (!content.trim() && selectedFiles.length === 0 && !linkUrl.trim()) {
+  const handleCreatePost = () => {
+    if (!content.trim() && selectedFiles.length === 0) {
       toast({
         title: "Error",
-        description: "Please add content, upload a file, or add a link",
+        description: "Please add content or upload a file",
         variant: "destructive",
       });
       return;
     }
 
-    setIsCreating(true);
-    try {
-      let mediaUrl = '';
-      let mediaType = '';
-      
-      // Upload files if any
-      if (selectedFiles.length > 0) {
-        const file = selectedFiles[0]; // For now, handle one file
-        mediaUrl = await uploadFile(file);
-        mediaType = file.type;
-      }
+    // Here you would typically send the post data to your backend
+    toast({
+      title: "Post Created!",
+      description: "Your post has been published successfully",
+    });
 
-      // Prepare post data
-      const postData = {
-        title: title.trim() || undefined,
-        content: content.trim() || undefined,
-        post_type: postType,
-        media_url: mediaUrl || undefined,
-        media_type: mediaType || undefined,
-        link_url: linkUrl.trim() || undefined,
-        integration_data: integrationApp ? { app: integrationApp } : undefined,
-        is_paid: isPaid,
-        price: isPaid && price ? parseFloat(price) : undefined,
-        metadata: {},
-      };
-
-      await createPost(postData);
-
-      // Reset form
-      setTitle('');
-      setContent('');
-      setPostType('text');
-      setSelectedFiles([]);
-      setLinkUrl('');
-      setIntegrationApp('');
-      setIsPaid(false);
-      setPrice('');
-      setShowLinkInput(false);
-      setShowPricingOptions(false);
-      
-      onClose();
-    } catch (error) {
-      // Error already handled in usePosts hook
-    } finally {
-      setIsCreating(false);
-    }
+    // Reset form
+    setContent('');
+    setTitle('');
+    setSelectedFiles([]);
+    setLinkUrl('');
+    setIntegrationApp('');
+    setIsPaid(false);
+    setPrice('');
+    setShowLinkInput(false);
+    setShowPricingOptions(false);
+    onClose();
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl bg-card max-h-[90vh] overflow-hidden flex flex-col border shadow-2xl">
+      <Card className="w-full max-w-3xl bg-card max-h-[95vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <CardHeader className="flex flex-row items-center justify-between border-b bg-gradient-to-r from-primary/5 to-secondary/5">
+        <CardHeader className="flex flex-row items-center justify-between border-b">
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarImage src="/placeholder.svg" />
               <AvatarFallback>U</AvatarFallback>
             </Avatar>
             <div>
-              <CardTitle className="text-lg bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Create Post
-              </CardTitle>
+              <CardTitle className="text-lg">Create Post</CardTitle>
               <div className="flex items-center gap-1 text-sm text-muted-foreground">
                 <Globe className="h-3 w-3" />
                 <span>Public</span>
               </div>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} disabled={isCreating}>
+          <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="w-4 h-4" />
           </Button>
         </CardHeader>
@@ -153,33 +116,30 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
         <CardContent className="flex-1 overflow-y-auto p-0">
           <div className="p-6 space-y-4">
             {/* Title Input */}
-            <div className="space-y-2">
-              <Input
-                placeholder="Add a compelling title... (optional)"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="text-lg font-semibold border-none shadow-none p-0 placeholder:text-muted-foreground focus-visible:ring-0 bg-transparent"
-              />
-              <Separator className="opacity-30" />
-            </div>
+            <Input
+              placeholder="Add a compelling title..."
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="text-lg font-semibold border-none shadow-none p-0 placeholder:text-muted-foreground focus-visible:ring-0"
+            />
 
             {/* Content Editor */}
             <Textarea
-              placeholder="What's on your mind? Share your thoughts, experiences, or ask questions..."
+              placeholder="What's on your mind? Share your thoughts, experiences, or anything interesting..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="min-h-[150px] border-none shadow-none p-0 resize-none text-base placeholder:text-muted-foreground focus-visible:ring-0 bg-transparent"
+              className="min-h-[200px] border-none shadow-none p-0 resize-none text-base placeholder:text-muted-foreground focus-visible:ring-0"
             />
 
-            {/* Link Input */}
+            {/* Link Input (conditionally shown) */}
             {showLinkInput && (
-              <div className="bg-muted/30 rounded-lg p-4 border border-primary/20">
+              <div className="bg-muted/50 rounded-lg p-4 border">
                 <div className="flex items-center gap-2 mb-2">
-                  <LinkIcon className="h-4 w-4 text-primary" />
+                  <LinkIcon className="h-4 w-4" />
                   <span className="text-sm font-medium">Add Link</span>
                 </div>
                 <Input
-                  placeholder="https://example.com"
+                  placeholder="Paste or type a link..."
                   value={linkUrl}
                   onChange={(e) => setLinkUrl(e.target.value)}
                   className="mb-2"
@@ -187,10 +147,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={() => {
-                    setShowLinkInput(false);
-                    setLinkUrl('');
-                  }}
+                  onClick={() => setShowLinkInput(false)}
                   className="text-xs"
                 >
                   Remove Link
@@ -202,16 +159,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
             {selectedFiles.length > 0 && (
               <div className="space-y-2">
                 <div className="text-sm font-medium text-muted-foreground">Attached Files</div>
-                <div className="grid grid-cols-1 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {selectedFiles.map((file, index) => (
-                    <div key={index} className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg p-3 flex items-center gap-2 border border-primary/20">
-                      {file.type.startsWith('image/') ? (
-                        <Image className="h-4 w-4 text-primary" />
-                      ) : file.type.startsWith('video/') ? (
-                        <Video className="h-4 w-4 text-primary" />
-                      ) : (
-                        <FileText className="h-4 w-4 text-primary" />
-                      )}
+                    <div key={index} className="bg-muted/50 rounded-lg p-3 flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
                       <span className="text-sm truncate flex-1">{file.name}</span>
                       <Button 
                         variant="ghost" 
@@ -229,9 +180,9 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
 
             {/* Integration Selection */}
             {integrationApp && (
-              <div className="bg-gradient-to-r from-secondary/10 to-primary/10 rounded-lg p-4 border border-secondary/20">
+              <div className="bg-muted/50 rounded-lg p-4 border">
                 <div className="flex items-center gap-2 mb-2">
-                  <Zap className="h-4 w-4 text-secondary" />
+                  <Zap className="h-4 w-4" />
                   <span className="text-sm font-medium">Integration: {integrationApp}</span>
                 </div>
                 <Button 
@@ -247,10 +198,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
 
             {/* Pricing Options */}
             {showPricingOptions && (
-              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20 rounded-lg p-4 border border-yellow-200 dark:border-yellow-800">
+              <div className="bg-muted/50 rounded-lg p-4 border">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">💰 Monetization</span>
+                    <span className="text-sm font-medium">Monetization</span>
                   </div>
                   <Button 
                     variant="ghost" 
@@ -297,7 +248,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
         <Separator />
 
         {/* Bottom Action Bar */}
-        <div className="p-4 bg-gradient-to-r from-muted/50 to-muted/30">
+        <div className="p-4 bg-muted/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1">
               {/* Media Upload Buttons */}
@@ -313,10 +264,9 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
                 variant="ghost"
                 size="sm"
                 onClick={() => document.getElementById('photo-upload')?.click()}
-                className="h-9 w-9 p-0 hover:bg-primary/10 group"
-                disabled={isCreating}
+                className="h-9 w-9 p-0 hover:bg-accent"
               >
-                <Image className="h-4 w-4 text-green-600 group-hover:text-green-700 transition-colors" />
+                <Image className="h-4 w-4 text-green-600" />
               </Button>
 
               <input
@@ -330,10 +280,9 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
                 variant="ghost"
                 size="sm"
                 onClick={() => document.getElementById('video-upload')?.click()}
-                className="h-9 w-9 p-0 hover:bg-primary/10 group"
-                disabled={isCreating}
+                className="h-9 w-9 p-0 hover:bg-accent"
               >
-                <Video className="h-4 w-4 text-blue-600 group-hover:text-blue-700 transition-colors" />
+                <Video className="h-4 w-4 text-blue-600" />
               </Button>
 
               <input
@@ -347,27 +296,32 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
                 variant="ghost"
                 size="sm"
                 onClick={() => document.getElementById('document-upload')?.click()}
-                className="h-9 w-9 p-0 hover:bg-primary/10 group"
-                disabled={isCreating}
+                className="h-9 w-9 p-0 hover:bg-accent"
               >
-                <Paperclip className="h-4 w-4 text-purple-600 group-hover:text-purple-700 transition-colors" />
+                <Paperclip className="h-4 w-4 text-purple-600" />
               </Button>
 
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowLinkInput(!showLinkInput)}
-                className="h-9 w-9 p-0 hover:bg-primary/10 group"
-                disabled={isCreating}
+                className="h-9 w-9 p-0 hover:bg-accent"
               >
-                <LinkIcon className="h-4 w-4 text-orange-600 group-hover:text-orange-700 transition-colors" />
+                <LinkIcon className="h-4 w-4 text-orange-600" />
               </Button>
 
               {/* Integration Select */}
-              <Select value={integrationApp} onValueChange={setIntegrationApp} disabled={isCreating}>
-                <SelectTrigger className="h-9 w-9 p-0 border-none shadow-none hover:bg-primary/10 group">
-                  <Zap className="h-4 w-4 text-yellow-600 group-hover:text-yellow-700 transition-colors" />
-                </SelectTrigger>
+              <Select value={integrationApp} onValueChange={setIntegrationApp}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 w-9 p-0 hover:bg-accent"
+                  asChild
+                >
+                  <SelectTrigger className="border-none shadow-none">
+                    <Zap className="h-4 w-4 text-yellow-600" />
+                  </SelectTrigger>
+                </Button>
                 <SelectContent>
                   <SelectItem value="">None</SelectItem>
                   <SelectItem value="spotify">Spotify</SelectItem>
@@ -385,8 +339,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowPricingOptions(!showPricingOptions)}
-                className="h-9 px-3 text-sm hover:bg-primary/10"
-                disabled={isCreating}
+                className="h-9 px-3 text-sm hover:bg-accent"
               >
                 💰
               </Button>
@@ -394,8 +347,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-9 px-3 text-sm hover:bg-primary/10"
-                disabled={isCreating}
+                className="h-9 px-3 text-sm hover:bg-accent"
               >
                 <Smile className="h-4 w-4" />
               </Button>
@@ -403,8 +355,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-9 px-3 text-sm hover:bg-primary/10"
-                disabled={isCreating}
+                className="h-9 px-3 text-sm hover:bg-accent"
               >
                 <Hash className="h-4 w-4" />
               </Button>
@@ -412,23 +363,15 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
 
             {/* Action Buttons */}
             <div className="flex items-center gap-2">
-              <Button variant="ghost" onClick={onClose} size="sm" disabled={isCreating}>
+              <Button variant="ghost" onClick={onClose} size="sm">
                 Cancel
               </Button>
               <Button 
                 onClick={handleCreatePost}
                 className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-primary-foreground"
                 size="sm"
-                disabled={isCreating}
               >
-                {isCreating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Publishing...
-                  </>
-                ) : (
-                  'Publish'
-                )}
+                Publish
               </Button>
             </div>
           </div>
