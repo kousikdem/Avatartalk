@@ -5,8 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
 import { 
+  MapPin, 
   Calendar, 
+  Link as LinkIcon, 
   Mail,
   Edit,
   Settings,
@@ -24,11 +27,11 @@ import PostsGrid from './PostsGrid';
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('posts');
-  const { profile, loading } = useProfile();
-  const { profileData } = useUserProfile();
+  const { profile, isLoading } = useProfile();
+  const { userProfile } = useUserProfile();
   const { posts, isLoading: postsLoading } = usePosts(profile?.id);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="container mx-auto p-6 max-w-4xl">
         <div className="animate-pulse">
@@ -48,9 +51,9 @@ const ProfilePage = () => {
 
   const stats = [
     { label: 'Posts', value: posts?.length || 0 },
-    { label: 'Followers', value: profileData?.analytics?.followers_count || 0 },
+    { label: 'Followers', value: userProfile?.followers_count || 0 },
     { label: 'Following', value: 0 },
-    { label: 'Views', value: profileData?.analytics?.profile_views || 0 },
+    { label: 'Views', value: userProfile?.profile_views || 0 },
   ];
 
   return (
@@ -67,7 +70,7 @@ const ProfilePage = () => {
               {/* Avatar */}
               <div className="flex-shrink-0">
                 <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
-                  <AvatarImage src={profile?.profile_pic_url} />
+                  <AvatarImage src={profile?.avatar_url || profile?.profile_pic_url} />
                   <AvatarFallback className="text-lg font-semibold">
                     {profile?.display_name?.[0] || profile?.full_name?.[0] || 'U'}
                   </AvatarFallback>
@@ -111,15 +114,15 @@ const ProfilePage = () => {
 
                 {/* Additional Info */}
                 <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-3">
-                  {profileData?.profession && (
+                  {profile?.profession && (
                     <div className="flex items-center gap-1">
-                      <Badge variant="secondary">{profileData.profession}</Badge>
+                      <Badge variant="secondary">{profile.profession}</Badge>
                     </div>
                   )}
-                  {profileData?.created_at && (
+                  {profile?.created_at && (
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
-                      <span>Joined {new Date(profileData.created_at).toLocaleDateString()}</span>
+                      <span>Joined {new Date(profile.created_at).toLocaleDateString()}</span>
                     </div>
                   )}
                 </div>
@@ -196,10 +199,10 @@ const ProfilePage = () => {
                 </div>
               )}
               
-              {profileData?.profession && (
+              {profile?.profession && (
                 <div>
                   <h4 className="font-medium mb-2">Profession</h4>
-                  <p className="text-muted-foreground">{profileData.profession}</p>
+                  <p className="text-muted-foreground">{profile.profession}</p>
                 </div>
               )}
 
