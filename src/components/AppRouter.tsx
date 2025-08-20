@@ -5,7 +5,7 @@ import { AuthGuard } from '@/components/AuthGuard';
 import { ProfileSetup } from '@/components/ProfileSetup';
 import Dashboard from '@/components/Dashboard';
 import ProfilePage from '@/components/ProfilePage';
-import NotFound from '@/pages/NotFound';
+import { NotFound } from '@/pages/NotFound';
 import { useUserProfile } from '@/hooks/useUserProfile';
 
 export const AppRouter = () => {

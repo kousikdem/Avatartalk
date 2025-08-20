@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -12,42 +11,26 @@ export interface User {
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    // Get initial session
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user || null);
+      setLoading(false);
+    };
+
+    getSession();
+
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        if (session?.user) {
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            user_metadata: session.user.user_metadata
-          });
-        } else {
-          setUser(null);
-        }
+      async (event, session) => {
+        setUser(session?.user || null);
         setLoading(false);
       }
     );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          user_metadata: session.user.user_metadata
-        });
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -81,8 +64,7 @@ export const useAuth = () => {
         email,
         password,
         options: {
-          data: userData,
-          emailRedirectTo: `${window.location.origin}/`
+          data: userData
         }
       });
 
@@ -122,7 +104,6 @@ export const useAuth = () => {
 
   return {
     user,
-    session,
     loading,
     signIn,
     signUp,
