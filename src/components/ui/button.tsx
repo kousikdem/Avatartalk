@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
@@ -9,15 +10,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:from-primary/90 hover:to-primary/80 hover:shadow-lg hover:scale-105",
-        destructive:
-          "bg-gradient-to-r from-destructive to-destructive/90 text-destructive-foreground hover:from-destructive/90 hover:to-destructive/80",
-        outline:
-          "border border-input bg-gradient-to-r from-background to-background/95 hover:from-accent hover:to-accent/80 hover:text-accent-foreground hover:shadow-md",
-        secondary:
-          "bg-gradient-to-r from-secondary to-secondary/90 text-secondary-foreground hover:from-secondary/90 hover:to-secondary/80",
-        ghost: "hover:bg-gradient-to-r hover:from-accent hover:to-accent/80 hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+        default: "gradient-btn-primary text-white shadow-lg hover:shadow-xl",
+        destructive: "gradient-btn-danger text-white shadow-lg hover:shadow-xl",
+        outline: "border border-input bg-gradient-to-r from-white/90 to-slate-50/90 hover:gradient-btn-primary hover:text-white hover:border-transparent shadow-md hover:shadow-lg",
+        secondary: "gradient-btn-secondary text-white shadow-lg hover:shadow-xl",
+        ghost: "hover:gradient-btn-primary hover:text-white transition-all duration-300",
+        link: "text-primary underline-offset-4 hover:underline hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:no-underline hover:px-2 hover:py-1 hover:rounded transition-all duration-300",
+        accent: "gradient-btn-accent text-white shadow-lg hover:shadow-xl",
       },
       size: {
         default: "h-10 px-4 py-2",
