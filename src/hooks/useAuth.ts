@@ -1,13 +1,8 @@
 
 import { useState, useEffect } from 'react';
+import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-export interface User {
-  id: string;
-  email: string;
-  user_metadata?: any;
-}
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -64,7 +59,8 @@ export const useAuth = () => {
         email,
         password,
         options: {
-          data: userData
+          data: userData,
+          emailRedirectTo: `${window.location.origin}/`
         }
       });
 
