@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { MainAuth } from '@/components/MainAuth';
+import MainAuth from '@/components/MainAuth';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -19,7 +19,7 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
   }
 
   if (!user) {
-    return <MainAuth />;
+    return <MainAuth isOpen={true} onClose={() => {}} />;
   }
 
   return <>{children}</>;
