@@ -1,166 +1,25 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import DashboardSidebar from "./components/DashboardSidebar";
-import CreatePostModal from "./components/CreatePostModal";
-import Index from "./pages/Index";
-import ProfilePage from "./components/ProfilePage";
-import AiTraining from "./components/AiTraining";
-import Dashboard from "./components/Dashboard";
-import CalendarPage from "./components/CalendarPage";
-import NotificationsPage from "./components/NotificationsPage";
-import FollowersPage from "./components/FollowersPage";
-import SettingsPage from "./components/SettingsPage";
-import NotFound from "./pages/NotFound";
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { User } from "@supabase/supabase-js";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { BrowserRouter as Router } from "react-router-dom";
+import { ThemeProvider } from "next-themes";
+import { AppRouter } from "@/components/AppRouter";
+import "./App.css";
 
 const queryClient = new QueryClient();
 
-// Global Layout wrapper component that includes sidebar only for dashboard pages
-const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
-  const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const isMobile = useIsMobile();
-
-  useEffect(() => {
-    // Check current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null);
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  // Check if current path requires sidebar (dashboard routes)
-  const currentPath = window.location.pathname;
-  const isDashboardRoute = ['/dashboard', '/calendar', '/notifications', '/followers', '/profiles', '/feed', '/analytics', '/bookmarks', '/settings'].includes(currentPath);
-  
-  // Also check for query parameters that indicate dashboard view
-  const urlParams = new URLSearchParams(window.location.search);
-  const isDashboardView = urlParams.get('view') === 'dashboard';
-
-  // Show sidebar only for authenticated users on dashboard routes OR dashboard view
-  if (!user || (!isDashboardRoute && !isDashboardView)) {
-    return (
-      <div className="min-h-screen w-full bg-background">
-        {children}
-      </div>
-    );
-  }
-
+function App() {
   return (
-    <SidebarProvider defaultOpen={!isMobile}>
-      <div className="min-h-screen flex w-full bg-background">
-        <DashboardSidebar onCreatePost={() => setIsCreatePostOpen(true)} />
-        
-        <SidebarInset className="flex-1 w-full">
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 bg-background sticky top-0 z-50 w-full">
-            <SidebarTrigger className="h-8 w-8 p-1" />
-          </header>
-          
-          <main className="flex-1 overflow-auto w-full bg-background">
-            <div className="w-full max-w-full">
-              {children}
-            </div>
-          </main>
-        </SidebarInset>
-
-        <CreatePostModal 
-          isOpen={isCreatePostOpen}
-          onClose={() => setIsCreatePostOpen(false)}
-        />
-      </div>
-    </SidebarProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <TooltipProvider>
+          <AppRouter />
+          <Toaster />
+        </TooltipProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
-};
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <div className="w-full min-h-screen bg-background">
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <GlobalLayout>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/train" element={<AiTraining />} />
-              <Route path="/:username" element={<ProfilePage />} />
-              
-              {/* Dashboard routes with sidebar */}
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/calendar" element={<CalendarPage />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
-              <Route path="/followers" element={<FollowersPage />} />
-              <Route path="/profiles" element={
-                <div className="p-4 md:p-6 w-full">
-                  <h1 className="text-2xl font-bold mb-4">Browse Profiles</h1>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {['fosik', 'emily', 'alex', 'sarah', 'john', 'demo'].map((username) => (
-                      <div key={username} className="bg-card rounded-lg border p-4 hover:shadow-md transition-shadow">
-                        <h3 className="font-semibold text-lg mb-2">@{username}</h3>
-                        <p className="text-muted-foreground text-sm mb-3">Visit this profile to see their content</p>
-                        <a 
-                          href={`/${username}`} 
-                          className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-md transition-all duration-200"
-                        >
-                          View Profile
-                        </a>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              } />
-              <Route path="/feed" element={
-                <div className="p-4 md:p-6 w-full">
-                  <h1 className="text-2xl font-bold">Feed</h1>
-                  <p className="text-muted-foreground mt-2">Your social feed will be displayed here.</p>
-                </div>
-              } />
-              <Route path="/analytics" element={
-                <div className="p-4 md:p-6 w-full">
-                  <h1 className="text-2xl font-bold">Analytics</h1>
-                  <p className="text-muted-foreground mt-2">Your analytics data will be displayed here.</p>
-                </div>
-              } />
-              <Route path="/bookmarks" element={
-                <div className="p-4 md:p-6 w-full">
-                  <h1 className="text-2xl font-bold">Bookmarks</h1>
-                  <p className="text-muted-foreground mt-2">Your saved bookmarks will be displayed here.</p>
-                </div>
-              } />
-              <Route path="/settings" element={<SettingsPage />} />
-              
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </GlobalLayout>
-        </BrowserRouter>
-      </div>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+}
 
 export default App;

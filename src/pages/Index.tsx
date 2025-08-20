@@ -1,34 +1,8 @@
 
-import React from 'react';
-import { useSearchParams } from 'react-router-dom';
-import Navbar from '@/components/Navbar';
-import LandingPage from '@/components/LandingPage';
-import Dashboard from '@/components/Dashboard';
-import ProfilePage from '@/components/ProfilePage';
-import PricingPage from '@/components/PricingPage';
+import { AppRouter } from "@/components/AppRouter";
 
 const Index = () => {
-  const [searchParams] = useSearchParams();
-  const view = searchParams.get('view');
-  const username = searchParams.get('username');
-
-  // Show dashboard view (sidebar will be handled by App.tsx)
-  if (view === 'dashboard') {
-    return <Dashboard />;
-  }
-
-  // Show pricing page
-  if (view === 'pricing') {
-    return <PricingPage />;
-  }
-
-  // Default landing page (no sidebar)
-  return (
-    <>
-      <Navbar />
-      <LandingPage />
-    </>
-  );
+  return <AppRouter />;
 };
 
 export default Index;
