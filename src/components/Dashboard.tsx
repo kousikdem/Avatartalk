@@ -12,42 +12,39 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50 pt-20 pb-8 flex items-center justify-center">
+      <div className="min-h-screen bg-white pt-20 pb-8 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-700">Loading your dashboard...</p>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50">
-      <div className="p-6">
-        {/* Header Section with Share Button */}
-        <div className="mb-8">
-          <div className="flex items-center justify-end mb-6">
-            <Button 
-              onClick={() => setIsShareOpen(true)}
-              variant="default"
-              className="shadow-lg hover:shadow-xl transition-all duration-300"
-            >
-              <Share2 className="w-4 h-4 mr-2" />
-              Share Profile
-            </Button>
-          </div>
+    <div className="p-6">
+      {/* Header Section with Share Button */}
+      <div className="mb-8">
+        <div className="flex items-center justify-end mb-6">
+          <Button 
+            onClick={() => setIsShareOpen(true)}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+          >
+            <Share2 className="w-4 h-4 mr-2" />
+            Share Profile
+          </Button>
         </div>
-
-        <EnhancedDashboard />
-
-        {/* Share Modal */}
-        <ShareModal
-          isOpen={isShareOpen}
-          onClose={() => setIsShareOpen(false)}
-          profileUrl={profileData?.public_link || `${window.location.origin}/profile`}
-          username={profileData?.username || 'user'}
-        />
       </div>
+
+      <EnhancedDashboard />
+
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+        profileUrl={profileData?.public_link || `${window.location.origin}/profile`}
+        username={profileData?.username || 'user'}
+      />
     </div>
   );
 };
