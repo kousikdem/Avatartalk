@@ -96,24 +96,24 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
               </Button>
             </div>
 
-            <SidebarMenu className="space-y-1">
+            <SidebarMenu className="space-y-2">
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
-                    className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 text-slate-700 hover:text-slate-900 w-full transition-all duration-300 rounded-lg"
+                    className="bg-gradient-to-r from-slate-50 via-blue-50/50 to-indigo-50/50 hover:from-blue-100 hover:via-indigo-100/60 hover:to-purple-100/50 text-slate-700 hover:text-slate-900 w-full transition-all duration-300 rounded-lg border border-slate-200/30 hover:border-blue-300/50 shadow-sm hover:shadow-md backdrop-blur-sm"
                     tooltip={isCollapsed ? item.title : undefined}
                   >
                     <a 
                       href={item.url} 
                       className={`flex items-center w-full ${
-                        isCollapsed ? 'justify-center p-2' : 'gap-3 p-2'
+                        isCollapsed ? 'justify-center p-3' : 'gap-3 p-3'
                       }`}
                       onClick={handleMenuItemClick}
                     >
                       <item.icon className="w-5 h-5 flex-shrink-0" />
                       {!isCollapsed && (
-                        <span className="truncate text-sm md:text-base">{item.title}</span>
+                        <span className="truncate text-sm md:text-base font-medium">{item.title}</span>
                       )}
                     </a>
                   </SidebarMenuButton>
