@@ -10,13 +10,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 hover:from-blue-600 hover:via-purple-600 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105",
-        destructive: "bg-gradient-to-r from-red-500 via-pink-500 to-rose-600 hover:from-red-600 hover:via-pink-600 hover:to-rose-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105",
-        outline: "border border-input bg-gradient-to-r from-white/90 to-blue-50/50 hover:bg-gradient-to-r hover:from-blue-100 hover:to-indigo-100 hover:text-slate-900 hover:border-blue-300 shadow-md hover:shadow-lg backdrop-blur-sm",
+        default: "bg-gradient-to-r from-blue-400 via-purple-400 to-indigo-500 hover:from-blue-500 hover:via-purple-500 hover:to-indigo-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105",
+        destructive: "bg-gradient-to-r from-red-400 via-pink-400 to-rose-500 hover:from-red-500 hover:via-pink-500 hover:to-rose-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105",
+        outline: "border border-slate-200 bg-gradient-to-r from-white/90 to-slate-50/60 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-slate-900 hover:border-blue-300 shadow-sm hover:shadow-md backdrop-blur-sm",
         secondary: "bg-gradient-to-r from-slate-100 via-blue-50 to-indigo-50 hover:from-slate-200 hover:via-blue-100 hover:to-indigo-100 text-slate-900 shadow-lg hover:shadow-xl transform hover:scale-105",
-        ghost: "hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-slate-900 transition-all duration-300",
-        link: "text-primary underline-offset-4 hover:underline hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:no-underline hover:px-2 hover:py-1 hover:rounded transition-all duration-300",
-        accent: "bg-gradient-to-r from-emerald-400 via-cyan-500 to-blue-500 hover:from-emerald-500 hover:via-cyan-600 hover:to-blue-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105",
+        ghost: "hover:bg-gradient-to-r hover:from-blue-50/80 hover:to-indigo-50/80 hover:text-slate-900 transition-all duration-300",
+        link: "text-primary underline-offset-4 hover:underline hover:bg-gradient-to-r hover:from-blue-50/60 hover:to-purple-50/60 hover:no-underline hover:px-2 hover:py-1 hover:rounded transition-all duration-300",
+        accent: "bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 hover:from-emerald-500 hover:via-cyan-500 hover:to-blue-500 text-white shadow-lg hover:shadow-xl transform hover:scale-105",
       },
       size: {
         default: "h-10 px-4 py-2",

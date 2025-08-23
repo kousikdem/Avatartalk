@@ -12,9 +12,9 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/50 pt-20 pb-8 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 pt-20 pb-8 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gradient-to-r from-blue-400 to-purple-400 mx-auto"></div>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gradient-to-r from-blue-300 to-purple-300 mx-auto"></div>
           <p className="mt-4 text-slate-600">Loading your dashboard...</p>
         </div>
       </div>
@@ -22,7 +22,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 p-6">
       {/* Header Section with Share Button */}
       <div className="mb-8">
         <div className="flex items-center justify-end mb-6">
