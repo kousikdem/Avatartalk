@@ -10,13 +10,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "gradient-btn-primary text-white shadow-lg hover:shadow-xl",
-        destructive: "gradient-btn-danger text-white shadow-lg hover:shadow-xl",
-        outline: "border border-input bg-gradient-to-r from-white/90 to-slate-50/90 hover:gradient-btn-primary hover:text-white hover:border-transparent shadow-md hover:shadow-lg",
-        secondary: "gradient-btn-secondary text-white shadow-lg hover:shadow-xl",
-        ghost: "hover:gradient-btn-primary hover:text-white transition-all duration-300",
+        default: "bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 hover:from-blue-600 hover:via-purple-600 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105",
+        destructive: "bg-gradient-to-r from-red-500 via-pink-500 to-rose-600 hover:from-red-600 hover:via-pink-600 hover:to-rose-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105",
+        outline: "border border-input bg-gradient-to-r from-white/90 to-blue-50/50 hover:bg-gradient-to-r hover:from-blue-100 hover:to-indigo-100 hover:text-slate-900 hover:border-blue-300 shadow-md hover:shadow-lg backdrop-blur-sm",
+        secondary: "bg-gradient-to-r from-slate-100 via-blue-50 to-indigo-50 hover:from-slate-200 hover:via-blue-100 hover:to-indigo-100 text-slate-900 shadow-lg hover:shadow-xl transform hover:scale-105",
+        ghost: "hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-slate-900 transition-all duration-300",
         link: "text-primary underline-offset-4 hover:underline hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:no-underline hover:px-2 hover:py-1 hover:rounded transition-all duration-300",
-        accent: "gradient-btn-accent text-white shadow-lg hover:shadow-xl",
+        accent: "bg-gradient-to-r from-emerald-400 via-cyan-500 to-blue-500 hover:from-emerald-500 hover:via-cyan-600 hover:to-blue-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105",
       },
       size: {
         default: "h-10 px-4 py-2",

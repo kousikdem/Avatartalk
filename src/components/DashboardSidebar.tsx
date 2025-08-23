@@ -60,15 +60,15 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
 
   return (
     <Sidebar 
-      className="border-r border-slate-200/50 bg-gradient-to-b from-white via-blue-50/30 to-indigo-50/50 backdrop-blur-sm"
+      className="border-r border-white/30 bg-gradient-to-b from-white via-blue-50/20 to-indigo-50/30 backdrop-blur-lg"
       collapsible="icon"
     >
-      <SidebarHeader className="p-4 border-b border-slate-100/50">
+      <SidebarHeader className="p-4 border-b border-white/20">
         <div 
           className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
           onClick={handleLogoClick}
         >
-          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg">
+          <div className="w-8 h-8 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg">
             <span className="text-white font-bold text-sm">A</span>
           </div>
           {!isCollapsed && (
@@ -86,10 +86,11 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
             <div className="mb-4">
               <Button
                 onClick={onCreatePost}
-                className={`w-full bg-gradient-to-r from-emerald-400 via-cyan-500 to-blue-500 hover:from-emerald-500 hover:via-cyan-600 hover:to-blue-600 text-white transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 ${
+                className={`w-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 ${
                   isCollapsed ? 'px-2 py-2' : 'px-4 py-2'
                 }`}
                 size={isCollapsed ? "icon" : "default"}
+                variant="accent"
               >
                 <Plus className="w-4 h-4 flex-shrink-0" />
                 {!isCollapsed && <span className="ml-2 text-sm md:text-base">Create Post</span>}
@@ -101,7 +102,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
-                    className="bg-gradient-to-r from-slate-50 via-blue-50/50 to-indigo-50/50 hover:from-blue-100 hover:via-indigo-100/60 hover:to-purple-100/50 text-slate-700 hover:text-slate-900 w-full transition-all duration-300 rounded-lg border border-slate-200/30 hover:border-blue-300/50 shadow-sm hover:shadow-md backdrop-blur-sm"
+                    className="bg-gradient-to-r from-white/60 via-blue-50/40 to-indigo-50/30 hover:from-blue-100/60 hover:via-indigo-100/50 hover:to-purple-100/40 text-slate-700 hover:text-slate-900 w-full transition-all duration-300 rounded-lg border border-white/30 hover:border-blue-300/40 shadow-sm hover:shadow-lg backdrop-blur-sm"
                     tooltip={isCollapsed ? item.title : undefined}
                   >
                     <a 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,7 +25,6 @@ const FollowersPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('followers');
 
-  // Mock data for demonstration
   const mockFollowers: User[] = [
     {
       id: '1',
@@ -131,7 +129,7 @@ const FollowersPage = () => {
     isFollowing?: boolean;
     showMessageButton?: boolean;
   }) => (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="hover:shadow-lg transition-all duration-300 bg-gradient-to-r from-white/80 via-blue-50/30 to-indigo-50/20 backdrop-blur-sm border border-white/50">
       <CardContent className="p-4">
         <div className="flex items-start space-x-4">
           <Avatar className="w-12 h-12">
@@ -143,7 +141,7 @@ const FollowersPage = () => {
             <div className="flex items-center justify-between">
               <h3 className="font-medium text-gray-900 truncate">{user.full_name}</h3>
               {user.last_seen && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-xs bg-gradient-to-r from-blue-50 to-indigo-50">
                   {formatDistanceToNow(new Date(user.last_seen), { addSuffix: true })}
                 </Badge>
               )}
@@ -200,14 +198,14 @@ const FollowersPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/50 p-6">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
             <Users className="w-8 h-8 text-blue-600" />
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Connections</h1>
-              <p className="text-gray-600">Manage your followers and following</p>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">Connections</h1>
+              <p className="text-slate-600">Manage your followers and following</p>
             </div>
           </div>
         </div>
@@ -220,13 +218,13 @@ const FollowersPage = () => {
               placeholder="Search users..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 bg-gradient-to-r from-white/80 to-blue-50/30 border-white/50 backdrop-blur-sm"
             />
           </div>
         </div>
 
         <Tabs defaultValue="followers" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-white/80 via-blue-50/50 to-indigo-50/30 backdrop-blur-sm">
             <TabsTrigger value="followers">
               Followers ({filteredFollowers.length})
             </TabsTrigger>
@@ -240,7 +238,7 @@ const FollowersPage = () => {
 
           <TabsContent value="followers" className="mt-6 space-y-4">
             {filteredFollowers.length === 0 ? (
-              <Card>
+              <Card className="bg-gradient-to-r from-white/80 via-blue-50/30 to-indigo-50/20 backdrop-blur-sm border border-white/50">
                 <CardContent className="text-center py-12">
                   <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-500">
@@ -261,7 +259,7 @@ const FollowersPage = () => {
 
           <TabsContent value="following" className="mt-6 space-y-4">
             {filteredFollowing.length === 0 ? (
-              <Card>
+              <Card className="bg-gradient-to-r from-white/80 via-blue-50/30 to-indigo-50/20 backdrop-blur-sm border border-white/50">
                 <CardContent className="text-center py-12">
                   <UserPlus className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-500">
@@ -284,7 +282,7 @@ const FollowersPage = () => {
 
           <TabsContent value="visitors" className="mt-6 space-y-4">
             {filteredVisitors.length === 0 ? (
-              <Card>
+              <Card className="bg-gradient-to-r from-white/80 via-blue-50/30 to-indigo-50/20 backdrop-blur-sm border border-white/50">
                 <CardContent className="text-center py-12">
                   <Eye className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-500">
