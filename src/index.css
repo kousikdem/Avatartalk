@@ -30,7 +30,7 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.75rem;
-    --sidebar-background: 220 20% 98%;
+    --sidebar-background: 255 255% 100%;
     --sidebar-foreground: 220 9% 46%;
     --sidebar-primary: 220 13% 91%;
     --sidebar-primary-foreground: 220 9% 9%;
@@ -81,25 +81,33 @@
     @apply border-border;
   }
   body {
-    @apply bg-gradient-to-br from-slate-50 via-white to-blue-50/30 text-foreground;
+    @apply bg-gradient-to-br from-white via-blue-50/30 to-purple-50/20 text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
 @layer utilities {
   .gradient-bg {
-    @apply bg-gradient-to-br from-slate-50 via-white to-blue-50/30;
+    @apply bg-gradient-to-br from-white via-blue-50/30 to-purple-50/20;
   }
   
   .light-gradient-bg {
-    @apply bg-gradient-to-r from-white/90 via-slate-50/60 to-blue-50/40;
+    @apply bg-gradient-to-r from-white/95 via-blue-50/60 to-purple-50/40;
   }
   
   .sidebar-gradient {
-    @apply bg-gradient-to-b from-white via-slate-50/80 to-blue-50/50;
+    @apply bg-gradient-to-b from-white via-blue-50/40 to-purple-50/30;
   }
   
   .card-gradient {
-    @apply bg-gradient-to-r from-white/95 via-slate-50/70 to-blue-50/50;
+    @apply bg-gradient-to-r from-white/95 via-blue-50/50 to-purple-50/40;
+  }
+
+  .dashboard-bg {
+    @apply bg-gradient-to-br from-white via-blue-50/30 to-purple-50/20;
+  }
+
+  .light-card {
+    @apply bg-gradient-to-br from-white/90 via-blue-50/40 to-purple-50/30 border-slate-200/60 backdrop-blur-sm;
   }
 }
