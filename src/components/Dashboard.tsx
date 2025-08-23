@@ -12,7 +12,7 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-purple-50/20 pt-20 pb-8 flex items-center justify-center">
+      <div className="min-h-screen page-gradient pt-20 pb-8 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gradient-to-r from-blue-400/60 to-purple-400/60 mx-auto"></div>
           <p className="mt-4 text-slate-600">Loading your dashboard...</p>
@@ -22,14 +22,14 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-purple-50/20 p-6">
+    <div className="min-h-screen page-gradient p-6">
       {/* Header Section with Share Button */}
       <div className="mb-8">
         <div className="flex items-center justify-end mb-6">
           <Button 
             onClick={() => setIsShareOpen(true)}
             variant="default"
-            className="bg-gradient-to-r from-blue-400/80 to-purple-400/80 hover:from-blue-500/90 hover:to-purple-500/90 text-white shadow-lg hover:shadow-xl"
+            className="bg-gradient-to-r from-blue-500/90 to-purple-500/90 hover:from-blue-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
           >
             <Share2 className="w-4 h-4 mr-2" />
             Share Profile

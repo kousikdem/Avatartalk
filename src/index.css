@@ -81,33 +81,41 @@
     @apply border-border;
   }
   body {
-    @apply bg-gradient-to-br from-white via-blue-50/30 to-purple-50/20 text-foreground;
+    @apply bg-white text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
 @layer utilities {
   .gradient-bg {
-    @apply bg-gradient-to-br from-white via-blue-50/30 to-purple-50/20;
+    @apply bg-gradient-to-br from-white via-slate-50/50 to-gray-100/30;
   }
   
   .light-gradient-bg {
-    @apply bg-gradient-to-r from-white/95 via-blue-50/60 to-purple-50/40;
+    @apply bg-gradient-to-r from-white via-slate-50/30 to-gray-50/50;
   }
   
   .sidebar-gradient {
-    @apply bg-gradient-to-b from-white via-blue-50/40 to-purple-50/30;
+    @apply bg-gradient-to-b from-white via-slate-50/20 to-gray-50/30;
   }
   
   .card-gradient {
-    @apply bg-gradient-to-r from-white/95 via-blue-50/50 to-purple-50/40;
+    @apply bg-gradient-to-r from-white via-slate-50/40 to-gray-50/60;
   }
 
   .dashboard-bg {
-    @apply bg-gradient-to-br from-white via-blue-50/30 to-purple-50/20;
+    @apply bg-gradient-to-br from-white via-slate-50/30 to-gray-100/20;
   }
 
   .light-card {
-    @apply bg-gradient-to-br from-white/90 via-blue-50/40 to-purple-50/30 border-slate-200/60 backdrop-blur-sm;
+    @apply bg-gradient-to-br from-white via-slate-50/30 to-gray-50/40 border-slate-200/60 backdrop-blur-sm;
+  }
+
+  .page-gradient {
+    @apply bg-gradient-to-br from-white via-slate-50/20 to-gray-100/10;
+  }
+
+  .sidebar-light {
+    @apply bg-gradient-to-b from-white via-slate-50/30 to-gray-50/20;
   }
 }
