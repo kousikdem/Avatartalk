@@ -7,13 +7,49 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
   }
   public: {
     Tables: {
+      api_training_data: {
+        Row: {
+          api_endpoint: string
+          api_headers: Json | null
+          api_method: string | null
+          created_at: string
+          id: string
+          response_data: Json | null
+          training_context: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_endpoint: string
+          api_headers?: Json | null
+          api_method?: string | null
+          created_at?: string
+          id?: string
+          response_data?: Json | null
+          training_context?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_endpoint?: string
+          api_headers?: Json | null
+          api_method?: string | null
+          created_at?: string
+          id?: string
+          response_data?: Json | null
+          training_context?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       avatar_settings: {
         Row: {
           avatar_mood: string | null
@@ -61,6 +97,50 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      behavior_learning_data: {
+        Row: {
+          ai_response: string | null
+          context_data: Json | null
+          created_at: string
+          feedback_score: number | null
+          id: string
+          interaction_type: string
+          session_id: string | null
+          user_id: string
+          user_input: string | null
+        }
+        Insert: {
+          ai_response?: string | null
+          context_data?: Json | null
+          created_at?: string
+          feedback_score?: number | null
+          id?: string
+          interaction_type: string
+          session_id?: string | null
+          user_id: string
+          user_input?: string | null
+        }
+        Update: {
+          ai_response?: string | null
+          context_data?: Json | null
+          created_at?: string
+          feedback_score?: number | null
+          id?: string
+          interaction_type?: string
+          session_id?: string | null
+          user_id?: string
+          user_input?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "behavior_learning_data_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "training_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -497,6 +577,39 @@ export type Database = {
         }
         Relationships: []
       }
+      qa_pairs: {
+        Row: {
+          answer: string
+          category: string | null
+          created_at: string
+          id: string
+          question: string
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answer: string
+          category?: string | null
+          created_at?: string
+          id?: string
+          question: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answer?: string
+          category?: string | null
+          created_at?: string
+          id?: string
+          question?: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       social_links: {
         Row: {
           created_at: string | null
@@ -602,6 +715,81 @@ export type Database = {
           },
         ]
       }
+      training_documents: {
+        Row: {
+          created_at: string
+          extracted_content: string | null
+          file_path: string
+          file_size: number
+          file_type: string
+          filename: string
+          id: string
+          processing_status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          extracted_content?: string | null
+          file_path: string
+          file_size: number
+          file_type: string
+          filename: string
+          id?: string
+          processing_status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          extracted_content?: string | null
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          filename?: string
+          id?: string
+          processing_status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      training_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          personality_settings: Json | null
+          progress: number | null
+          session_name: string
+          status: string | null
+          training_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          personality_settings?: Json | null
+          progress?: number | null
+          session_name: string
+          status?: string | null
+          training_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          personality_settings?: Json | null
+          progress?: number | null
+          session_name?: string
+          status?: string | null
+          training_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_analytics: {
         Row: {
           created_at: string
@@ -704,6 +892,72 @@ export type Database = {
           },
         ]
       }
+      voice_profiles: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean | null
+          profile_name: string
+          updated_at: string
+          user_id: string
+          voice_settings: Json | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          profile_name: string
+          updated_at?: string
+          user_id: string
+          voice_settings?: Json | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          profile_name?: string
+          updated_at?: string
+          user_id?: string
+          voice_settings?: Json | null
+        }
+        Relationships: []
+      }
+      voice_recordings: {
+        Row: {
+          created_at: string
+          duration: number | null
+          file_path: string
+          filename: string
+          id: string
+          transcription: string | null
+          updated_at: string
+          user_id: string
+          voice_profile_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration?: number | null
+          file_path: string
+          filename: string
+          id?: string
+          transcription?: string | null
+          updated_at?: string
+          user_id: string
+          voice_profile_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration?: number | null
+          file_path?: string
+          filename?: string
+          id?: string
+          transcription?: string | null
+          updated_at?: string
+          user_id?: string
+          voice_profile_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       public_profiles: {
@@ -750,16 +1004,16 @@ export type Database = {
       get_public_profile: {
         Args: { profile_id: string }
         Returns: {
-          id: string
-          created_at: string
-          updated_at: string
-          full_name: string
           avatar_url: string
-          username: string
           bio: string
-          profile_pic_url: string
+          created_at: string
           display_name: string
+          full_name: string
+          id: string
           profession: string
+          profile_pic_url: string
+          updated_at: string
+          username: string
         }[]
       }
     }
