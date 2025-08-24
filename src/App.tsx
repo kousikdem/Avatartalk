@@ -56,7 +56,7 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
 
   // Check if current path requires sidebar (dashboard routes)
   const currentPath = window.location.pathname;
-  const isDashboardRoute = ['/dashboard', '/calendar', '/notifications', '/followers', '/profiles', '/feed', '/analytics', '/bookmarks', '/settings'].includes(currentPath);
+  const isDashboardRoute = ['/dashboard', '/calendar', '/notifications', '/followers', '/profiles', '/feed', '/analytics', '/bookmarks', '/settings', '/ai-training'].includes(currentPath);
   
   // Also check for query parameters that indicate dashboard view
   const urlParams = new URLSearchParams(window.location.search);
@@ -158,6 +158,7 @@ const App = () => (
                   <p className="text-gray-600 mt-2">Your account settings will be displayed here.</p>
                 </div>
               } />
+              <Route path="/ai-training" element={<AiTraining />} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>
