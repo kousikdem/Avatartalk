@@ -19,6 +19,20 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
+    // Get user from auth token
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Authentication required');
+    }
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (authError || !user) {
+      throw new Error('Invalid authentication token');
+    }
+
     const { action, trainingData, personalitySettings, trainingId } = await req.json();
 
     console.log('AI Training request:', { action, trainingId });
@@ -28,6 +42,7 @@ serve(async (req) => {
         const { data: newTraining, error: createError } = await supabase
           .from('personalized_ai_training')
           .insert({
+            user_id: user.id,
             training_name: trainingData.name || 'Untitled Training',
             personality_settings: personalitySettings,
             training_data: trainingData,
@@ -55,6 +70,7 @@ serve(async (req) => {
             updated_at: new Date().toISOString()
           })
           .eq('id', trainingId)
+          .eq('user_id', user.id)
           .select()
           .single();
 
@@ -73,6 +89,7 @@ serve(async (req) => {
           .from('personalized_ai_training')
           .select('*')
           .eq('id', trainingId)
+          .eq('user_id', user.id)
           .single();
 
         if (fetchError) throw fetchError;
@@ -170,6 +187,7 @@ serve(async (req) => {
           .from('personalized_ai_training')
           .select('*')
           .eq('id', trainingId)
+          .eq('user_id', user.id)
           .single();
 
         if (getError) throw getError;
@@ -185,6 +203,7 @@ serve(async (req) => {
         const { data: trainings, error: listError } = await supabase
           .from('personalized_ai_training')
           .select('*')
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
         if (listError) throw listError;

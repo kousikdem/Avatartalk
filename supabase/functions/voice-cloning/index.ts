@@ -19,6 +19,20 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
+    // Get user from auth token
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Authentication required');
+    }
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (authError || !user) {
+      throw new Error('Invalid authentication token');
+    }
+
     const { action, voiceData, voiceSettings, cloningId } = await req.json();
 
     console.log('Voice cloning request:', { action, cloningId });
@@ -29,6 +43,7 @@ serve(async (req) => {
         const { data: newCloning, error: createError } = await supabase
           .from('voice_cloning')
           .insert({
+            user_id: user.id,
             original_voice_path: voiceData.originalPath,
             voice_settings: voiceSettings,
             clone_status: 'processing'
@@ -104,6 +119,7 @@ serve(async (req) => {
           .from('voice_cloning')
           .select('*')
           .eq('id', cloningId)
+          .eq('user_id', user.id)
           .single();
 
         if (getError) throw getError;
@@ -165,6 +181,7 @@ serve(async (req) => {
           .from('voice_cloning')
           .select('*')
           .eq('clone_status', 'completed')
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
         if (listError) throw listError;

@@ -1849,14 +1849,88 @@ const AiTraining = () => {
             </Card>
           )}
 
-          {/* Action Buttons - Now in a horizontal line */}
+          {/* Status Bars - Enhanced */}
+          {(backgroundProcessing.aiTraining || backgroundProcessing.voiceCloning) && (
+            <Card className="bg-white/95 backdrop-blur-sm border-gray-200 shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold text-gray-800 flex items-center">
+                  <Settings className="w-5 h-5 mr-2 text-blue-500" />
+                  Training Progress
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {backgroundProcessing.aiTraining && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Brain className="w-5 h-5 text-purple-500" />
+                        <span className="text-sm font-medium text-gray-700">AI Training Progress</span>
+                        <Badge variant={trainingProgress === 100 ? "default" : "secondary"} className="text-xs">
+                          {trainingProgress === 100 ? 'Complete' : 'Processing'}
+                        </Badge>
+                      </div>
+                      <span className="text-xs text-gray-500 font-mono">
+                        {trainingStartTime && `${Math.round((Date.now() - trainingStartTime.getTime()) / 1000)}s`}
+                      </span>
+                    </div>
+                    <Progress value={trainingProgress} className="h-4 bg-gray-200">
+                      <div 
+                        className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500 rounded-full"
+                        style={{ width: `${trainingProgress}%` }}
+                      />
+                    </Progress>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-medium text-purple-600">{Math.round(trainingProgress)}% complete</span>
+                      <span className="text-gray-600 capitalize">
+                        {trainingProgress < 30 ? 'Processing documents...' : 
+                         trainingProgress < 60 ? 'Training Q&A pairs...' : 
+                         trainingProgress < 100 ? 'Fine-tuning model...' : '✅ Training Complete!'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                
+                {backgroundProcessing.voiceCloning && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Volume2 className="w-5 h-5 text-green-500" />
+                        <span className="text-sm font-medium text-gray-700">Voice Cloning Progress</span>
+                        <Badge variant={voiceCloningProgress === 100 ? "default" : "secondary"} className="text-xs">
+                          {voiceCloningProgress === 100 ? 'Complete' : 'Processing'}
+                        </Badge>
+                      </div>
+                      <span className="text-xs text-gray-500 font-mono">
+                        {voiceCloningStartTime && `${Math.round((Date.now() - voiceCloningStartTime.getTime()) / 1000)}s`}
+                      </span>
+                    </div>
+                    <Progress value={voiceCloningProgress} className="h-4 bg-gray-200">
+                      <div 
+                        className="h-full bg-gradient-to-r from-green-500 to-teal-500 transition-all duration-500 rounded-full"
+                        style={{ width: `${voiceCloningProgress}%` }}
+                      />
+                    </Progress>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-medium text-green-600">{Math.round(voiceCloningProgress)}% complete</span>
+                      <span className="text-gray-600 capitalize">
+                        {voiceCloningProgress < 50 ? 'Analyzing voice patterns...' : 
+                         voiceCloningProgress < 100 ? 'Generating voice model...' : '✅ Voice Cloning Complete!'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Action Buttons - Centered with proper spacing */}
           <Card className="bg-white/95 backdrop-blur-sm border-gray-200 shadow-lg">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-center space-x-4">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-center gap-6">
                 <Button
                   onClick={handleSaveDraft}
                   disabled={isTraining || !trainingName.trim()}
-                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 flex-1 max-w-[180px]"
+                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 min-w-[160px] px-6 py-3"
                   size="lg"
                 >
                   <Save className="w-4 h-4 mr-2" />
@@ -1866,7 +1940,7 @@ const AiTraining = () => {
                 <Button
                   onClick={handleTrainAI}
                   disabled={isTraining || backgroundProcessing.aiTraining || !trainingName.trim() || (qaPairs.length === 0 && documents.length === 0)}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 flex-1 max-w-[180px]"
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 min-w-[160px] px-6 py-3"
                   size="lg"
                 >
                   {isTraining || backgroundProcessing.aiTraining ? (
@@ -1885,7 +1959,7 @@ const AiTraining = () => {
                 <Button
                   onClick={handleVoiceCloning}
                   disabled={isCloning || backgroundProcessing.voiceCloning || recordings.length === 0}
-                  className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 flex-1 max-w-[180px]"
+                  className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 min-w-[160px] px-6 py-3"
                   size="lg"
                 >
                   {isCloning || backgroundProcessing.voiceCloning ? (
