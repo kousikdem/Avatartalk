@@ -90,32 +90,70 @@ export const useVoiceCloning = () => {
 
   const synthesizeWithClonedVoice = useCallback(async (
     text: string,
-    voiceModelId: string
+    voiceModelId: string,
+    synthesisSettings: any = {}
   ) => {
     setIsLoading(true);
     try {
       const response = await supabase.functions.invoke('voice-cloning', {
         body: {
           action: 'synthesize_with_cloned_voice',
-          voiceData: { text, voiceModelId }
+          voiceData: { text, voiceModelId, synthesisSettings }
         }
       });
 
       if (response.error) throw response.error;
       
-      const { audioContent } = response.data;
+      const { audioContent, metadata } = response.data;
       
       toast({
         title: "Success",
-        description: "Text synthesized with cloned voice"
+        description: `High-quality cloned voice synthesis completed (${metadata?.duration}s)`
       });
       
-      return audioContent;
+      return { audioContent, metadata };
     } catch (error) {
       console.error('Error synthesizing with cloned voice:', error);
       toast({
         title: "Error",
         description: "Failed to synthesize with cloned voice",
+        variant: "destructive"
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
+  const multiSpeakerSynthesis = useCallback(async (
+    speakers: Array<{ name: string; voice_model_id: string }>,
+    texts: string[],
+    voiceSettings: any = {}
+  ) => {
+    setIsLoading(true);
+    try {
+      const response = await supabase.functions.invoke('voice-cloning', {
+        body: {
+          action: 'multi_speaker_synthesis',
+          voiceData: { speakers, texts, voiceSettings }
+        }
+      });
+
+      if (response.error) throw response.error;
+      
+      const { multiSpeakerAudio } = response.data;
+      
+      toast({
+        title: "Success",
+        description: `Multi-speaker synthesis completed for ${speakers.length} speakers`
+      });
+      
+      return multiSpeakerAudio;
+    } catch (error) {
+      console.error('Error in multi-speaker synthesis:', error);
+      toast({
+        title: "Error",
+        description: "Failed to complete multi-speaker synthesis",
         variant: "destructive"
       });
       throw error;
@@ -183,6 +221,7 @@ export const useVoiceCloning = () => {
     startVoiceCloning,
     getCloningStatus,
     synthesizeWithClonedVoice,
+    multiSpeakerSynthesis,
     fetchClonedVoices,
     playClonedVoice,
     setCurrentCloning

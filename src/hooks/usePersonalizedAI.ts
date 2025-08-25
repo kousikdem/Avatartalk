@@ -202,6 +202,109 @@ export const usePersonalizedAI = () => {
     }
   }, [toast]);
 
+  const processDocuments = useCallback(async (documents: any[]) => {
+    setIsLoading(true);
+    try {
+      const response = await supabase.functions.invoke('personalized-ai-training', {
+        body: {
+          action: 'process_documents',
+          documents
+        }
+      });
+
+      if (response.error) throw response.error;
+      
+      const { processedDocuments } = response.data;
+      
+      toast({
+        title: "Success",
+        description: `${documents.length} documents processed for LLaMA 3 training`
+      });
+      
+      return processedDocuments;
+    } catch (error) {
+      console.error('Error processing documents:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process documents",
+        variant: "destructive"
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
+  const processQAPairs = useCallback(async (qaPairs: any[]) => {
+    setIsLoading(true);
+    try {
+      const response = await supabase.functions.invoke('personalized-ai-training', {
+        body: {
+          action: 'process_qa_pairs',
+          qaPairs
+        }
+      });
+
+      if (response.error) throw response.error;
+      
+      const { processedQA } = response.data;
+      
+      toast({
+        title: "Success",
+        description: `${qaPairs.length} Q&A pairs processed for training`
+      });
+      
+      return processedQA;
+    } catch (error) {
+      console.error('Error processing Q&A pairs:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process Q&A pairs",
+        variant: "destructive"
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
+  const llamaFineTune = useCallback(async (
+    datasetId: string,
+    personalityConfig: PersonalitySettings
+  ) => {
+    setIsTraining(true);
+    try {
+      const response = await supabase.functions.invoke('personalized-ai-training', {
+        body: {
+          action: 'llama3_fine_tune',
+          datasetId,
+          personalityConfig
+        }
+      });
+
+      if (response.error) throw response.error;
+      
+      const { finetuneResult } = response.data;
+      
+      toast({
+        title: "Success",
+        description: `LLaMA 3 QLoRA fine-tuning completed: ${finetuneResult.model_id}`
+      });
+      
+      return finetuneResult;
+    } catch (error) {
+      console.error('Error in LLaMA 3 fine-tuning:', error);
+      toast({
+        title: "Error",
+        description: "Failed to complete LLaMA 3 fine-tuning",
+        variant: "destructive"
+      });
+      throw error;
+    } finally {
+      setIsTraining(false);
+    }
+  }, [toast]);
+
   const saveDraft = useCallback(async (
     trainingData: TrainingData,
     personalitySettings: PersonalitySettings
@@ -224,6 +327,9 @@ export const usePersonalizedAI = () => {
     trainModel,
     getTraining,
     saveDraft,
+    processDocuments,
+    processQAPairs,
+    llamaFineTune,
     setCurrentTraining
   };
 };
