@@ -45,8 +45,15 @@ import {
   Layout,
   Send,
   Smile,
-  RotateCcw
+  RotateCcw,
+  FileDown,
+  FileUp,
+  Sheet,
+  FileType
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import { saveAs } from 'file-saver';
 
 interface QAPair {
   id: string;
@@ -246,13 +253,110 @@ const AiTraining = () => {
     }
   }, [transcript, isListening, resetTranscript]);
 
-  // Handle voice input
-  useEffect(() => {
-    if (transcript && !isListening) {
-      setTestMessage(prev => prev + ' ' + transcript);
-      resetTranscript();
+  // Export Q&A functions
+  const exportToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(
+      localQAPairs.map((pair, index) => ({
+        'No.': index + 1,
+        'Question': pair.question,
+        'Answer': pair.answer
+      }))
+    );
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'QA Pairs');
+    XLSX.writeFile(workbook, 'qa_pairs.xlsx');
+    toast({
+      title: "Export Successful",
+      description: "Q&A pairs exported to Excel file",
+    });
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(20);
+    doc.text('Q&A Training Pairs', 20, 20);
+    
+    let yPosition = 40;
+    localQAPairs.forEach((pair, index) => {
+      if (yPosition > 270) {
+        doc.addPage();
+        yPosition = 20;
+      }
+      
+      doc.setFontSize(12);
+      doc.text(`${index + 1}. Q: ${pair.question}`, 20, yPosition);
+      yPosition += 10;
+      
+      const answerLines = doc.splitTextToSize(`A: ${pair.answer}`, 170);
+      doc.text(answerLines, 20, yPosition);
+      yPosition += (answerLines.length * 7) + 10;
+    });
+    
+    doc.save('qa_pairs.pdf');
+    toast({
+      title: "Export Successful",
+      description: "Q&A pairs exported to PDF file",
+    });
+  };
+
+  const exportToJSON = () => {
+    const dataStr = JSON.stringify(localQAPairs, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    saveAs(dataBlob, 'qa_pairs.json');
+    toast({
+      title: "Export Successful",
+      description: "Q&A pairs exported to JSON file",
+    });
+  };
+
+  const importFromFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        let importedPairs: any[] = [];
+
+        if (file.name.endsWith('.json')) {
+          importedPairs = JSON.parse(content);
+        } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+          const workbook = XLSX.read(content, { type: 'binary' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          importedPairs = XLSX.utils.sheet_to_json(worksheet);
+        }
+
+        const newPairs = importedPairs.map((pair: any, index: number) => ({
+          id: `imported_${Date.now()}_${index}`,
+          question: pair.Question || pair.question || '',
+          answer: pair.Answer || pair.answer || ''
+        })).filter(pair => pair.question && pair.answer);
+
+        setLocalQAPairs([...localQAPairs, ...newPairs]);
+        toast({
+          title: "Import Successful",
+          description: `Imported ${newPairs.length} Q&A pairs`,
+        });
+      } catch (error) {
+        toast({
+          title: "Import Failed",
+          description: "Failed to import file. Please check the format.",
+          variant: "destructive"
+        });
+      }
+    };
+
+    if (file.name.endsWith('.json')) {
+      reader.readAsText(file);
+    } else {
+      reader.readAsBinaryString(file);
     }
-  }, [transcript, isListening, resetTranscript]);
+
+    // Reset the input
+    event.target.value = '';
+  };
 
   const trainingMethods = [
     {
@@ -556,51 +660,54 @@ const AiTraining = () => {
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
           >
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8 mt-8">
-              <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 bg-white/95 backdrop-blur-sm border border-gray-200/80 rounded-xl p-2 shadow-lg gap-1">
-                <TabsTrigger 
-                  value="qa" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-blue-50 data-[state=inactive]:to-purple-50 data-[state=inactive]:text-blue-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  Q&A Format
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="document" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-teal-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-green-50 data-[state=inactive]:to-teal-50 data-[state=inactive]:text-green-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2"
-                >
-                  <FileText className="w-4 h-4" />
-                  Documents
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="api" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-indigo-50 data-[state=inactive]:to-blue-50 data-[state=inactive]:text-indigo-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2"
-                >
-                  <Database className="w-4 h-4" />
-                  API Data
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="voice" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-purple-50 data-[state=inactive]:to-pink-50 data-[state=inactive]:text-purple-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2"
-                >
-                  <Mic className="w-4 h-4" />
-                  Voice
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="scenario" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-500 data-[state=active]:to-green-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-teal-50 data-[state=inactive]:to-green-50 data-[state=inactive]:text-teal-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2"
-                >
-                  <Layout className="w-4 h-4" />
-                  Templates
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="test" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-orange-50 data-[state=inactive]:to-red-50 data-[state=inactive]:text-orange-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  Test Chat
-                </TabsTrigger>
-              </TabsList>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+              {/* Fixed Tab Layout with proper spacing */}
+              <div className="mb-8">
+                <TabsList className="flex w-full h-auto bg-white/95 backdrop-blur-sm border border-gray-200/80 rounded-xl p-2 shadow-lg gap-2 overflow-x-auto">
+                  <TabsTrigger 
+                    value="qa" 
+                    className="flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-blue-50 data-[state=inactive]:to-purple-50 data-[state=inactive]:text-blue-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2 min-w-fit"
+                  >
+                    <MessageSquare className="w-5 h-5" />
+                    Q&A Format
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="document" 
+                    className="flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-teal-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-green-50 data-[state=inactive]:to-teal-50 data-[state=inactive]:text-green-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2 min-w-fit"
+                  >
+                    <FileText className="w-5 h-5" />
+                    Documents
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="api" 
+                    className="flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-indigo-50 data-[state=inactive]:to-blue-50 data-[state=inactive]:text-indigo-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2 min-w-fit"
+                  >
+                    <Database className="w-5 h-5" />
+                    API Data
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="voice" 
+                    className="flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-purple-50 data-[state=inactive]:to-pink-50 data-[state=inactive]:text-purple-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2 min-w-fit"
+                  >
+                    <Mic className="w-5 h-5" />
+                    Voice
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="scenario" 
+                    className="flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-500 data-[state=active]:to-green-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-teal-50 data-[state=inactive]:to-green-50 data-[state=inactive]:text-teal-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2 min-w-fit"
+                  >
+                    <Layout className="w-5 h-5" />
+                    Templates
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="test" 
+                    className="flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-orange-50 data-[state=inactive]:to-red-50 data-[state=inactive]:text-orange-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2 min-w-fit"
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                    Test Chat
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
               {/* Q&A Training */}
               <TabsContent value="qa" className="space-y-6">
@@ -610,13 +717,57 @@ const AiTraining = () => {
                       Teach Your AI with Q&A Pairs
                     </CardTitle>
                     <div className="flex space-x-2">
-                      <Button 
-                        variant="outline"
-                        className="border-blue-300 text-blue-600 hover:bg-blue-50"
-                      >
-                        <Upload className="w-4 h-4 mr-2" />
-                        Import Q&A
-                      </Button>
+                      {/* Import Dropdown */}
+                      <div className="relative">
+                        <input
+                          type="file"
+                          accept=".json,.xlsx,.xls"
+                          onChange={importFromFile}
+                          className="hidden"
+                          id="import-qa"
+                        />
+                        <label htmlFor="import-qa">
+                          <Button 
+                            variant="outline"
+                            className="border-blue-300 text-blue-600 hover:bg-blue-50"
+                            asChild
+                          >
+                            <span>
+                              <Upload className="w-4 h-4 mr-2" />
+                              Import Q&A
+                            </span>
+                          </Button>
+                        </label>
+                      </div>
+                      
+                      {/* Export Dropdown */}
+                      <div className="flex space-x-1">
+                        <Button 
+                          variant="outline"
+                          onClick={exportToExcel}
+                          className="border-green-300 text-green-600 hover:bg-green-50"
+                        >
+                          <Sheet className="w-4 h-4 mr-2" />
+                          Excel
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          onClick={exportToPDF}
+                          className="border-red-300 text-red-600 hover:bg-red-50"
+                        >
+                          <FileType className="w-4 h-4 mr-2" />
+                          PDF
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          onClick={exportToJSON}
+                          className="border-purple-300 text-purple-600 hover:bg-purple-50"
+                        >
+                          <FileDown className="w-4 h-4 mr-2" />
+                          JSON
+                        </Button>
+                      </div>
+                      
                       <Button 
                         onClick={addLocalQAPair}
                         className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
@@ -681,16 +832,9 @@ const AiTraining = () => {
                     
                     <div className="flex space-x-4 pt-4">
                       <Button 
-                        variant="outline" 
-                        className="border-gray-300 text-gray-700 hover:bg-gray-50 flex-1"
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Export Q&A
-                      </Button>
-                      <Button 
                         onClick={saveQAPairs}
                         disabled={qaLoading}
-                        className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white flex-1"
+                        className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white w-full"
                       >
                         {qaLoading ? (
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
