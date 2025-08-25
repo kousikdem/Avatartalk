@@ -162,6 +162,13 @@ const AiTraining = () => {
       return;
     }
 
+    console.log('🔄 Starting AI training process...', { 
+      trainingName, 
+      qaPairsCount: qaPairs.length,
+      documentsCount: documents.length,
+      recordingsCount: recordings.length 
+    });
+
     try {
       setTrainingStartTime(new Date());
       setTrainingProgress(0);
@@ -185,12 +192,18 @@ const AiTraining = () => {
         behavior_learning: behaviorLearning
       };
 
+      console.log('📊 Training data prepared:', { trainingData, personalitySettings });
+
       let training;
       if (currentTraining) {
+        console.log('🔄 Updating existing training:', currentTraining.id);
         training = await updateTraining(currentTraining.id, trainingData, personalitySettings);
       } else {
+        console.log('🆕 Creating new training session...');
         training = await createTraining(trainingData, personalitySettings);
       }
+
+      console.log('✅ Training session created/updated:', training);
 
       if (training) {
         const progressInterval = setInterval(() => {
@@ -199,10 +212,13 @@ const AiTraining = () => {
               clearInterval(progressInterval);
               return 100;
             }
-            return prev + Math.random() * 10;
+            const newProgress = prev + Math.random() * 10;
+            console.log(`📈 Training progress: ${Math.round(newProgress)}%`);
+            return newProgress;
           });
         }, 1000);
 
+        console.log('🧠 Starting model training...');
         await trainModel(training.id);
         setTrainingProgress(100);
         setBackgroundProcessing(prev => ({ ...prev, aiTraining: false }));
@@ -210,17 +226,19 @@ const AiTraining = () => {
         const endTime = new Date();
         const duration = trainingStartTime ? Math.round((endTime.getTime() - trainingStartTime.getTime()) / 1000) : 0;
         
+        console.log('🎉 AI training completed successfully in', duration, 'seconds');
+        
         toast({
           title: "AI Training Complete",
           description: `Your personalized AI model has been trained successfully in ${duration}s!`
         });
       }
     } catch (error) {
-      console.error('Training failed:', error);
+      console.error('❌ AI Training failed:', error);
       setBackgroundProcessing(prev => ({ ...prev, aiTraining: false }));
       toast({
         title: "Training Failed",
-        description: "Failed to train AI model. Please try again.",
+        description: `Failed to train AI model: ${error.message || 'Unknown error'}`,
         variant: "destructive"
       });
     }
@@ -236,6 +254,11 @@ const AiTraining = () => {
       return;
     }
 
+    console.log('🎤 Starting voice cloning process...', { 
+      recordingsCount: recordings.length,
+      firstRecording: recordings[0] 
+    });
+
     try {
       setVoiceCloningStartTime(new Date());
       setVoiceCloningProgress(0);
@@ -248,17 +271,24 @@ const AiTraining = () => {
         clarity: 1.0
       };
 
+      console.log('🔧 Voice settings configured:', voiceSettings);
+
       const progressInterval = setInterval(() => {
         setVoiceCloningProgress(prev => {
           if (prev >= 100) {
             clearInterval(progressInterval);
             return 100;
           }
-          return prev + Math.random() * 5;
+          const newProgress = prev + Math.random() * 5;
+          console.log(`🎵 Voice cloning progress: ${Math.round(newProgress)}%`);
+          return newProgress;
         });
       }, 1500);
 
+      console.log('🚀 Starting voice cloning with recording:', recordings[0].file_path);
       const cloning = await startVoiceCloning(recordings[0].file_path, voiceSettings);
+      
+      console.log('✅ Voice cloning result:', cloning);
       
       if (cloning) {
         setVoiceCloningProgress(100);
@@ -267,17 +297,19 @@ const AiTraining = () => {
         const endTime = new Date();
         const duration = voiceCloningStartTime ? Math.round((endTime.getTime() - voiceCloningStartTime.getTime()) / 1000) : 0;
         
+        console.log('🎉 Voice cloning completed successfully in', duration, 'seconds');
+        
         toast({
           title: "Voice Cloning Complete",
           description: `Your voice has been cloned successfully in ${duration}s!`
         });
       }
     } catch (error) {
-      console.error('Voice cloning failed:', error);
+      console.error('❌ Voice cloning failed:', error);
       setBackgroundProcessing(prev => ({ ...prev, voiceCloning: false }));
       toast({
         title: "Voice Cloning Failed",
-        description: "Failed to start voice cloning. Please try again.",
+        description: `Failed to start voice cloning: ${error.message || 'Unknown error'}`,
         variant: "destructive"
       });
     }
@@ -300,39 +332,51 @@ const AiTraining = () => {
 
   // Auto-save functionality
   const handleSaveDraft = useCallback(async () => {
-    if (trainingName.trim()) {
-      const trainingData = {
-        name: trainingName,
-        qaPairs: qaPairs,
-        documents: documents,
-        voiceRecordings: recordings,
-        apiData: apiData,
-        behaviorData: []
-      };
+    if (!trainingName.trim()) {
+      toast({
+        title: "Training Name Required",
+        description: "Please provide a name before saving draft",
+        variant: "destructive"
+      });
+      return;
+    }
 
-      const personalitySettings = {
-        formality: formality[0],
-        verbosity: verbosity[0],
-        friendliness: friendliness[0],
-        mode: personalityMode as 'human' | 'robot' | 'adaptive',
-        behavior_learning: behaviorLearning
-      };
+    console.log('💾 Saving draft...', { trainingName });
 
-      try {
-        await saveDraft(trainingData, personalitySettings);
-        setIsDraftSaved(true);
-        toast({
-          title: "Draft Saved",
-          description: "Your training configuration has been saved as draft."
-        });
-      } catch (error) {
-        console.error('Save draft failed:', error);
-        toast({
-          title: "Save Failed",
-          description: "Failed to save draft. Please try again.",
-          variant: "destructive"
-        });
-      }
+    const trainingData = {
+      name: trainingName,
+      qaPairs: qaPairs,
+      documents: documents,
+      voiceRecordings: recordings,
+      apiData: apiData,
+      behaviorData: []
+    };
+
+    const personalitySettings = {
+      formality: formality[0],
+      verbosity: verbosity[0],
+      friendliness: friendliness[0],
+      mode: personalityMode as 'human' | 'robot' | 'adaptive',
+      behavior_learning: behaviorLearning
+    };
+
+    console.log('📝 Draft data prepared:', { trainingData, personalitySettings });
+
+    try {
+      await saveDraft(trainingData, personalitySettings);
+      setIsDraftSaved(true);
+      console.log('✅ Draft saved successfully');
+      toast({
+        title: "Draft Saved",
+        description: "Your training configuration has been saved as draft."
+      });
+    } catch (error) {
+      console.error('❌ Save draft failed:', error);
+      toast({
+        title: "Save Failed",
+        description: `Failed to save draft: ${error.message || 'Unknown error'}`,
+        variant: "destructive"
+      });
     }
   }, [trainingName, qaPairs, documents, recordings, apiData, formality, verbosity, friendliness, personalityMode, behaviorLearning, saveDraft, toast]);
 
@@ -1736,16 +1780,16 @@ const AiTraining = () => {
           </motion.div>
         </div>
 
-        {/* Enhanced Floating Action Bar with Progress Tracking */}
+        {/* Progress and Action Bar */}
         <motion.div 
-          className="fixed bottom-6 right-6 z-50 space-y-4"
+          className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 space-y-4"
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
           {/* Progress Indicators */}
           {(backgroundProcessing.aiTraining || backgroundProcessing.voiceCloning) && (
-            <Card className="bg-white/95 backdrop-blur-sm border-blue-200 shadow-lg p-4 min-w-[300px]">
+            <Card className="bg-white/95 backdrop-blur-sm border-blue-200 shadow-lg p-4 min-w-[600px]">
               <CardContent className="p-0 space-y-3">
                 {backgroundProcessing.aiTraining && (
                   <div>
@@ -1805,56 +1849,60 @@ const AiTraining = () => {
             </Card>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex flex-col space-y-3">
-            <Button
-              onClick={handleSaveDraft}
-              disabled={isTraining || !trainingName.trim()}
-              className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 min-w-[180px]"
-              size="lg"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              {isDraftSaved ? 'Draft Saved' : 'Save Draft'}
-            </Button>
-            
-            <Button
-              onClick={handleTrainAI}
-              disabled={isTraining || backgroundProcessing.aiTraining || !trainingName.trim() || (qaPairs.length === 0 && documents.length === 0)}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 min-w-[180px]"
-              size="lg"
-            >
-              {isTraining || backgroundProcessing.aiTraining ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Training AI...
-                </>
-              ) : (
-                <>
-                  <Brain className="w-4 h-4 mr-2" />
-                  Train AI
-                </>
-              )}
-            </Button>
+          {/* Action Buttons - Now in a horizontal line */}
+          <Card className="bg-white/95 backdrop-blur-sm border-gray-200 shadow-lg">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-center space-x-4">
+                <Button
+                  onClick={handleSaveDraft}
+                  disabled={isTraining || !trainingName.trim()}
+                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 flex-1 max-w-[180px]"
+                  size="lg"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {isDraftSaved ? 'Draft Saved' : 'Save Draft'}
+                </Button>
+                
+                <Button
+                  onClick={handleTrainAI}
+                  disabled={isTraining || backgroundProcessing.aiTraining || !trainingName.trim() || (qaPairs.length === 0 && documents.length === 0)}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 flex-1 max-w-[180px]"
+                  size="lg"
+                >
+                  {isTraining || backgroundProcessing.aiTraining ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Training AI...
+                    </>
+                  ) : (
+                    <>
+                      <Brain className="w-4 h-4 mr-2" />
+                      Train AI
+                    </>
+                  )}
+                </Button>
 
-            <Button
-              onClick={handleVoiceCloning}
-              disabled={isCloning || backgroundProcessing.voiceCloning || recordings.length === 0}
-              className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 min-w-[180px]"
-              size="lg"
-            >
-              {isCloning || backgroundProcessing.voiceCloning ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Cloning Voice...
-                </>
-              ) : (
-                <>
-                  <Volume2 className="w-4 h-4 mr-2" />
-                  Clone Voice
-                </>
-              )}
-            </Button>
-          </div>
+                <Button
+                  onClick={handleVoiceCloning}
+                  disabled={isCloning || backgroundProcessing.voiceCloning || recordings.length === 0}
+                  className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 flex-1 max-w-[180px]"
+                  size="lg"
+                >
+                  {isCloning || backgroundProcessing.voiceCloning ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Cloning Voice...
+                    </>
+                  ) : (
+                    <>
+                      <Volume2 className="w-4 h-4 mr-2" />
+                      Clone Voice
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
       </div>
     </div>
