@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,11 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { motion } from 'framer-motion';
+import { useQAPairs } from '@/hooks/useQAPairs';
+import { useTrainingDocuments } from '@/hooks/useTrainingDocuments';
+import { useVoiceRecordings } from '@/hooks/useVoiceRecordings';
+import { useApiTraining } from '@/hooks/useApiTraining';
+import { useCoquiTTS } from '@/hooks/useCoquiTTS';
 import { 
   MessageCircle, 
   FileText, 
@@ -29,7 +34,9 @@ import {
   Zap,
   Clock,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Save,
+  Loader2
 } from 'lucide-react';
 
 interface QAPair {
