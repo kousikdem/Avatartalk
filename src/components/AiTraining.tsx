@@ -8,6 +8,7 @@ import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { Switch } from '@/components/ui/switch';
 import { motion } from 'framer-motion';
 import { useQAPairs } from '@/hooks/useQAPairs';
 import { useTrainingDocuments } from '@/hooks/useTrainingDocuments';
@@ -15,6 +16,9 @@ import { useVoiceRecordings } from '@/hooks/useVoiceRecordings';
 import { useApiTraining } from '@/hooks/useApiTraining';
 import { useCoquiTTS } from '@/hooks/useCoquiTTS';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
+import { usePersonalizedAI } from '@/hooks/usePersonalizedAI';
+import { useVoiceCloning } from '@/hooks/useVoiceCloning';
+import { useScenarioTemplates } from '@/hooks/useScenarioTemplates';
 import { useToast } from '@/hooks/use-toast';
 import EmojiPicker from '@/components/EmojiPicker';
 import { 
@@ -103,6 +107,41 @@ const AiTraining = () => {
   const { recordings, isLoading: voiceLoading, isRecording, recordingDuration, fetchRecordings, startNewRecording, stopCurrentRecording, uploadVoiceFile, deleteRecording, formatDuration } = useVoiceRecordings();
   const { apiData, isLoading: apiLoading, isTestingApi, fetchApiData, testApiEndpoint, saveApiTrainingData, deleteApiData } = useApiTraining();
   const { synthesizeSpeech, isPlaying, isSupported } = useCoquiTTS();
+  
+  // New personalized AI hooks
+  const { 
+    trainings, 
+    isLoading: aiLoading, 
+    isTraining, 
+    currentTraining, 
+    fetchTrainings, 
+    createTraining, 
+    updateTraining, 
+    trainModel, 
+    saveDraft 
+  } = usePersonalizedAI();
+  
+  const { 
+    clonings, 
+    isCloning, 
+    startVoiceCloning, 
+    getCloningStatus, 
+    synthesizeWithClonedVoice, 
+    fetchClonedVoices 
+  } = useVoiceCloning();
+  
+  const { 
+    templates, 
+    isLoading: templatesLoading, 
+    fetchTemplates, 
+    applyTemplate 
+  } = useScenarioTemplates();
+
+  // Additional state for new features
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+  const [previewText, setPreviewText] = useState('Hello! This is how I would respond based on your personality settings.');
+  const [isDraftSaved, setIsDraftSaved] = useState(false);
+  const [voiceFile, setVoiceFile] = useState<File | null>(null);
 
   // Load data on component mount
   useEffect(() => {
@@ -110,7 +149,10 @@ const AiTraining = () => {
     fetchDocuments();
     fetchRecordings();
     fetchApiData();
-  }, [fetchQAPairs, fetchDocuments, fetchRecordings, fetchApiData]);
+    fetchTrainings();
+    fetchClonedVoices();
+    fetchTemplates();
+  }, [fetchQAPairs, fetchDocuments, fetchRecordings, fetchApiData, fetchTrainings, fetchClonedVoices, fetchTemplates]);
 
   // Local Q&A state for immediate UI updates
   const [localQAPairs, setLocalQAPairs] = useState<Array<{id: string, question: string, answer: string}>>([]);
@@ -549,18 +591,76 @@ const AiTraining = () => {
                   />
                 </div>
                 
-                <div>
-                  <Label className="text-gray-700 mb-2 block text-sm">
-                    Friendliness: {friendliness[0]}%
-                  </Label>
-                  <Slider
-                    value={friendliness}
-                    onValueChange={setFriendliness}
-                    max={100}
-                    step={1}
-                    className="w-full"
-                  />
-                </div>
+                 <div>
+                   <Label className="text-gray-700 mb-2 block text-sm">
+                     Friendliness: {friendliness[0]}%
+                   </Label>
+                   <Slider
+                     value={friendliness}
+                     onValueChange={setFriendliness}
+                     max={100}
+                     step={1}
+                     className="w-full"
+                   />
+                 </div>
+
+                 {/* Behavior Learning Toggle */}
+                 <div className="flex items-center justify-between p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg">
+                   <div>
+                     <Label className="text-gray-800 font-medium text-sm">Behavior Learning Mode</Label>
+                     <p className="text-xs text-gray-600">AI learns from user interactions</p>
+                   </div>
+                   <Switch
+                     checked={behaviorLearning}
+                     onCheckedChange={setBehaviorLearning}
+                     className="data-[state=checked]:bg-amber-500"
+                   />
+                 </div>
+
+                 {/* AI Response Preview */}
+                 <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+                   <Label className="text-gray-800 font-medium text-sm mb-2 block">Response Preview</Label>
+                   <div className="text-sm text-gray-700 italic">
+                     "{previewText}"
+                   </div>
+                   <div className="flex gap-2 mt-2">
+                     <div className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                       Mode: {personalityMode}
+                     </div>
+                     <div className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                       Formality: {formality[0]}%
+                     </div>
+                     <div className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                       Learning: {behaviorLearning ? 'ON' : 'OFF'}
+                     </div>
+                   </div>
+                 </div>
+
+                 {/* Scenario Templates */}
+                 <div className="mt-4">
+                   <Label className="text-gray-700 mb-2 block text-sm">Quick Apply Templates</Label>
+                   <div className="grid grid-cols-2 gap-2">
+                     {templates.slice(0, 4).map((template) => (
+                       <Button
+                         key={template.id}
+                         variant="outline"
+                         size="sm"
+                         className="text-xs p-2 h-auto flex flex-col items-center gap-1"
+                         onClick={() => {
+                           const applied = applyTemplate(template);
+                           setFormality([applied.personalitySettings.formality]);
+                           setVerbosity([applied.personalitySettings.verbosity]);
+                           setFriendliness([applied.personalitySettings.friendliness]);
+                           setPersonalityMode(applied.personalitySettings.mode);
+                           setSelectedTemplate(template.id);
+                         }}
+                       >
+                         <span className="font-medium">{template.template_name}</span>
+                         <span className="text-xs text-gray-500">{template.template_type}</span>
+                       </Button>
+                     ))}
+                   </div>
+                 </div>
 
                 {/* Behavior Learning Toggle */}
                 <div className="flex items-center justify-between pt-2">

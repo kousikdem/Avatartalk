@@ -109,6 +109,8 @@ export type Database = {
           feedback_score: number | null
           id: string
           interaction_type: string
+          learning_enabled: boolean | null
+          personality_impact: Json | null
           session_id: string | null
           user_id: string
           user_input: string | null
@@ -120,6 +122,8 @@ export type Database = {
           feedback_score?: number | null
           id?: string
           interaction_type: string
+          learning_enabled?: boolean | null
+          personality_impact?: Json | null
           session_id?: string | null
           user_id: string
           user_input?: string | null
@@ -131,6 +135,8 @@ export type Database = {
           feedback_score?: number | null
           id?: string
           interaction_type?: string
+          learning_enabled?: boolean | null
+          personality_impact?: Json | null
           session_id?: string | null
           user_id?: string
           user_input?: string | null
@@ -407,6 +413,51 @@ export type Database = {
           },
         ]
       }
+      personalized_ai_training: {
+        Row: {
+          created_at: string
+          id: string
+          model_status: string | null
+          personality_settings: Json | null
+          scenario_template: string | null
+          training_data: Json | null
+          training_name: string
+          training_progress: number | null
+          updated_at: string
+          user_id: string
+          voice_model_id: string | null
+          voice_settings: Json | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          model_status?: string | null
+          personality_settings?: Json | null
+          scenario_template?: string | null
+          training_data?: Json | null
+          training_name: string
+          training_progress?: number | null
+          updated_at?: string
+          user_id: string
+          voice_model_id?: string | null
+          voice_settings?: Json | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          model_status?: string | null
+          personality_settings?: Json | null
+          scenario_template?: string | null
+          training_data?: Json | null
+          training_name?: string
+          training_progress?: number | null
+          updated_at?: string
+          user_id?: string
+          voice_model_id?: string | null
+          voice_settings?: Json | null
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           comments_count: number | null
@@ -607,6 +658,42 @@ export type Database = {
           tags?: string[] | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      scenario_templates: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean | null
+          personality_preset: Json
+          template_name: string
+          template_type: string
+          training_prompts: Json | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          personality_preset: Json
+          template_name: string
+          template_type: string
+          training_prompts?: Json | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          personality_preset?: Json
+          template_name?: string
+          template_type?: string
+          training_prompts?: Json | null
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -891,6 +978,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      voice_cloning: {
+        Row: {
+          clone_status: string | null
+          cloned_voice_path: string | null
+          created_at: string
+          id: string
+          original_voice_path: string
+          updated_at: string
+          user_id: string
+          voice_model_id: string | null
+          voice_settings: Json | null
+        }
+        Insert: {
+          clone_status?: string | null
+          cloned_voice_path?: string | null
+          created_at?: string
+          id?: string
+          original_voice_path: string
+          updated_at?: string
+          user_id: string
+          voice_model_id?: string | null
+          voice_settings?: Json | null
+        }
+        Update: {
+          clone_status?: string | null
+          cloned_voice_path?: string | null
+          created_at?: string
+          id?: string
+          original_voice_path?: string
+          updated_at?: string
+          user_id?: string
+          voice_model_id?: string | null
+          voice_settings?: Json | null
+        }
+        Relationships: []
       }
       voice_profiles: {
         Row: {
