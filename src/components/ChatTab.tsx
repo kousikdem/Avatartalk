@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Mic, MicOff, Volume2, Send, Smile, Facebook, X, Instagram, Youtube, Linkedin } from 'lucide-react';
+import { Mic, MicOff, Volume2, VolumeX, Send, Smile, Facebook, X, Instagram, Youtube, Linkedin, Loader2 } from 'lucide-react';
 import EmojiPicker from './EmojiPicker';
 import { LinkCard } from './LinkCard';
+import { useCoquiTTS } from '@/hooks/useCoquiTTS';
+import { useVoiceInput } from '@/hooks/useVoiceInput';
 
 interface ChatMessage {
   message: string;
@@ -26,12 +28,6 @@ interface ChatTabProps {
   onSendMessage: () => void;
   message: string;
   setMessage: (message: string) => void;
-  isListening: boolean;
-  transcript: string;
-  voiceSupported: boolean;
-  toggleVoiceInput: () => void;
-  isSpeaking: boolean;
-  stopTTS: () => void;
   isEmojiPickerOpen: boolean;
   setIsEmojiPickerOpen: (open: boolean) => void;
   onEmojiSelect: (emoji: string) => void;
@@ -43,17 +39,60 @@ export const ChatTab: React.FC<ChatTabProps> = ({
   onSendMessage,
   message,
   setMessage,
-  isListening,
-  transcript,
-  voiceSupported,
-  toggleVoiceInput,
-  isSpeaking,
-  stopTTS,
   isEmojiPickerOpen,
   setIsEmojiPickerOpen,
   onEmojiSelect,
   socialLinks
 }) => {
+  // Voice input hook
+  const {
+    isListening,
+    transcript,
+    interimTranscript,
+    startListening,
+    stopListening,
+    resetTranscript,
+    isSupported: voiceInputSupported
+  } = useVoiceInput();
+
+  // Voice output hook
+  const {
+    synthesizeSpeech,
+    stopSpeech,
+    isLoading: isTTSLoading,
+    isPlaying: isTTSPlaying,
+    isSupported: voiceOutputSupported
+  } = useCoquiTTS();
+
+  // Update message when voice transcript changes
+  useEffect(() => {
+    if (transcript) {
+      setMessage(message + transcript);
+      resetTranscript();
+    }
+  }, [transcript, message, setMessage, resetTranscript]);
+
+  const handleVoiceInput = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening({ continuous: false, interimResults: true });
+    }
+  };
+
+  const handleVoiceOutput = async () => {
+    if (isTTSPlaying) {
+      stopSpeech();
+    } else {
+      const lastMessage = conversations[conversations.length - 1];
+      if (lastMessage && lastMessage.type === 'avatar') {
+        await synthesizeSpeech(lastMessage.message, {
+          voice: 'alloy',
+          speed: 1.0
+        });
+      }
+    }
+  };
   return (
     <div className="space-y-4">
       {/* Chat Messages */}
@@ -100,7 +139,7 @@ export const ChatTab: React.FC<ChatTabProps> = ({
       <div className="relative">
         <div className="bg-slate-800/50 rounded-2xl border border-slate-600/50 px-4 py-3 flex items-center gap-3">
           <Input
-            value={message + (isListening ? transcript : '')}
+            value={message + (isListening ? ` ${interimTranscript}` : '')}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Ask me anything..."
             className="border-0 bg-transparent text-white placeholder:text-slate-400 flex-1 focus-visible:ring-0 p-0"
@@ -114,26 +153,36 @@ export const ChatTab: React.FC<ChatTabProps> = ({
           >
             <Smile className="w-4 h-4 text-slate-400" />
           </Button>
-          {voiceSupported && (
+          {voiceInputSupported && (
             <Button 
               size="sm" 
               variant="ghost" 
-              onClick={toggleVoiceInput}
+              onClick={handleVoiceInput}
               className={`h-8 w-8 p-0 hover:bg-slate-700 rounded-full ${
                 isListening ? 'bg-red-600/20 text-red-400' : ''
               }`}
+              disabled={isTTSLoading}
             >
               {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4 text-slate-400" />}
             </Button>
           )}
-          {isSpeaking && (
+          {voiceOutputSupported && (
             <Button 
               size="sm" 
               variant="ghost" 
-              onClick={stopTTS}
-              className="h-8 w-8 p-0 hover:bg-slate-700 rounded-full text-blue-400"
+              onClick={handleVoiceOutput}
+              className={`h-8 w-8 p-0 hover:bg-slate-700 rounded-full ${
+                isTTSPlaying ? 'text-blue-400' : 'text-slate-400'
+              }`}
+              disabled={isTTSLoading}
             >
-              <Volume2 className="w-4 h-4" />
+              {isTTSLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : isTTSPlaying ? (
+                <VolumeX className="w-4 h-4" />
+              ) : (
+                <Volume2 className="w-4 h-4" />
+              )}
             </Button>
           )}
           <Button 

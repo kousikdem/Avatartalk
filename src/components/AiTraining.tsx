@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -72,6 +72,13 @@ const AiTraining = () => {
   const [personalityMode, setPersonalityMode] = useState('adaptive');
   const [behaviorLearning, setBehaviorLearning] = useState(true);
   const [trainingProgress, setTrainingProgress] = useState(45);
+  const [voiceCloningProgress, setVoiceCloningProgress] = useState(0);
+  const [trainingStartTime, setTrainingStartTime] = useState<Date | null>(null);
+  const [voiceCloningStartTime, setVoiceCloningStartTime] = useState<Date | null>(null);
+  const [backgroundProcessing, setBackgroundProcessing] = useState({
+    aiTraining: false,
+    voiceCloning: false
+  });
   const [activeTab, setActiveTab] = useState('qa');
   const [apiEndpoint, setApiEndpoint] = useState('');
   const [apiMethod, setApiMethod] = useState('GET');
@@ -142,6 +149,192 @@ const AiTraining = () => {
   const [previewText, setPreviewText] = useState('Hello! This is how I would respond based on your personality settings.');
   const [isDraftSaved, setIsDraftSaved] = useState(false);
   const [voiceFile, setVoiceFile] = useState<File | null>(null);
+  const [trainingName, setTrainingName] = useState('');
+
+  // Enhanced training functions
+  const handleTrainAI = async () => {
+    if (!trainingName.trim()) {
+      toast({
+        title: "Training Name Required",
+        description: "Please provide a name for your AI training session",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setTrainingStartTime(new Date());
+      setTrainingProgress(0);
+      setBackgroundProcessing(prev => ({ ...prev, aiTraining: true }));
+
+      // Create training data
+      const trainingData = {
+        name: trainingName,
+        qaPairs: qaPairs,
+        documents: documents,
+        voiceRecordings: recordings,
+        apiData: apiData,
+        behaviorData: []
+      };
+
+      const personalitySettings = {
+        formality: formality[0],
+        verbosity: verbosity[0], 
+        friendliness: friendliness[0],
+        mode: personalityMode as 'human' | 'robot' | 'adaptive',
+        behavior_learning: behaviorLearning
+      };
+
+      let training;
+      if (currentTraining) {
+        training = await updateTraining(currentTraining.id, trainingData, personalitySettings);
+      } else {
+        training = await createTraining(trainingData, personalitySettings);
+      }
+
+      if (training) {
+        const progressInterval = setInterval(() => {
+          setTrainingProgress(prev => {
+            if (prev >= 100) {
+              clearInterval(progressInterval);
+              return 100;
+            }
+            return prev + Math.random() * 10;
+          });
+        }, 1000);
+
+        await trainModel(training.id);
+        setTrainingProgress(100);
+        setBackgroundProcessing(prev => ({ ...prev, aiTraining: false }));
+        
+        const endTime = new Date();
+        const duration = trainingStartTime ? Math.round((endTime.getTime() - trainingStartTime.getTime()) / 1000) : 0;
+        
+        toast({
+          title: "AI Training Complete",
+          description: `Your personalized AI model has been trained successfully in ${duration}s!`
+        });
+      }
+    } catch (error) {
+      console.error('Training failed:', error);
+      setBackgroundProcessing(prev => ({ ...prev, aiTraining: false }));
+      toast({
+        title: "Training Failed",
+        description: "Failed to train AI model. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleVoiceCloning = async () => {
+    if (recordings.length === 0) {
+      toast({
+        title: "No Voice Recordings",
+        description: "Please record or upload voice samples for cloning",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setVoiceCloningStartTime(new Date());
+      setVoiceCloningProgress(0);
+      setBackgroundProcessing(prev => ({ ...prev, voiceCloning: true }));
+
+      const voiceSettings = {
+        speed: 1.0,
+        pitch: 1.0,
+        emotion: 'neutral',
+        clarity: 1.0
+      };
+
+      const progressInterval = setInterval(() => {
+        setVoiceCloningProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(progressInterval);
+            return 100;
+          }
+          return prev + Math.random() * 5;
+        });
+      }, 1500);
+
+      const cloning = await startVoiceCloning(recordings[0].file_path, voiceSettings);
+      
+      if (cloning) {
+        setVoiceCloningProgress(100);
+        setBackgroundProcessing(prev => ({ ...prev, voiceCloning: false }));
+        
+        const endTime = new Date();
+        const duration = voiceCloningStartTime ? Math.round((endTime.getTime() - voiceCloningStartTime.getTime()) / 1000) : 0;
+        
+        toast({
+          title: "Voice Cloning Complete",
+          description: `Your voice has been cloned successfully in ${duration}s!`
+        });
+      }
+    } catch (error) {
+      console.error('Voice cloning failed:', error);
+      setBackgroundProcessing(prev => ({ ...prev, voiceCloning: false }));
+      toast({
+        title: "Voice Cloning Failed",
+        description: "Failed to start voice cloning. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Handle page visibility change for background processing
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && (backgroundProcessing.aiTraining || backgroundProcessing.voiceCloning)) {
+        toast({
+          title: "Background Processing",
+          description: "Training continues in the background. You'll be notified when complete.",
+        });
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [backgroundProcessing, toast]);
+
+  // Auto-save functionality
+  const handleSaveDraft = useCallback(async () => {
+    if (trainingName.trim()) {
+      const trainingData = {
+        name: trainingName,
+        qaPairs: qaPairs,
+        documents: documents,
+        voiceRecordings: recordings,
+        apiData: apiData,
+        behaviorData: []
+      };
+
+      const personalitySettings = {
+        formality: formality[0],
+        verbosity: verbosity[0],
+        friendliness: friendliness[0],
+        mode: personalityMode as 'human' | 'robot' | 'adaptive',
+        behavior_learning: behaviorLearning
+      };
+
+      try {
+        await saveDraft(trainingData, personalitySettings);
+        setIsDraftSaved(true);
+        toast({
+          title: "Draft Saved",
+          description: "Your training configuration has been saved as draft."
+        });
+      } catch (error) {
+        console.error('Save draft failed:', error);
+        toast({
+          title: "Save Failed",
+          description: "Failed to save draft. Please try again.",
+          variant: "destructive"
+        });
+      }
+    }
+  }, [trainingName, qaPairs, documents, recordings, apiData, formality, verbosity, friendliness, personalityMode, behaviorLearning, saveDraft, toast]);
 
   // Load data on component mount
   useEffect(() => {
@@ -1543,28 +1736,123 @@ const AiTraining = () => {
           </motion.div>
         </div>
 
-        {/* Bottom Action Bar */}
+        {/* Enhanced Floating Action Bar with Progress Tracking */}
         <motion.div 
-          className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50"
+          className="fixed bottom-6 right-6 z-50 space-y-4"
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <div className="bg-white/90 backdrop-blur-sm rounded-full border border-gray-200 shadow-lg px-6 py-3 flex items-center space-x-4">
+          {/* Progress Indicators */}
+          {(backgroundProcessing.aiTraining || backgroundProcessing.voiceCloning) && (
+            <Card className="bg-white/95 backdrop-blur-sm border-blue-200 shadow-lg p-4 min-w-[300px]">
+              <CardContent className="p-0 space-y-3">
+                {backgroundProcessing.aiTraining && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700 flex items-center">
+                        <Brain className="w-4 h-4 mr-2 text-purple-500" />
+                        AI Training Progress
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {trainingStartTime && `${Math.round((Date.now() - trainingStartTime.getTime()) / 1000)}s`}
+                      </span>
+                    </div>
+                    <Progress value={trainingProgress} className="h-3 bg-gray-200">
+                      <div 
+                        className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
+                        style={{ width: `${trainingProgress}%` }}
+                      />
+                    </Progress>
+                    <p className="text-xs text-gray-600 mt-1 flex items-center justify-between">
+                      <span>{Math.round(trainingProgress)}% complete</span>
+                      <span className="text-purple-600 font-medium">
+                        {trainingProgress < 30 ? 'Processing documents...' : 
+                         trainingProgress < 60 ? 'Training Q&A pairs...' : 
+                         trainingProgress < 100 ? 'Fine-tuning model...' : 'Complete!'}
+                      </span>
+                    </p>
+                  </div>
+                )}
+                
+                {backgroundProcessing.voiceCloning && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700 flex items-center">
+                        <Volume2 className="w-4 h-4 mr-2 text-green-500" />
+                        Voice Cloning Progress
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {voiceCloningStartTime && `${Math.round((Date.now() - voiceCloningStartTime.getTime()) / 1000)}s`}
+                      </span>
+                    </div>
+                    <Progress value={voiceCloningProgress} className="h-3 bg-gray-200">
+                      <div 
+                        className="h-full bg-gradient-to-r from-green-500 to-teal-500 transition-all duration-300"
+                        style={{ width: `${voiceCloningProgress}%` }}
+                      />
+                    </Progress>
+                    <p className="text-xs text-gray-600 mt-1 flex items-center justify-between">
+                      <span>{Math.round(voiceCloningProgress)}% complete</span>
+                      <span className="text-green-600 font-medium">
+                        {voiceCloningProgress < 50 ? 'Analyzing voice patterns...' : 
+                         voiceCloningProgress < 100 ? 'Generating voice model...' : 'Complete!'}
+                      </span>
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex flex-col space-y-3">
             <Button
-              size="sm"
-              variant="outline"
-              className="border-gray-300 text-gray-700 hover:bg-gray-50"
+              onClick={handleSaveDraft}
+              disabled={isTraining || !trainingName.trim()}
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 min-w-[180px]"
+              size="lg"
             >
-              <Clock className="w-4 h-4 mr-2" />
-              Save Draft
+              <Save className="w-4 h-4 mr-2" />
+              {isDraftSaved ? 'Draft Saved' : 'Save Draft'}
             </Button>
+            
             <Button
-              size="sm"
-              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
+              onClick={handleTrainAI}
+              disabled={isTraining || backgroundProcessing.aiTraining || !trainingName.trim() || (qaPairs.length === 0 && documents.length === 0)}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 min-w-[180px]"
+              size="lg"
             >
-              <Zap className="w-4 h-4 mr-2" />
-              Save & Train AI
+              {isTraining || backgroundProcessing.aiTraining ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Training AI...
+                </>
+              ) : (
+                <>
+                  <Brain className="w-4 h-4 mr-2" />
+                  Train AI
+                </>
+              )}
+            </Button>
+
+            <Button
+              onClick={handleVoiceCloning}
+              disabled={isCloning || backgroundProcessing.voiceCloning || recordings.length === 0}
+              className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 min-w-[180px]"
+              size="lg"
+            >
+              {isCloning || backgroundProcessing.voiceCloning ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Cloning Voice...
+                </>
+              ) : (
+                <>
+                  <Volume2 className="w-4 h-4 mr-2" />
+                  Clone Voice
+                </>
+              )}
             </Button>
           </div>
         </motion.div>
