@@ -14,6 +14,9 @@ import { useTrainingDocuments } from '@/hooks/useTrainingDocuments';
 import { useVoiceRecordings } from '@/hooks/useVoiceRecordings';
 import { useApiTraining } from '@/hooks/useApiTraining';
 import { useCoquiTTS } from '@/hooks/useCoquiTTS';
+import { useVoiceInput } from '@/hooks/useVoiceInput';
+import { useToast } from '@/hooks/use-toast';
+import EmojiPicker from '@/components/EmojiPicker';
 import { 
   MessageCircle, 
   FileText, 
@@ -36,7 +39,13 @@ import {
   CheckCircle,
   AlertCircle,
   Save,
-  Loader2
+  Loader2,
+  MessageSquare,
+  Database,
+  Layout,
+  Send,
+  Smile,
+  RotateCcw
 } from 'lucide-react';
 
 interface QAPair {
@@ -57,7 +66,29 @@ const AiTraining = () => {
   const [apiMethod, setApiMethod] = useState('GET');
   const [apiHeaders, setApiHeaders] = useState<Record<string, string>>({});
   const [apiKey, setApiKey] = useState('');
+  const [testMessage, setTestMessage] = useState('');
+  const [testMessages, setTestMessages] = useState([
+    {
+      id: '1',
+      content: 'Hello! How can I help you today?',
+      isBot: true,
+      timestamp: new Date()
+    }
+  ]);
+  const [testLoading, setTestLoading] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  // Voice input hook
+  const {
+    isListening,
+    transcript,
+    startListening,
+    stopListening,
+    resetTranscript,
+    isSupported: isVoiceSupported
+  } = useVoiceInput();
 
   // Custom hooks
   const { qaPairs, isLoading: qaLoading, fetchQAPairs, addQAPair, updateQAPair, deleteQAPair } = useQAPairs();
@@ -159,6 +190,69 @@ const AiTraining = () => {
   const switchToTab = (tabId: string) => {
     setActiveTab(tabId);
   };
+
+  // Test chat functionality
+  const sendTestMessage = async () => {
+    if (!testMessage.trim() || testLoading) return;
+
+    const userMessage = {
+      id: Date.now().toString(),
+      content: testMessage,
+      isBot: false,
+      timestamp: new Date()
+    };
+
+    setTestMessages(prev => [...prev, userMessage]);
+    setTestMessage('');
+    setTestLoading(true);
+
+    // Simulate AI response (in production, this would call your AI service)
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+      
+      const responses = [
+        "That's a great question! Let me help you with that.",
+        "I understand what you're looking for. Here's what I think...",
+        "Based on my training, I'd recommend...",
+        "That's interesting! Let me break that down for you.",
+        "I can definitely help with that. Here's my approach...",
+        "Great point! From my experience with similar questions..."
+      ];
+      
+      const botResponse = {
+        id: (Date.now() + 1).toString(),
+        content: responses[Math.floor(Math.random() * responses.length)],
+        isBot: true,
+        timestamp: new Date()
+      };
+
+      setTestMessages(prev => [...prev, botResponse]);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to get AI response. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setTestLoading(false);
+    }
+  };
+
+  // Handle voice input
+  useEffect(() => {
+    if (transcript && !isListening) {
+      setTestMessage(prev => prev + ' ' + transcript);
+      resetTranscript();
+    }
+  }, [transcript, isListening, resetTranscript]);
+
+  // Handle voice input
+  useEffect(() => {
+    if (transcript && !isListening) {
+      setTestMessage(prev => prev + ' ' + transcript);
+      resetTranscript();
+    }
+  }, [transcript, isListening, resetTranscript]);
 
   const trainingMethods = [
     {
@@ -466,38 +560,44 @@ const AiTraining = () => {
               <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 bg-white/95 backdrop-blur-sm border border-gray-200/80 rounded-xl p-2 shadow-lg gap-1">
                 <TabsTrigger 
                   value="qa" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-blue-50 data-[state=inactive]:to-purple-50 data-[state=inactive]:text-blue-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-blue-50 data-[state=inactive]:to-purple-50 data-[state=inactive]:text-blue-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2"
                 >
+                  <MessageSquare className="w-4 h-4" />
                   Q&A Format
                 </TabsTrigger>
                 <TabsTrigger 
                   value="document" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-teal-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-green-50 data-[state=inactive]:to-teal-50 data-[state=inactive]:text-green-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-teal-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-green-50 data-[state=inactive]:to-teal-50 data-[state=inactive]:text-green-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2"
                 >
+                  <FileText className="w-4 h-4" />
                   Documents
                 </TabsTrigger>
                 <TabsTrigger 
                   value="api" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-indigo-50 data-[state=inactive]:to-blue-50 data-[state=inactive]:text-indigo-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-indigo-50 data-[state=inactive]:to-blue-50 data-[state=inactive]:text-indigo-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2"
                 >
+                  <Database className="w-4 h-4" />
                   API Data
                 </TabsTrigger>
                 <TabsTrigger 
                   value="voice" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-purple-50 data-[state=inactive]:to-pink-50 data-[state=inactive]:text-purple-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-purple-50 data-[state=inactive]:to-pink-50 data-[state=inactive]:text-purple-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2"
                 >
+                  <Mic className="w-4 h-4" />
                   Voice
                 </TabsTrigger>
                 <TabsTrigger 
                   value="scenario" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-500 data-[state=active]:to-green-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-teal-50 data-[state=inactive]:to-green-50 data-[state=inactive]:text-teal-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-500 data-[state=active]:to-green-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-teal-50 data-[state=inactive]:to-green-50 data-[state=inactive]:text-teal-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2"
                 >
+                  <Layout className="w-4 h-4" />
                   Templates
                 </TabsTrigger>
                 <TabsTrigger 
                   value="test" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-orange-50 data-[state=inactive]:to-red-50 data-[state=inactive]:text-orange-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-orange-50 data-[state=inactive]:to-red-50 data-[state=inactive]:text-orange-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2"
                 >
+                  <MessageCircle className="w-4 h-4" />
                   Test Chat
                 </TabsTrigger>
               </TabsList>
@@ -1030,40 +1130,132 @@ const AiTraining = () => {
               <TabsContent value="test" className="space-y-6">
                 <Card className="bg-white/80 backdrop-blur-sm border border-orange-200 shadow-lg">
                   <CardHeader>
-                    <CardTitle className="text-gray-800 flex items-center">
-                      <MessageCircle className="w-5 h-5 mr-2 text-orange-500" />
-                      Live Chat Testing Window
+                    <CardTitle className="text-gray-800 flex items-center justify-between">
+                      <div className="flex items-center">
+                        <MessageCircle className="w-5 h-5 mr-2 text-orange-500" />
+                        Live Chat Testing Window
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setTestMessages([{
+                          id: '1',
+                          content: 'Hello! How can I help you today?',
+                          isBot: true,
+                          timestamp: new Date()
+                        }])}
+                        className="border-orange-300 text-orange-600 hover:bg-orange-50"
+                      >
+                        <RotateCcw className="w-4 h-4 mr-2" />
+                        Reset Chat
+                      </Button>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="bg-gray-50 rounded-lg p-4 h-96 mb-4 overflow-y-auto">
+                    <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg p-4 h-96 mb-4 overflow-y-auto border border-gray-200">
                       <div className="space-y-3">
-                        <div className="flex">
-                          <div className="bg-blue-500 text-white rounded-lg px-3 py-2 max-w-xs">
-                            Hello! How can I help you today?
+                        {testMessages.map((message) => (
+                          <motion.div
+                            key={message.id}
+                            className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                          >
+                            <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                              message.isBot 
+                                ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' 
+                                : 'bg-gradient-to-r from-gray-200 to-gray-300 text-gray-800'
+                            }`}>
+                              {message.content}
+                            </div>
+                          </motion.div>
+                        ))}
+                        {testLoading && (
+                          <div className="flex justify-start">
+                            <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg px-4 py-2 max-w-xs">
+                              <div className="flex items-center space-x-1">
+                                <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>
+                                <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                                <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex justify-end">
-                          <div className="bg-gray-200 text-gray-800 rounded-lg px-3 py-2 max-w-xs">
-                            What services do you offer?
-                          </div>
-                        </div>
-                        <div className="flex">
-                          <div className="bg-blue-500 text-white rounded-lg px-3 py-2 max-w-xs">
-                            I specialize in digital marketing, content creation, and brand strategy for small businesses. My packages start at $1,200 for a complete marketing audit.
-                          </div>
-                        </div>
+                        )}
                       </div>
                     </div>
-                    <div className="flex space-x-2">
-                      <Input
-                        placeholder="Type your test message..."
-                        className="flex-1 bg-white border-gray-300"
-                      />
-                      <Button className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white">
-                        Send
-                      </Button>
+                    <div className="relative">
+                      <div className="flex items-end space-x-2">
+                        <div className="flex-1 relative">
+                          <Input
+                            value={testMessage}
+                            onChange={(e) => setTestMessage(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && !testLoading && sendTestMessage()}
+                            placeholder="Type your test message..."
+                            className="bg-white border-gray-300 pr-20"
+                            disabled={testLoading}
+                          />
+                          <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                              className="p-1 h-8 w-8 text-yellow-500 hover:bg-yellow-50"
+                            >
+                              <Smile className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => isListening ? stopListening() : startListening()}
+                              className={`p-1 h-8 w-8 ${isListening ? 'text-red-500 hover:bg-red-50' : 'text-blue-500 hover:bg-blue-50'}`}
+                              disabled={!isVoiceSupported}
+                            >
+                              <Mic className={`w-4 h-4 ${isListening ? 'animate-pulse' : ''}`} />
+                            </Button>
+                          </div>
+                        </div>
+                        <Button 
+                          onClick={sendTestMessage}
+                          disabled={testLoading || !testMessage.trim()}
+                          className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white"
+                        >
+                          {testLoading ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Send className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
+                      
+                      {/* Emoji Picker */}
+                      {showEmojiPicker && (
+                        <div className="absolute bottom-full mb-2 right-0 z-50">
+                          <EmojiPicker
+                            isOpen={showEmojiPicker}
+                            onEmojiSelect={(emoji) => {
+                              setTestMessage(prev => prev + emoji);
+                              setShowEmojiPicker(false);
+                            }}
+                            onClose={() => setShowEmojiPicker(false)}
+                          />
+                        </div>
+                      )}
                     </div>
+                    
+                    {/* Voice Input Feedback */}
+                    {isListening && (
+                      <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                          <span className="text-sm text-blue-700">Listening... Speak clearly</span>
+                        </div>
+                        {transcript && (
+                          <p className="text-sm text-gray-700 mt-2 italic">"{transcript}"</p>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
