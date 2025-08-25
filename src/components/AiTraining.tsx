@@ -595,7 +595,10 @@ const AiTraining = () => {
                   whileHover={{ scale: 1.02 }}
                   onClick={() => switchToTab('qa')}
                 >
-                  <span className="text-lg font-bold text-gray-800">Q&A Pairs</span>
+                  <div className="flex items-center gap-3">
+                    <MessageSquare className="w-6 h-6 text-blue-600" />
+                    <span className="text-lg font-bold text-gray-800">Q&A Pairs</span>
+                  </div>
                   <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white text-lg px-4 py-2 font-bold">
                     {localQAPairs.length}
                   </Badge>
@@ -605,7 +608,10 @@ const AiTraining = () => {
                   whileHover={{ scale: 1.02 }}
                   onClick={() => switchToTab('document')}
                 >
-                  <span className="text-lg font-bold text-gray-800">Documents</span>
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-6 h-6 text-green-600" />
+                    <span className="text-lg font-bold text-gray-800">Documents</span>
+                  </div>
                   <Badge className="bg-gradient-to-r from-green-500 to-teal-500 text-white text-lg px-4 py-2 font-bold">
                     {documents.length}
                   </Badge>
@@ -615,7 +621,10 @@ const AiTraining = () => {
                   whileHover={{ scale: 1.02 }}
                   onClick={() => switchToTab('voice')}
                 >
-                  <span className="text-lg font-bold text-gray-800">Voice</span>
+                  <div className="flex items-center gap-3">
+                    <Mic className="w-6 h-6 text-purple-600" />
+                    <span className="text-lg font-bold text-gray-800">Voice</span>
+                  </div>
                   <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-lg px-4 py-2 font-bold">
                     {recordings.length}
                   </Badge>
@@ -625,7 +634,10 @@ const AiTraining = () => {
                   whileHover={{ scale: 1.02 }}
                   onClick={() => switchToTab('api')}
                 >
-                  <span className="text-lg font-bold text-gray-800">API Data</span>
+                  <div className="flex items-center gap-3">
+                    <Database className="w-6 h-6 text-indigo-600" />
+                    <span className="text-lg font-bold text-gray-800">API Data</span>
+                  </div>
                   <Badge className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white text-lg px-4 py-2 font-bold">
                     {apiData.length}
                   </Badge>
@@ -635,7 +647,10 @@ const AiTraining = () => {
                   whileHover={{ scale: 1.02 }}
                   onClick={() => switchToTab('scenario')}
                 >
-                  <span className="text-lg font-bold text-gray-800">Templates</span>
+                  <div className="flex items-center gap-3">
+                    <Layout className="w-6 h-6 text-teal-600" />
+                    <span className="text-lg font-bold text-gray-800">Templates</span>
+                  </div>
                   <Badge className="bg-gradient-to-r from-teal-500 to-green-500 text-white text-lg px-4 py-2 font-bold">
                     {scenarioTemplates.length}
                   </Badge>
@@ -645,7 +660,10 @@ const AiTraining = () => {
                   whileHover={{ scale: 1.02 }}
                   onClick={() => switchToTab('test')}
                 >
-                  <span className="text-lg font-bold text-gray-800">Test Chat</span>
+                  <div className="flex items-center gap-3">
+                    <MessageCircle className="w-6 h-6 text-orange-600" />
+                    <span className="text-lg font-bold text-gray-800">Test Chat</span>
+                  </div>
                   <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-lg px-4 py-2 font-bold">
                     Pro
                   </Badge>
@@ -661,52 +679,54 @@ const AiTraining = () => {
             animate={{ opacity: 1, x: 0 }}
           >
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-              {/* Fixed Tab Layout with proper spacing */}
+              {/* Fixed Tab Layout with proper spacing - Reordered with API Data at end */}
               <div className="mb-8">
-                <TabsList className="flex w-full h-auto bg-white/95 backdrop-blur-sm border border-gray-200/80 rounded-xl p-2 shadow-lg gap-2 overflow-x-auto">
-                  <TabsTrigger 
-                    value="qa" 
-                    className="flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-blue-50 data-[state=inactive]:to-purple-50 data-[state=inactive]:text-blue-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2 min-w-fit"
-                  >
-                    <MessageSquare className="w-5 h-5" />
-                    Q&A Format
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="document" 
-                    className="flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-teal-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-green-50 data-[state=inactive]:to-teal-50 data-[state=inactive]:text-green-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2 min-w-fit"
-                  >
-                    <FileText className="w-5 h-5" />
-                    Documents
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="api" 
-                    className="flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-indigo-50 data-[state=inactive]:to-blue-50 data-[state=inactive]:text-indigo-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2 min-w-fit"
-                  >
-                    <Database className="w-5 h-5" />
-                    API Data
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="voice" 
-                    className="flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-purple-50 data-[state=inactive]:to-pink-50 data-[state=inactive]:text-purple-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2 min-w-fit"
-                  >
-                    <Mic className="w-5 h-5" />
-                    Voice
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="scenario" 
-                    className="flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-500 data-[state=active]:to-green-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-teal-50 data-[state=inactive]:to-green-50 data-[state=inactive]:text-teal-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2 min-w-fit"
-                  >
-                    <Layout className="w-5 h-5" />
-                    Templates
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="test" 
-                    className="flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-orange-50 data-[state=inactive]:to-red-50 data-[state=inactive]:text-orange-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md flex items-center gap-2 min-w-fit"
-                  >
-                    <MessageCircle className="w-5 h-5" />
-                    Test Chat
-                  </TabsTrigger>
-                </TabsList>
+                <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                  <TabsList className="flex w-max min-w-full h-auto bg-white/95 backdrop-blur-sm border border-gray-200/80 rounded-xl p-3 shadow-lg gap-3">
+                    <TabsTrigger 
+                      value="qa" 
+                      className="flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-blue-50 data-[state=inactive]:to-purple-50 data-[state=inactive]:text-blue-700 text-lg lg:text-xl font-bold px-8 py-5 rounded-xl transition-all duration-300 hover:shadow-md hover:scale-105 flex items-center gap-3 min-w-fit whitespace-nowrap"
+                    >
+                      <MessageSquare className="w-6 h-6" />
+                      Q&A Format
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="document" 
+                      className="flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-teal-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-green-50 data-[state=inactive]:to-teal-50 data-[state=inactive]:text-green-700 text-lg lg:text-xl font-bold px-8 py-5 rounded-xl transition-all duration-300 hover:shadow-md hover:scale-105 flex items-center gap-3 min-w-fit whitespace-nowrap"
+                    >
+                      <FileText className="w-6 h-6" />
+                      Documents
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="voice" 
+                      className="flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-purple-50 data-[state=inactive]:to-pink-50 data-[state=inactive]:text-purple-700 text-lg lg:text-xl font-bold px-8 py-5 rounded-xl transition-all duration-300 hover:shadow-md hover:scale-105 flex items-center gap-3 min-w-fit whitespace-nowrap"
+                    >
+                      <Mic className="w-6 h-6" />
+                      Voice
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="test" 
+                      className="flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-orange-50 data-[state=inactive]:to-red-50 data-[state=inactive]:text-orange-700 text-lg lg:text-xl font-bold px-8 py-5 rounded-xl transition-all duration-300 hover:shadow-md hover:scale-105 flex items-center gap-3 min-w-fit whitespace-nowrap"
+                    >
+                      <MessageCircle className="w-6 h-6" />
+                      Test Chat
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="scenario" 
+                      className="flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-500 data-[state=active]:to-green-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-teal-50 data-[state=inactive]:to-green-50 data-[state=inactive]:text-teal-700 text-lg lg:text-xl font-bold px-8 py-5 rounded-xl transition-all duration-300 hover:shadow-md hover:scale-105 flex items-center gap-3 min-w-fit whitespace-nowrap"
+                    >
+                      <Layout className="w-6 h-6" />
+                      Templates
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="api" 
+                      className="flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-indigo-50 data-[state=inactive]:to-blue-50 data-[state=inactive]:text-indigo-700 text-lg lg:text-xl font-bold px-8 py-5 rounded-xl transition-all duration-300 hover:shadow-md hover:scale-105 flex items-center gap-3 min-w-fit whitespace-nowrap"
+                    >
+                      <Database className="w-6 h-6" />
+                      API Data
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
               </div>
 
               {/* Q&A Training */}
@@ -1006,18 +1026,33 @@ const AiTraining = () => {
                         className="bg-white border-gray-300"
                       />
                     </div>
-                    <Button 
-                      onClick={handleApiTest}
-                      disabled={apiLoading || isTestingApi || !apiEndpoint.trim()}
-                      className="w-full bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white"
-                    >
-                      {isTestingApi ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <Globe className="w-4 h-4 mr-2" />
-                      )}
-                      Connect & Test API
-                    </Button>
+                    <div className="flex gap-3">
+                      <Button 
+                        onClick={handleApiTest}
+                        disabled={apiLoading || isTestingApi || !apiEndpoint.trim()}
+                        className="flex-1 bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white relative"
+                      >
+                        {isTestingApi ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <Globe className="w-4 h-4 mr-2" />
+                        )}
+                        Test API
+                        <span className="absolute -top-1 -right-1 bg-yellow-500 text-xs px-1.5 py-0.5 rounded-full text-black font-bold">
+                          Coming Soon
+                        </span>
+                      </Button>
+                      <Button 
+                        disabled={true}
+                        className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white relative opacity-60"
+                      >
+                        <Zap className="w-4 h-4 mr-2" />
+                        Connect API
+                        <span className="absolute -top-1 -right-1 bg-yellow-500 text-xs px-1.5 py-0.5 rounded-full text-black font-bold">
+                          Coming Soon
+                        </span>
+                      </Button>
+                    </div>
                     
                     {/* API Data List */}
                     {apiData.length > 0 && (
@@ -1246,8 +1281,8 @@ const AiTraining = () => {
               <TabsContent value="scenario" className="space-y-6">
                 <Card className="bg-white/80 backdrop-blur-sm border border-teal-200 shadow-lg">
                   <CardHeader>
-                    <CardTitle className="text-gray-800 flex items-center">
-                      <Users className="w-5 h-5 mr-2 text-teal-500" />
+                    <CardTitle className="bg-gradient-to-r from-teal-600 to-green-600 bg-clip-text text-transparent flex items-center">
+                      <Layout className="w-5 h-5 mr-2 text-teal-500" />
                       Scenario-Based Role Training
                     </CardTitle>
                   </CardHeader>
@@ -1259,8 +1294,9 @@ const AiTraining = () => {
                           <p className="text-sm text-gray-600 mb-3">{template.description}</p>
                           <Button 
                             size="sm" 
-                            className="w-full bg-gradient-to-r from-teal-500 to-green-500 hover:from-teal-600 hover:to-green-600 text-white"
+                            className="w-full bg-gradient-to-r from-teal-500 to-green-500 hover:from-teal-600 hover:to-green-600 text-white flex items-center justify-center gap-2"
                           >
+                            <Layout className="w-4 h-4" />
                             Apply Template
                           </Button>
                         </div>
@@ -1274,7 +1310,7 @@ const AiTraining = () => {
               <TabsContent value="test" className="space-y-6">
                 <Card className="bg-white/80 backdrop-blur-sm border border-orange-200 shadow-lg">
                   <CardHeader>
-                    <CardTitle className="text-gray-800 flex items-center justify-between">
+                    <CardTitle className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent flex items-center justify-between">
                       <div className="flex items-center">
                         <MessageCircle className="w-5 h-5 mr-2 text-orange-500" />
                         Live Chat Testing Window
