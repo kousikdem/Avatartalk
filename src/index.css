@@ -96,7 +96,7 @@
   }
   
   .sidebar-gradient {
-    @apply bg-gradient-to-b from-white via-slate-50/20 to-gray-50/30;
+    @apply bg-gradient-to-b from-white via-slate-50/20 to-white/80;
   }
   
   .card-gradient {
@@ -116,6 +116,14 @@
   }
 
   .sidebar-light {
-    @apply bg-gradient-to-b from-white via-slate-50/30 to-gray-50/20;
+    @apply bg-gradient-to-b from-white via-white/90 to-slate-50/50;
+  }
+
+  .white-gradient-bg {
+    @apply bg-gradient-to-br from-white via-slate-50/30 to-white/90;
+  }
+
+  .pure-white-gradient {
+    @apply bg-gradient-to-br from-white via-white/95 to-slate-50/20;
   }
 }

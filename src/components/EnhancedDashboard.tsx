@@ -178,7 +178,7 @@ const EnhancedDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white pt-20 pb-8 flex items-center justify-center">
+      <div className="min-h-screen white-gradient-bg pt-20 pb-8 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading your profile...</p>
@@ -188,7 +188,7 @@ const EnhancedDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white pt-20 pb-8">
+    <div className="min-h-screen white-gradient-bg pt-20 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header with Progress */}
         <motion.div 
@@ -217,7 +217,7 @@ const EnhancedDashboard = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => setDarkMode(!darkMode)}
-                className="text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+                className="text-slate-600 hover:text-slate-800 hover:bg-white/80"
               >
                 {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </Button>
@@ -225,7 +225,7 @@ const EnhancedDashboard = () => {
           </div>
           
           {/* Progress Bar */}
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-slate-200/50 rounded-full h-2">
             <motion.div 
               className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full"
               initial={{ width: 0 }}
@@ -333,7 +333,7 @@ const EnhancedDashboard = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <Tabs defaultValue="profile" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-6 bg-gray-100 border border-gray-200">
+              <TabsList className="grid w-full grid-cols-6 bg-white/90 border border-slate-200/60 backdrop-blur-sm">
                 <TabsTrigger value="profile" className="data-[state=active]:gradient-button">
                   <User className="w-4 h-4 mr-2" />
                   Profile
@@ -400,7 +400,7 @@ const EnhancedDashboard = () => {
                       <div>
                         <Label htmlFor="username" className="text-gray-700">Custom URL</Label>
                         <div className="flex">
-                          <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-600 text-sm">
+                          <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-slate-300/60 bg-slate-50/60 text-slate-600 text-sm">
                             avatartalk.bio/
                           </span>
                           <Input 
@@ -538,7 +538,7 @@ const EnhancedDashboard = () => {
                           <Button
                             key={style}
                             variant={profileData?.avatar_data.style === style ? "default" : "outline"}
-                            className={`h-20 ${profileData?.avatar_data.style === style ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                            className={`h-20 ${profileData?.avatar_data.style === style ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' : 'border-slate-300/60 text-slate-700 hover:bg-white/80'}`}
                             onClick={() => handleProfileUpdate('avatar_style', style)}
                           >
                             <div className="text-center">
@@ -556,7 +556,7 @@ const EnhancedDashboard = () => {
                           <Button
                             key={template.name}
                             variant={profileData?.avatar_data.mood === template.mood ? "default" : "outline"}
-                            className={`p-4 h-auto justify-start ${profileData?.avatar_data.mood === template.mood ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                            className={`p-4 h-auto justify-start ${profileData?.avatar_data.mood === template.mood ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' : 'border-slate-300/60 text-slate-700 hover:bg-white/80'}`}
                             onClick={() => handleProfileUpdate('avatar_mood', template.mood)}
                           >
                             <template.icon className="w-5 h-5 mr-3" />
@@ -629,7 +629,7 @@ const EnhancedDashboard = () => {
                       </Button>
                       <Button 
                         variant="outline" 
-                        className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50"
+                        className="flex-1 border-slate-300/60 text-slate-700 hover:bg-white/80"
                         onClick={() => setIsVoiceRecording(!isVoiceRecording)}
                       >
                         <Mic className={`w-4 h-4 mr-2 ${isVoiceRecording ? 'text-red-500' : ''}`} />

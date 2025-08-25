@@ -73,15 +73,15 @@ const NotificationsPage = () => {
   const getNotificationColor = (type: string) => {
     switch (type) {
       case 'message':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-50 text-blue-800';
       case 'follow':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-50 text-green-800';
       case 'like':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-50 text-red-800';
       case 'appointment':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-purple-50 text-purple-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-slate-50 text-slate-800';
     }
   };
 
@@ -94,7 +94,7 @@ const NotificationsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen white-gradient-bg p-6">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
@@ -139,8 +139,8 @@ const NotificationsPage = () => {
                       return (
                         <div
                           key={notification.id}
-                          className={`p-4 hover:bg-gray-50 transition-colors ${
-                            !notification.read ? 'bg-blue-50' : ''
+                          className={`p-4 hover:bg-white/60 transition-colors ${
+                            !notification.read ? 'bg-blue-50/80' : ''
                           }`}
                         >
                           <div className="flex items-start space-x-4">
@@ -193,7 +193,7 @@ const NotificationsPage = () => {
                     {allNotifications.filter(n => !n.read).map((notification) => {
                       const NotificationIcon = getNotificationIcon(notification.type);
                       return (
-                        <div key={notification.id} className="p-4 bg-blue-50 hover:bg-blue-100 transition-colors">
+                        <div key={notification.id} className="p-4 bg-blue-50/80 hover:bg-blue-100/60 transition-colors">
                           <div className="flex items-start space-x-4">
                             <div className={`p-2 rounded-full ${getNotificationColor(notification.type)}`}>
                               <NotificationIcon className="w-4 h-4" />
@@ -226,7 +226,7 @@ const NotificationsPage = () => {
               <CardContent className="p-0">
                 <div className="divide-y">
                   {allNotifications.filter(n => n.type === 'message').map((notification) => (
-                    <div key={notification.id} className="p-4 hover:bg-gray-50">
+                    <div key={notification.id} className="p-4 hover:bg-white/60 transition-colors">
                       <div className="flex items-start space-x-4">
                         <Avatar>
                           <AvatarImage src="/placeholder-avatar.jpg" />
@@ -254,7 +254,7 @@ const NotificationsPage = () => {
                   {allNotifications.filter(n => ['follow', 'like', 'appointment'].includes(n.type)).map((notification) => {
                     const NotificationIcon = getNotificationIcon(notification.type);
                     return (
-                      <div key={notification.id} className="p-4 hover:bg-gray-50">
+                      <div key={notification.id} className="p-4 hover:bg-white/60 transition-colors">
                         <div className="flex items-start space-x-4">
                           <div className={`p-2 rounded-full ${getNotificationColor(notification.type)}`}>
                             <NotificationIcon className="w-4 h-4" />

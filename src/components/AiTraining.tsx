@@ -393,48 +393,63 @@ const AiTraining = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <motion.div 
-                  className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200"
+                  className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 cursor-pointer"
                   whileHover={{ scale: 1.02 }}
+                  onClick={() => switchToTab('qa')}
                 >
-                  <span className="text-base font-medium text-gray-700">Q&A Pairs</span>
-                  <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white text-base px-3 py-1">
+                  <span className="text-lg font-bold text-gray-800">Q&A Pairs</span>
+                  <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white text-lg px-4 py-2 font-bold">
                     {localQAPairs.length}
                   </Badge>
                 </motion.div>
                 <motion.div 
-                  className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200"
+                  className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 cursor-pointer"
                   whileHover={{ scale: 1.02 }}
+                  onClick={() => switchToTab('document')}
                 >
-                  <span className="text-base font-medium text-gray-700">Documents</span>
-                  <Badge className="bg-gradient-to-r from-green-500 to-teal-500 text-white text-base px-3 py-1">
+                  <span className="text-lg font-bold text-gray-800">Documents</span>
+                  <Badge className="bg-gradient-to-r from-green-500 to-teal-500 text-white text-lg px-4 py-2 font-bold">
                     {documents.length}
                   </Badge>
                 </motion.div>
                 <motion.div 
-                  className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200"
+                  className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 cursor-pointer"
                   whileHover={{ scale: 1.02 }}
+                  onClick={() => switchToTab('voice')}
                 >
-                  <span className="text-base font-medium text-gray-700">Voice Recordings</span>
-                  <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-base px-3 py-1">
+                  <span className="text-lg font-bold text-gray-800">Voice</span>
+                  <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-lg px-4 py-2 font-bold">
                     {recordings.length}
                   </Badge>
                 </motion.div>
                 <motion.div 
-                  className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200"
+                  className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 cursor-pointer"
                   whileHover={{ scale: 1.02 }}
+                  onClick={() => switchToTab('api')}
                 >
-                  <span className="text-base font-medium text-gray-700">API Endpoints</span>
-                  <Badge className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white text-base px-3 py-1">
+                  <span className="text-lg font-bold text-gray-800">API Data</span>
+                  <Badge className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white text-lg px-4 py-2 font-bold">
                     {apiData.length}
                   </Badge>
                 </motion.div>
                 <motion.div 
-                  className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-green-50 to-teal-50 border border-green-200"
+                  className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-teal-50 to-green-50 border border-teal-200 cursor-pointer"
                   whileHover={{ scale: 1.02 }}
+                  onClick={() => switchToTab('scenario')}
                 >
-                  <span className="text-base font-medium text-gray-700">Accuracy Score</span>
-                  <Badge className="bg-gradient-to-r from-green-500 to-teal-500 text-white text-base px-3 py-1">
-                    94%
+                  <span className="text-lg font-bold text-gray-800">Templates</span>
+                  <Badge className="bg-gradient-to-r from-teal-500 to-green-500 text-white text-lg px-4 py-2 font-bold">
+                    {scenarioTemplates.length}
+                  </Badge>
+                </motion.div>
+                <motion.div 
+                  className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 cursor-pointer"
+                  whileHover={{ scale: 1.02 }}
+                  onClick={() => switchToTab('test')}
+                >
+                  <span className="text-lg font-bold text-gray-800">Test Chat</span>
+                  <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-lg px-4 py-2 font-bold">
+                    Pro
                   </Badge>
                 </motion.div>
               </CardContent>
@@ -447,41 +462,41 @@ const AiTraining = () => {
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
           >
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-xl p-1">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8 mt-8">
+              <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 bg-white/95 backdrop-blur-sm border border-gray-200/80 rounded-xl p-2 shadow-lg gap-1">
                 <TabsTrigger 
                   value="qa" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white text-sm lg:text-base font-semibold px-4 py-3 rounded-lg transition-all duration-300"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-blue-50 data-[state=inactive]:to-purple-50 data-[state=inactive]:text-blue-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md"
                 >
                   Q&A Format
                 </TabsTrigger>
                 <TabsTrigger 
                   value="document" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-teal-500 data-[state=active]:text-white text-sm lg:text-base font-semibold px-4 py-3 rounded-lg transition-all duration-300"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-teal-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-green-50 data-[state=inactive]:to-teal-50 data-[state=inactive]:text-green-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md"
                 >
                   Documents
                 </TabsTrigger>
                 <TabsTrigger 
                   value="api" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-blue-500 data-[state=active]:text-white text-sm lg:text-base font-semibold px-4 py-3 rounded-lg transition-all duration-300"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-indigo-50 data-[state=inactive]:to-blue-50 data-[state=inactive]:text-indigo-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md"
                 >
                   API Data
                 </TabsTrigger>
                 <TabsTrigger 
                   value="voice" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white text-sm lg:text-base font-semibold px-4 py-3 rounded-lg transition-all duration-300"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-purple-50 data-[state=inactive]:to-pink-50 data-[state=inactive]:text-purple-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md"
                 >
                   Voice
                 </TabsTrigger>
                 <TabsTrigger 
                   value="scenario" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-500 data-[state=active]:to-green-500 data-[state=active]:text-white text-sm lg:text-base font-semibold px-4 py-3 rounded-lg transition-all duration-300"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-500 data-[state=active]:to-green-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-teal-50 data-[state=inactive]:to-green-50 data-[state=inactive]:text-teal-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md"
                 >
-                  Scenarios
+                  Templates
                 </TabsTrigger>
                 <TabsTrigger 
                   value="test" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white text-sm lg:text-base font-semibold px-4 py-3 rounded-lg transition-all duration-300"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=inactive]:bg-gradient-to-r data-[state=inactive]:from-orange-50 data-[state=inactive]:to-red-50 data-[state=inactive]:text-orange-700 text-base lg:text-lg font-bold px-6 py-4 rounded-lg transition-all duration-300 hover:shadow-md"
                 >
                   Test Chat
                 </TabsTrigger>

@@ -64,13 +64,13 @@ const CalendarPage = () => {
   const getEventTypeColor = (type: string) => {
     switch (type) {
       case 'meeting':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-50 text-blue-800';
       case 'appointment':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-50 text-green-800';
       case 'call':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-purple-50 text-purple-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-slate-50 text-slate-800';
     }
   };
 
@@ -88,7 +88,7 @@ const CalendarPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen white-gradient-bg p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -146,7 +146,7 @@ const CalendarPage = () => {
                 selectedDateEvents.map((event) => {
                   const EventIcon = getEventIcon(event.event_type);
                   return (
-                    <div key={event.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                    <div key={event.id} className="border rounded-lg p-4 hover:bg-white/80 transition-colors">
                       <div className="flex items-start justify-between mb-2">
                         <h3 className="font-medium text-gray-900">{event.title}</h3>
                         <Badge className={getEventTypeColor(event.event_type)}>
@@ -196,7 +196,7 @@ const CalendarPage = () => {
               {allEvents.slice(0, 6).map((event) => {
                 const EventIcon = getEventIcon(event.event_type);
                 return (
-                  <div key={event.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                  <div key={event.id} className="border rounded-lg p-4 hover:bg-white/80 transition-colors">
                     <div className="flex items-center justify-between mb-2">
                       <EventIcon className="w-5 h-5 text-gray-600" />
                       <Badge className={getEventTypeColor(event.event_type)}>
