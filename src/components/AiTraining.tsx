@@ -380,6 +380,18 @@ const AiTraining = () => {
     }
   }, [trainingName, qaPairs, documents, recordings, apiData, formality, verbosity, friendliness, personalityMode, behaviorLearning, saveDraft, toast]);
 
+  // Auto-save when data changes
+  useEffect(() => {
+    const autoSaveTimer = setTimeout(() => {
+      if (trainingName.trim() && (qaPairs.length > 0 || documents.length > 0 || recordings.length > 0)) {
+        console.log('💾 Auto-saving draft...');
+        handleSaveDraft();
+      }
+    }, 30000); // Auto-save every 30 seconds
+
+    return () => clearTimeout(autoSaveTimer);
+  }, [trainingName, qaPairs, documents, recordings, handleSaveDraft]);
+
   // Load data on component mount
   useEffect(() => {
     fetchQAPairs();
@@ -1923,30 +1935,30 @@ const AiTraining = () => {
             </Card>
           )}
 
-          {/* Action Buttons - Centered with proper spacing */}
-          <Card className="bg-white/95 backdrop-blur-sm border-gray-200 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-center gap-6">
+          {/* Floating Action Buttons - Centered */}
+          <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50">
+            <div className="bg-white/95 backdrop-blur-sm border border-gray-200 shadow-2xl rounded-2xl p-4">
+              <div className="flex items-center justify-center gap-4">
                 <Button
                   onClick={handleSaveDraft}
                   disabled={isTraining || !trainingName.trim()}
-                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 min-w-[160px] px-6 py-3"
-                  size="lg"
+                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 min-w-[140px] px-4 py-2 rounded-xl"
+                  size="sm"
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  {isDraftSaved ? 'Draft Saved' : 'Save Draft'}
+                  {isDraftSaved ? 'Saved' : 'Save Draft'}
                 </Button>
                 
                 <Button
                   onClick={handleTrainAI}
                   disabled={isTraining || backgroundProcessing.aiTraining || !trainingName.trim() || (qaPairs.length === 0 && documents.length === 0)}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 min-w-[160px] px-6 py-3"
-                  size="lg"
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 min-w-[140px] px-4 py-2 rounded-xl"
+                  size="sm"
                 >
                   {isTraining || backgroundProcessing.aiTraining ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Training AI...
+                      Training...
                     </>
                   ) : (
                     <>
@@ -1959,13 +1971,13 @@ const AiTraining = () => {
                 <Button
                   onClick={handleVoiceCloning}
                   disabled={isCloning || backgroundProcessing.voiceCloning || recordings.length === 0}
-                  className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 min-w-[160px] px-6 py-3"
-                  size="lg"
+                  className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 min-w-[140px] px-4 py-2 rounded-xl"
+                  size="sm"
                 >
                   {isCloning || backgroundProcessing.voiceCloning ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Cloning Voice...
+                      Cloning...
                     </>
                   ) : (
                     <>
@@ -1975,8 +1987,8 @@ const AiTraining = () => {
                   )}
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </motion.div>
       </div>
     </div>

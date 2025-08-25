@@ -22,7 +22,14 @@ serve(async (req) => {
     // Get user from auth token
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('Authentication required');
+      console.error('❌ No authorization header provided');
+      return new Response(JSON.stringify({ 
+        error: 'Authentication required',
+        success: false 
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const { data: { user }, error: authError } = await supabase.auth.getUser(
@@ -30,10 +37,31 @@ serve(async (req) => {
     );
 
     if (authError || !user) {
-      throw new Error('Invalid authentication token');
+      console.error('❌ Authentication failed:', authError);
+      return new Response(JSON.stringify({ 
+        error: 'Invalid authentication token',
+        success: false 
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    const { action, voiceData, voiceSettings, cloningId } = await req.json();
+    let requestBody;
+    try {
+      requestBody = await req.json();
+    } catch (parseError) {
+      console.error('❌ Failed to parse request body:', parseError);
+      return new Response(JSON.stringify({ 
+        error: 'Invalid request body',
+        success: false 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { action, voiceData = {}, voiceSettings = {}, cloningId } = requestBody;
 
     console.log('Voice cloning request:', { action, cloningId });
 
