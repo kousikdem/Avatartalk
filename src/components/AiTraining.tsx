@@ -49,52 +49,115 @@ const AiTraining = () => {
   const [formality, setFormality] = useState([50]);
   const [verbosity, setVerbosity] = useState([70]);
   const [friendliness, setFriendliness] = useState([80]);
-  const [qaPairs, setQaPairs] = useState<QAPair[]>([
-    { 
-      id: '1', 
-      question: 'What services do you offer?',
-      answer: 'I specialize in digital marketing, content creation, and brand strategy for small businesses. My packages start at $1,200 for a complete marketing audit.'
-    },
-    { 
-      id: '2', 
-      question: 'How can I book a consultation with you?',
-      answer: 'You can book a 30-minute consultation through my Calendly link. Just click on "Book a Consultation" in my profile links and select a time that works for you. Initial consultations are $150, which can be applied to your package if you decide to work with me.'
-    }
-  ]);
-  const [isRecording, setIsRecording] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [personalityMode, setPersonalityMode] = useState('adaptive');
   const [behaviorLearning, setBehaviorLearning] = useState(true);
   const [trainingProgress, setTrainingProgress] = useState(45);
+  const [activeTab, setActiveTab] = useState('qa');
+  const [apiEndpoint, setApiEndpoint] = useState('');
+  const [apiMethod, setApiMethod] = useState('GET');
+  const [apiHeaders, setApiHeaders] = useState<Record<string, string>>({});
+  const [apiKey, setApiKey] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const addQAPair = () => {
-    const newPair: QAPair = {
+  // Custom hooks
+  const { qaPairs, isLoading: qaLoading, fetchQAPairs, addQAPair, updateQAPair, deleteQAPair } = useQAPairs();
+  const { documents, isLoading: docsLoading, uploadProgress, fetchDocuments, uploadDocument, deleteDocument } = useTrainingDocuments();
+  const { recordings, isLoading: voiceLoading, isRecording, recordingDuration, fetchRecordings, startNewRecording, stopCurrentRecording, uploadVoiceFile, deleteRecording, formatDuration } = useVoiceRecordings();
+  const { apiData, isLoading: apiLoading, isTestingApi, fetchApiData, testApiEndpoint, saveApiTrainingData, deleteApiData } = useApiTraining();
+  const { synthesizeSpeech, isPlaying, isSupported } = useCoquiTTS();
+
+  // Load data on component mount
+  useEffect(() => {
+    fetchQAPairs();
+    fetchDocuments();
+    fetchRecordings();
+    fetchApiData();
+  }, [fetchQAPairs, fetchDocuments, fetchRecordings, fetchApiData]);
+
+  // Local Q&A state for immediate UI updates
+  const [localQAPairs, setLocalQAPairs] = useState<Array<{id: string, question: string, answer: string}>>([]);
+
+  useEffect(() => {
+    setLocalQAPairs(qaPairs);
+  }, [qaPairs]);
+
+  const addLocalQAPair = () => {
+    const newPair = {
       id: Date.now().toString(),
       question: '',
       answer: ''
     };
-    setQaPairs([...qaPairs, newPair]);
+    setLocalQAPairs([...localQAPairs, newPair]);
   };
 
-  const removeQAPair = (id: string) => {
-    if (qaPairs.length > 1) {
-      setQaPairs(qaPairs.filter(pair => pair.id !== id));
+  const removeLocalQAPair = async (id: string) => {
+    if (localQAPairs.length > 1) {
+      const isExistingPair = qaPairs.some(pair => pair.id === id);
+      if (isExistingPair) {
+        await deleteQAPair(id);
+      } else {
+        setLocalQAPairs(localQAPairs.filter(pair => pair.id !== id));
+      }
     }
   };
 
-  const updateQAPair = (id: string, field: 'question' | 'answer', value: string) => {
-    setQaPairs(qaPairs.map(pair => 
+  const updateLocalQAPair = async (id: string, field: 'question' | 'answer', value: string) => {
+    setLocalQAPairs(localQAPairs.map(pair => 
       pair.id === id ? { ...pair, [field]: value } : pair
     ));
+    
+    // If this is an existing pair, update in database
+    const existingPair = qaPairs.find(pair => pair.id === id);
+    if (existingPair && (value.trim() !== existingPair[field])) {
+      await updateQAPair(id, { [field]: value });
+    }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const saveQAPairs = async () => {
+    for (const pair of localQAPairs) {
+      const existingPair = qaPairs.find(existing => existing.id === pair.id);
+      if (!existingPair && pair.question.trim() && pair.answer.trim()) {
+        await addQAPair({
+          question: pair.question,
+          answer: pair.answer
+        });
+      }
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    setUploadedFiles([...uploadedFiles, ...files]);
+    for (const file of files) {
+      await uploadDocument(file);
+    }
   };
 
-  const removeFile = (index: number) => {
-    setUploadedFiles(uploadedFiles.filter((_, i) => i !== index));
+  const handleVoiceFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    for (const file of files) {
+      await uploadVoiceFile(file);
+    }
+  };
+
+  const handleApiTest = async () => {
+    const headers = { ...apiHeaders };
+    if (apiKey) {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+
+    const result = await testApiEndpoint({
+      endpoint: apiEndpoint,
+      method: apiMethod,
+      headers
+    });
+
+    if (result.success && result.data) {
+      await saveApiTrainingData(apiEndpoint, apiMethod, headers, result.data);
+    }
+  };
+
+  const switchToTab = (tabId: string) => {
+    setActiveTab(tabId);
   };
 
   const trainingMethods = [
@@ -103,48 +166,54 @@ const AiTraining = () => {
       title: 'Q&A Format',
       icon: MessageCircle,
       description: 'Train with question-answer pairs',
-      color: 'text-blue-500',
-      bgColor: 'bg-blue-50 border-blue-200'
+      gradient: 'bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600',
+      textColor: 'text-white',
+      borderColor: 'border-blue-200 hover:border-blue-300'
     },
     {
       id: 'document',
       title: 'Document Upload',
       icon: FileText,
       description: 'Upload PDF, DOCX, TXT files',
-      color: 'text-green-500',
-      bgColor: 'bg-green-50 border-green-200'
+      gradient: 'bg-gradient-to-br from-green-500 via-emerald-500 to-teal-600',
+      textColor: 'text-white',
+      borderColor: 'border-green-200 hover:border-green-300'
     },
     {
       id: 'api',
       title: 'API Data Training',
       icon: Globe,
       description: 'Connect external APIs for real-time data',
-      color: 'text-indigo-500',
-      bgColor: 'bg-indigo-50 border-indigo-200'
+      gradient: 'bg-gradient-to-br from-indigo-500 via-blue-500 to-cyan-600',
+      textColor: 'text-white',
+      borderColor: 'border-indigo-200 hover:border-indigo-300'
     },
     {
       id: 'voice',
       title: 'Voice Training',
       icon: Mic,
       description: 'Train with voice samples',
-      color: 'text-purple-500',
-      bgColor: 'bg-purple-50 border-purple-200'
+      gradient: 'bg-gradient-to-br from-purple-500 via-pink-500 to-rose-600',
+      textColor: 'text-white',
+      borderColor: 'border-purple-200 hover:border-purple-300'
     },
     {
       id: 'behavior',
       title: 'Behavior Learning',
       icon: Brain,
       description: 'AI learns from user interactions',
-      color: 'text-orange-500',
-      bgColor: 'bg-orange-50 border-orange-200'
+      gradient: 'bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-600',
+      textColor: 'text-white',
+      borderColor: 'border-orange-200 hover:border-orange-300'
     },
     {
       id: 'scenario',
       title: 'Scenario Templates',
       icon: Users,
       description: 'Pre-built role templates',
-      color: 'text-teal-500',
-      bgColor: 'bg-teal-50 border-teal-200'
+      gradient: 'bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-600',
+      textColor: 'text-white',
+      borderColor: 'border-teal-200 hover:border-teal-300'
     }
   ];
 
@@ -206,16 +275,17 @@ const AiTraining = () => {
                 {trainingMethods.map((method, index) => (
                   <motion.div
                     key={method.id}
-                    className={`p-3 rounded-lg border ${method.bgColor} hover:shadow-md cursor-pointer transition-all duration-200`}
+                    className={`p-4 rounded-xl border ${method.borderColor} ${method.gradient} hover:shadow-lg cursor-pointer transition-all duration-300 hover:scale-105`}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
+                    onClick={() => switchToTab(method.id)}
                   >
                     <div className="flex items-center space-x-3">
-                      <method.icon className={`w-4 h-4 ${method.color}`} />
+                      <method.icon className={`w-5 h-5 ${method.textColor}`} />
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-gray-800 text-sm">{method.title}</h4>
-                        <p className="text-xs text-gray-600 truncate">{method.description}</p>
+                        <h4 className={`font-semibold ${method.textColor} text-sm mb-1`}>{method.title}</h4>
+                        <p className={`text-xs ${method.textColor} opacity-90 line-clamp-2`}>{method.description}</p>
                       </div>
                     </div>
                   </motion.div>
@@ -316,24 +386,57 @@ const AiTraining = () => {
             {/* Analytics Preview */}
             <Card className="bg-white/80 backdrop-blur-sm border border-blue-200 shadow-lg">
               <CardHeader>
-                <CardTitle className="text-gray-800 flex items-center">
+                <CardTitle className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center">
                   <BarChart className="w-5 h-5 mr-2 text-blue-500" />
                   Quick Stats
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Q&A Pairs</span>
-                  <span className="text-sm font-medium text-gray-800">{qaPairs.length}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Documents</span>
-                  <span className="text-sm font-medium text-gray-800">{uploadedFiles.length}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Accuracy Score</span>
-                  <span className="text-sm font-medium text-green-600">94%</span>
-                </div>
+              <CardContent className="space-y-4">
+                <motion.div 
+                  className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <span className="text-base font-medium text-gray-700">Q&A Pairs</span>
+                  <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white text-base px-3 py-1">
+                    {localQAPairs.length}
+                  </Badge>
+                </motion.div>
+                <motion.div 
+                  className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <span className="text-base font-medium text-gray-700">Documents</span>
+                  <Badge className="bg-gradient-to-r from-green-500 to-teal-500 text-white text-base px-3 py-1">
+                    {documents.length}
+                  </Badge>
+                </motion.div>
+                <motion.div 
+                  className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <span className="text-base font-medium text-gray-700">Voice Recordings</span>
+                  <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-base px-3 py-1">
+                    {recordings.length}
+                  </Badge>
+                </motion.div>
+                <motion.div 
+                  className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <span className="text-base font-medium text-gray-700">API Endpoints</span>
+                  <Badge className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white text-base px-3 py-1">
+                    {apiData.length}
+                  </Badge>
+                </motion.div>
+                <motion.div 
+                  className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-green-50 to-teal-50 border border-green-200"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <span className="text-base font-medium text-gray-700">Accuracy Score</span>
+                  <Badge className="bg-gradient-to-r from-green-500 to-teal-500 text-white text-base px-3 py-1">
+                    94%
+                  </Badge>
+                </motion.div>
               </CardContent>
             </Card>
           </motion.div>
@@ -344,24 +447,42 @@ const AiTraining = () => {
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
           >
-            <Tabs defaultValue="qa" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg">
-                <TabsTrigger value="qa" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white text-xs lg:text-sm">
-                  Q&A
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+              <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-xl p-1">
+                <TabsTrigger 
+                  value="qa" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white text-sm lg:text-base font-semibold px-4 py-3 rounded-lg transition-all duration-300"
+                >
+                  Q&A Format
                 </TabsTrigger>
-                <TabsTrigger value="document" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-teal-500 data-[state=active]:text-white text-xs lg:text-sm">
+                <TabsTrigger 
+                  value="document" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-teal-500 data-[state=active]:text-white text-sm lg:text-base font-semibold px-4 py-3 rounded-lg transition-all duration-300"
+                >
                   Documents
                 </TabsTrigger>
-                <TabsTrigger value="api" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-blue-500 data-[state=active]:text-white text-xs lg:text-sm">
+                <TabsTrigger 
+                  value="api" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-blue-500 data-[state=active]:text-white text-sm lg:text-base font-semibold px-4 py-3 rounded-lg transition-all duration-300"
+                >
                   API Data
                 </TabsTrigger>
-                <TabsTrigger value="voice" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white text-xs lg:text-sm">
+                <TabsTrigger 
+                  value="voice" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white text-sm lg:text-base font-semibold px-4 py-3 rounded-lg transition-all duration-300"
+                >
                   Voice
                 </TabsTrigger>
-                <TabsTrigger value="scenario" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-500 data-[state=active]:to-green-500 data-[state=active]:text-white text-xs lg:text-sm">
+                <TabsTrigger 
+                  value="scenario" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-500 data-[state=active]:to-green-500 data-[state=active]:text-white text-sm lg:text-base font-semibold px-4 py-3 rounded-lg transition-all duration-300"
+                >
                   Scenarios
                 </TabsTrigger>
-                <TabsTrigger value="test" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white text-xs lg:text-sm">
+                <TabsTrigger 
+                  value="test" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white text-sm lg:text-base font-semibold px-4 py-3 rounded-lg transition-all duration-300"
+                >
                   Test Chat
                 </TabsTrigger>
               </TabsList>
@@ -370,7 +491,9 @@ const AiTraining = () => {
               <TabsContent value="qa" className="space-y-6">
                 <Card className="bg-white/80 backdrop-blur-sm border border-blue-200 shadow-lg">
                   <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle className="text-gray-800">Teach Your AI with Q&A Pairs</CardTitle>
+                    <CardTitle className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                      Teach Your AI with Q&A Pairs
+                    </CardTitle>
                     <div className="flex space-x-2">
                       <Button 
                         variant="outline"
@@ -380,7 +503,7 @@ const AiTraining = () => {
                         Import Q&A
                       </Button>
                       <Button 
-                        onClick={addQAPair}
+                        onClick={addLocalQAPair}
                         className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
                       >
                         <Plus className="w-4 h-4 mr-2" />
@@ -389,22 +512,28 @@ const AiTraining = () => {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {qaPairs.map((pair, index) => (
+                    {qaLoading && (
+                      <div className="flex items-center justify-center p-8">
+                        <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+                        <span className="ml-2 text-gray-600">Loading Q&A pairs...</span>
+                      </div>
+                    )}
+                    {localQAPairs.map((pair, index) => (
                       <motion.div
                         key={pair.id}
-                        className="p-4 border border-gray-200 rounded-lg space-y-4 bg-white/50"
+                        className="p-4 border border-gray-200 rounded-lg space-y-4 bg-gradient-to-r from-white/80 to-blue-50/50"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                       >
                         <div className="flex justify-between items-center">
-                          <Badge variant="outline" className="border-blue-400 text-blue-600">
+                          <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
                             Q&A Pair #{index + 1}
                           </Badge>
-                          {qaPairs.length > 1 && (
+                          {localQAPairs.length > 1 && (
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => removeQAPair(pair.id)}
+                              onClick={() => removeLocalQAPair(pair.id)}
                               className="text-red-500 border-red-300 hover:bg-red-50"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -413,20 +542,20 @@ const AiTraining = () => {
                         </div>
                         
                         <div>
-                          <Label className="text-gray-700 text-sm">Question</Label>
+                          <Label className="text-gray-700 font-medium">Question</Label>
                           <Input
                             value={pair.question}
-                            onChange={(e) => updateQAPair(pair.id, 'question', e.target.value)}
+                            onChange={(e) => updateLocalQAPair(pair.id, 'question', e.target.value)}
                             placeholder="What services do you offer?"
                             className="bg-white border-gray-300 text-gray-800 mt-1"
                           />
                         </div>
                         
                         <div>
-                          <Label className="text-gray-700 text-sm">Answer</Label>
+                          <Label className="text-gray-700 font-medium">Answer</Label>
                           <Textarea
                             value={pair.answer}
-                            onChange={(e) => updateQAPair(pair.id, 'answer', e.target.value)}
+                            onChange={(e) => updateLocalQAPair(pair.id, 'answer', e.target.value)}
                             placeholder="I specialize in digital marketing, content creation, and brand strategy..."
                             className="bg-white border-gray-300 text-gray-800 mt-1"
                             rows={3}
@@ -443,8 +572,16 @@ const AiTraining = () => {
                         <Download className="w-4 h-4 mr-2" />
                         Export Q&A
                       </Button>
-                      <Button className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white flex-1">
-                        <Zap className="w-4 h-4 mr-2" />
+                      <Button 
+                        onClick={saveQAPairs}
+                        disabled={qaLoading}
+                        className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white flex-1"
+                      >
+                        {qaLoading ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <Save className="w-4 h-4 mr-2" />
+                        )}
                         Save & Train AI
                       </Button>
                     </div>
@@ -456,15 +593,32 @@ const AiTraining = () => {
               <TabsContent value="document" className="space-y-6">
                 <Card className="bg-white/80 backdrop-blur-sm border border-green-200 shadow-lg">
                   <CardHeader>
-                    <CardTitle className="text-gray-800 flex items-center justify-between">
+                    <CardTitle className="bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent flex items-center justify-between">
                       <span>Document Upload Training</span>
-                      <Badge variant="outline" className="border-green-400 text-green-600">
-                        {uploadedFiles.length} files uploaded
+                      <Badge className="bg-gradient-to-r from-green-500 to-teal-500 text-white">
+                        {documents.length} files uploaded
                       </Badge>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-white/50">
+                    {docsLoading && (
+                      <div className="flex items-center justify-center p-8">
+                        <Loader2 className="w-6 h-6 animate-spin text-green-500" />
+                        <span className="ml-2 text-gray-600">Uploading document...</span>
+                      </div>
+                    )}
+                    
+                    {uploadProgress > 0 && uploadProgress < 100 && (
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Upload Progress</span>
+                          <span className="text-green-600">{Math.round(uploadProgress)}%</span>
+                        </div>
+                        <Progress value={uploadProgress} className="h-2" />
+                      </div>
+                    )}
+                    
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gradient-to-r from-white/80 to-green-50/50">
                       <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                       <p className="text-gray-600 mb-2 font-medium">
                         Drag and drop files here, or click to browse
@@ -484,6 +638,7 @@ const AiTraining = () => {
                         <Button 
                           className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white"
                           asChild
+                          disabled={docsLoading}
                         >
                           <span>
                             <FileText className="w-4 h-4 mr-2" />
@@ -493,35 +648,46 @@ const AiTraining = () => {
                       </Label>
                     </div>
                     
-                    {uploadedFiles.length > 0 && (
+                    {documents.length > 0 && (
                       <div className="space-y-3">
                         <h4 className="font-medium text-gray-800 flex items-center">
                           <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                          Uploaded Files:
+                          Uploaded Documents:
                         </h4>
-                        {uploadedFiles.map((file, index) => (
-                          <div key={index} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                        {documents.map((doc, index) => (
+                          <div key={doc.id} className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
                             <div className="flex items-center space-x-3">
                               <FileText className="w-5 h-5 text-green-500" />
                               <div>
-                                <span className="text-gray-800 font-medium">{file.name}</span>
+                                <span className="text-gray-800 font-medium">{doc.filename}</span>
                                 <div className="text-xs text-gray-600">
-                                  {(file.size / 1024 / 1024).toFixed(2)} MB
+                                  {(doc.file_size / 1024 / 1024).toFixed(2)} MB
+                                  <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 rounded text-xs">
+                                    {doc.processing_status}
+                                  </span>
                                 </div>
                               </div>
                             </div>
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => removeFile(index)}
+                              onClick={() => deleteDocument(doc.id, doc.file_path)}
                               className="text-red-500 border-red-300 hover:bg-red-50"
+                              disabled={docsLoading}
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
                         ))}
-                        <Button className="w-full bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white">
-                          <Zap className="w-4 h-4 mr-2" />
+                        <Button 
+                          disabled={docsLoading}
+                          className="w-full bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white"
+                        >
+                          {docsLoading ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <Zap className="w-4 h-4 mr-2" />
+                          )}
                           Process Documents & Train AI
                         </Button>
                       </div>
@@ -534,42 +700,99 @@ const AiTraining = () => {
               <TabsContent value="api" className="space-y-6">
                 <Card className="bg-white/80 backdrop-blur-sm border border-indigo-200 shadow-lg">
                   <CardHeader>
-                    <CardTitle className="text-gray-800 flex items-center">
+                    <CardTitle className="bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent flex items-center">
                       <Globe className="w-5 h-5 mr-2 text-indigo-500" />
                       API Data Training
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {apiLoading && (
+                      <div className="flex items-center justify-center p-4">
+                        <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
+                        <span className="ml-2 text-gray-600">Testing API...</span>
+                      </div>
+                    )}
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-3">
-                        <Label className="text-gray-700">API Endpoint</Label>
+                        <Label className="text-gray-700 font-medium">API Endpoint</Label>
                         <Input
+                          value={apiEndpoint}
+                          onChange={(e) => setApiEndpoint(e.target.value)}
                           placeholder="https://api.example.com/data"
                           className="bg-white border-gray-300"
                         />
                       </div>
                       <div className="space-y-3">
-                        <Label className="text-gray-700">Authentication Method</Label>
-                        <select className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-800">
-                          <option>API Key</option>
-                          <option>Bearer Token</option>
-                          <option>Basic Auth</option>
-                          <option>OAuth 2.0</option>
+                        <Label className="text-gray-700 font-medium">HTTP Method</Label>
+                        <select 
+                          value={apiMethod}
+                          onChange={(e) => setApiMethod(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-800"
+                        >
+                          <option value="GET">GET</option>
+                          <option value="POST">POST</option>
+                          <option value="PUT">PUT</option>
+                          <option value="DELETE">DELETE</option>
                         </select>
                       </div>
                     </div>
                     <div className="space-y-3">
-                      <Label className="text-gray-700">API Key / Token</Label>
+                      <Label className="text-gray-700 font-medium">API Key / Token</Label>
                       <Input
                         type="password"
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
                         placeholder="Enter your API key..."
                         className="bg-white border-gray-300"
                       />
                     </div>
-                    <Button className="w-full bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white">
-                      <Globe className="w-4 h-4 mr-2" />
+                    <Button 
+                      onClick={handleApiTest}
+                      disabled={apiLoading || isTestingApi || !apiEndpoint.trim()}
+                      className="w-full bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white"
+                    >
+                      {isTestingApi ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Globe className="w-4 h-4 mr-2" />
+                      )}
                       Connect & Test API
                     </Button>
+                    
+                    {/* API Data List */}
+                    {apiData.length > 0 && (
+                      <div className="pt-4 border-t border-gray-200">
+                        <h4 className="font-medium text-gray-800 mb-3 flex items-center">
+                          <CheckCircle className="w-4 h-4 text-indigo-500 mr-2" />
+                          Connected APIs:
+                        </h4>
+                        <div className="space-y-2 max-h-60 overflow-y-auto">
+                          {apiData.map((api) => (
+                            <div key={api.id} className="flex items-center justify-between p-3 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg border border-indigo-200">
+                              <div className="flex items-center space-x-3">
+                                <Globe className="w-4 h-4 text-indigo-500" />
+                                <div>
+                                  <div className="text-sm font-medium text-gray-800 truncate max-w-40">{api.api_endpoint}</div>
+                                  <div className="text-xs text-gray-600">
+                                    {api.api_method} • {new Date(api.created_at).toLocaleDateString()}
+                                  </div>
+                                </div>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => deleteApiData(api.id)}
+                                className="text-red-500 border-red-300 hover:bg-red-50"
+                                disabled={apiLoading}
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -579,39 +802,81 @@ const AiTraining = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <Card className="bg-white/80 backdrop-blur-sm border border-purple-200 shadow-lg">
                     <CardHeader>
-                      <CardTitle className="text-gray-800 flex items-center">
+                      <CardTitle className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent flex items-center">
                         <Mic className="w-5 h-5 mr-2 text-purple-500" />
-                        Voice Input Recording
+                        Voice Recording & Upload
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                      <div className="text-center p-6 border border-gray-200 rounded-lg bg-white/50">
+                      {voiceLoading && (
+                        <div className="flex items-center justify-center p-4">
+                          <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
+                          <span className="ml-2 text-gray-600">Processing voice...</span>
+                        </div>
+                      )}
+                      
+                      {/* Recording Section */}
+                      <div className="text-center p-6 border border-gray-200 rounded-lg bg-gradient-to-r from-white/80 to-purple-50/50">
                         <Mic className={`w-16 h-16 mx-auto mb-4 ${isRecording ? 'text-red-500 animate-pulse' : 'text-purple-500'}`} />
                         <h3 className="text-lg font-medium text-gray-800 mb-2">
-                          {isRecording ? 'Recording...' : 'Record Your Voice'}
+                          {isRecording ? `Recording... ${formatDuration(recordingDuration)}` : 'Record Your Voice'}
                         </h3>
                         <p className="text-gray-600 mb-4 text-sm">
                           Speak clearly to train your AI assistant's voice responses
                         </p>
-                        <Button
-                          onClick={() => setIsRecording(!isRecording)}
-                          className={`${isRecording 
-                            ? 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600' 
-                            : 'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600'
-                          } text-white`}
-                        >
-                          {isRecording ? (
-                            <>
-                              <Pause className="w-4 h-4 mr-2" />
-                              Stop Recording
-                            </>
-                          ) : (
-                            <>
-                              <Play className="w-4 h-4 mr-2" />
-                              Start Recording
-                            </>
-                          )}
-                        </Button>
+                        <div className="flex gap-2 justify-center">
+                          <Button
+                            onClick={isRecording ? stopCurrentRecording : startNewRecording}
+                            disabled={voiceLoading}
+                            className={`${isRecording 
+                              ? 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600' 
+                              : 'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600'
+                            } text-white`}
+                          >
+                            {isRecording ? (
+                              <>
+                                <Pause className="w-4 h-4 mr-2" />
+                                Stop Recording
+                              </>
+                            ) : (
+                              <>
+                                <Play className="w-4 h-4 mr-2" />
+                                Start Recording
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {/* Voice Upload Section */}
+                      <div className="border-2 border-dashed border-purple-300 rounded-lg p-6 text-center bg-gradient-to-r from-white/80 to-pink-50/50">
+                        <Upload className="w-12 h-12 text-purple-400 mx-auto mb-4" />
+                        <p className="text-gray-600 mb-2 font-medium">
+                          Upload Voice Files
+                        </p>
+                        <p className="text-sm text-gray-500 mb-4">
+                          Supported formats: MP3, WAV, M4A (Max 25MB per file)
+                        </p>
+                        <Input
+                          type="file"
+                          multiple
+                          accept=".mp3,.wav,.m4a,.webm"
+                          onChange={handleVoiceFileUpload}
+                          className="hidden"
+                          id="voice-upload"
+                        />
+                        <Label htmlFor="voice-upload">
+                          <Button 
+                            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                            asChild
+                            disabled={voiceLoading}
+                          >
+                            <span>
+                              <Upload className="w-4 h-4 mr-2" />
+                              Choose Voice Files
+                            </span>
+                          </Button>
+                        </Label>
                       </div>
                       
                       <div className="space-y-4">
@@ -624,11 +889,11 @@ const AiTraining = () => {
                           <Progress value={75} className="h-2" />
                           <div className="flex items-center justify-between">
                             <span className="text-gray-600 text-sm">Quality</span>
-                            <Badge variant="outline" className="border-purple-400 text-purple-600">High</Badge>
+                            <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">High</Badge>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-gray-600 text-sm">Duration</span>
-                            <span className="text-gray-800 text-sm">0:00 / 5:00</span>
+                            <span className="text-gray-800 text-sm">{formatDuration(recordingDuration)} / 5:00</span>
                           </div>
                         </div>
                       </div>
@@ -637,40 +902,76 @@ const AiTraining = () => {
 
                   <Card className="bg-white/80 backdrop-blur-sm border border-pink-200 shadow-lg">
                     <CardHeader>
-                      <CardTitle className="text-gray-800">Voice Library</CardTitle>
+                      <CardTitle className="bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
+                        Voice Library & Recordings
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
+                      {/* Voice Type Selection */}
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="p-3 border border-gray-200 rounded-lg text-center cursor-pointer hover:bg-gray-50">
+                        <div className="p-3 border border-gray-200 rounded-lg text-center cursor-pointer hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all">
                           <Users className="w-6 h-6 text-blue-500 mx-auto mb-2" />
                           <div className="text-sm font-medium text-gray-800">Professional</div>
                           <div className="text-xs text-gray-600">Business tone</div>
                         </div>
-                        <div className="p-3 border border-gray-200 rounded-lg text-center cursor-pointer hover:bg-gray-50">
+                        <div className="p-3 border border-gray-200 rounded-lg text-center cursor-pointer hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 transition-all">
                           <MessageCircle className="w-6 h-6 text-green-500 mx-auto mb-2" />
                           <div className="text-sm font-medium text-gray-800">Casual</div>
                           <div className="text-xs text-gray-600">Friendly tone</div>
                         </div>
-                        <div className="p-3 border border-gray-200 rounded-lg text-center cursor-pointer hover:bg-gray-50">
+                        <div className="p-3 border border-gray-200 rounded-lg text-center cursor-pointer hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 transition-all">
                           <Brain className="w-6 h-6 text-purple-500 mx-auto mb-2" />
                           <div className="text-sm font-medium text-gray-800">Technical</div>
                           <div className="text-xs text-gray-600">Expert tone</div>
                         </div>
-                        <div className="p-3 border border-gray-200 rounded-lg text-center cursor-pointer hover:bg-gray-50">
+                        <div className="p-3 border border-gray-200 rounded-lg text-center cursor-pointer hover:bg-gradient-to-r hover:from-orange-50 hover:to-amber-50 transition-all">
                           <Plus className="w-6 h-6 text-orange-500 mx-auto mb-2" />
                           <div className="text-sm font-medium text-gray-800">Custom</div>
                           <div className="text-xs text-gray-600">Upload voice</div>
                         </div>
                       </div>
                       
+                      {/* Voice Recordings List */}
+                      {recordings.length > 0 && (
+                        <div className="pt-4 border-t border-gray-200">
+                          <h5 className="font-medium text-gray-800 mb-3">Your Recordings</h5>
+                          <div className="space-y-2 max-h-40 overflow-y-auto">
+                            {recordings.map((recording) => (
+                              <div key={recording.id} className="flex items-center justify-between p-2 bg-gradient-to-r from-purple-50 to-pink-50 rounded border border-purple-200">
+                                <div className="flex items-center space-x-2">
+                                  <Mic className="w-4 h-4 text-purple-500" />
+                                  <div>
+                                    <div className="text-sm font-medium text-gray-800">{recording.filename}</div>
+                                    {recording.transcription && (
+                                      <div className="text-xs text-gray-600 truncate max-w-32">
+                                        {recording.transcription}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => deleteRecording(recording.id, recording.file_path)}
+                                  className="text-red-500 border-red-300 hover:bg-red-50"
+                                  disabled={voiceLoading}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
                       <div className="pt-4 border-t border-gray-200">
                         <h5 className="font-medium text-gray-800 mb-3">Training Progress</h5>
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-600">Voice Samples</span>
-                            <span className="text-gray-800">0/10</span>
+                            <span className="text-gray-800">{recordings.length}/10</span>
                           </div>
-                          <Progress value={0} className="h-2" />
+                          <Progress value={(recordings.length / 10) * 100} className="h-2" />
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-600">Processing Time</span>
                             <span className="text-gray-800">~2 minutes</span>
