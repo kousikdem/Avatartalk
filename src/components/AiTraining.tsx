@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +15,7 @@ import { useTrainingDocuments } from '@/hooks/useTrainingDocuments';
 import { useQAPairs } from '@/hooks/useQAPairs';
 import { useApiTraining } from '@/hooks/useApiTraining';
 import { useVoiceCloning } from '@/hooks/useVoiceCloning';
+import { useVoiceRecordings } from '@/hooks/useVoiceRecordings';
 
 interface PersonalitySettings {
   formality: number;
@@ -61,7 +61,8 @@ const AiTraining = () => {
   const { documents, fetchDocuments } = useTrainingDocuments();
   const { qaPairs, fetchQAPairs } = useQAPairs();
   const { apiData, fetchApiData } = useApiTraining();
-  const { recordings, fetchRecordings, startVoiceCloning } = useVoiceCloning();
+  const { startVoiceCloning } = useVoiceCloning();
+  const { recordings, fetchRecordings } = useVoiceRecordings();
 
   // Auto-save functionality
   useEffect(() => {
