@@ -63,10 +63,24 @@ serve(async (req) => {
 
     const { action, voiceData = {}, voiceSettings = {}, cloningId } = requestBody;
 
-    console.log('Voice cloning request:', { action, cloningId });
+    console.log('Voice cloning request:', { action, cloningId, voiceData });
 
     switch (action) {
       case 'start_cloning':
+        // Validate required fields
+        if (!voiceData.originalPath) {
+          console.error('❌ Missing originalPath in voiceData:', voiceData);
+          return new Response(JSON.stringify({ 
+            error: 'Original voice path is required for cloning',
+            success: false 
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        console.log('📁 Creating voice cloning record with path:', voiceData.originalPath);
+        
         // Create voice cloning record
         const { data: newCloning, error: createError } = await supabase
           .from('voice_cloning')
@@ -79,7 +93,10 @@ serve(async (req) => {
           .select()
           .single();
 
-        if (createError) throw createError;
+        if (createError) {
+          console.error('❌ Database error creating voice cloning:', createError);
+          throw createError;
+        }
 
         // Advanced voice cloning with Coqui TTS
         console.log('Starting advanced Coqui TTS voice cloning process...');

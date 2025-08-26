@@ -254,6 +254,15 @@ const AiTraining = () => {
       return;
     }
 
+    if (!recordings[0].file_path) {
+      toast({
+        title: "Invalid Recording",
+        description: "The selected recording has no file path",
+        variant: "destructive"
+      });
+      return;
+    }
+
     console.log('🎤 Starting voice cloning process...', { 
       recordingsCount: recordings.length,
       firstRecording: recordings[0] 

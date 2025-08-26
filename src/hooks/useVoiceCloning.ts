@@ -26,6 +26,8 @@ export const useVoiceCloning = () => {
   ) => {
     setIsCloning(true);
     try {
+      console.log('🔧 Voice cloning hook called with:', { originalVoicePath, voiceSettings });
+      
       const response = await supabase.functions.invoke('voice-cloning', {
         body: {
           action: 'start_cloning',
@@ -34,7 +36,12 @@ export const useVoiceCloning = () => {
         }
       });
 
-      if (response.error) throw response.error;
+      console.log('📡 Voice cloning response:', response);
+
+      if (response.error) {
+        console.error('❌ Voice cloning function error:', response.error);
+        throw response.error;
+      }
       
       const { cloning } = response.data;
       setClonings(prev => [cloning, ...prev]);
@@ -50,7 +57,7 @@ export const useVoiceCloning = () => {
       console.error('Error starting voice cloning:', error);
       toast({
         title: "Error",
-        description: "Failed to start voice cloning",
+        description: `Failed to start voice cloning: ${error.message || 'Unknown error'}`,
         variant: "destructive"
       });
       throw error;
