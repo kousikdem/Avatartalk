@@ -9,6 +9,7 @@ interface VoiceRecording {
   file_path: string;
   duration?: number;
   transcription?: string;
+  processing_status?: string;
   created_at: string;
 }
 
@@ -137,7 +138,8 @@ export const useVoiceRecordings = () => {
           user_id: user.id,
           filename: `recording_${Date.now()}.webm`,
           file_path: uploadData.path,
-          duration: recordingDuration
+          duration: recordingDuration,
+          processing_status: 'pending'
         })
         .select()
         .single();
@@ -196,18 +198,32 @@ export const useVoiceRecordings = () => {
       // Update recording with transcription
       await supabase
         .from('voice_recordings')
-        .update({ transcription: data.text })
+        .update({ 
+          transcription: data.text,
+          processing_status: 'completed'
+        })
         .eq('id', recordingId);
       
       // Update local state
       setRecordings(prev => prev.map(rec => 
         rec.id === recordingId 
-          ? { ...rec, transcription: data.text }
+          ? { ...rec, transcription: data.text, processing_status: 'completed' }
           : rec
       ));
       
     } catch (error) {
       console.error('Error transcribing recording:', error);
+      // Update recording with error status
+      await supabase
+        .from('voice_recordings')
+        .update({ processing_status: 'error' })
+        .eq('id', recordingId);
+      
+      setRecordings(prev => prev.map(rec => 
+        rec.id === recordingId 
+          ? { ...rec, processing_status: 'error' }
+          : rec
+      ));
     }
   }, []);
 
@@ -234,7 +250,8 @@ export const useVoiceRecordings = () => {
           user_id: user.id,
           filename: file.name,
           file_path: uploadData.path,
-          duration: 0 // Will be updated after processing
+          duration: 0, // Will be updated after processing
+          processing_status: 'pending'
         })
         .select()
         .single();
