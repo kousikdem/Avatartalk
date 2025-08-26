@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -146,6 +147,8 @@ export const usePersonalizedAI = () => {
   const trainModel = useCallback(async (trainingId: string) => {
     setIsTraining(true);
     try {
+      console.log('🚀 Starting LlamaIndex → LLaMA 3 training pipeline...');
+      
       const response = await supabase.functions.invoke('personalized-ai-training', {
         body: {
           action: 'train_model',
@@ -153,22 +156,29 @@ export const usePersonalizedAI = () => {
         }
       });
 
-      if (response.error) throw response.error;
+      if (response.error) {
+        console.error('Training error:', response.error);
+        throw response.error;
+      }
+      
+      const result = response.data;
+      
+      console.log('✅ Training completed:', result);
       
       toast({
-        title: "Success",
-        description: "AI model training completed successfully"
+        title: "🎉 AI Training Complete!",
+        description: `LlamaIndex → LLaMA 3 model training completed successfully. Model ID: ${result.modelId}`,
       });
       
       // Refresh trainings to get updated status
       await fetchTrainings();
       
-      return response.data;
+      return result;
     } catch (error) {
       console.error('Error training model:', error);
       toast({
-        title: "Error",
-        description: "Failed to train AI model",
+        title: "❌ Training Failed",
+        description: error instanceof Error ? error.message : "Failed to train AI model with LlamaIndex",
         variant: "destructive"
       });
       throw error;
@@ -205,6 +215,8 @@ export const usePersonalizedAI = () => {
   const processDocuments = useCallback(async (documents: any[]) => {
     setIsLoading(true);
     try {
+      console.log('📚 Processing documents with LlamaIndex...');
+      
       const response = await supabase.functions.invoke('personalized-ai-training', {
         body: {
           action: 'process_documents',
@@ -214,11 +226,11 @@ export const usePersonalizedAI = () => {
 
       if (response.error) throw response.error;
       
-      const { processedDocuments } = response.data;
+      const { processedDocuments, llamaIndexMetrics } = response.data;
       
       toast({
-        title: "Success",
-        description: `${documents.length} documents processed for LLaMA 3 training`
+        title: "📄 Documents Processed",
+        description: `${documents.length} documents processed with LlamaIndex. Generated ${llamaIndexMetrics.chunksGenerated} chunks.`
       });
       
       return processedDocuments;
@@ -226,7 +238,7 @@ export const usePersonalizedAI = () => {
       console.error('Error processing documents:', error);
       toast({
         title: "Error",
-        description: "Failed to process documents",
+        description: "Failed to process documents with LlamaIndex",
         variant: "destructive"
       });
       throw error;
@@ -238,6 +250,8 @@ export const usePersonalizedAI = () => {
   const processQAPairs = useCallback(async (qaPairs: any[]) => {
     setIsLoading(true);
     try {
+      console.log('💬 Processing Q&A pairs for LLaMA 3...');
+      
       const response = await supabase.functions.invoke('personalized-ai-training', {
         body: {
           action: 'process_qa_pairs',
@@ -250,8 +264,8 @@ export const usePersonalizedAI = () => {
       const { processedQA } = response.data;
       
       toast({
-        title: "Success",
-        description: `${qaPairs.length} Q&A pairs processed for training`
+        title: "💭 Q&A Processed",
+        description: `${qaPairs.length} Q&A pairs formatted for LLaMA 3 training`
       });
       
       return processedQA;
