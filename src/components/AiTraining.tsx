@@ -1,5 +1,4 @@
-
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,11 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Brain, Mic, FileText, Database, Bot, Loader2, Play, Pause, CheckCircle, AlertCircle } from "lucide-react";
+import { Upload, Brain, Mic, FileText, Database, Bot, Loader2, Play, Pause, CheckCircle, AlertCircle, Plus, Trash2, Download, X } from "lucide-react";
 
 // Separate hooks for different functionalities
 import { usePersonalizedAI } from "@/hooks/usePersonalizedAI";
@@ -49,9 +47,37 @@ const AiTraining = () => {
   } = useVoiceCloning();
 
   // Training Data Hooks
-  const { documents, fetchDocuments } = useTrainingDocuments();
-  const { qaPairs, fetchQAPairs } = useQAPairs();
-  const { recordings, fetchRecordings } = useVoiceRecordings();
+  const { 
+    documents, 
+    isLoading: isDocumentsLoading,
+    uploadProgress: documentUploadProgress,
+    fetchDocuments, 
+    uploadDocument, 
+    deleteDocument 
+  } = useTrainingDocuments();
+  
+  const { 
+    qaPairs, 
+    isLoading: isQALoading,
+    fetchQAPairs, 
+    addQAPair, 
+    updateQAPair, 
+    deleteQAPair 
+  } = useQAPairs();
+  
+  const { 
+    recordings, 
+    isLoading: isRecordingsLoading,
+    isRecording,
+    recordingDuration,
+    fetchRecordings, 
+    startNewRecording, 
+    stopCurrentRecording, 
+    uploadVoiceFile, 
+    deleteRecording,
+    formatDuration 
+  } = useVoiceRecordings();
+  
   const { apiData, fetchApiData } = useApiTraining();
 
   // Local state for training configuration
@@ -75,6 +101,25 @@ const AiTraining = () => {
     temperature: 0.75,
     training_epochs: 100
   });
+
+  // Document upload state
+  const [selectedDocuments, setSelectedDocuments] = useState<FileList | null>(null);
+
+  // Q&A state
+  const [newQAPair, setNewQAPair] = useState({
+    question: '',
+    answer: '',
+    category: ''
+  });
+  const [editingQA, setEditingQA] = useState<string | null>(null);
+
+  // Load data on component mount
+  useEffect(() => {
+    fetchDocuments();
+    fetchQAPairs();
+    fetchRecordings();
+    fetchApiData();
+  }, []);
 
   // AI Training Function (separate from voice cloning)
   const handleAiTraining = useCallback(async () => {
@@ -188,274 +233,613 @@ const AiTraining = () => {
     }
   }, [selectedVoiceFile, voiceSettings, startVoiceCloning, toast]);
 
+  // Document upload function
+  const handleDocumentUpload = useCallback(async () => {
+    if (!selectedDocuments || selectedDocuments.length === 0) {
+      toast({
+        title: "No Files Selected",
+        description: "Please select documents to upload",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const uploadPromises = Array.from(selectedDocuments).map(file => uploadDocument(file));
+      await Promise.all(uploadPromises);
+      
+      setSelectedDocuments(null);
+      // Reset the file input
+      const fileInput = document.getElementById('document-upload') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
+      
+      toast({
+        title: "Documents Uploaded",
+        description: `Successfully uploaded ${selectedDocuments.length} document(s)`,
+      });
+    } catch (error) {
+      console.error('Document upload failed:', error);
+    }
+  }, [selectedDocuments, uploadDocument, toast]);
+
+  // Q&A functions
+  const handleAddQAPair = useCallback(async () => {
+    if (!newQAPair.question.trim() || !newQAPair.answer.trim()) {
+      toast({
+        title: "Invalid Q&A Pair",
+        description: "Both question and answer are required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await addQAPair(newQAPair);
+      setNewQAPair({ question: '', answer: '', category: '' });
+      
+      toast({
+        title: "Q&A Added",
+        description: "Successfully added new Q&A pair",
+      });
+    } catch (error) {
+      console.error('Failed to add Q&A pair:', error);
+    }
+  }, [newQAPair, addQAPair, toast]);
+
+  // Voice recording functions
+  const handleStartRecording = useCallback(async () => {
+    try {
+      await startNewRecording();
+    } catch (error) {
+      console.error('Failed to start recording:', error);
+    }
+  }, [startNewRecording]);
+
+  const handleStopRecording = useCallback(async () => {
+    try {
+      await stopCurrentRecording();
+    } catch (error) {
+      console.error('Failed to stop recording:', error);
+    }
+  }, [stopCurrentRecording]);
+
+  // Voice file upload
+  const handleVoiceFileUpload = useCallback(async (file: File) => {
+    try {
+      await uploadVoiceFile(file);
+      toast({
+        title: "Voice File Uploaded",
+        description: "Successfully uploaded voice file for cloning",
+      });
+    } catch (error) {
+      console.error('Voice file upload failed:', error);
+    }
+  }, [uploadVoiceFile, toast]);
+
   // Get training status badge
   const getTrainingStatusBadge = () => {
     switch (aiTrainingStatus) {
       case 'processing':
-        return <Badge variant="default" className="bg-blue-500"><Loader2 className="w-3 h-3 mr-1 animate-spin" />Training</Badge>;
+        return <Badge className="bg-gradient-to-r from-blue-500 to-purple-600 text-white"><Loader2 className="w-3 h-3 mr-1 animate-spin" />Training</Badge>;
       case 'completed':
-        return <Badge variant="default" className="bg-green-500"><CheckCircle className="w-3 h-3 mr-1" />Completed</Badge>;
+        return <Badge className="bg-gradient-to-r from-green-500 to-emerald-600 text-white"><CheckCircle className="w-3 h-3 mr-1" />Completed</Badge>;
       case 'error':
-        return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1" />Error</Badge>;
+        return <Badge className="bg-gradient-to-r from-red-500 to-pink-600 text-white"><AlertCircle className="w-3 h-3 mr-1" />Error</Badge>;
       default:
-        return <Badge variant="outline">Ready</Badge>;
+        return <Badge className="bg-gradient-to-r from-gray-500 to-slate-600 text-white border-0">Ready</Badge>;
     }
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold mb-2">AI Training & Voice Cloning</h1>
-        <p className="text-muted-foreground">
-          Train your personalized AI with LlamaIndex → LLaMA 3 pipeline and clone voices with Coqui TTS
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-6">
+      <div className="container mx-auto space-y-6">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+            AI Training & Voice Cloning
+          </h1>
+          <p className="text-gray-600">
+            Train your personalized AI with LlamaIndex → LLaMA 3 pipeline and clone voices with Coqui TTS
+          </p>
+        </div>
 
-      <Tabs defaultValue="ai-training" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="ai-training" className="flex items-center gap-2">
-            <Brain className="w-4 h-4" />
-            AI Training
-          </TabsTrigger>
-          <TabsTrigger value="voice-cloning" className="flex items-center gap-2">
-            <Mic className="w-4 h-4" />
-            Voice Cloning
-          </TabsTrigger>
-        </TabsList>
+        <Tabs defaultValue="ai-training" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 bg-white shadow-lg border-0">
+            <TabsTrigger 
+              value="ai-training" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white"
+            >
+              <Brain className="w-4 h-4" />
+              AI Training
+            </TabsTrigger>
+            <TabsTrigger 
+              value="voice-cloning" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-600 data-[state=active]:text-white"
+            >
+              <Mic className="w-4 h-4" />
+              Voice Cloning
+            </TabsTrigger>
+          </TabsList>
 
-        {/* AI Training Tab */}
-        <TabsContent value="ai-training" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Brain className="w-5 h-5" />
-                AI Model Training
-                {getTrainingStatusBadge()}
-              </CardTitle>
-              <CardDescription>
-                Train your personalized AI using Q&A pairs, documents, and API data through LlamaIndex → LLaMA 3 pipeline
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="training-name">Training Name</Label>
+          {/* AI Training Tab */}
+          <TabsContent value="ai-training" className="space-y-6">
+            {/* Documents Section */}
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-blue-600" />
+                  Training Documents
+                </CardTitle>
+                <CardDescription>
+                  Upload documents (PDF, TXT, DOC, etc.) for AI training
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-4">
                   <Input
-                    id="training-name"
-                    placeholder="My Personalized AI"
-                    value={trainingName}
-                    onChange={(e) => setTrainingName(e.target.value)}
-                    disabled={aiTrainingStatus === 'processing'}
+                    id="document-upload"
+                    type="file"
+                    multiple
+                    accept=".pdf,.txt,.doc,.docx,.md,.csv"
+                    onChange={(e) => setSelectedDocuments(e.target.files)}
+                    className="flex-1"
                   />
+                  <Button
+                    onClick={handleDocumentUpload}
+                    disabled={!selectedDocuments || isDocumentsLoading}
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0"
+                  >
+                    {isDocumentsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                    Upload
+                  </Button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <FileText className="w-4 h-4" />
-                      <span className="font-medium">Documents</span>
-                    </div>
-                    <p className="text-2xl font-bold">{documents?.length || 0}</p>
-                  </Card>
-                  
-                  <Card className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Bot className="w-4 h-4" />
-                      <span className="font-medium">Q&A Pairs</span>
-                    </div>
-                    <p className="text-2xl font-bold">{qaPairs?.length || 0}</p>
-                  </Card>
-                  
-                  <Card className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Database className="w-4 h-4" />
-                      <span className="font-medium">API Data</span>
-                    </div>
-                    <p className="text-2xl font-bold">{apiData?.length || 0}</p>
-                  </Card>
-                </div>
-
-                {/* Personality Settings */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Personality Configuration</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label>Formality: {personalitySettings.formality}%</Label>
-                      <Slider
-                        value={[personalitySettings.formality]}
-                        onValueChange={([value]) => setPersonalitySettings(prev => ({ ...prev, formality: value }))}
-                        max={100}
-                        step={1}
-                        disabled={aiTrainingStatus === 'processing'}
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label>Verbosity: {personalitySettings.verbosity}%</Label>
-                      <Slider
-                        value={[personalitySettings.verbosity]}
-                        onValueChange={([value]) => setPersonalitySettings(prev => ({ ...prev, verbosity: value }))}
-                        max={100}
-                        step={1}
-                        disabled={aiTrainingStatus === 'processing'}
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label>Friendliness: {personalitySettings.friendliness}%</Label>
-                      <Slider
-                        value={[personalitySettings.friendliness]}
-                        onValueChange={([value]) => setPersonalitySettings(prev => ({ ...prev, friendliness: value }))}
-                        max={100}
-                        step={1}
-                        disabled={aiTrainingStatus === 'processing'}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="behavior-learning"
-                      checked={personalitySettings.behavior_learning}
-                      onCheckedChange={(checked) => setPersonalitySettings(prev => ({ ...prev, behavior_learning: checked }))}
-                      disabled={aiTrainingStatus === 'processing'}
-                    />
-                    <Label htmlFor="behavior-learning">Enable Behavior Learning</Label>
-                  </div>
-                </div>
-
-                {/* AI Training Progress */}
-                {aiTrainingStatus === 'processing' && (
+                {documentUploadProgress > 0 && (
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span>Training Progress</span>
-                      <span>{aiTrainingProgress}%</span>
+                      <span>Upload Progress</span>
+                      <span>{documentUploadProgress}%</span>
                     </div>
-                    <Progress value={aiTrainingProgress} className="w-full" />
-                    <p className="text-sm text-muted-foreground">
-                      Processing through LlamaIndex → LLaMA 3 pipeline...
-                    </p>
+                    <Progress value={documentUploadProgress} className="w-full" />
                   </div>
                 )}
 
-                {/* Train AI Button with integrated progress */}
-                <Button
-                  onClick={handleAiTraining}
-                  disabled={aiTrainingStatus === 'processing' || !trainingName.trim()}
-                  className="w-full relative"
-                  size="lg"
-                >
-                  {aiTrainingStatus === 'processing' ? (
-                    <>
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Training AI ({aiTrainingProgress}%)
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {documents?.map((doc) => (
+                    <Card key={doc.id} className="p-4 bg-gradient-to-br from-white to-blue-50 border border-blue-200">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="font-medium text-sm truncate">{doc.filename}</p>
+                          <p className="text-xs text-gray-500">{(doc.file_size / 1024).toFixed(1)} KB</p>
+                          <Badge className={`text-xs ${
+                            doc.processing_status === 'completed' 
+                              ? 'bg-green-100 text-green-800' 
+                              : doc.processing_status === 'pending'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {doc.processing_status}
+                          </Badge>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteDocument(doc.id, doc.file_path)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
-                      <div 
-                        className="absolute left-0 top-0 h-full bg-blue-600/20 transition-all duration-300"
-                        style={{ width: `${aiTrainingProgress}%` }}
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <Brain className="w-4 h-4 mr-2" />
-                      Train AI
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Voice Cloning Tab */}
-        <TabsContent value="voice-cloning" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Mic className="w-5 h-5" />
-                Voice Cloning
-                <Badge variant={isCloning ? "default" : "outline"}>
-                  {isCloning ? "Cloning..." : "Ready"}
-                </Badge>
-              </CardTitle>
-              <CardDescription>
-                Clone voices using advanced Coqui TTS technology
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="voice-file">Voice File</Label>
+            {/* Q&A Section */}
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bot className="w-5 h-5 text-purple-600" />
+                  Q&A Training Data
+                </CardTitle>
+                <CardDescription>
+                  Add question-answer pairs for AI training
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="question">Question</Label>
+                    <Textarea
+                      id="question"
+                      placeholder="Enter your question..."
+                      value={newQAPair.question}
+                      onChange={(e) => setNewQAPair(prev => ({ ...prev, question: e.target.value }))}
+                      className="min-h-[100px]"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="answer">Answer</Label>
+                    <Textarea
+                      id="answer"
+                      placeholder="Enter the answer..."
+                      value={newQAPair.answer}
+                      onChange={(e) => setNewQAPair(prev => ({ ...prev, answer: e.target.value }))}
+                      className="min-h-[100px]"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-4">
                   <Input
-                    id="voice-file"
+                    placeholder="Category (optional)"
+                    value={newQAPair.category}
+                    onChange={(e) => setNewQAPair(prev => ({ ...prev, category: e.target.value }))}
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={handleAddQAPair}
+                    disabled={isQALoading}
+                    className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white border-0"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Q&A
+                  </Button>
+                </div>
+
+                <div className="space-y-3">
+                  {qaPairs?.map((qa) => (
+                    <Card key={qa.id} className="p-4 bg-gradient-to-br from-white to-purple-50 border border-purple-200">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <p className="font-medium text-sm mb-1">{qa.question}</p>
+                          <p className="text-sm text-gray-600 mb-2">{qa.answer}</p>
+                          {qa.category && (
+                            <Badge className="text-xs bg-purple-100 text-purple-800">{qa.category}</Badge>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteQAPair(qa.id)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* AI Model Training */}
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Brain className="w-5 h-5 text-blue-600" />
+                  AI Model Training
+                  {getTrainingStatusBadge()}
+                </CardTitle>
+                <CardDescription>
+                  Train your personalized AI using Q&A pairs, documents, and API data through LlamaIndex → LLaMA 3 pipeline
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="training-name">Training Name</Label>
+                    <Input
+                      id="training-name"
+                      placeholder="My Personalized AI"
+                      value={trainingName}
+                      onChange={(e) => setTrainingName(e.target.value)}
+                      disabled={aiTrainingStatus === 'processing'}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FileText className="w-4 h-4 text-blue-600" />
+                        <span className="font-medium">Documents</span>
+                      </div>
+                      <p className="text-2xl font-bold text-blue-700">{documents?.length || 0}</p>
+                    </Card>
+                    
+                    <Card className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Bot className="w-4 h-4 text-purple-600" />
+                        <span className="font-medium">Q&A Pairs</span>
+                      </div>
+                      <p className="text-2xl font-bold text-purple-700">{qaPairs?.length || 0}</p>
+                    </Card>
+                    
+                    <Card className="p-4 bg-gradient-to-br from-pink-50 to-pink-100 border border-pink-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Database className="w-4 h-4 text-pink-600" />
+                        <span className="font-medium">API Data</span>
+                      </div>
+                      <p className="text-2xl font-bold text-pink-700">{apiData?.length || 0}</p>
+                    </Card>
+                  </div>
+
+                  {/* Personality Settings */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Personality Configuration</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label>Formality: {personalitySettings.formality}%</Label>
+                        <Slider
+                          value={[personalitySettings.formality]}
+                          onValueChange={([value]) => setPersonalitySettings(prev => ({ ...prev, formality: value }))}
+                          max={100}
+                          step={1}
+                          disabled={aiTrainingStatus === 'processing'}
+                          className="mt-2"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label>Verbosity: {personalitySettings.verbosity}%</Label>
+                        <Slider
+                          value={[personalitySettings.verbosity]}
+                          onValueChange={([value]) => setPersonalitySettings(prev => ({ ...prev, verbosity: value }))}
+                          max={100}
+                          step={1}
+                          disabled={aiTrainingStatus === 'processing'}
+                          className="mt-2"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label>Friendliness: {personalitySettings.friendliness}%</Label>
+                        <Slider
+                          value={[personalitySettings.friendliness]}
+                          onValueChange={([value]) => setPersonalitySettings(prev => ({ ...prev, friendliness: value }))}
+                          max={100}
+                          step={1}
+                          disabled={aiTrainingStatus === 'processing'}
+                          className="mt-2"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="behavior-learning"
+                        checked={personalitySettings.behavior_learning}
+                        onCheckedChange={(checked) => setPersonalitySettings(prev => ({ ...prev, behavior_learning: checked }))}
+                        disabled={aiTrainingStatus === 'processing'}
+                      />
+                      <Label htmlFor="behavior-learning">Enable Behavior Learning</Label>
+                    </div>
+                  </div>
+
+                  {/* AI Training Progress */}
+                  {aiTrainingStatus === 'processing' && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Training Progress</span>
+                        <span>{aiTrainingProgress}%</span>
+                      </div>
+                      <Progress value={aiTrainingProgress} className="w-full" />
+                      <p className="text-sm text-muted-foreground">
+                        Processing through LlamaIndex → LLaMA 3 pipeline...
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Train AI Button with integrated progress */}
+                  <Button
+                    onClick={handleAiTraining}
+                    disabled={aiTrainingStatus === 'processing' || !trainingName.trim()}
+                    className="w-full relative bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0"
+                    size="lg"
+                  >
+                    {aiTrainingStatus === 'processing' ? (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Training AI ({aiTrainingProgress}%)
+                        </div>
+                        <div 
+                          className="absolute left-0 top-0 h-full bg-blue-600/20 transition-all duration-300 rounded"
+                          style={{ width: `${aiTrainingProgress}%` }}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <Brain className="w-4 h-4 mr-2" />
+                        Train AI
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Voice Cloning Tab */}
+          <TabsContent value="voice-cloning" className="space-y-6">
+            {/* Voice Recording Section */}
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Mic className="w-5 h-5 text-purple-600" />
+                  Voice Recording
+                  <Badge variant={isRecording ? "default" : "outline"} className={
+                    isRecording 
+                      ? "bg-gradient-to-r from-red-500 to-pink-600 text-white" 
+                      : "bg-gradient-to-r from-gray-500 to-slate-600 text-white border-0"
+                  }>
+                    {isRecording ? "Recording..." : "Ready"}
+                  </Badge>
+                </CardTitle>
+                <CardDescription>
+                  Record your voice for cloning or upload audio files
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-4 items-center">
+                  <Button
+                    onClick={isRecording ? handleStopRecording : handleStartRecording}
+                    disabled={isRecordingsLoading}
+                    className={`flex-1 ${
+                      isRecording 
+                        ? 'bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700' 
+                        : 'bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700'
+                    } text-white border-0`}
+                  >
+                    {isRecording ? (
+                      <>
+                        <Pause className="w-4 h-4 mr-2" />
+                        Stop Recording ({formatDuration(recordingDuration)})
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-4 h-4 mr-2" />
+                        Start Recording
+                      </>
+                    )}
+                  </Button>
+
+                  <Input
                     type="file"
                     accept="audio/*"
-                    onChange={(e) => setSelectedVoiceFile(e.target.files?.[0] || null)}
-                    disabled={isCloning}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        handleVoiceFileUpload(file);
+                      }
+                    }}
+                    className="flex-1"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="language">Language</Label>
-                    <Input
-                      id="language"
-                      value={voiceSettings.language}
-                      onChange={(e) => setVoiceSettings(prev => ({ ...prev, language: e.target.value }))}
-                      disabled={isCloning}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label>Temperature: {voiceSettings.temperature}</Label>
-                    <Slider
-                      value={[voiceSettings.temperature]}
-                      onValueChange={([value]) => setVoiceSettings(prev => ({ ...prev, temperature: value }))}
-                      max={1}
-                      min={0}
-                      step={0.1}
-                      disabled={isCloning}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label>Training Epochs: {voiceSettings.training_epochs}</Label>
-                    <Slider
-                      value={[voiceSettings.training_epochs]}
-                      onValueChange={([value]) => setVoiceSettings(prev => ({ ...prev, training_epochs: value }))}
-                      max={200}
-                      min={50}
-                      step={10}
-                      disabled={isCloning}
-                    />
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {recordings?.map((recording) => (
+                    <Card key={recording.id} className="p-4 bg-gradient-to-br from-white to-purple-50 border border-purple-200">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="font-medium text-sm truncate">{recording.filename}</p>
+                          <p className="text-xs text-gray-500">
+                            {recording.duration ? formatDuration(recording.duration) : 'Unknown duration'}
+                          </p>
+                          {recording.transcription && (
+                            <p className="text-xs text-gray-600 mt-1 truncate" title={recording.transcription}>
+                              {recording.transcription}
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteRecording(recording.id, recording.file_path)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
                 </div>
+              </CardContent>
+            </Card>
 
-                <Button
-                  onClick={handleVoiceCloning}
-                  disabled={isCloning || !selectedVoiceFile}
-                  className="w-full"
-                  size="lg"
-                >
-                  {isCloning ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Cloning Voice...
-                    </>
-                  ) : (
-                    <>
-                      <Mic className="w-4 h-4 mr-2" />
-                      Clone Voice
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            {/* Voice Cloning Settings */}
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Mic className="w-5 h-5 text-pink-600" />
+                  Voice Cloning
+                  <Badge variant={isCloning ? "default" : "outline"} className={
+                    isCloning 
+                      ? "bg-gradient-to-r from-purple-500 to-pink-600 text-white" 
+                      : "bg-gradient-to-r from-gray-500 to-slate-600 text-white border-0"
+                  }>
+                    {isCloning ? "Cloning..." : "Ready"}
+                  </Badge>
+                </CardTitle>
+                <CardDescription>
+                  Clone voices using advanced Coqui TTS technology
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="voice-file">Voice File</Label>
+                    <Input
+                      id="voice-file"
+                      type="file"
+                      accept="audio/*"
+                      onChange={(e) => setSelectedVoiceFile(e.target.files?.[0] || null)}
+                      disabled={isCloning}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="language">Language</Label>
+                      <Input
+                        id="language"
+                        value={voiceSettings.language}
+                        onChange={(e) => setVoiceSettings(prev => ({ ...prev, language: e.target.value }))}
+                        disabled={isCloning}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label>Temperature: {voiceSettings.temperature}</Label>
+                      <Slider
+                        value={[voiceSettings.temperature]}
+                        onValueChange={([value]) => setVoiceSettings(prev => ({ ...prev, temperature: value }))}
+                        max={1}
+                        min={0}
+                        step={0.1}
+                        disabled={isCloning}
+                        className="mt-2"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label>Training Epochs: {voiceSettings.training_epochs}</Label>
+                      <Slider
+                        value={[voiceSettings.training_epochs]}
+                        onValueChange={([value]) => setVoiceSettings(prev => ({ ...prev, training_epochs: value }))}
+                        max={200}
+                        min={50}
+                        step={10}
+                        disabled={isCloning}
+                        className="mt-2"
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={handleVoiceCloning}
+                    disabled={isCloning || !selectedVoiceFile}
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white border-0"
+                    size="lg"
+                  >
+                    {isCloning ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Cloning Voice...
+                      </>
+                    ) : (
+                      <>
+                        <Mic className="w-4 h-4 mr-2" />
+                        Clone Voice
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
