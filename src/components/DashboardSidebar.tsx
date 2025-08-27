@@ -60,10 +60,10 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
 
   return (
     <Sidebar 
-      className="border-r border-slate-200/40 bg-gradient-to-b from-white/95 via-blue-50/30 to-purple-50/20 backdrop-blur-lg shadow-sm"
+      className="border-r border-gray-200 bg-white shadow-sm"
       collapsible="icon"
     >
-      <SidebarHeader className="p-4 border-b border-slate-200/30 bg-gradient-to-r from-white/90 to-blue-50/50">
+      <SidebarHeader className="p-4 border-b border-gray-200 bg-white">
         <div 
           className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all duration-300"
           onClick={handleLogoClick}
@@ -74,13 +74,13 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
           {!isCollapsed && (
             <div className="min-w-0 flex-1">
               <h2 className="font-semibold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent truncate text-sm md:text-base">AvatarTalk.bio</h2>
-              <p className="text-xs text-slate-500 truncate">Dashboard</p>
+              <p className="text-xs text-gray-500 truncate">Dashboard</p>
             </div>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="p-2 bg-gradient-to-b from-white/80 via-blue-50/20 to-purple-50/10">
+      <SidebarContent className="p-2 bg-white">
         <SidebarGroup>
           <SidebarGroupContent>
             <div className="mb-4">
@@ -101,7 +101,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
-                    className="bg-gradient-to-r from-white/90 via-blue-50/40 to-purple-50/30 hover:from-blue-100/60 hover:via-purple-50/50 hover:to-pink-50/40 text-slate-700 hover:text-slate-900 w-full transition-all duration-300 rounded-lg border border-slate-200/40 hover:border-slate-300/60 shadow-sm hover:shadow-md backdrop-blur-sm"
+                    className="bg-gradient-to-r from-white to-gray-50 hover:from-blue-50 hover:to-purple-50 text-gray-700 hover:text-gray-900 w-full transition-all duration-300 rounded-lg border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md backdrop-blur-sm"
                     tooltip={isCollapsed ? item.title : undefined}
                   >
                     <a 
@@ -111,9 +111,9 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
                       }`}
                       onClick={handleMenuItemClick}
                     >
-                      <item.icon className="w-5 h-5 flex-shrink-0 text-slate-600" />
+                      <item.icon className="w-5 h-5 flex-shrink-0 text-gray-600" />
                       {!isCollapsed && (
-                        <span className="truncate text-sm md:text-base font-medium text-slate-700">{item.title}</span>
+                        <span className="truncate text-sm md:text-base font-medium text-gray-700">{item.title}</span>
                       )}
                     </a>
                   </SidebarMenuButton>
