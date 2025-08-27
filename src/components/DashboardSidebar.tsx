@@ -49,12 +49,10 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
   const isMobile = useIsMobile();
 
   const handleLogoClick = () => {
-    // For logged-in users, navigate to dashboard
     window.location.href = '/dashboard';
   };
 
   const handleMenuItemClick = () => {
-    // Close sidebar on mobile after clicking a menu item
     if (isMobile) {
       setOpen(false);
     }
@@ -62,33 +60,33 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
 
   return (
     <Sidebar 
-      className="border-r border-slate-200/40 sidebar-light backdrop-blur-lg shadow-sm"
+      className="border-r border-slate-200/40 bg-gradient-to-b from-white/95 via-blue-50/30 to-purple-50/20 backdrop-blur-lg shadow-sm"
       collapsible="icon"
     >
-      <SidebarHeader className="p-4 border-b border-slate-200/30 light-gradient-bg">
+      <SidebarHeader className="p-4 border-b border-slate-200/30 bg-gradient-to-r from-white/90 to-blue-50/50">
         <div 
           className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all duration-300"
           onClick={handleLogoClick}
         >
-          <div className="w-8 h-8 bg-gradient-to-r from-blue-500/80 via-purple-500/80 to-indigo-500/80 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg">
+          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg">
             <span className="text-white font-bold text-sm">A</span>
           </div>
           {!isCollapsed && (
             <div className="min-w-0 flex-1">
-              <h2 className="font-semibold bg-gradient-to-r from-slate-600 to-slate-800 bg-clip-text text-transparent truncate text-sm md:text-base">AvatarTalk.bio</h2>
+              <h2 className="font-semibold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent truncate text-sm md:text-base">AvatarTalk.bio</h2>
               <p className="text-xs text-slate-500 truncate">Dashboard</p>
             </div>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="p-2 sidebar-light">
+      <SidebarContent className="p-2 bg-gradient-to-b from-white/80 via-blue-50/20 to-purple-50/10">
         <SidebarGroup>
           <SidebarGroupContent>
             <div className="mb-4">
               <Button
                 onClick={onCreatePost}
-                className={`w-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 bg-gradient-to-r from-blue-500/90 to-purple-500/90 hover:from-blue-600 hover:to-purple-600 text-white ${
+                className={`w-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white ${
                   isCollapsed ? 'px-2 py-2' : 'px-4 py-2'
                 }`}
                 size={isCollapsed ? "icon" : "default"}
@@ -103,7 +101,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
-                    className="bg-gradient-to-r from-white via-slate-50/60 to-gray-50/80 hover:from-slate-100/80 hover:via-gray-50/70 hover:to-slate-100/60 text-slate-700 hover:text-slate-900 w-full transition-all duration-300 rounded-lg border border-slate-200/40 hover:border-slate-300/60 shadow-sm hover:shadow-md backdrop-blur-sm"
+                    className="bg-gradient-to-r from-white/90 via-blue-50/40 to-purple-50/30 hover:from-blue-100/60 hover:via-purple-50/50 hover:to-pink-50/40 text-slate-700 hover:text-slate-900 w-full transition-all duration-300 rounded-lg border border-slate-200/40 hover:border-slate-300/60 shadow-sm hover:shadow-md backdrop-blur-sm"
                     tooltip={isCollapsed ? item.title : undefined}
                   >
                     <a 

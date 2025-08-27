@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -349,7 +348,7 @@ const AiTraining = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 p-6">
       <div className="container mx-auto space-y-6">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
@@ -361,17 +360,17 @@ const AiTraining = () => {
         </div>
 
         <Tabs defaultValue="ai-training" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-white/70 backdrop-blur-sm shadow-lg border border-slate-200/50">
+          <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-white/90 via-blue-50 to-purple-50 backdrop-blur-sm shadow-lg border border-slate-200/50">
             <TabsTrigger 
               value="ai-training" 
-              className="flex items-center gap-2 text-slate-700 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-100 data-[state=active]:to-purple-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-md hover:bg-slate-100/50 transition-all"
+              className="flex items-center gap-2 text-slate-700 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-100/80 data-[state=active]:to-purple-100/80 data-[state=active]:text-slate-900 data-[state=active]:shadow-md hover:bg-slate-100/50 transition-all font-medium"
             >
               <Brain className="w-4 h-4" />
               AI Training
             </TabsTrigger>
             <TabsTrigger 
               value="voice-cloning" 
-              className="flex items-center gap-2 text-slate-700 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-100 data-[state=active]:to-pink-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-md hover:bg-slate-100/50 transition-all"
+              className="flex items-center gap-2 text-slate-700 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-100/80 data-[state=active]:to-pink-100/80 data-[state=active]:text-slate-900 data-[state=active]:shadow-md hover:bg-slate-100/50 transition-all font-medium"
             >
               <Mic className="w-4 h-4" />
               Voice Cloning
@@ -381,7 +380,7 @@ const AiTraining = () => {
           {/* AI Training Tab */}
           <TabsContent value="ai-training" className="space-y-6">
             {/* Documents Section */}
-            <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/50 shadow-xl">
+            <Card className="bg-gradient-to-br from-white/90 to-blue-50/50 backdrop-blur-sm border border-slate-200/50 shadow-xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-slate-800">
                   <FileText className="w-5 h-5 text-blue-600" />
@@ -399,7 +398,7 @@ const AiTraining = () => {
                     multiple
                     accept=".pdf,.txt,.doc,.docx,.md,.csv"
                     onChange={(e) => setSelectedDocuments(e.target.files)}
-                    className="flex-1 border-slate-200 focus:border-blue-300"
+                    className="flex-1 bg-white text-slate-900 placeholder:text-slate-500 border-slate-200 focus:border-blue-300"
                   />
                   <Button
                     onClick={handleDocumentUpload}
@@ -454,7 +453,7 @@ const AiTraining = () => {
             </Card>
 
             {/* Q&A Section */}
-            <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/50 shadow-xl">
+            <Card className="bg-gradient-to-br from-white/90 to-purple-50/50 backdrop-blur-sm border border-slate-200/50 shadow-xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-slate-800">
                   <Bot className="w-5 h-5 text-purple-600" />
@@ -473,7 +472,7 @@ const AiTraining = () => {
                       placeholder="Enter your question..."
                       value={newQAPair.question}
                       onChange={(e) => setNewQAPair(prev => ({ ...prev, question: e.target.value }))}
-                      className="min-h-[100px] border-slate-200 focus:border-purple-300"
+                      className="min-h-[100px] bg-white text-slate-900 placeholder:text-slate-500 border-slate-200 focus:border-purple-300"
                     />
                   </div>
                   <div>
@@ -483,7 +482,7 @@ const AiTraining = () => {
                       placeholder="Enter the answer..."
                       value={newQAPair.answer}
                       onChange={(e) => setNewQAPair(prev => ({ ...prev, answer: e.target.value }))}
-                      className="min-h-[100px] border-slate-200 focus:border-purple-300"
+                      className="min-h-[100px] bg-white text-slate-900 placeholder:text-slate-500 border-slate-200 focus:border-purple-300"
                     />
                   </div>
                 </div>
@@ -492,7 +491,7 @@ const AiTraining = () => {
                     placeholder="Category (optional)"
                     value={newQAPair.category}
                     onChange={(e) => setNewQAPair(prev => ({ ...prev, category: e.target.value }))}
-                    className="flex-1 border-slate-200 focus:border-purple-300"
+                    className="flex-1 bg-white text-slate-900 placeholder:text-slate-500 border-slate-200 focus:border-purple-300"
                   />
                   <Button
                     onClick={handleAddQAPair}
@@ -531,7 +530,7 @@ const AiTraining = () => {
             </Card>
 
             {/* AI Model Training */}
-            <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/50 shadow-xl">
+            <Card className="bg-gradient-to-br from-white/90 to-blue-50/50 backdrop-blur-sm border border-slate-200/50 shadow-xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-slate-800">
                   <Brain className="w-5 h-5 text-blue-600" />
@@ -552,7 +551,7 @@ const AiTraining = () => {
                       value={trainingName}
                       onChange={(e) => setTrainingName(e.target.value)}
                       disabled={aiTrainingStatus === 'processing'}
-                      className="border-slate-200 focus:border-blue-300"
+                      className="bg-white text-slate-900 placeholder:text-slate-500 border-slate-200 focus:border-blue-300"
                     />
                   </div>
 
@@ -681,12 +680,12 @@ const AiTraining = () => {
 
           {/* Voice Cloning Tab */}
           <TabsContent value="voice-cloning" className="space-y-6">
-            {/* Voice Recording Section */}
-            <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/50 shadow-xl">
+            {/* Voice File Upload & Recording Section */}
+            <Card className="bg-gradient-to-br from-white/90 to-purple-50/50 backdrop-blur-sm border border-slate-200/50 shadow-xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-slate-800">
                   <Mic className="w-5 h-5 text-purple-600" />
-                  Voice Recording
+                  Voice Upload & Recording
                   <Badge variant={isRecording ? "default" : "outline"} className={
                     isRecording 
                       ? "bg-red-500/10 text-red-700 border-red-200" 
@@ -696,44 +695,54 @@ const AiTraining = () => {
                   </Badge>
                 </CardTitle>
                 <CardDescription className="text-slate-600">
-                  Record your voice for cloning or upload audio files
+                  Upload voice files or record your voice for cloning
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex gap-4 items-center">
-                  <Button
-                    onClick={isRecording ? handleStopRecording : handleStartRecording}
-                    disabled={isRecordingsLoading}
-                    className={`flex-1 ${
-                      isRecording 
-                        ? 'bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700' 
-                        : 'bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700'
-                    } text-white border-0 shadow-md`}
-                  >
-                    {isRecording ? (
-                      <>
-                        <Pause className="w-4 h-4 mr-2" />
-                        Stop Recording ({formatDuration(recordingDuration)})
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4 mr-2" />
-                        Start Recording
-                      </>
-                    )}
-                  </Button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Voice File Upload */}
+                  <div className="space-y-2">
+                    <Label htmlFor="voice-file-upload" className="text-slate-700">Upload Voice File</Label>
+                    <Input
+                      id="voice-file-upload"
+                      type="file"
+                      accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setSelectedVoiceFile(file);
+                          handleVoiceFileUpload(file);
+                        }
+                      }}
+                      className="bg-white text-slate-900 placeholder:text-slate-500 border-slate-200 focus:border-purple-300"
+                    />
+                  </div>
 
-                  <Input
-                    type="file"
-                    accept="audio/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        handleVoiceFileUpload(file);
-                      }
-                    }}
-                    className="flex-1 border-slate-200 focus:border-purple-300"
-                  />
+                  {/* Voice Recording */}
+                  <div className="space-y-2">
+                    <Label className="text-slate-700">Record Voice</Label>
+                    <Button
+                      onClick={isRecording ? handleStopRecording : handleStartRecording}
+                      disabled={isRecordingsLoading}
+                      className={`w-full ${
+                        isRecording 
+                          ? 'bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700' 
+                          : 'bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700'
+                      } text-white border-0 shadow-md`}
+                    >
+                      {isRecording ? (
+                        <>
+                          <Pause className="w-4 h-4 mr-2" />
+                          Stop Recording ({formatDuration(recordingDuration)})
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-4 h-4 mr-2" />
+                          Start Recording
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -767,11 +776,11 @@ const AiTraining = () => {
             </Card>
 
             {/* Voice Cloning Settings */}
-            <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/50 shadow-xl">
+            <Card className="bg-gradient-to-br from-white/90 to-pink-50/50 backdrop-blur-sm border border-slate-200/50 shadow-xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-slate-800">
                   <Mic className="w-5 h-5 text-pink-600" />
-                  Voice Cloning
+                  Voice Cloning Settings
                   <Badge variant={isCloning ? "default" : "outline"} className={
                     isCloning 
                       ? "bg-purple-500/10 text-purple-700 border-purple-200" 
@@ -781,23 +790,11 @@ const AiTraining = () => {
                   </Badge>
                 </CardTitle>
                 <CardDescription className="text-slate-600">
-                  Clone voices using advanced Coqui TTS technology
+                  Configure and start voice cloning with advanced Coqui TTS
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="voice-file" className="text-slate-700">Voice File</Label>
-                    <Input
-                      id="voice-file"
-                      type="file"
-                      accept="audio/*"
-                      onChange={(e) => setSelectedVoiceFile(e.target.files?.[0] || null)}
-                      disabled={isCloning}
-                      className="border-slate-200 focus:border-pink-300"
-                    />
-                  </div>
-
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <Label htmlFor="language" className="text-slate-700">Language</Label>
@@ -806,7 +803,7 @@ const AiTraining = () => {
                         value={voiceSettings.language}
                         onChange={(e) => setVoiceSettings(prev => ({ ...prev, language: e.target.value }))}
                         disabled={isCloning}
-                        className="border-slate-200 focus:border-pink-300"
+                        className="bg-white text-slate-900 placeholder:text-slate-500 border-slate-200 focus:border-pink-300"
                       />
                     </div>
                     
