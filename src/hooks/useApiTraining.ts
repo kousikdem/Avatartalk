@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,16 +26,45 @@ export const useApiTraining = () => {
   const [isTestingApi, setIsTestingApi] = useState(false);
   const { toast } = useToast();
 
+  const handleError = (error: any, action: string) => {
+    console.error(`Error in ${action}:`, error);
+    
+    let errorMessage = `Failed to ${action}`;
+    
+    if (error?.code === '42501') {
+      errorMessage = 'Access denied. Please check your permissions or contact support.';
+    } else if (error?.message?.includes('row-level security')) {
+      errorMessage = 'Database access restricted. Please ensure you are properly authenticated.';
+    } else if (error?.message?.includes('not authenticated')) {
+      errorMessage = 'Please log in to continue.';
+    } else if (error?.message) {
+      errorMessage = error.message;
+    }
+
+    toast({
+      title: "Error",
+      description: errorMessage,
+      variant: "destructive",
+    });
+  };
+
   const fetchApiData = useCallback(async () => {
     setIsLoading(true);
     try {
+      // Check authentication first
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        throw new Error('User not authenticated');
+      }
+
       const { data, error } = await supabase
         .from('api_training_data')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setApiData(data.map(item => ({
+      
+      setApiData(data?.map(item => ({
         id: item.id,
         api_endpoint: item.api_endpoint,
         api_method: item.api_method,
@@ -44,12 +74,9 @@ export const useApiTraining = () => {
         created_at: item.created_at
       })) || []);
     } catch (error) {
-      console.error('Error fetching API data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch API training data",
-        variant: "destructive",
-      });
+      handleError(error, 'fetch API training data');
+      // Set empty array on error to prevent UI issues
+      setApiData([]);
     } finally {
       setIsLoading(false);
     }
@@ -109,8 +136,10 @@ export const useApiTraining = () => {
   ) => {
     setIsLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        throw new Error('User not authenticated');
+      }
 
       const { data, error } = await supabase
         .from('api_training_data')
@@ -146,12 +175,7 @@ export const useApiTraining = () => {
 
       return data;
     } catch (error) {
-      console.error('Error saving API training data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save API training data",
-        variant: "destructive",
-      });
+      handleError(error, 'save API training data');
       throw error;
     } finally {
       setIsLoading(false);
@@ -161,6 +185,11 @@ export const useApiTraining = () => {
   const deleteApiData = useCallback(async (id: string) => {
     setIsLoading(true);
     try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        throw new Error('User not authenticated');
+      }
+
       const { error } = await supabase
         .from('api_training_data')
         .delete()
@@ -175,12 +204,7 @@ export const useApiTraining = () => {
         description: "API training data deleted successfully",
       });
     } catch (error) {
-      console.error('Error deleting API data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete API training data",
-        variant: "destructive",
-      });
+      handleError(error, 'delete API training data');
     } finally {
       setIsLoading(false);
     }
