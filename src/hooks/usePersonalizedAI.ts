@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -41,52 +40,24 @@ export const usePersonalizedAI = () => {
   const [currentTraining, setCurrentTraining] = useState<PersonalizedTraining | null>(null);
   const { toast } = useToast();
 
-  const handleError = (error: any, action: string) => {
-    console.error(`Error in ${action}:`, error);
-    
-    let errorMessage = `Failed to ${action}`;
-    
-    if (error?.code === '42501') {
-      errorMessage = 'Access denied. Please check your permissions or contact support.';
-    } else if (error?.message?.includes('row-level security')) {
-      errorMessage = 'Database access restricted. Please ensure you are properly authenticated.';
-    } else if (error?.message?.includes('not authenticated')) {
-      errorMessage = 'Please log in to continue.';
-    } else if (error?.message) {
-      errorMessage = error.message;
-    }
-
-    toast({
-      title: "Error",
-      description: errorMessage,
-      variant: "destructive"
-    });
-  };
-
   const fetchTrainings = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Check authentication first
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        throw new Error('User not authenticated');
-      }
-
       const response = await supabase.functions.invoke('personalized-ai-training', {
         body: { action: 'list_trainings' }
       });
 
-      if (response.error) {
-        console.error('Function response error:', response.error);
-        throw response.error;
-      }
+      if (response.error) throw response.error;
       
-      const { trainings: fetchedTrainings } = response.data || {};
+      const { trainings: fetchedTrainings } = response.data;
       setTrainings(fetchedTrainings || []);
     } catch (error) {
-      handleError(error, 'fetch AI trainings');
-      // Set empty array on error to prevent UI issues
-      setTrainings([]);
+      console.error('Error fetching trainings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch AI trainings",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -98,12 +69,6 @@ export const usePersonalizedAI = () => {
   ) => {
     setIsLoading(true);
     try {
-      // Check authentication first
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        throw new Error('User not authenticated');
-      }
-
       const response = await supabase.functions.invoke('personalized-ai-training', {
         body: {
           action: 'create_training',
@@ -112,27 +77,25 @@ export const usePersonalizedAI = () => {
         }
       });
 
-      if (response.error) {
-        console.error('Function response error:', response.error);
-        throw response.error;
-      }
+      if (response.error) throw response.error;
       
-      const { training } = response.data || {};
-      if (training) {
-        setTrainings(prev => [training, ...prev]);
-        setCurrentTraining(training);
-        
-        toast({
-          title: "Success",
-          description: "AI training created successfully"
-        });
-        
-        return training;
-      } else {
-        throw new Error('No training data returned from server');
-      }
+      const { training } = response.data;
+      setTrainings(prev => [training, ...prev]);
+      setCurrentTraining(training);
+      
+      toast({
+        title: "Success",
+        description: "AI training created successfully"
+      });
+      
+      return training;
     } catch (error) {
-      handleError(error, 'create AI training');
+      console.error('Error creating training:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create AI training",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsLoading(false);
@@ -146,11 +109,6 @@ export const usePersonalizedAI = () => {
   ) => {
     setIsLoading(true);
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        throw new Error('User not authenticated');
-      }
-
       const response = await supabase.functions.invoke('personalized-ai-training', {
         body: {
           action: 'update_training',
@@ -160,27 +118,25 @@ export const usePersonalizedAI = () => {
         }
       });
 
-      if (response.error) {
-        console.error('Function response error:', response.error);
-        throw response.error;
-      }
+      if (response.error) throw response.error;
       
-      const { training } = response.data || {};
-      if (training) {
-        setTrainings(prev => prev.map(t => t.id === trainingId ? training : t));
-        setCurrentTraining(training);
-        
-        toast({
-          title: "Success",
-          description: "AI training updated successfully"
-        });
-        
-        return training;
-      } else {
-        throw new Error('No training data returned from server');
-      }
+      const { training } = response.data;
+      setTrainings(prev => prev.map(t => t.id === trainingId ? training : t));
+      setCurrentTraining(training);
+      
+      toast({
+        title: "Success",
+        description: "AI training updated successfully"
+      });
+      
+      return training;
     } catch (error) {
-      handleError(error, 'update AI training');
+      console.error('Error updating training:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update AI training",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsLoading(false);
@@ -190,11 +146,6 @@ export const usePersonalizedAI = () => {
   const trainModel = useCallback(async (trainingId: string) => {
     setIsTraining(true);
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        throw new Error('User not authenticated');
-      }
-
       const response = await supabase.functions.invoke('personalized-ai-training', {
         body: {
           action: 'train_model',
@@ -202,10 +153,7 @@ export const usePersonalizedAI = () => {
         }
       });
 
-      if (response.error) {
-        console.error('Function response error:', response.error);
-        throw response.error;
-      }
+      if (response.error) throw response.error;
       
       toast({
         title: "Success",
@@ -217,7 +165,12 @@ export const usePersonalizedAI = () => {
       
       return response.data;
     } catch (error) {
-      handleError(error, 'train AI model');
+      console.error('Error training model:', error);
+      toast({
+        title: "Error",
+        description: "Failed to train AI model",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsTraining(false);
@@ -226,11 +179,6 @@ export const usePersonalizedAI = () => {
 
   const getTraining = useCallback(async (trainingId: string) => {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        throw new Error('User not authenticated');
-      }
-
       const response = await supabase.functions.invoke('personalized-ai-training', {
         body: {
           action: 'get_training',
@@ -238,20 +186,18 @@ export const usePersonalizedAI = () => {
         }
       });
 
-      if (response.error) {
-        console.error('Function response error:', response.error);
-        throw response.error;
-      }
+      if (response.error) throw response.error;
       
-      const { training } = response.data || {};
-      if (training) {
-        setCurrentTraining(training);
-        return training;
-      } else {
-        throw new Error('Training not found');
-      }
+      const { training } = response.data;
+      setCurrentTraining(training);
+      return training;
     } catch (error) {
-      handleError(error, 'fetch AI training');
+      console.error('Error fetching training:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch AI training",
+        variant: "destructive"
+      });
       throw error;
     }
   }, [toast]);
@@ -259,11 +205,6 @@ export const usePersonalizedAI = () => {
   const processDocuments = useCallback(async (documents: any[]) => {
     setIsLoading(true);
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        throw new Error('User not authenticated');
-      }
-
       const response = await supabase.functions.invoke('personalized-ai-training', {
         body: {
           action: 'process_documents',
@@ -271,21 +212,23 @@ export const usePersonalizedAI = () => {
         }
       });
 
-      if (response.error) {
-        console.error('Function response error:', response.error);
-        throw response.error;
-      }
+      if (response.error) throw response.error;
       
-      const { processedDocuments } = response.data || {};
+      const { processedDocuments } = response.data;
       
       toast({
         title: "Success",
         description: `${documents.length} documents processed for LLaMA 3 training`
       });
       
-      return processedDocuments || [];
+      return processedDocuments;
     } catch (error) {
-      handleError(error, 'process documents');
+      console.error('Error processing documents:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process documents",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsLoading(false);
@@ -295,11 +238,6 @@ export const usePersonalizedAI = () => {
   const processQAPairs = useCallback(async (qaPairs: any[]) => {
     setIsLoading(true);
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        throw new Error('User not authenticated');
-      }
-
       const response = await supabase.functions.invoke('personalized-ai-training', {
         body: {
           action: 'process_qa_pairs',
@@ -307,21 +245,23 @@ export const usePersonalizedAI = () => {
         }
       });
 
-      if (response.error) {
-        console.error('Function response error:', response.error);
-        throw response.error;
-      }
+      if (response.error) throw response.error;
       
-      const { processedQA } = response.data || {};
+      const { processedQA } = response.data;
       
       toast({
         title: "Success",
         description: `${qaPairs.length} Q&A pairs processed for training`
       });
       
-      return processedQA || [];
+      return processedQA;
     } catch (error) {
-      handleError(error, 'process Q&A pairs');
+      console.error('Error processing Q&A pairs:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process Q&A pairs",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsLoading(false);
@@ -334,11 +274,6 @@ export const usePersonalizedAI = () => {
   ) => {
     setIsTraining(true);
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        throw new Error('User not authenticated');
-      }
-
       const response = await supabase.functions.invoke('personalized-ai-training', {
         body: {
           action: 'llama3_fine_tune',
@@ -347,21 +282,23 @@ export const usePersonalizedAI = () => {
         }
       });
 
-      if (response.error) {
-        console.error('Function response error:', response.error);
-        throw response.error;
-      }
+      if (response.error) throw response.error;
       
-      const { finetuneResult } = response.data || {};
+      const { finetuneResult } = response.data;
       
       toast({
         title: "Success",
-        description: `LLaMA 3 QLoRA fine-tuning completed: ${finetuneResult?.model_id || 'Model ready'}`
+        description: `LLaMA 3 QLoRA fine-tuning completed: ${finetuneResult.model_id}`
       });
       
-      return finetuneResult || {};
+      return finetuneResult;
     } catch (error) {
-      handleError(error, 'complete LLaMA 3 fine-tuning');
+      console.error('Error in LLaMA 3 fine-tuning:', error);
+      toast({
+        title: "Error",
+        description: "Failed to complete LLaMA 3 fine-tuning",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsTraining(false);
@@ -372,15 +309,10 @@ export const usePersonalizedAI = () => {
     trainingData: TrainingData,
     personalitySettings: PersonalitySettings
   ) => {
-    try {
-      if (currentTraining) {
-        return await updateTraining(currentTraining.id, trainingData, personalitySettings);
-      } else {
-        return await createTraining(trainingData, personalitySettings);
-      }
-    } catch (error) {
-      // Error already handled in create/update functions
-      throw error;
+    if (currentTraining) {
+      return await updateTraining(currentTraining.id, trainingData, personalitySettings);
+    } else {
+      return await createTraining(trainingData, personalitySettings);
     }
   }, [currentTraining, updateTraining, createTraining]);
 
