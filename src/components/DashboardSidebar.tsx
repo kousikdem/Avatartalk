@@ -1,96 +1,105 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import {
-  LayoutDashboard,
-  MessageSquare,
+import { 
+  Home, 
+  MessageSquare, 
+  Calendar, 
+  Bell, 
+  Users, 
+  Settings, 
   Brain,
-  Calendar,
-  Bell,
-  Users,
-  Settings,
   User,
-  Home
+  Palette
 } from 'lucide-react';
 
 const DashboardSidebar = () => {
   const location = useLocation();
+  const currentPath = location.pathname;
 
   const menuItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-    { name: 'Avatar', icon: User, path: '/avatar' },
-    { name: 'Chat', icon: MessageSquare, path: '/chat' },
-    { name: 'AI Training', icon: Brain, path: '/training' },
-    { name: 'Calendar', icon: Calendar, path: '/calendar' },
-    { name: 'Notifications', icon: Bell, path: '/notifications' },
-    { name: 'Followers', icon: Users, path: '/followers' },
-    { name: 'Settings', icon: Settings, path: '/settings' }
+    { icon: Home, label: 'Dashboard', path: '/?view=dashboard' },
+    { icon: User, label: 'Avatar Creator', path: '/avatar', isNew: true },
+    { icon: MessageSquare, label: 'Chat', path: '/chat' },
+    { icon: Brain, label: 'AI Training', path: '/training' },
+    { icon: Calendar, label: 'Calendar', path: '/calendar' },
+    { icon: Bell, label: 'Notifications', path: '/notifications' },
+    { icon: Users, label: 'Followers', path: '/followers' },
+    { icon: Settings, label: 'Settings', path: '/settings' },
   ];
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    if (path === '/?view=dashboard') {
+      return currentPath === '/' && new URLSearchParams(window.location.search).get('view') === 'dashboard';
+    }
+    return currentPath === path;
+  };
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col">
-      {/* Header */}
-      <div className="p-6 border-b border-gray-200">
-        <Link to="/" className="flex items-center gap-2">
-          <Home className="w-6 h-6 text-blue-600" />
-          <h2 className="text-xl font-bold text-gray-800">Avatar Spark</h2>
-        </Link>
+    <div className="w-64 h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-pink-50 border-r border-gray-200 shadow-lg">
+      {/* Logo */}
+      <div className="p-6 border-b border-gray-200/50">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+            <Palette className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              AvatarTalk
+            </h1>
+            <p className="text-xs text-gray-600">Bio Platform</p>
+          </div>
+        </div>
       </div>
 
       {/* Navigation */}
-      <ScrollArea className="flex-1 px-3 py-4">
-        <div className="space-y-1">
+      <nav className="flex-1 p-4">
+        <ul className="space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
+            const active = isActive(item.path);
+            
             return (
-              <Link key={item.name} to={item.path}>
-                <Button
-                  variant={isActive(item.path) ? "default" : "ghost"}
-                  className={`w-full justify-start gap-3 ${
-                    isActive(item.path) 
-                      ? 'bg-blue-50 text-blue-700 border-blue-200' 
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              <li key={item.path}>
+                <Link
+                  to={item.path}
+                  className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group relative ${
+                    active
+                      ? 'bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 text-blue-700 shadow-sm border border-blue-200/30'
+                      : 'text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:text-blue-700'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
-                  {item.name}
-                </Button>
-              </Link>
+                  <Icon className={`w-5 h-5 transition-colors ${
+                    active ? 'text-blue-600' : 'text-gray-500 group-hover:text-blue-600'
+                  }`} />
+                  <span className="font-medium">{item.label}</span>
+                  
+                  {item.isNew && (
+                    <span className="ml-auto px-2 py-1 text-xs font-bold text-white bg-gradient-to-r from-green-500 to-emerald-600 rounded-full">
+                      NEW
+                    </span>
+                  )}
+                  
+                  {active && (
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 to-purple-500 rounded-r-full" />
+                  )}
+                </Link>
+              </li>
             );
           })}
-        </div>
+        </ul>
+      </nav>
 
-        <Separator className="my-6" />
-
-        {/* Quick Actions */}
-        <div className="space-y-2">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3">
-            Quick Actions
-          </h3>
-          <Link to="/avatar">
-            <Button variant="outline" size="sm" className="w-full justify-start gap-2">
-              <User className="w-4 h-4" />
-              Create Avatar
-            </Button>
-          </Link>
-          <Link to="/chat">
-            <Button variant="outline" size="sm" className="w-full justify-start gap-2">
-              <MessageSquare className="w-4 h-4" />
-              Start Chat
-            </Button>
-          </Link>
-        </div>
-      </ScrollArea>
-
-      {/* Footer */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="text-xs text-gray-500 text-center">
-          Avatar Spark v1.0
+      {/* User Profile */}
+      <div className="p-4 border-t border-gray-200/50">
+        <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-white/60 to-gray-50/60 rounded-xl border border-white/20">
+          <div className="w-10 h-10 bg-gradient-to-r from-gray-400 to-gray-600 rounded-full flex items-center justify-center">
+            <User className="w-5 h-5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-800 truncate">Your Profile</p>
+            <p className="text-xs text-gray-600">Manage account</p>
+          </div>
         </div>
       </div>
     </div>

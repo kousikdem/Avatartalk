@@ -30,7 +30,14 @@ export const useApiTraining = () => {
     console.error(`Error in ${action}:`, error);
     
     let errorMessage = `Failed to ${action}`;
-    if (error?.message) {
+    
+    if (error?.code === '42501') {
+      errorMessage = 'Access denied. Please check your permissions or contact support.';
+    } else if (error?.message?.includes('row-level security')) {
+      errorMessage = 'Database access restricted. Please ensure you are properly authenticated.';
+    } else if (error?.message?.includes('not authenticated')) {
+      errorMessage = 'Please log in to continue.';
+    } else if (error?.message) {
       errorMessage = error.message;
     }
 
@@ -44,23 +51,18 @@ export const useApiTraining = () => {
   const fetchApiData = useCallback(async () => {
     setIsLoading(true);
     try {
+      // Check authentication first
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
-        setApiData([]);
-        return;
+        throw new Error('User not authenticated');
       }
 
-      // Since we might not have the api_training_data table, let's handle this gracefully
       const { data, error } = await supabase
         .from('api_training_data')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.log('API training data table might not exist yet');
-        setApiData([]);
-        return;
-      }
+      if (error) throw error;
       
       setApiData(data?.map(item => ({
         id: item.id,
@@ -72,12 +74,13 @@ export const useApiTraining = () => {
         created_at: item.created_at
       })) || []);
     } catch (error) {
-      console.log('Error fetching API data:', error);
+      handleError(error, 'fetch API training data');
+      // Set empty array on error to prevent UI issues
       setApiData([]);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   const testApiEndpoint = useCallback(async (request: ApiTestRequest) => {
     setIsTestingApi(true);
@@ -138,7 +141,6 @@ export const useApiTraining = () => {
         throw new Error('User not authenticated');
       }
 
-      // Try to save but handle if table doesn't exist
       const { data, error } = await supabase
         .from('api_training_data')
         .insert({
@@ -152,14 +154,7 @@ export const useApiTraining = () => {
         .select()
         .single();
 
-      if (error) {
-        console.log('Could not save to api_training_data table:', error);
-        toast({
-          title: "Info",
-          description: "API training data table needs to be set up first",
-        });
-        return;
-      }
+      if (error) throw error;
 
       const newData = {
         id: data.id,
@@ -200,10 +195,7 @@ export const useApiTraining = () => {
         .delete()
         .eq('id', id);
 
-      if (error) {
-        console.log('Could not delete from api_training_data table:', error);
-        return;
-      }
+      if (error) throw error;
 
       setApiData(prev => prev.filter(item => item.id !== id));
       
