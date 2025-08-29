@@ -42,7 +42,7 @@ const AvatarSaveLoad: React.FC<AvatarSaveLoadProps> = ({ currentConfig, onLoadCo
   }, []);
 
   // Save avatars to localStorage whenever the list changes
-  const saveTo LocalStorage = (avatars: SavedAvatar[]) => {
+  const saveToLocalStorage = (avatars: SavedAvatar[]) => {
     localStorage.setItem('savedAvatars', JSON.stringify(avatars));
   };
 

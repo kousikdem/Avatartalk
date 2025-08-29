@@ -3,11 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, Download, Rotate3D, Eye, Palette, User } from 'lucide-react';
+import { Save, Download, Rotate3D, Eye, Palette, User, Sparkles, Zap } from 'lucide-react';
 import Avatar3DPreview from '@/components/avatar/Avatar3DPreview';
 import AvatarCustomizer from '@/components/avatar/AvatarCustomizer';
 import AvatarSaveLoad from '@/components/avatar/AvatarSaveLoad';
 import { useToast } from '@/hooks/use-toast';
+import { useAvatarGeneration } from '@/hooks/useAvatarGeneration';
 
 export interface AvatarConfig {
   bodyType: 'slim' | 'average' | 'muscular' | 'custom';
@@ -40,45 +41,49 @@ const defaultConfig: AvatarConfig = {
 
 const AvatarPage = () => {
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(defaultConfig);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [avatarModel, setAvatarModel] = useState<string | null>(null);
   const { toast } = useToast();
+  
+  const { 
+    generateAvatar, 
+    exportAvatar, 
+    isGenerating, 
+    progress, 
+    currentStep 
+  } = useAvatarGeneration();
 
   const handleConfigChange = (newConfig: Partial<AvatarConfig>) => {
     setAvatarConfig(prev => ({ ...prev, ...newConfig }));
   };
 
-  const generateAvatar = async () => {
-    setIsGenerating(true);
-    try {
-      console.log('Generating avatar with config:', avatarConfig);
-      
-      // Simulate avatar generation (replace with actual backend call)
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // In real implementation, this would be the GLB/GLTF model URL
-      setAvatarModel(`/api/avatar/generate?config=${encodeURIComponent(JSON.stringify(avatarConfig))}`);
-      
-      toast({
-        title: "Avatar Generated",
-        description: "Your 3D avatar has been created successfully!",
-      });
-    } catch (error) {
-      console.error('Avatar generation failed:', error);
-      toast({
-        title: "Generation Failed",
-        description: "Failed to generate avatar. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsGenerating(false);
+  const handleGenerateAvatar = async () => {
+    const result = await generateAvatar(avatarConfig);
+    if (result) {
+      setAvatarModel(result.modelUrl);
+    }
+  };
+
+  const handleExportAvatar = (format: 'glb' | 'fbx' | 'obj') => {
+    if (avatarModel) {
+      exportAvatar(avatarModel, format);
     }
   };
 
   const saveAvatar = async () => {
     try {
-      // Save avatar configuration to database
-      console.log('Saving avatar config:', avatarConfig);
+      // Save avatar configuration to localStorage for demo
+      const savedAvatars = JSON.parse(localStorage.getItem('savedAvatars') || '[]');
+      const newAvatar = {
+        id: Date.now().toString(),
+        name: `Avatar ${savedAvatars.length + 1}`,
+        config: avatarConfig,
+        modelUrl: avatarModel,
+        createdAt: new Date()
+      };
+      
+      savedAvatars.push(newAvatar);
+      localStorage.setItem('savedAvatars', JSON.stringify(savedAvatars));
+      
       toast({
         title: "Avatar Saved",
         description: "Your avatar configuration has been saved.",
@@ -93,58 +98,56 @@ const AvatarPage = () => {
     }
   };
 
-  const downloadAvatar = async () => {
-    if (!avatarModel) {
-      toast({
-        title: "No Avatar",
-        description: "Please generate an avatar first.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      // Download avatar model
-      const link = document.createElement('a');
-      link.href = avatarModel;
-      link.download = 'avatar.glb';
-      link.click();
-      
-      toast({
-        title: "Download Started",
-        description: "Your avatar model is being downloaded.",
-      });
-    } catch (error) {
-      console.error('Download failed:', error);
-      toast({
-        title: "Download Failed",
-        description: "Failed to download avatar model.",
-        variant: "destructive"
-      });
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       <div className="container mx-auto p-6">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
-            3D Avatar Creator
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Create your realistic 3D avatar with advanced customization options
-          </p>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center">
+              <Rotate3D className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Realistic 3D Avatar Creator
+              </h1>
+              <p className="text-gray-600 text-lg">
+                Create your photorealistic 3D avatar with advanced AI-powered customization
+              </p>
+            </div>
+          </div>
+          
+          {/* Feature Highlights */}
+          <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-purple-500" />
+              <span>AI-Powered Generation</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-blue-500" />
+              <span>Real-time Preview</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Download className="w-4 h-4 text-green-500" />
+              <span>Multiple Export Formats</span>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           {/* Avatar Preview */}
           <div className="xl:col-span-2">
-            <Card className="h-full bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 border-0 shadow-xl">
+            <Card className="h-full bg-white/70 backdrop-blur-sm border-0 shadow-2xl">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-gray-800">
                   <Rotate3D className="w-6 h-6 text-blue-600" />
                   Avatar Preview
+                  {isGenerating && (
+                    <div className="ml-auto flex items-center gap-2 text-sm text-blue-600">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      Generating...
+                    </div>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -152,34 +155,41 @@ const AvatarPage = () => {
                   config={avatarConfig}
                   modelUrl={avatarModel}
                   isGenerating={isGenerating}
+                  generationProgress={progress}
+                  generationStep={currentStep}
+                  onExport={handleExportAvatar}
                 />
                 
                 {/* Action Buttons */}
                 <div className="flex flex-wrap gap-3 mt-6">
                   <Button 
-                    onClick={generateAvatar} 
+                    onClick={handleGenerateAvatar} 
                     disabled={isGenerating}
-                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg"
                   >
+                    <Sparkles className="w-4 h-4 mr-2" />
                     {isGenerating ? 'Generating...' : 'Generate Avatar'}
                   </Button>
+                  
                   <Button 
                     onClick={saveAvatar} 
                     variant="outline"
-                    className="border-blue-200 hover:bg-blue-50"
+                    className="border-blue-200 hover:bg-blue-50 shadow-md"
                   >
                     <Save className="w-4 h-4 mr-2" />
-                    Save
+                    Save Configuration
                   </Button>
-                  <Button 
-                    onClick={downloadAvatar} 
-                    variant="outline"
-                    disabled={!avatarModel}
-                    className="border-green-200 hover:bg-green-50"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download GLB
-                  </Button>
+                  
+                  {avatarModel && (
+                    <Button 
+                      onClick={() => handleExportAvatar('glb')} 
+                      variant="outline"
+                      className="border-green-200 hover:bg-green-50 shadow-md"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Quick Export GLB
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -187,7 +197,7 @@ const AvatarPage = () => {
 
           {/* Customization Panel */}
           <div className="space-y-6">
-            <Card className="bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 border-0 shadow-xl">
+            <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-2xl">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-gray-800">
                   <Palette className="w-6 h-6 text-purple-600" />
@@ -196,7 +206,7 @@ const AvatarPage = () => {
               </CardHeader>
               <CardContent>
                 <Tabs defaultValue="basic" className="w-full">
-                  <TabsList className="grid grid-cols-3 w-full mb-6 bg-white/50">
+                  <TabsList className="grid grid-cols-3 w-full mb-6 bg-white/60 backdrop-blur-sm">
                     <TabsTrigger value="basic" className="text-sm">
                       <User className="w-4 h-4 mr-1" />
                       Basic
