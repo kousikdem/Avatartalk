@@ -10,7 +10,8 @@ import {
   Bell,
   Bookmark,
   Calendar,
-  Brain
+  Brain,
+  User
 } from 'lucide-react';
 import {
   Sidebar,
@@ -33,6 +34,7 @@ interface DashboardSidebarProps {
 const navigationItems = [
   { title: "Dashboard", icon: Home, url: "/dashboard" },
   { title: "Feed", icon: MessageSquare, url: "/feed" },
+  { title: "Avatar", icon: User, url: "/avatar" },
   { title: "AI Training", icon: Brain, url: "/ai-training" },
   { title: "Analytics", icon: BarChart3, url: "/analytics" },
   { title: "Followers", icon: Users, url: "/followers" },
