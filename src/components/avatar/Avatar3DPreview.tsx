@@ -1,10 +1,11 @@
 
 import React, { Suspense, useRef, useState, useEffect } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import { OrbitControls, Environment, PerspectiveCamera, useGLTF } from '@react-three/drei';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import * as THREE from 'three';
 import { motion } from 'framer-motion';
-import { RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
+import { RotateLeft, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AvatarConfig } from '@/pages/AvatarPage';
 
