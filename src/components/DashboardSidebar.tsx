@@ -19,7 +19,7 @@ const DashboardSidebar = () => {
 
   const menuItems = [
     { icon: Home, label: 'Dashboard', path: '/?view=dashboard' },
-    { icon: User, label: 'Create Avatar', path: '/avatar', isNew: true },
+    { icon: User, label: 'Avatar Creator', path: '/avatar', isNew: true },
     { icon: MessageSquare, label: 'Chat', path: '/chat' },
     { icon: Brain, label: 'AI Training', path: '/training' },
     { icon: Calendar, label: 'Calendar', path: '/calendar' },
