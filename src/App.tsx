@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import Index from '@/pages/Index';
 import NotFound from '@/pages/NotFound';
@@ -26,6 +27,8 @@ function App() {
           <Routes>
             {/* Main routes */}
             <Route path="/" element={<Index />} />
+            
+            {/* Avatar Creator Page */}
             <Route path="/avatar" element={
               <div className="flex min-h-screen w-full">
                 <DashboardSidebar />
@@ -42,8 +45,10 @@ function App() {
                 <div className="flex min-h-screen w-full">
                   <DashboardSidebar />
                   <main className="flex-1">
-                    {/* Your dashboard content here */}
-                    <h1>Dashboard Content</h1>
+                    <div className="p-6">
+                      <h1 className="text-2xl font-bold text-gray-800">Dashboard Content</h1>
+                      <p className="text-gray-600 mt-2">Welcome to your dashboard!</p>
+                    </div>
                   </main>
                 </div>
               }
