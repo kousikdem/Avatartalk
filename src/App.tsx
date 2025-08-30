@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -21,6 +20,7 @@ import AvatarCreationPage from "./pages/AvatarCreationPage";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Menu } from "lucide-react";
 
 const queryClient = new QueryClient();
 
@@ -74,13 +74,23 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <SidebarProvider defaultOpen={!isMobile}>
+    <SidebarProvider 
+      defaultOpen={!isMobile}
+      open={undefined}
+      onOpenChange={undefined}
+    >
       <div className="min-h-screen flex w-full bg-white">
         <DashboardSidebar onCreatePost={() => setIsCreatePostOpen(true)} />
         
         <SidebarInset className="flex-1 w-full">
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 bg-white sticky top-0 z-50 w-full">
-            <SidebarTrigger className="h-8 w-8 p-1" />
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 bg-white sticky top-0 z-50 w-full md:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
           </header>
           
           <main className="flex-1 overflow-auto w-full">
