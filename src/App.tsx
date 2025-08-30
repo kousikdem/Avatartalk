@@ -114,11 +114,6 @@ const App = () => (
               {/* Dashboard routes with sidebar */}
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/avatar" element={<AvatarPage />} />
-              <Route path="/avatar/create" element={
-                <div className="w-full">
-                  {React.lazy(() => import('./pages/AvatarCreationPage'))}
-                </div>
-              } />
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/followers" element={<FollowersPage />} />
