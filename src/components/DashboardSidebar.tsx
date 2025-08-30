@@ -1,109 +1,253 @@
 
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { 
-  Home, 
-  MessageSquare, 
-  Calendar, 
-  Bell, 
-  Users, 
-  Settings, 
+import {
+  BarChart3,
+  Bookmark,
   Brain,
+  Calendar,
+  Globe,
+  Home,
+  LayoutDashboard,
+  Settings,
   User,
-  Palette
-} from 'lucide-react';
+  Users,
+  Bell,
+  ChevronLeft,
+  Menu,
+} from "lucide-react"
+import { useLocation, useNavigate } from "react-router-dom"
 
-const DashboardSidebar = () => {
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from "@/components/ui/sidebar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useIsMobile } from "@/hooks/use-mobile"
+
+interface DashboardSidebarProps {
+  onCreatePost: () => void
+}
+
+export function DashboardSidebar({ onCreatePost }: DashboardSidebarProps) {
+  const navigate = useNavigate();
   const location = useLocation();
-  const currentPath = location.pathname;
+  const { state, toggleSidebar } = useSidebar();
+  const isMobile = useIsMobile();
+  const isCollapsed = state === "collapsed";
 
   const menuItems = [
-    { icon: Home, label: 'Dashboard', path: '/?view=dashboard' },
-    { icon: User, label: 'Avatar Creator', path: '/avatar', isNew: true },
-    { icon: MessageSquare, label: 'Chat', path: '/chat' },
-    { icon: Brain, label: 'AI Training', path: '/training' },
-    { icon: Calendar, label: 'Calendar', path: '/calendar' },
-    { icon: Bell, label: 'Notifications', path: '/notifications' },
-    { icon: Users, label: 'Followers', path: '/followers' },
-    { icon: Settings, label: 'Settings', path: '/settings' },
+    {
+      title: "Dashboard",
+      icon: LayoutDashboard,
+      href: "/dashboard",
+    },
+    {
+      title: "Avatar",
+      icon: User,
+      href: "/avatar",
+      subItems: [
+        {
+          title: "Manage Avatars",
+          href: "/avatar",
+        },
+        {
+          title: "Create New",
+          href: "/avatar/create",
+        }
+      ]
+    },
+    {
+      title: "Calendar",
+      icon: Calendar,
+      href: "/calendar",
+    },
+    {
+      title: "Notifications",
+      icon: Bell,
+      href: "/notifications",
+      badge: 3,
+    },
+    {
+      title: "Followers",
+      icon: Users,
+      href: "/followers",
+    },
+    {
+      title: "Browse Profiles",
+      icon: Globe,
+      href: "/profiles",
+    },
+    {
+      title: "Feed",
+      icon: Home,
+      href: "/feed",
+    },
+    {
+      title: "Analytics",
+      icon: BarChart3,
+      href: "/analytics",
+    },
+    {
+      title: "Bookmarks",
+      icon: Bookmark,
+      href: "/bookmarks",
+    },
+    {
+      title: "Settings",
+      icon: Settings,
+      href: "/settings",
+    },
+    {
+      title: "AI Training",
+      icon: Brain,
+      href: "/ai-training",
+    },
   ];
 
-  const isActive = (path: string) => {
-    if (path === '/?view=dashboard') {
-      return currentPath === '/' && new URLSearchParams(window.location.search).get('view') === 'dashboard';
+  const isActive = (href: string) => {
+    if (href === "/avatar") {
+      return location.pathname === href || location.pathname.startsWith("/avatar");
     }
-    return currentPath === path;
+    return location.pathname === href;
   };
 
   return (
-    <div className="w-64 h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-pink-50 border-r border-gray-200 shadow-lg">
-      {/* Logo */}
-      <div className="p-6 border-b border-gray-200/50">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-            <Palette className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              AvatarTalk
-            </h1>
-            <p className="text-xs text-gray-600">Bio Platform</p>
-          </div>
+    <Sidebar 
+      variant="inset" 
+      className="border-r border-gray-200 transition-all duration-300 ease-in-out"
+      collapsible="icon"
+    >
+      <SidebarHeader className={`pb-4 transition-all duration-300 ${isCollapsed ? 'px-2' : 'px-4'}`}>
+        <div className="flex items-center justify-between w-full">
+          <Button 
+            variant="ghost" 
+            className={`justify-start transition-all duration-300 ${isCollapsed ? 'w-10 h-10 p-0' : 'w-full px-4'}`}
+          >
+            <Avatar className={`${isCollapsed ? 'h-6 w-6' : 'mr-2 h-8 w-8'}`}>
+              <AvatarImage src="/avatars/01.png" alt="Avatar" />
+              <AvatarFallback>OM</AvatarFallback>
+            </Avatar>
+            {!isCollapsed && (
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium">FosiK</p>
+                <p className="text-xs text-gray-500">admin</p>
+              </div>
+            )}
+          </Button>
+          
+          {/* Minimize/Expand Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebar}
+            className={`h-8 w-8 transition-all duration-300 ${isCollapsed ? 'rotate-180' : ''} ${isMobile ? 'md:flex' : 'flex'}`}
+            title={isCollapsed ? "Expand sidebar" : "Minimize sidebar"}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
         </div>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 p-4">
-        <ul className="space-y-2">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.path);
-            
-            return (
-              <li key={item.path}>
-                <Link
-                  to={item.path}
-                  className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group relative ${
-                    active
-                      ? 'bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 text-blue-700 shadow-sm border border-blue-200/30'
-                      : 'text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:text-blue-700'
-                  }`}
-                >
-                  <Icon className={`w-5 h-5 transition-colors ${
-                    active ? 'text-blue-600' : 'text-gray-500 group-hover:text-blue-600'
-                  }`} />
-                  <span className="font-medium">{item.label}</span>
+      </SidebarHeader>
+      
+      <SidebarContent className="gap-0">
+        <SidebarGroup>
+          <SidebarGroupLabel className={isCollapsed ? "sr-only" : ""}>
+            Navigation
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {menuItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton 
+                    asChild
+                    isActive={isActive(item.href)}
+                    className="relative"
+                    tooltip={isCollapsed ? item.title : undefined}
+                  >
+                    <button
+                      onClick={() => navigate(item.href)}
+                      className="flex items-center justify-between w-full"
+                    >
+                      <div className="flex items-center">
+                        <item.icon className={`h-4 w-4 ${isCollapsed ? '' : 'mr-2'}`} />
+                        {!isCollapsed && <span>{item.title}</span>}
+                      </div>
+                      {item.badge && !isCollapsed && (
+                        <Badge variant="secondary" className="ml-auto">
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </button>
+                  </SidebarMenuButton>
                   
-                  {item.isNew && (
-                    <span className="ml-auto px-2 py-1 text-xs font-bold text-white bg-gradient-to-r from-green-500 to-emerald-600 rounded-full">
-                      NEW
-                    </span>
+                  {/* Avatar Sub-menu - Only show when expanded */}
+                  {item.subItems && isActive(item.href) && !isCollapsed && (
+                    <SidebarMenu className="ml-6 mt-2">
+                      {item.subItems.map((subItem) => (
+                        <SidebarMenuItem key={subItem.title}>
+                          <SidebarMenuButton 
+                            asChild
+                            size="sm"
+                            isActive={location.pathname === subItem.href}
+                          >
+                            <button
+                              onClick={() => navigate(subItem.href)}
+                              className="text-sm text-gray-600 hover:text-gray-900"
+                            >
+                              {subItem.title}
+                            </button>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
                   )}
-                  
-                  {active && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 to-purple-500 rounded-r-full" />
-                  )}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
-      {/* User Profile */}
-      <div className="p-4 border-t border-gray-200/50">
-        <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-white/60 to-gray-50/60 rounded-xl border border-white/20">
-          <div className="w-10 h-10 bg-gradient-to-r from-gray-400 to-gray-600 rounded-full flex items-center justify-center">
-            <User className="w-5 h-5 text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-800 truncate">Your Profile</p>
-            <p className="text-xs text-gray-600">Manage account</p>
-          </div>
-        </div>
-      </div>
-    </div>
+        <SidebarGroup>
+          <SidebarGroupLabel className={isCollapsed ? "sr-only" : ""}>
+            Actions
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <Button 
+              variant="secondary" 
+              className={`w-full transition-all duration-300 ${isCollapsed ? 'px-2' : ''}`} 
+              onClick={onCreatePost}
+              title={isCollapsed ? "Create Post" : undefined}
+            >
+              {isCollapsed ? <span className="text-lg">+</span> : "Create Post"}
+            </Button>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter className={`transition-all duration-300 ${isCollapsed ? 'px-2' : ''}`}>
+        <Button 
+          variant="link" 
+          className={`justify-start transition-all duration-300 ${isCollapsed ? 'w-10 h-10 p-0' : 'w-full px-4'}`}
+          title={isCollapsed ? "Log out" : undefined}
+        >
+          {isCollapsed ? (
+            <span className="text-sm">⏻</span>
+          ) : (
+            "Log out"
+          )}
+        </Button>
+      </SidebarFooter>
+    </Sidebar>
   );
-};
+}
 
 export default DashboardSidebar;
