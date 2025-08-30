@@ -60,7 +60,7 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
 
   // Check if current path requires sidebar (dashboard routes)
   const currentPath = window.location.pathname;
-  const isDashboardRoute = ['/dashboard', '/avatar', '/calendar', '/notifications', '/followers', '/profiles', '/feed', '/analytics', '/bookmarks', '/settings', '/ai-training'].includes(currentPath);
+  const isDashboardRoute = ['/dashboard', '/avatar', '/calendar', '/notifications', '/followers', '/profiles', '/feed', '/analytics', '/bookmarks', '/settings', '/ai-training'].includes(currentPath) || currentPath.startsWith('/avatar/');
   
   // Also check for query parameters that indicate dashboard view
   const urlParams = new URLSearchParams(window.location.search);
@@ -76,23 +76,21 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <SidebarProvider 
-      defaultOpen={!isMobile}
-      open={undefined}
-      onOpenChange={undefined}
-    >
+    <SidebarProvider defaultOpen={!isMobile}>
       <div className="min-h-screen flex w-full bg-white">
         <DashboardSidebar onCreatePost={() => setIsCreatePostOpen(true)} />
         
         <SidebarInset className="flex-1 w-full">
           <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 bg-white sticky top-0 z-50 w-full md:hidden">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-            >
-              <Menu className="h-4 w-4" />
-            </Button>
+            <SidebarTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+              >
+                <Menu className="h-4 w-4" />
+              </Button>
+            </SidebarTrigger>
           </header>
           
           <main className="flex-1 overflow-auto w-full">
