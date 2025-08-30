@@ -1,4 +1,5 @@
 
+import React, { useState, useEffect, Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,7 +17,7 @@ import NotificationsPage from "./components/NotificationsPage";
 import FollowersPage from "./components/FollowersPage";
 import NotFound from "./pages/NotFound";
 import AvatarPage from "./pages/AvatarPage";
-import { useState, useEffect } from "react";
+import AvatarCreationPage from "./pages/AvatarCreationPage";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -115,9 +116,9 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/avatar" element={<AvatarPage />} />
               <Route path="/avatar/create" element={
-                <div className="w-full">
-                  {React.lazy(() => import('./pages/AvatarCreationPage'))}
-                </div>
+                <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
+                  <AvatarCreationPage />
+                </Suspense>
               } />
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
