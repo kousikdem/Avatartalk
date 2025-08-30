@@ -1,12 +1,10 @@
 
-import React, { useState, useEffect, Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
 import DashboardSidebar from "./components/DashboardSidebar";
 import CreatePostModal from "./components/CreatePostModal";
 import Index from "./pages/Index";
@@ -18,11 +16,10 @@ import NotificationsPage from "./components/NotificationsPage";
 import FollowersPage from "./components/FollowersPage";
 import NotFound from "./pages/NotFound";
 import AvatarPage from "./pages/AvatarPage";
-import AvatarCreationPage from "./pages/AvatarCreationPage";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Menu } from "lucide-react";
 
 const queryClient = new QueryClient();
 
@@ -60,7 +57,7 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
 
   // Check if current path requires sidebar (dashboard routes)
   const currentPath = window.location.pathname;
-  const isDashboardRoute = ['/dashboard', '/avatar', '/calendar', '/notifications', '/followers', '/profiles', '/feed', '/analytics', '/bookmarks', '/settings', '/ai-training'].includes(currentPath) || currentPath.startsWith('/avatar/');
+  const isDashboardRoute = ['/dashboard', '/avatar', '/calendar', '/notifications', '/followers', '/profiles', '/feed', '/analytics', '/bookmarks', '/settings', '/ai-training'].includes(currentPath);
   
   // Also check for query parameters that indicate dashboard view
   const urlParams = new URLSearchParams(window.location.search);
@@ -81,16 +78,8 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
         <DashboardSidebar onCreatePost={() => setIsCreatePostOpen(true)} />
         
         <SidebarInset className="flex-1 w-full">
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 bg-white sticky top-0 z-50 w-full md:hidden">
-            <SidebarTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-              >
-                <Menu className="h-4 w-4" />
-              </Button>
-            </SidebarTrigger>
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 bg-white sticky top-0 z-50 w-full">
+            <SidebarTrigger className="h-8 w-8 p-1" />
           </header>
           
           <main className="flex-1 overflow-auto w-full">
@@ -126,9 +115,9 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/avatar" element={<AvatarPage />} />
               <Route path="/avatar/create" element={
-                <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
-                  <AvatarCreationPage />
-                </Suspense>
+                <div className="w-full">
+                  {React.lazy(() => import('./pages/AvatarCreationPage'))}
+                </div>
               } />
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />

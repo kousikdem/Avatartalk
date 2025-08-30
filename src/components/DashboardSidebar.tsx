@@ -1,4 +1,3 @@
-
 import {
   BarChart3,
   Bookmark,
@@ -11,8 +10,6 @@ import {
   User,
   Users,
   Bell,
-  ChevronLeft,
-  Menu,
 } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom"
 
@@ -29,10 +26,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useIsMobile } from "@/hooks/use-mobile"
 
 interface DashboardSidebarProps {
   onCreatePost: () => void
@@ -41,9 +36,6 @@ interface DashboardSidebarProps {
 export function DashboardSidebar({ onCreatePost }: DashboardSidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { state, toggleSidebar } = useSidebar();
-  const isMobile = useIsMobile();
-  const isCollapsed = state === "collapsed";
 
   const menuItems = [
     {
@@ -122,47 +114,23 @@ export function DashboardSidebar({ onCreatePost }: DashboardSidebarProps) {
   };
 
   return (
-    <Sidebar 
-      variant="inset" 
-      className="border-r border-gray-200 transition-all duration-300 ease-in-out"
-      collapsible="icon"
-    >
-      <SidebarHeader className={`pb-4 transition-all duration-300 ${isCollapsed ? 'px-2' : 'px-4'}`}>
-        <div className="flex items-center justify-between w-full">
-          <Button 
-            variant="ghost" 
-            className={`justify-start transition-all duration-300 ${isCollapsed ? 'w-10 h-10 p-0' : 'w-full px-4'}`}
-          >
-            <Avatar className={`${isCollapsed ? 'h-6 w-6' : 'mr-2 h-8 w-8'}`}>
-              <AvatarImage src="/avatars/01.png" alt="Avatar" />
-              <AvatarFallback>OM</AvatarFallback>
-            </Avatar>
-            {!isCollapsed && (
-              <div className="space-y-0.5">
-                <p className="text-sm font-medium">FosiK</p>
-                <p className="text-xs text-gray-500">admin</p>
-              </div>
-            )}
-          </Button>
-          
-          {/* Minimize/Expand Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleSidebar}
-            className={`h-8 w-8 transition-all duration-300 ${isCollapsed ? 'rotate-180' : ''} ${isMobile ? 'md:flex' : 'flex'}`}
-            title={isCollapsed ? "Expand sidebar" : "Minimize sidebar"}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-        </div>
+    <Sidebar variant="inset" className="border-r border-gray-200">
+      <SidebarHeader className="pb-4">
+        <Button variant="ghost" className="w-full justify-start px-4">
+          <Avatar className="mr-2 h-8 w-8">
+            <AvatarImage src="/avatars/01.png" alt="Avatar" />
+            <AvatarFallback>OM</AvatarFallback>
+          </Avatar>
+          <div className="space-y-0.5">
+            <p className="text-sm font-medium">FosiK</p>
+            <p className="text-xs text-gray-500">admin</p>
+          </div>
+        </Button>
       </SidebarHeader>
       
       <SidebarContent className="gap-0">
         <SidebarGroup>
-          <SidebarGroupLabel className={isCollapsed ? "sr-only" : ""}>
-            Navigation
-          </SidebarGroupLabel>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -171,17 +139,16 @@ export function DashboardSidebar({ onCreatePost }: DashboardSidebarProps) {
                     asChild
                     isActive={isActive(item.href)}
                     className="relative"
-                    tooltip={isCollapsed ? item.title : undefined}
                   >
                     <button
                       onClick={() => navigate(item.href)}
                       className="flex items-center justify-between w-full"
                     >
                       <div className="flex items-center">
-                        <item.icon className={`h-4 w-4 ${isCollapsed ? '' : 'mr-2'}`} />
-                        {!isCollapsed && <span>{item.title}</span>}
+                        <item.icon className="mr-2 h-4 w-4" />
+                        <span>{item.title}</span>
                       </div>
-                      {item.badge && !isCollapsed && (
+                      {item.badge && (
                         <Badge variant="secondary" className="ml-auto">
                           {item.badge}
                         </Badge>
@@ -189,8 +156,8 @@ export function DashboardSidebar({ onCreatePost }: DashboardSidebarProps) {
                     </button>
                   </SidebarMenuButton>
                   
-                  {/* Avatar Sub-menu - Only show when expanded */}
-                  {item.subItems && isActive(item.href) && !isCollapsed && (
+                  {/* Avatar Sub-menu */}
+                  {item.subItems && isActive(item.href) && (
                     <SidebarMenu className="ml-6 mt-2">
                       {item.subItems.map((subItem) => (
                         <SidebarMenuItem key={subItem.title}>
@@ -217,33 +184,18 @@ export function DashboardSidebar({ onCreatePost }: DashboardSidebarProps) {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className={isCollapsed ? "sr-only" : ""}>
-            Actions
-          </SidebarGroupLabel>
+          <SidebarGroupLabel>Actions</SidebarGroupLabel>
           <SidebarGroupContent>
-            <Button 
-              variant="secondary" 
-              className={`w-full transition-all duration-300 ${isCollapsed ? 'px-2' : ''}`} 
-              onClick={onCreatePost}
-              title={isCollapsed ? "Create Post" : undefined}
-            >
-              {isCollapsed ? <span className="text-lg">+</span> : "Create Post"}
+            <Button variant="secondary" className="w-full" onClick={onCreatePost}>
+              Create Post
             </Button>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className={`transition-all duration-300 ${isCollapsed ? 'px-2' : ''}`}>
-        <Button 
-          variant="link" 
-          className={`justify-start transition-all duration-300 ${isCollapsed ? 'w-10 h-10 p-0' : 'w-full px-4'}`}
-          title={isCollapsed ? "Log out" : undefined}
-        >
-          {isCollapsed ? (
-            <span className="text-sm">⏻</span>
-          ) : (
-            "Log out"
-          )}
+      <SidebarFooter>
+        <Button variant="link" className="w-full justify-start px-4">
+          Log out
         </Button>
       </SidebarFooter>
     </Sidebar>
