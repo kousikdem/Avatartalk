@@ -16,6 +16,7 @@ import NotificationsPage from "./components/NotificationsPage";
 import FollowersPage from "./components/FollowersPage";
 import NotFound from "./pages/NotFound";
 import AvatarPage from "./pages/AvatarPage";
+import AvatarCreationPage from "./pages/AvatarCreationPage";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
@@ -114,11 +115,7 @@ const App = () => (
               {/* Dashboard routes with sidebar */}
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/avatar" element={<AvatarPage />} />
-              <Route path="/avatar/create" element={
-                <div className="w-full">
-                  {React.lazy(() => import('./pages/AvatarCreationPage'))}
-                </div>
-              } />
+              <Route path="/avatar/create" element={<AvatarCreationPage />} />
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/followers" element={<FollowersPage />} />

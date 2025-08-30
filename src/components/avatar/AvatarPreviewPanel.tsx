@@ -24,9 +24,9 @@ const AvatarMesh = ({ config }: { config: AvatarConfig }) => {
   const getBodyGeometry = () => {
     switch (config.bodyType) {
       case 'slim':
-        return { scale: [0.8, 1, 0.8] };
+        return { scale: [0.8, 1, 0.8] as [number, number, number] };
       case 'muscular':
-        return { scale: [1.2, 1.1, 1.2] };
+        return { scale: [1.2, 1.1, 1.2] as [number, number, number] };
       case 'custom':
         const heightFactor = config.height / 175;
         const weightFactor = config.weight / 70;
@@ -35,10 +35,10 @@ const AvatarMesh = ({ config }: { config: AvatarConfig }) => {
             0.8 + (weightFactor * 0.4), 
             0.8 + (heightFactor * 0.4), 
             0.8 + (weightFactor * 0.4)
-          ] 
+          ] as [number, number, number]
         };
       default:
-        return { scale: [1, 1, 1] };
+        return { scale: [1, 1, 1] as [number, number, number] };
     }
   };
 
