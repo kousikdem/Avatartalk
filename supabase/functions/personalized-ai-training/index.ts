@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.1';
@@ -15,13 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client with service role for edge function operations
-    const supabaseServiceRole = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    const supabaseClient = createClient(
+    const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
@@ -30,81 +23,35 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       console.error('❌ No authorization header provided');
-      return new Response(JSON.stringify({
-        error: 'Authentication required',
-        success: false
-      }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      throw new Error('Authentication required');
     }
 
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
       authHeader.replace('Bearer ', '')
     );
 
     if (authError || !user) {
       console.error('❌ Authentication failed:', authError);
-      return new Response(JSON.stringify({
-        error: 'Invalid authentication token',
-        success: false
-      }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      throw new Error('Invalid authentication token');
     }
 
     console.log('✅ User authenticated:', user.id);
 
-    const requestBody = await req.json().catch(() => ({}));
-    const { action, trainingData, personalitySettings, trainingId } = requestBody;
+    const { action, trainingData, personalitySettings, trainingId } = await req.json();
 
-    console.log('🚀 AI Training request:', { 
-      action, 
-      trainingId, 
-      userId: user.id,
-      dataTypes: trainingData ? Object.keys(trainingData) : [] 
-    });
-
-    // Input validation
-    if (!action) {
-      return new Response(JSON.stringify({
-        error: 'Action parameter is required',
-        success: false
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
+    console.log('🚀 AI Training request:', { action, trainingId, dataTypes: trainingData ? Object.keys(trainingData) : [] });
 
     switch (action) {
       case 'create_training':
         console.log('📝 Creating new AI training record...');
         
-        if (!trainingData?.name) {
-          return new Response(JSON.stringify({
-            error: 'Training name is required',
-            success: false
-          }), {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          });
-        }
-
-        // Use service role client to bypass RLS for insert
-        const { data: newTraining, error: createError } = await supabaseServiceRole
+        const { data: newTraining, error: createError } = await supabase
           .from('personalized_ai_training')
           .insert({
             user_id: user.id,
             training_name: trainingData.name || 'Untitled Training',
-            personality_settings: personalitySettings || {
-              mode: 'adaptive',
-              formality: 50,
-              verbosity: 70,
-              friendliness: 80,
-              behavior_learning: true
-            },
-            training_data: trainingData || {},
+            personality_settings: personalitySettings,
+            training_data: trainingData,
             model_status: 'draft',
             training_progress: 0
           })
@@ -113,14 +60,7 @@ serve(async (req) => {
 
         if (createError) {
           console.error('❌ Database error creating training:', createError);
-          return new Response(JSON.stringify({
-            error: `Failed to create training: ${createError.message}`,
-            success: false,
-            details: createError
-          }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          });
+          throw createError;
         }
 
         console.log('✅ Training record created:', newTraining.id);
@@ -135,17 +75,7 @@ serve(async (req) => {
       case 'update_training':
         console.log('📝 Updating AI training record:', trainingId);
         
-        if (!trainingId) {
-          return new Response(JSON.stringify({
-            error: 'Training ID is required for update',
-            success: false
-          }), {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          });
-        }
-
-        const { data: updatedTraining, error: updateError } = await supabaseServiceRole
+        const { data: updatedTraining, error: updateError } = await supabase
           .from('personalized_ai_training')
           .update({
             personality_settings: personalitySettings,
@@ -159,14 +89,7 @@ serve(async (req) => {
 
         if (updateError) {
           console.error('❌ Database error updating training:', updateError);
-          return new Response(JSON.stringify({
-            error: `Failed to update training: ${updateError.message}`,
-            success: false,
-            details: updateError
-          }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          });
+          throw updateError;
         }
 
         console.log('✅ Training record updated:', trainingId);
@@ -181,18 +104,8 @@ serve(async (req) => {
       case 'train_model':
         console.log('🧠 Starting AI model training process...');
         
-        if (!trainingId) {
-          return new Response(JSON.stringify({
-            error: 'Training ID is required for model training',
-            success: false
-          }), {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          });
-        }
-
         // Get training data for processing
-        const { data: trainingRecord, error: fetchError } = await supabaseServiceRole
+        const { data: trainingRecord, error: fetchError } = await supabase
           .from('personalized_ai_training')
           .select('*')
           .eq('id', trainingId)
@@ -201,13 +114,7 @@ serve(async (req) => {
 
         if (fetchError) {
           console.error('❌ Failed to fetch training record:', fetchError);
-          return new Response(JSON.stringify({
-            error: `Failed to fetch training record: ${fetchError.message}`,
-            success: false
-          }), {
-            status: 404,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          });
+          throw fetchError;
         }
 
         console.log('📊 Training data retrieved:', {
@@ -217,8 +124,10 @@ serve(async (req) => {
           apiData: trainingRecord.training_data?.apiData?.length || 0
         });
 
+        console.log('🔄 Data flow: Q&A / Docs / API / Behavior Data → LlamaIndex → LLaMA 3');
+        
         // Update status to training
-        await supabaseServiceRole
+        await supabase
           .from('personalized_ai_training')
           .update({
             model_status: 'training',
@@ -228,9 +137,10 @@ serve(async (req) => {
 
         console.log('📚 Step 1: Processing training data with LlamaIndex...');
         
-        const processedData = await processTrainingDataWithLlamaIndex(trainingRecord.training_data);
+        const trainingData = trainingRecord.training_data;
+        const processedData = await processTrainingDataWithLlamaIndex(trainingData);
         
-        await supabaseServiceRole
+        await supabase
           .from('personalized_ai_training')
           .update({ training_progress: 20 })
           .eq('id', trainingId);
@@ -250,7 +160,7 @@ serve(async (req) => {
           personality: trainingRecord.personality_settings
         };
 
-        await supabaseServiceRole
+        await supabase
           .from('personalized_ai_training')
           .update({ training_progress: 35 })
           .eq('id', trainingId);
@@ -269,6 +179,7 @@ serve(async (req) => {
         ];
 
         for (const step of progressSteps) {
+          // Realistic processing time based on data complexity
           const processingTime = calculateProcessingTime(processedData, step.stage);
           await new Promise(resolve => setTimeout(resolve, processingTime));
           
@@ -276,7 +187,7 @@ serve(async (req) => {
           
           const modelStatus = step.progress === 100 ? 'completed' : 'training';
           
-          await supabaseServiceRole
+          await supabase
             .from('personalized_ai_training')
             .update({
               training_progress: step.progress,
@@ -288,7 +199,7 @@ serve(async (req) => {
         // Generate unique model ID for deployment
         const modelId = `llama3_llamaindex_${trainingId}_${Date.now()}`;
         
-        await supabaseServiceRole
+        await supabase
           .from('personalized_ai_training')
           .update({
             voice_model_id: modelId,
@@ -317,33 +228,14 @@ serve(async (req) => {
         });
 
       case 'get_training':
-        if (!trainingId) {
-          return new Response(JSON.stringify({
-            error: 'Training ID is required',
-            success: false
-          }), {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          });
-        }
-
-        const { data: training, error: getError } = await supabaseServiceRole
+        const { data: training, error: getError } = await supabase
           .from('personalized_ai_training')
           .select('*')
           .eq('id', trainingId)
           .eq('user_id', user.id)
           .single();
 
-        if (getError) {
-          console.error('❌ Failed to get training:', getError);
-          return new Response(JSON.stringify({
-            error: `Failed to get training: ${getError.message}`,
-            success: false
-          }), {
-            status: 404,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          });
-        }
+        if (getError) throw getError;
 
         return new Response(JSON.stringify({ 
           success: true, 
@@ -353,42 +245,23 @@ serve(async (req) => {
         });
 
       case 'list_trainings':
-        const { data: trainings, error: listError } = await supabaseServiceRole
+        const { data: trainings, error: listError } = await supabase
           .from('personalized_ai_training')
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
-        if (listError) {
-          console.error('❌ Failed to list trainings:', listError);
-          return new Response(JSON.stringify({
-            error: `Failed to list trainings: ${listError.message}`,
-            success: false
-          }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          });
-        }
+        if (listError) throw listError;
 
         return new Response(JSON.stringify({ 
           success: true, 
-          trainings: trainings || []
+          trainings 
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
 
       case 'process_documents':
-        const { documents } = requestBody;
-        
-        if (!documents || !Array.isArray(documents)) {
-          return new Response(JSON.stringify({
-            error: 'Documents array is required',
-            success: false
-          }), {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          });
-        }
+        const { documents } = await req.json();
         
         console.log('Processing documents with LlamaIndex...');
         const processedDocuments = await processDocuments(documents);
@@ -401,17 +274,7 @@ serve(async (req) => {
         });
 
       case 'process_qa_pairs':
-        const { qaPairs } = requestBody;
-        
-        if (!qaPairs || !Array.isArray(qaPairs)) {
-          return new Response(JSON.stringify({
-            error: 'Q&A pairs array is required',
-            success: false
-          }), {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          });
-        }
+        const { qaPairs } = await req.json();
         
         console.log('Processing Q&A pairs for training...');
         const processedQA = await processQAPairs(qaPairs);
@@ -424,17 +287,7 @@ serve(async (req) => {
         });
 
       case 'llama3_fine_tune':
-        const { datasetId, personalityConfig } = requestBody;
-        
-        if (!datasetId) {
-          return new Response(JSON.stringify({
-            error: 'Dataset ID is required for fine-tuning',
-            success: false
-          }), {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          });
-        }
+        const { datasetId, personalityConfig } = await req.json();
         
         console.log('Starting LLaMA 3 QLoRA fine-tuning...');
         const finetuneResult = await fineTuneLLaMA3(datasetId, personalityConfig);
@@ -447,21 +300,14 @@ serve(async (req) => {
         });
 
       default:
-        return new Response(JSON.stringify({
-          error: `Invalid action: ${action}`,
-          success: false
-        }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
+        throw new Error('Invalid action');
     }
 
   } catch (error) {
     console.error('❌ Error in personalized-ai-training function:', error);
     return new Response(JSON.stringify({ 
-      error: error.message || 'Internal server error',
-      success: false,
-      details: error.stack
+      error: error.message,
+      success: false 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -481,6 +327,7 @@ async function processTrainingDataWithLlamaIndex(trainingData: any) {
     totalTokens: 0
   };
 
+  // Process documents with LlamaIndex document loaders
   if (trainingData.documents && trainingData.documents.length > 0) {
     console.log(`📄 Processing ${trainingData.documents.length} documents with LlamaIndex...`);
     for (const doc of trainingData.documents) {
@@ -497,6 +344,7 @@ async function processTrainingDataWithLlamaIndex(trainingData: any) {
     }
   }
 
+  // Process Q&A pairs for instruction tuning
   if (trainingData.qaPairs && trainingData.qaPairs.length > 0) {
     console.log(`❓ Processing ${trainingData.qaPairs.length} Q&A pairs for instruction tuning...`);
     for (const qa of trainingData.qaPairs) {
@@ -511,6 +359,12 @@ async function processTrainingDataWithLlamaIndex(trainingData: any) {
     }
   }
 
+  // Process API data for structured knowledge
+  if (trainingData.apiData && trainingData.apiData.length > 0) {
+    console.log(`🔌 Processing ${trainingData.apiData.length} API data entries...`);
+    // Additional processing for API data
+  }
+
   console.log('✅ LlamaIndex processing completed:', {
     documentsProcessed: processedData.documents.length,
     qaPairsProcessed: processedData.qaPairs.length,
@@ -520,12 +374,18 @@ async function processTrainingDataWithLlamaIndex(trainingData: any) {
   return processedData;
 }
 
+// Advanced embedding generation (simulated)
 async function generateAdvancedEmbeddings(text: string) {
   console.log(`🔍 Generating advanced embeddings for: ${text.substring(0, 50)}...`);
+  
+  // Simulate realistic embedding generation time
   await new Promise(resolve => setTimeout(resolve, 200));
+  
+  // Return simulated high-dimensional embedding
   return Array.from({length: 1536}, () => Math.random() * 2 - 1);
 }
 
+// Smart chunking with LlamaIndex
 async function smartChunking(text: string, chunkSize: number = 512, overlap: number = 50) {
   const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
   const chunks = [];
@@ -547,6 +407,7 @@ async function smartChunking(text: string, chunkSize: number = 512, overlap: num
   return chunks;
 }
 
+// Create LlamaIndex node structure
 async function createLlamaIndexNode(doc: any) {
   return {
     id: doc.id,
@@ -561,6 +422,7 @@ async function createLlamaIndexNode(doc: any) {
   };
 }
 
+// Format Q&A for LLaMA 3 instruction tuning
 function formatForLLaMA3Training(qa: any) {
   return {
     input: `<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n${qa.question}<|eot_id|><|start_header_id|>assistant<|end_header_id|>`,
@@ -569,8 +431,9 @@ function formatForLLaMA3Training(qa: any) {
   };
 }
 
+// Calculate realistic processing time based on data complexity
 function calculateProcessingTime(processedData: any, stage: string): number {
-  const baseTime = 2000;
+  const baseTime = 2000; // 2 seconds base
   const complexity = (processedData.documents?.length || 0) * 100 + 
                     (processedData.qaPairs?.length || 0) * 50;
   
@@ -587,6 +450,7 @@ function calculateProcessingTime(processedData: any, stage: string): number {
   return Math.min(baseTime + complexity * (stageMultipliers[stage] || 1.0), 8000);
 }
 
+// Process documents specifically
 async function processDocuments(documents: any[]) {
   console.log(`Processing ${documents.length} documents for LLaMA 3 training...`);
   
@@ -613,6 +477,7 @@ async function processDocuments(documents: any[]) {
   return processed;
 }
 
+// Process Q&A pairs specifically
 async function processQAPairs(qaPairs: any[]) {
   console.log(`Processing ${qaPairs.length} Q&A pairs for LLaMA 3 training...`);
   
@@ -638,6 +503,7 @@ async function processQAPairs(qaPairs: any[]) {
   return processed;
 }
 
+// Fine-tune LLaMA 3 with QLoRA
 async function fineTuneLLaMA3(datasetId: string, personalityConfig: any) {
   console.log('Initializing LLaMA 3 QLoRA fine-tuning...');
   
@@ -664,6 +530,7 @@ async function fineTuneLLaMA3(datasetId: string, personalityConfig: any) {
     personality: personalityConfig
   };
   
+  // Simulate realistic fine-tuning process
   const steps = [
     'loading_base_model',
     'applying_quantization',
@@ -695,12 +562,19 @@ async function fineTuneLLaMA3(datasetId: string, personalityConfig: any) {
   };
 }
 
+// Generate embeddings for text (simulated)
 async function generateEmbeddings(text: string) {
+  // In production, this would use actual embedding models
   console.log(`Generating embeddings for text: ${text.substring(0, 50)}...`);
+  
+  // Simulate embedding generation
   await new Promise(resolve => setTimeout(resolve, 100));
+  
+  // Return simulated 768-dimensional embedding
   return Array.from({length: 768}, () => Math.random() * 2 - 1);
 }
 
+// Split text into chunks for processing
 function splitIntoChunks(text: string, chunkSize: number = 512) {
   const words = text.split(' ');
   const chunks = [];
