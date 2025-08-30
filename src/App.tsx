@@ -1,5 +1,4 @@
 
-import React, { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,8 +15,7 @@ import CalendarPage from "./components/CalendarPage";
 import NotificationsPage from "./components/NotificationsPage";
 import FollowersPage from "./components/FollowersPage";
 import NotFound from "./pages/NotFound";
-import AvatarPage from "./pages/AvatarPage";
-import AvatarCreationPage from "./pages/AvatarCreationPage";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -58,7 +56,7 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
 
   // Check if current path requires sidebar (dashboard routes)
   const currentPath = window.location.pathname;
-  const isDashboardRoute = ['/dashboard', '/avatar', '/calendar', '/notifications', '/followers', '/profiles', '/feed', '/analytics', '/bookmarks', '/settings', '/ai-training'].includes(currentPath);
+  const isDashboardRoute = ['/dashboard', '/calendar', '/notifications', '/followers', '/profiles', '/feed', '/analytics', '/bookmarks', '/settings', '/ai-training'].includes(currentPath);
   
   // Also check for query parameters that indicate dashboard view
   const urlParams = new URLSearchParams(window.location.search);
@@ -114,8 +112,6 @@ const App = () => (
               
               {/* Dashboard routes with sidebar */}
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/avatar" element={<AvatarPage />} />
-              <Route path="/avatar/create" element={<AvatarCreationPage />} />
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/followers" element={<FollowersPage />} />

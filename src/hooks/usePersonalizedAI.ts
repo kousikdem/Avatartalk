@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -41,85 +40,28 @@ export const usePersonalizedAI = () => {
   const [currentTraining, setCurrentTraining] = useState<PersonalizedTraining | null>(null);
   const { toast } = useToast();
 
-  const handleEdgeFunctionError = useCallback((error: any, operation: string) => {
-    console.error(`❌ ${operation} failed:`, error);
-    
-    let errorMessage = `Failed to ${operation.toLowerCase()}`;
-    
-    if (error?.message) {
-      errorMessage = error.message;
-    } else if (typeof error === 'string') {
-      errorMessage = error;
-    }
-    
-    toast({
-      title: "Error",
-      description: errorMessage,
-      variant: "destructive"
-    });
-    
-    return { success: false, error: errorMessage };
-  }, [toast]);
-
-  const invokeEdgeFunction = useCallback(async (body: any, retries = 3) => {
-    for (let attempt = 1; attempt <= retries; attempt++) {
-      try {
-        console.log(`🔄 Edge function attempt ${attempt}/${retries}:`, body.action);
-        
-        const response = await supabase.functions.invoke('personalized-ai-training', {
-          body
-        });
-
-        if (response.error) {
-          console.error(`❌ Edge function error (attempt ${attempt}):`, response.error);
-          
-          if (attempt === retries) {
-            throw new Error(response.error.message || 'Edge function failed');
-          }
-          
-          // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-          continue;
-        }
-
-        console.log(`✅ Edge function success (attempt ${attempt}):`, response.data?.success);
-        return response;
-        
-      } catch (error) {
-        console.error(`❌ Edge function exception (attempt ${attempt}):`, error);
-        
-        if (attempt === retries) {
-          throw error;
-        }
-        
-        // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-      }
-    }
-  }, []);
-
   const fetchTrainings = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await invokeEdgeFunction({
-        action: 'list_trainings'
+      const response = await supabase.functions.invoke('personalized-ai-training', {
+        body: { action: 'list_trainings' }
       });
 
-      if (!response?.data?.success) {
-        throw new Error(response?.data?.error || 'Failed to fetch trainings');
-      }
+      if (response.error) throw response.error;
       
-      const fetchedTrainings = response.data.trainings || [];
-      setTrainings(fetchedTrainings);
-      
-      console.log(`✅ Fetched ${fetchedTrainings.length} trainings`);
-      
+      const { trainings: fetchedTrainings } = response.data;
+      setTrainings(fetchedTrainings || []);
     } catch (error) {
-      handleEdgeFunctionError(error, 'Fetch trainings');
+      console.error('Error fetching trainings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch AI trainings",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
-  }, [invokeEdgeFunction, handleEdgeFunctionError]);
+  }, [toast]);
 
   const createTraining = useCallback(async (
     trainingData: TrainingData,
@@ -127,17 +69,17 @@ export const usePersonalizedAI = () => {
   ) => {
     setIsLoading(true);
     try {
-      const response = await invokeEdgeFunction({
-        action: 'create_training',
-        trainingData,
-        personalitySettings
+      const response = await supabase.functions.invoke('personalized-ai-training', {
+        body: {
+          action: 'create_training',
+          trainingData,
+          personalitySettings
+        }
       });
 
-      if (!response?.data?.success) {
-        throw new Error(response?.data?.error || 'Failed to create training');
-      }
+      if (response.error) throw response.error;
       
-      const training = response.data.training;
+      const { training } = response.data;
       setTrainings(prev => [training, ...prev]);
       setCurrentTraining(training);
       
@@ -148,12 +90,17 @@ export const usePersonalizedAI = () => {
       
       return training;
     } catch (error) {
-      handleEdgeFunctionError(error, 'Create training');
+      console.error('Error creating training:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create AI training",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsLoading(false);
     }
-  }, [invokeEdgeFunction, handleEdgeFunctionError, toast]);
+  }, [toast]);
 
   const updateTraining = useCallback(async (
     trainingId: string,
@@ -162,18 +109,18 @@ export const usePersonalizedAI = () => {
   ) => {
     setIsLoading(true);
     try {
-      const response = await invokeEdgeFunction({
-        action: 'update_training',
-        trainingId,
-        trainingData,
-        personalitySettings
+      const response = await supabase.functions.invoke('personalized-ai-training', {
+        body: {
+          action: 'update_training',
+          trainingId,
+          trainingData,
+          personalitySettings
+        }
       });
 
-      if (!response?.data?.success) {
-        throw new Error(response?.data?.error || 'Failed to update training');
-      }
+      if (response.error) throw response.error;
       
-      const training = response.data.training;
+      const { training } = response.data;
       setTrainings(prev => prev.map(t => t.id === trainingId ? training : t));
       setCurrentTraining(training);
       
@@ -184,24 +131,29 @@ export const usePersonalizedAI = () => {
       
       return training;
     } catch (error) {
-      handleEdgeFunctionError(error, 'Update training');
+      console.error('Error updating training:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update AI training",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsLoading(false);
     }
-  }, [invokeEdgeFunction, handleEdgeFunctionError, toast]);
+  }, [toast]);
 
   const trainModel = useCallback(async (trainingId: string) => {
     setIsTraining(true);
     try {
-      const response = await invokeEdgeFunction({
-        action: 'train_model',
-        trainingId
+      const response = await supabase.functions.invoke('personalized-ai-training', {
+        body: {
+          action: 'train_model',
+          trainingId
+        }
       });
 
-      if (!response?.data?.success) {
-        throw new Error(response?.data?.error || 'Failed to train model');
-      }
+      if (response.error) throw response.error;
       
       toast({
         title: "Success",
@@ -213,46 +165,56 @@ export const usePersonalizedAI = () => {
       
       return response.data;
     } catch (error) {
-      handleEdgeFunctionError(error, 'Train model');
+      console.error('Error training model:', error);
+      toast({
+        title: "Error",
+        description: "Failed to train AI model",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsTraining(false);
     }
-  }, [invokeEdgeFunction, handleEdgeFunctionError, toast, fetchTrainings]);
+  }, [toast, fetchTrainings]);
 
   const getTraining = useCallback(async (trainingId: string) => {
     try {
-      const response = await invokeEdgeFunction({
-        action: 'get_training',
-        trainingId
+      const response = await supabase.functions.invoke('personalized-ai-training', {
+        body: {
+          action: 'get_training',
+          trainingId
+        }
       });
 
-      if (!response?.data?.success) {
-        throw new Error(response?.data?.error || 'Failed to fetch training');
-      }
+      if (response.error) throw response.error;
       
-      const training = response.data.training;
+      const { training } = response.data;
       setCurrentTraining(training);
       return training;
     } catch (error) {
-      handleEdgeFunctionError(error, 'Get training');
+      console.error('Error fetching training:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch AI training",
+        variant: "destructive"
+      });
       throw error;
     }
-  }, [invokeEdgeFunction, handleEdgeFunctionError]);
+  }, [toast]);
 
   const processDocuments = useCallback(async (documents: any[]) => {
     setIsLoading(true);
     try {
-      const response = await invokeEdgeFunction({
-        action: 'process_documents',
-        documents
+      const response = await supabase.functions.invoke('personalized-ai-training', {
+        body: {
+          action: 'process_documents',
+          documents
+        }
       });
 
-      if (!response?.data?.success) {
-        throw new Error(response?.data?.error || 'Failed to process documents');
-      }
+      if (response.error) throw response.error;
       
-      const processedDocuments = response.data.processedDocuments;
+      const { processedDocuments } = response.data;
       
       toast({
         title: "Success",
@@ -261,26 +223,31 @@ export const usePersonalizedAI = () => {
       
       return processedDocuments;
     } catch (error) {
-      handleEdgeFunctionError(error, 'Process documents');
+      console.error('Error processing documents:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process documents",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsLoading(false);
     }
-  }, [invokeEdgeFunction, handleEdgeFunctionError, toast]);
+  }, [toast]);
 
   const processQAPairs = useCallback(async (qaPairs: any[]) => {
     setIsLoading(true);
     try {
-      const response = await invokeEdgeFunction({
-        action: 'process_qa_pairs',
-        qaPairs
+      const response = await supabase.functions.invoke('personalized-ai-training', {
+        body: {
+          action: 'process_qa_pairs',
+          qaPairs
+        }
       });
 
-      if (!response?.data?.success) {
-        throw new Error(response?.data?.error || 'Failed to process Q&A pairs');
-      }
+      if (response.error) throw response.error;
       
-      const processedQA = response.data.processedQA;
+      const { processedQA } = response.data;
       
       toast({
         title: "Success",
@@ -289,12 +256,17 @@ export const usePersonalizedAI = () => {
       
       return processedQA;
     } catch (error) {
-      handleEdgeFunctionError(error, 'Process Q&A pairs');
+      console.error('Error processing Q&A pairs:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process Q&A pairs",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsLoading(false);
     }
-  }, [invokeEdgeFunction, handleEdgeFunctionError, toast]);
+  }, [toast]);
 
   const llamaFineTune = useCallback(async (
     datasetId: string,
@@ -302,17 +274,17 @@ export const usePersonalizedAI = () => {
   ) => {
     setIsTraining(true);
     try {
-      const response = await invokeEdgeFunction({
-        action: 'llama3_fine_tune',
-        datasetId,
-        personalityConfig
+      const response = await supabase.functions.invoke('personalized-ai-training', {
+        body: {
+          action: 'llama3_fine_tune',
+          datasetId,
+          personalityConfig
+        }
       });
 
-      if (!response?.data?.success) {
-        throw new Error(response?.data?.error || 'Failed to complete LLaMA 3 fine-tuning');
-      }
+      if (response.error) throw response.error;
       
-      const finetuneResult = response.data.finetuneResult;
+      const { finetuneResult } = response.data;
       
       toast({
         title: "Success",
@@ -321,12 +293,17 @@ export const usePersonalizedAI = () => {
       
       return finetuneResult;
     } catch (error) {
-      handleEdgeFunctionError(error, 'LLaMA 3 fine-tuning');
+      console.error('Error in LLaMA 3 fine-tuning:', error);
+      toast({
+        title: "Error",
+        description: "Failed to complete LLaMA 3 fine-tuning",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsTraining(false);
     }
-  }, [invokeEdgeFunction, handleEdgeFunctionError, toast]);
+  }, [toast]);
 
   const saveDraft = useCallback(async (
     trainingData: TrainingData,
