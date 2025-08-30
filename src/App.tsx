@@ -1,4 +1,5 @@
 
+import React, { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,7 +18,6 @@ import FollowersPage from "./components/FollowersPage";
 import NotFound from "./pages/NotFound";
 import AvatarPage from "./pages/AvatarPage";
 import AvatarCreationPage from "./pages/AvatarCreationPage";
-import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { useIsMobile } from "@/hooks/use-mobile";
