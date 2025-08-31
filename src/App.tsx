@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import DashboardSidebar from "@/components/DashboardSidebar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -14,21 +14,62 @@ import AvatarPage from "./pages/AvatarPage";
 import CalendarPage from "./components/CalendarPage";
 import ProductsPage from "./pages/ProductsPage";
 import CreatePostModal from "./components/CreatePostModal";
+import { supabase } from "@/integrations/supabase/client";
 
 const queryClient = new QueryClient();
 
 const App = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const isMobile = useIsMobile();
 
-  // Check if we should show sidebar based on URL params or path
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Check if we should show sidebar - only for authenticated users on dashboard pages
   const shouldShowSidebar = () => {
+    if (!user) return false;
     const urlParams = new URLSearchParams(window.location.search);
     const isDashboard = urlParams.get('view') === 'dashboard';
     const isDashboardPath = window.location.pathname !== '/' || isDashboard;
     return isDashboardPath;
   };
+
+  // Redirect authenticated users away from landing page
+  const shouldRedirectToDashboard = () => {
+    if (loading) return false;
+    return user && window.location.pathname === '/' && !new URLSearchParams(window.location.search).get('view');
+  };
+
+  if (shouldRedirectToDashboard()) {
+    window.location.href = '/?view=dashboard';
+    return null;
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>

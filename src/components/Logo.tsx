@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { User } from 'lucide-react';
 
 interface LogoProps {
   className?: string;
@@ -15,31 +16,10 @@ const Logo: React.FC<LogoProps> = ({ className = '', size = 'md' }) => {
 
   return (
     <div className={`${sizeClasses[size]} ${className} bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg`}>
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
+      <User
         className="w-3/4 h-3/4 text-white"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M12 2L2 7L12 12L22 7L12 2Z"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M2 17L12 22L22 17"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M2 12L12 17L22 12"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinejoin="round"
-        />
-      </svg>
+        strokeWidth={2}
+      />
     </div>
   );
 };

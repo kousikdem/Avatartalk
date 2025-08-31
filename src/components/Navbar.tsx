@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { UserCircle, Settings, Home, LogIn, Users } from 'lucide-react';
 import MainAuth from './MainAuth';
 import VisitorAuth from './VisitorAuth';
+import Logo from './Logo';
 
 interface NavbarProps {
   showAuth?: boolean;
@@ -22,7 +23,8 @@ const Navbar: React.FC<NavbarProps> = ({ showAuth = false }) => {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-slate-900/90 via-blue-900/90 to-slate-900/90 backdrop-blur-lg border-b border-blue-500/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
+              <Logo size="sm" />
               <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                 AvatarTalk.bio
               </span>
