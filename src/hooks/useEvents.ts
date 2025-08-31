@@ -23,6 +23,11 @@ export const useEvents = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const transformEvent = (event: any): Event => ({
+    ...event,
+    attendees: Array.isArray(event.attendees) ? event.attendees.filter((item: any) => typeof item === 'string') : []
+  });
+
   const fetchEvents = async () => {
     try {
       setLoading(true);
@@ -33,17 +38,34 @@ export const useEvents = () => {
 
       if (error) throw error;
 
-      // Transform the data to match our Event interface
-      const transformedEvents: Event[] = (data || []).map(event => ({
-        ...event,
-        attendees: Array.isArray(event.attendees) ? event.attendees : []
-      }));
-
+      const transformedEvents: Event[] = (data || []).map(transformEvent);
       setEvents(transformedEvents);
     } catch (error: any) {
       toast.error('Failed to fetch events: ' + error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const uploadThumbnail = async (file: File, userId: string): Promise<string> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${userId}/${Date.now()}.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from('thumbnails')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('thumbnails')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error: any) {
+      toast.error('Failed to upload thumbnail: ' + error.message);
+      throw error;
     }
   };
 
@@ -60,11 +82,7 @@ export const useEvents = () => {
 
       if (error) throw error;
 
-      const transformedEvent: Event = {
-        ...data,
-        attendees: Array.isArray(data.attendees) ? data.attendees : []
-      };
-
+      const transformedEvent: Event = transformEvent(data);
       setEvents(prev => [...prev, transformedEvent]);
       toast.success('Event created successfully!');
       return transformedEvent;
@@ -85,11 +103,7 @@ export const useEvents = () => {
 
       if (error) throw error;
 
-      const transformedEvent: Event = {
-        ...data,
-        attendees: Array.isArray(data.attendees) ? data.attendees : []
-      };
-
+      const transformedEvent: Event = transformEvent(data);
       setEvents(prev => prev.map(event => event.id === id ? transformedEvent : event));
       toast.success('Event updated successfully!');
       return transformedEvent;
@@ -126,6 +140,7 @@ export const useEvents = () => {
     createEvent,
     updateEvent,
     deleteEvent,
+    uploadThumbnail,
     refetch: fetchEvents
   };
 };

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,7 @@ import { useEvents } from '@/hooks/useEvents';
 const CalendarPage = () => {
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
-  const { events, isLoading } = useEvents();
+  const { events, loading } = useEvents();
 
   const getEventTypeColor = (type: string) => {
     switch (type) {
@@ -183,7 +182,7 @@ const CalendarPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {loading ? (
               <div className="text-center py-8">
                 <div className="text-slate-600">Loading events...</div>
               </div>
