@@ -43,19 +43,13 @@ const App = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Check if we should show sidebar - only for authenticated users on dashboard pages
-  const shouldShowSidebar = () => {
-    if (!user) return false;
-    const urlParams = new URLSearchParams(window.location.search);
-    const isDashboard = urlParams.get('view') === 'dashboard';
-    const isDashboardPath = window.location.pathname !== '/' || isDashboard;
-    return isDashboardPath;
-  };
-
-  // Redirect authenticated users away from landing page
+  // Redirect authenticated users to dashboard
   const shouldRedirectToDashboard = () => {
     if (loading) return false;
-    return user && window.location.pathname === '/' && !new URLSearchParams(window.location.search).get('view');
+    if (user && window.location.pathname === '/' && !new URLSearchParams(window.location.search).get('view')) {
+      return true;
+    }
+    return false;
   };
 
   if (shouldRedirectToDashboard()) {
@@ -71,14 +65,15 @@ const App = () => {
     );
   }
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <div className="min-h-screen bg-white text-black">
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            {shouldShowSidebar() ? (
+  // For authenticated users, always show dashboard with sidebar
+  if (user) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <div className="min-h-screen bg-white text-black">
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
               <SidebarProvider 
                 defaultOpen={!isMobile}
                 open={sidebarOpen}
@@ -104,14 +99,27 @@ const App = () => {
                   />
                 </div>
               </SidebarProvider>
-            ) : (
-              <div className="min-h-screen w-full bg-white">
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </div>
-            )}
+            </BrowserRouter>
+          </div>
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  // For non-authenticated users, show landing page without sidebar
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <div className="min-h-screen bg-white text-black">
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <div className="min-h-screen w-full bg-white">
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </div>
           </BrowserRouter>
         </div>
       </TooltipProvider>
