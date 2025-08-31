@@ -49,8 +49,8 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-16 w-16 sm:h-32 sm:w-32 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -66,7 +66,7 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
   // Show sidebar only for authenticated users on dashboard routes OR dashboard view
   if (!user || (!isDashboardRoute && !isDashboardView)) {
     return (
-      <div className="min-h-screen w-full bg-white">
+      <div className="min-h-screen w-full bg-background">
         {children}
       </div>
     );
@@ -74,16 +74,31 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <SidebarProvider defaultOpen={!isMobile}>
-      <div className="min-h-screen flex w-full bg-white">
+      <div className="min-h-screen flex w-full bg-background">
         <DashboardSidebar onCreatePost={() => setIsCreatePostOpen(true)} />
         
-        <SidebarInset className="flex-1 w-full min-w-0">
-          <header className="flex h-12 sm:h-16 shrink-0 items-center gap-2 border-b px-3 sm:px-4 bg-white sticky top-0 z-50 w-full">
-            <SidebarTrigger className="h-6 w-6 sm:h-8 sm:w-8 p-1" />
+        <SidebarInset className="flex-1 w-full min-w-0 bg-background">
+          <header className="flex h-14 sm:h-16 shrink-0 items-center gap-3 sm:gap-4 border-b border-border px-4 sm:px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-50 w-full">
+            <SidebarTrigger className="h-8 w-8 p-1.5 hover:bg-accent rounded-md transition-colors" />
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg sm:text-xl font-semibold text-foreground truncate">
+                {currentPath === '/dashboard' && 'Dashboard'}
+                {currentPath === '/avatar' && 'Avatar'}
+                {currentPath === '/calendar' && 'Calendar'}
+                {currentPath === '/notifications' && 'Notifications'}
+                {currentPath === '/followers' && 'Followers'}
+                {currentPath === '/profiles' && 'Browse Profiles'}
+                {currentPath === '/feed' && 'Feed'}
+                {currentPath === '/analytics' && 'Analytics'}
+                {currentPath === '/bookmarks' && 'Bookmarks'}
+                {currentPath === '/settings' && 'Settings'}
+                {currentPath === '/ai-training' && 'AI Training'}
+              </h1>
+            </div>
           </header>
           
-          <main className="flex-1 overflow-auto w-full">
-            <div className="w-full max-w-full p-3 sm:p-4 md:p-6">
+          <main className="flex-1 overflow-auto w-full bg-background">
+            <div className="w-full max-w-full p-4 sm:p-6 lg:p-8">
               {children}
             </div>
           </main>
@@ -101,7 +116,7 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <div className="w-full min-h-screen bg-white">
+      <div className="w-full min-h-screen bg-background">
         <Toaster />
         <Sonner />
         <BrowserRouter>
@@ -118,16 +133,27 @@ const App = () => (
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/followers" element={<FollowersPage />} />
               <Route path="/profiles" element={
-                <div className="p-4 md:p-6 w-full">
-                  <h1 className="text-2xl font-bold mb-4">Browse Profiles</h1>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="w-full max-w-7xl mx-auto">
+                  <div className="mb-6 sm:mb-8">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Browse Profiles</h1>
+                    <p className="text-muted-foreground">Discover amazing AI avatars and connect with their creators</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                     {['fosik', 'emily', 'alex', 'sarah', 'john', 'demo'].map((username) => (
-                      <div key={username} className="bg-white rounded-lg border p-4 hover:shadow-md transition-shadow">
-                        <h3 className="font-semibold text-lg mb-2">@{username}</h3>
-                        <p className="text-gray-600 text-sm mb-3">Visit this profile to see their content</p>
+                      <div key={username} className="bg-card rounded-xl border border-border p-6 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 hover:border-primary/20">
+                        <div className="flex items-center space-x-3 mb-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full flex items-center justify-center">
+                            <span className="text-lg font-semibold text-primary">{username[0].toUpperCase()}</span>
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-lg text-foreground">@{username}</h3>
+                            <p className="text-sm text-muted-foreground">AI Avatar</p>
+                          </div>
+                        </div>
+                        <p className="text-muted-foreground text-sm mb-4 leading-relaxed">Visit this profile to see their content and interact with their AI avatar</p>
                         <a 
                           href={`/${username}`} 
-                          className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
+                          className="inline-flex items-center justify-center w-full px-4 py-2.5 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20"
                         >
                           View Profile
                         </a>
@@ -137,27 +163,63 @@ const App = () => (
                 </div>
               } />
               <Route path="/feed" element={
-                <div className="p-4 md:p-6 w-full">
-                  <h1 className="text-2xl font-bold">Feed</h1>
-                  <p className="text-gray-600 mt-2">Your social feed will be displayed here.</p>
+                <div className="w-full max-w-4xl mx-auto">
+                  <div className="mb-6 sm:mb-8">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Feed</h1>
+                    <p className="text-muted-foreground">Stay updated with the latest from your network</p>
+                  </div>
+                  <div className="bg-card rounded-xl border border-border p-8 text-center">
+                    <div className="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-2xl">📱</span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">Your Social Feed</h3>
+                    <p className="text-muted-foreground">Your social feed will be displayed here once you start following other users.</p>
+                  </div>
                 </div>
               } />
               <Route path="/analytics" element={
-                <div className="p-4 md:p-6 w-full">
-                  <h1 className="text-2xl font-bold">Analytics</h1>
-                  <p className="text-gray-600 mt-2">Your analytics data will be displayed here.</p>
+                <div className="w-full max-w-6xl mx-auto">
+                  <div className="mb-6 sm:mb-8">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Analytics</h1>
+                    <p className="text-muted-foreground">Track your avatar's performance and engagement</p>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="bg-card rounded-xl border border-border p-6">
+                      <h3 className="text-lg font-semibold text-foreground mb-2">Engagement Overview</h3>
+                      <p className="text-muted-foreground text-sm">Your analytics data will be displayed here.</p>
+                    </div>
+                    <div className="bg-card rounded-xl border border-border p-6">
+                      <h3 className="text-lg font-semibold text-foreground mb-2">Performance Metrics</h3>
+                      <p className="text-muted-foreground text-sm">Detailed metrics coming soon.</p>
+                    </div>
+                  </div>
                 </div>
               } />
               <Route path="/bookmarks" element={
-                <div className="p-4 md:p-6 w-full">
-                  <h1 className="text-2xl font-bold">Bookmarks</h1>
-                  <p className="text-gray-600 mt-2">Your saved bookmarks will be displayed here.</p>
+                <div className="w-full max-w-4xl mx-auto">
+                  <div className="mb-6 sm:mb-8">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Bookmarks</h1>
+                    <p className="text-muted-foreground">Your saved content and favorite interactions</p>
+                  </div>
+                  <div className="bg-card rounded-xl border border-border p-8 text-center">
+                    <div className="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-2xl">🔖</span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No Bookmarks Yet</h3>
+                    <p className="text-muted-foreground">Your saved bookmarks will appear here when you start saving content.</p>
+                  </div>
                 </div>
               } />
               <Route path="/settings" element={
-                <div className="p-4 md:p-6 w-full">
-                  <h1 className="text-2xl font-bold">Settings</h1>
-                  <p className="text-gray-600 mt-2">Your account settings will be displayed here.</p>
+                <div className="w-full max-w-4xl mx-auto">
+                  <div className="mb-6 sm:mb-8">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Settings</h1>
+                    <p className="text-muted-foreground">Manage your account and preferences</p>
+                  </div>
+                  <div className="bg-card rounded-xl border border-border p-6">
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Account Settings</h3>
+                    <p className="text-muted-foreground">Your account settings and preferences will be available here.</p>
+                  </div>
                 </div>
               } />
               <Route path="/ai-training" element={<AiTraining />} />

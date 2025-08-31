@@ -12,31 +12,34 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-[calc(100vh-12rem)] sm:min-h-[calc(100vh-16rem)] page-gradient flex items-center justify-center">
-        <div className="text-center px-4">
-          <div className="animate-spin rounded-full h-16 w-16 sm:h-32 sm:w-32 border-b-2 border-gradient-to-r from-blue-400/60 to-purple-400/60 mx-auto"></div>
-          <p className="mt-4 text-slate-600 text-sm sm:text-base">Loading your dashboard...</p>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground text-sm sm:text-base">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-[calc(100vh-12rem)] sm:min-h-[calc(100vh-16rem)] page-gradient">
+    <div className="w-full max-w-7xl mx-auto">
       {/* Header Section with Share Button */}
-      <div className="mb-4 sm:mb-6 md:mb-8">
-        <div className="flex items-center justify-end mb-4 sm:mb-6">
-          <Button 
-            onClick={() => setIsShareOpen(true)}
-            variant="default"
-            size={window.innerWidth < 640 ? "sm" : "default"}
-            className="bg-gradient-to-r from-blue-500/90 to-purple-500/90 hover:from-blue-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 text-xs sm:text-sm"
-          >
-            <Share2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-            <span className="hidden xs:inline">Share Profile</span>
-            <span className="xs:hidden">Share</span>
-          </Button>
+      <div className="flex items-center justify-between mb-6 sm:mb-8">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Welcome Back!</h1>
+          <p className="text-muted-foreground">Manage your AI avatar and track your interactions</p>
         </div>
+        
+        <Button 
+          onClick={() => setIsShareOpen(true)}
+          variant="default"
+          size="default"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300"
+        >
+          <Share2 className="w-4 h-4 mr-2" />
+          <span className="hidden sm:inline">Share Profile</span>
+          <span className="sm:hidden">Share</span>
+        </Button>
       </div>
 
       <EnhancedDashboard />
