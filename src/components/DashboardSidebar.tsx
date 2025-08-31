@@ -11,7 +11,9 @@ import {
   Bookmark,
   Calendar,
   Brain,
-  User
+  User,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import {
   Sidebar,
@@ -46,7 +48,7 @@ const navigationItems = [
 ];
 
 const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => {
-  const { state, setOpen } = useSidebar();
+  const { state, setOpen, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
   const isMobile = useIsMobile();
 
@@ -66,19 +68,36 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
       collapsible="icon"
     >
       <SidebarHeader className="p-4 border-b border-gray-200 bg-white">
-        <div 
-          className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all duration-300"
-          onClick={handleLogoClick}
-        >
-          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg">
-            <span className="text-white font-bold text-sm">A</span>
-          </div>
-          {!isCollapsed && (
-            <div className="min-w-0 flex-1">
-              <h2 className="font-semibold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent truncate text-sm md:text-base">AvatarTalk.bio</h2>
-              <p className="text-xs text-gray-500 truncate">Dashboard</p>
+        <div className="flex items-center justify-between">
+          <div 
+            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all duration-300 flex-1"
+            onClick={handleLogoClick}
+          >
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg">
+              <span className="text-white font-bold text-sm">A</span>
             </div>
-          )}
+            {!isCollapsed && (
+              <div className="min-w-0 flex-1">
+                <h2 className="font-semibold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent truncate text-sm md:text-base">AvatarTalk.bio</h2>
+                <p className="text-xs text-gray-500 truncate">Dashboard</p>
+              </div>
+            )}
+          </div>
+          
+          {/* Minimize/Maximize Button */}
+          <Button
+            onClick={toggleSidebar}
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 p-1 hover:bg-gray-100 transition-colors flex-shrink-0"
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? (
+              <ChevronRight className="h-4 w-4 text-gray-600" />
+            ) : (
+              <ChevronLeft className="h-4 w-4 text-gray-600" />
+            )}
+          </Button>
         </div>
       </SidebarHeader>
 
