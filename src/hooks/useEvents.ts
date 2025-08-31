@@ -1,18 +1,18 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface Event {
   id: string;
   user_id: string;
   title: string;
-  description?: string;
+  description: string | null;
   event_type: string;
   start_time: string;
   end_time: string;
-  location?: string;
-  thumbnail_url?: string;
+  location: string | null;
+  thumbnail_url: string | null;
   attendees: string[];
   status: string;
   created_at: string;
@@ -21,77 +21,97 @@ export interface Event {
 
 export const useEvents = () => {
   const [events, setEvents] = useState<Event[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
 
   const fetchEvents = async () => {
-    setIsLoading(true);
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('events')
         .select('*')
         .order('start_time', { ascending: true });
 
       if (error) throw error;
-      setEvents(data || []);
-    } catch (error) {
-      console.error('Error fetching events:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load events",
-        variant: "destructive",
-      });
+
+      // Transform the data to match our Event interface
+      const transformedEvents: Event[] = (data || []).map(event => ({
+        ...event,
+        attendees: Array.isArray(event.attendees) ? event.attendees : []
+      }));
+
+      setEvents(transformedEvents);
+    } catch (error: any) {
+      toast.error('Failed to fetch events: ' + error.message);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const createEvent = async (eventData: Omit<Event, 'id' | 'created_at' | 'updated_at'>) => {
+  const createEvent = async (eventData: Omit<Event, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       const { data, error } = await supabase
         .from('events')
-        .insert([eventData])
+        .insert([{ ...eventData, user_id: user.id, attendees: eventData.attendees }])
         .select()
         .single();
 
       if (error) throw error;
-      
-      setEvents(prev => [...prev, data]);
-      toast({
-        title: "Success",
-        description: "Event created successfully",
-      });
-      
-      return data;
-    } catch (error) {
-      console.error('Error creating event:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create event",
-        variant: "destructive",
-      });
+
+      const transformedEvent: Event = {
+        ...data,
+        attendees: Array.isArray(data.attendees) ? data.attendees : []
+      };
+
+      setEvents(prev => [...prev, transformedEvent]);
+      toast.success('Event created successfully!');
+      return transformedEvent;
+    } catch (error: any) {
+      toast.error('Failed to create event: ' + error.message);
       throw error;
     }
   };
 
-  const uploadThumbnail = async (file: File, userId: string) => {
+  const updateEvent = async (id: string, updates: Partial<Event>) => {
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${userId}/${Date.now()}.${fileExt}`;
-
-      const { data, error } = await supabase.storage
-        .from('thumbnails')
-        .upload(fileName, file);
+      const { data, error } = await supabase
+        .from('events')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
 
       if (error) throw error;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('thumbnails')
-        .getPublicUrl(fileName);
+      const transformedEvent: Event = {
+        ...data,
+        attendees: Array.isArray(data.attendees) ? data.attendees : []
+      };
 
-      return publicUrl;
-    } catch (error) {
-      console.error('Error uploading thumbnail:', error);
+      setEvents(prev => prev.map(event => event.id === id ? transformedEvent : event));
+      toast.success('Event updated successfully!');
+      return transformedEvent;
+    } catch (error: any) {
+      toast.error('Failed to update event: ' + error.message);
+      throw error;
+    }
+  };
+
+  const deleteEvent = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setEvents(prev => prev.filter(event => event.id !== id));
+      toast.success('Event deleted successfully!');
+    } catch (error: any) {
+      toast.error('Failed to delete event: ' + error.message);
       throw error;
     }
   };
@@ -102,9 +122,10 @@ export const useEvents = () => {
 
   return {
     events,
-    isLoading,
-    fetchEvents,
+    loading,
     createEvent,
-    uploadThumbnail,
+    updateEvent,
+    deleteEvent,
+    refetch: fetchEvents
   };
 };

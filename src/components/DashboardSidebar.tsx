@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
+import Logo from './Logo';
 
 interface DashboardSidebarProps {
   onCreatePost: () => void;
@@ -66,52 +67,49 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
 
   return (
     <Sidebar 
-      className="border-r border-border bg-card/50 backdrop-blur-sm shadow-sm"
+      className="border-r border-gray-200 bg-white shadow-sm"
       collapsible="icon"
     >
-      <SidebarHeader className="p-4 border-b border-border bg-card/50 backdrop-blur-sm">
+      <SidebarHeader className="p-4 border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between gap-3">
           <div 
             className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-all duration-300 flex-1 min-w-0"
             onClick={handleLogoClick}
           >
-            <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center flex-shrink-0 shadow-md">
-              <span className="text-primary-foreground font-bold text-sm">A</span>
-            </div>
+            <Logo size="md" className="flex-shrink-0 shadow-md" />
             {!isCollapsed && (
               <div className="min-w-0 flex-1">
-                <h2 className="font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent truncate text-base">AvatarTalk.bio</h2>
-                <p className="text-xs text-muted-foreground truncate">Dashboard</p>
+                <h2 className="font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate text-base">AvatarTalk.bio</h2>
+                <p className="text-xs text-gray-600 truncate">Dashboard</p>
               </div>
             )}
           </div>
           
-          {/* Minimize/Maximize Button - Hide on mobile */}
           {!isMobile && (
             <Button
               onClick={toggleSidebar}
               variant="ghost"
               size="icon"
-              className="h-8 w-8 p-1.5 hover:bg-accent transition-colors flex-shrink-0"
+              className="h-8 w-8 p-1.5 hover:bg-gray-100 transition-colors flex-shrink-0 text-gray-600"
               title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               {isCollapsed ? (
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                <ChevronRight className="h-4 w-4" />
               ) : (
-                <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+                <ChevronLeft className="h-4 w-4" />
               )}
             </Button>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="p-3 bg-card/30">
+      <SidebarContent className="p-3 bg-white">
         <SidebarGroup>
           <SidebarGroupContent>
             <div className="mb-4">
               <Button
                 onClick={onCreatePost}
-                className={`w-full transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-[1.02] bg-primary hover:bg-primary/90 text-primary-foreground border-0 ${
+                className={`w-full transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-[1.02] bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 hover:from-blue-600 hover:via-purple-600 hover:to-indigo-700 text-white border-0 ${
                   isCollapsed ? 'px-2 py-2' : 'px-4 py-2.5'
                 }`}
                 size={isCollapsed ? "icon" : "default"}
@@ -126,7 +124,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
-                    className="bg-card/80 hover:bg-accent/80 text-foreground hover:text-accent-foreground w-full transition-all duration-200 rounded-lg border border-border/50 hover:border-accent/50 shadow-sm hover:shadow-md backdrop-blur-sm"
+                    className="bg-white hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 text-gray-700 hover:text-gray-900 w-full transition-all duration-200 rounded-lg border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md backdrop-blur-sm"
                     tooltip={isCollapsed ? item.title : undefined}
                   >
                     <a 
@@ -136,9 +134,9 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
                       }`}
                       onClick={handleMenuItemClick}
                     >
-                      <item.icon className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
+                      <item.icon className="w-4 h-4 flex-shrink-0 text-gray-600" />
                       {!isCollapsed && (
-                        <span className="truncate text-sm font-medium text-foreground">{item.title}</span>
+                        <span className="truncate text-sm font-medium text-gray-700">{item.title}</span>
                       )}
                     </a>
                   </SidebarMenuButton>

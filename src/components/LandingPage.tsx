@@ -61,11 +61,11 @@ const LandingPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white text-black">
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4">
+      <section className="pt-32 pb-20 px-4 bg-white">
         <div className="max-w-6xl mx-auto text-center">
-          <Badge className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-600 border-blue-500/30 mb-6">
+          <Badge className="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 border-blue-300 mb-6">
             <Sparkles className="w-4 h-4 mr-2" />
             Next-Gen AI Avatars
           </Badge>
@@ -74,7 +74,7 @@ const LandingPage = () => {
             Create Your AI Avatar
           </h1>
           
-          <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl md:text-2xl text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
             Build intelligent AI avatars that represent you, engage with visitors, and create meaningful conversations 24/7
           </p>
           
@@ -101,7 +101,7 @@ const LandingPage = () => {
             <Button 
               size="lg"
               variant="outline"
-              className="border-purple-500/50 text-purple-600 hover:bg-purple-500/10 px-8 py-6 text-lg"
+              className="bg-gradient-to-r from-white to-gray-50 border-purple-300 text-purple-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-purple-100 hover:border-purple-400 px-8 py-6 text-lg transition-all duration-300 shadow-sm hover:shadow-md"
               onClick={() => window.location.href = '/?view=pricing'}
             >
               <Zap className="w-5 h-5 mr-2" />
@@ -126,7 +126,7 @@ const LandingPage = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 bg-gray-50">
+      <section className="py-20 px-4 bg-gradient-to-br from-gray-50 to-white">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
@@ -139,9 +139,9 @@ const LandingPage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {features.map((feature, index) => (
-              <Card key={index} className="bg-white border-gray-200 hover:shadow-lg transition-all duration-300">
+              <Card key={index} className="gradient-card">
                 <CardHeader>
-                  <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${feature.color} flex items-center justify-center mb-4`}>
+                  <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${feature.color} flex items-center justify-center mb-4 shadow-lg`}>
                     <feature.icon className="w-6 h-6 text-white" />
                   </div>
                   <CardTitle className="text-gray-900 text-xl">
@@ -160,9 +160,9 @@ const LandingPage = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4">
+      <section className="py-20 px-4 bg-white">
         <div className="max-w-4xl mx-auto text-center">
-          <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+          <Card className="gradient-card border-blue-200">
             <CardContent className="p-12">
               <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
                 Ready to Get Started?
@@ -191,7 +191,7 @@ const LandingPage = () => {
                   <Button 
                     size="lg"
                     variant="outline"
-                    className="border-green-500/50 text-green-600 hover:bg-green-500/10 px-8 py-6 text-lg"
+                    className="bg-gradient-to-r from-white to-green-50 border-green-300 text-green-700 hover:bg-gradient-to-r hover:from-green-50 hover:to-green-100 hover:border-green-400 px-8 py-6 text-lg transition-all duration-300 shadow-sm hover:shadow-md"
                   >
                     <Eye className="w-5 h-5 mr-2" />
                     View Sample Profile
