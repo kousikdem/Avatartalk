@@ -211,6 +211,51 @@ export type Database = {
           },
         ]
       }
+      collaborations: {
+        Row: {
+          collaboration_type: string | null
+          created_at: string
+          description: string | null
+          end_date: string | null
+          id: string
+          participants: Json | null
+          start_date: string | null
+          status: string | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          collaboration_type?: string | null
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          participants?: Json | null
+          start_date?: string | null
+          status?: string | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          collaboration_type?: string | null
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          participants?: Json | null
+          start_date?: string | null
+          status?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           comment_type: string
@@ -265,6 +310,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      events: {
+        Row: {
+          attendees: Json | null
+          created_at: string
+          description: string | null
+          end_time: string
+          event_type: string | null
+          id: string
+          location: string | null
+          start_time: string
+          status: string | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attendees?: Json | null
+          created_at?: string
+          description?: string | null
+          end_time: string
+          event_type?: string | null
+          id?: string
+          location?: string | null
+          start_time: string
+          status?: string | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attendees?: Json | null
+          created_at?: string
+          description?: string | null
+          end_time?: string
+          event_type?: string | null
+          id?: string
+          location?: string | null
+          start_time?: string
+          status?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       follows: {
         Row: {
@@ -523,6 +616,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      products: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_free: boolean | null
+          media_type: string | null
+          media_url: string | null
+          price: number | null
+          product_type: string
+          status: string | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          views_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_free?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
+          price?: number | null
+          product_type: string
+          status?: string | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          views_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_free?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
+          price?: number | null
+          product_type?: string
+          status?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          views_count?: number | null
+        }
+        Relationships: []
       }
       profile_visitors: {
         Row: {

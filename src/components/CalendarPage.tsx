@@ -1,352 +1,305 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar as CalendarIcon, Clock, MapPin, Users, Plus, Video, Phone, Calendar as CalendarComponent, Grid, List } from 'lucide-react';
-import { useCalendarEvents } from '@/hooks/useCalendarEvents';
-import { Calendar } from '@/components/ui/calendar';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
+import { Plus, Calendar as CalendarIcon, Clock, MapPin, Users, Eye, Edit, Trash2 } from 'lucide-react';
 import EventForm from '@/components/EventForm';
-
-interface CalendarEvent {
-  id: string;
-  title: string;
-  description?: string;
-  event_type: string;
-  start_time: string;
-  end_time: string;
-  location?: string;
-  attendees: string[];
-  status: string;
-}
+import { useEvents } from '@/hooks/useEvents';
 
 const CalendarPage = () => {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
-  const [viewMode, setViewMode] = useState<'monthly' | 'weekly'>('monthly');
-  const [isEventFormOpen, setIsEventFormOpen] = useState(false);
-  const { events, loading, createEvent } = useCalendarEvents();
-
-  // Enhanced mock events with collaborations and virtual meetings
-  const mockEvents: CalendarEvent[] = [
-    {
-      id: '1',
-      title: 'AI Avatar Demo Session',
-      description: 'Live demonstration of new avatar features',
-      event_type: 'virtual_meeting',
-      start_time: new Date().toISOString(),
-      end_time: new Date(Date.now() + 3600000).toISOString(),
-      location: 'Virtual Meeting Room',
-      attendees: ['john@example.com', 'jane@example.com', 'client@techcorp.com'],
-      status: 'confirmed'
-    },
-    {
-      id: '2',
-      title: 'Product Strategy Collaboration',
-      description: 'Quarterly planning session with stakeholders',
-      event_type: 'collaboration',
-      start_time: new Date(Date.now() + 86400000).toISOString(),
-      end_time: new Date(Date.now() + 86400000 + 7200000).toISOString(),
-      location: 'Conference Room A',
-      attendees: ['team@avatartalk.bio', 'partners@example.com'],
-      status: 'pending'
-    },
-    {
-      id: '3',
-      title: 'Voice Training Workshop',
-      description: 'Interactive workshop for voice customization',
-      event_type: 'event',
-      start_time: new Date(Date.now() + 172800000).toISOString(),
-      end_time: new Date(Date.now() + 172800000 + 5400000).toISOString(),
-      location: 'Virtual Workshop Space',
-      attendees: ['participants@workshop.com'],
-      status: 'confirmed'
-    }
-  ];
-
-  const allEvents = [...events, ...mockEvents];
-
-  const getEventsForDate = (date: Date) => {
-    return allEvents.filter(event => 
-      isSameDay(new Date(event.start_time), date)
-    );
-  };
-
-  const selectedDateEvents = getEventsForDate(selectedDate);
+  const [isAddEventOpen, setIsAddEventOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
+  const { events, isLoading } = useEvents();
 
   const getEventTypeColor = (type: string) => {
     switch (type) {
-      case 'virtual_meeting':
-        return 'bg-blue-50 text-blue-800 border-blue-200';
-      case 'collaboration':
-        return 'bg-purple-50 text-purple-800 border-purple-200';
-      case 'event':
-        return 'bg-green-50 text-green-800 border-green-200';
-      case 'meeting':
-        return 'bg-slate-50 text-slate-800 border-slate-200';
-      default:
-        return 'bg-gray-50 text-gray-800 border-gray-200';
+      case 'meeting': return 'bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border-blue-200';
+      case 'conference': return 'bg-gradient-to-r from-purple-100 to-violet-100 text-purple-800 border-purple-200';
+      case 'workshop': return 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-200';
+      case 'webinar': return 'bg-gradient-to-r from-orange-100 to-amber-100 text-orange-800 border-orange-200';
+      case 'collaboration': return 'bg-gradient-to-r from-pink-100 to-rose-100 text-pink-800 border-pink-200';
+      default: return 'bg-gradient-to-r from-gray-100 to-slate-100 text-gray-800 border-gray-200';
     }
   };
 
-  const getEventIcon = (type: string) => {
-    switch (type) {
-      case 'virtual_meeting':
-        return Video;
-      case 'collaboration':
-        return Users;
-      case 'event':
-        return CalendarIcon;
-      case 'meeting':
-        return Phone;
-      default:
-        return CalendarIcon;
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'upcoming': return 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-200';
+      case 'ongoing': return 'bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 border-blue-200';
+      case 'completed': return 'bg-gradient-to-r from-gray-100 to-slate-100 text-gray-800 border-gray-200';
+      case 'cancelled': return 'bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border-red-200';
+      default: return 'bg-gradient-to-r from-gray-100 to-slate-100 text-gray-800 border-gray-200';
     }
   };
 
-  const handleEventClick = (event: CalendarEvent) => {
-    console.log('Event clicked:', event);
-    // Open event details modal
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
-  const handleCreateEvent = (eventData: any) => {
-    console.log('Creating event:', eventData);
-    setIsEventFormOpen(false);
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const handleEditEvent = (eventId: string) => {
+    console.log('Edit event:', eventId);
+  };
+
+  const handleDeleteEvent = (eventId: string) => {
+    console.log('Delete event:', eventId);
+  };
+
+  const handleViewEvent = (eventId: string) => {
+    console.log('View event:', eventId);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 p-4 sm:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/30 to-emerald-50/20 p-4 sm:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-green-700 to-emerald-700 bg-clip-text text-transparent">
               Calendar & Events
             </h1>
             <p className="text-muted-foreground mt-1">
-              Manage meetings, events, and collaborations
+              Manage your events, meetings, and collaborations
             </p>
           </div>
           
           <div className="flex gap-3">
-            <div className="flex bg-white/60 backdrop-blur-sm border border-slate-200/60 rounded-lg p-1">
+            <div className="flex bg-gradient-to-r from-slate-100 to-green-100 rounded-lg p-1">
               <Button
-                variant={viewMode === 'monthly' ? 'default' : 'ghost'}
+                variant={viewMode === 'month' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setViewMode('monthly')}
+                onClick={() => setViewMode('month')}
                 className="h-8 px-3"
               >
-                Monthly
+                Month
               </Button>
               <Button
-                variant={viewMode === 'weekly' ? 'default' : 'ghost'}
+                variant={viewMode === 'week' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setViewMode('weekly')}
+                onClick={() => setViewMode('week')}
                 className="h-8 px-3"
               >
-                Weekly
+                Week
               </Button>
             </div>
             
             <Button 
-              onClick={() => setIsEventFormOpen(true)}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+              onClick={() => setIsAddEventOpen(true)}
+              className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
             >
               <Plus className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">Add Event</span>
-              <span className="sm:hidden">Add</span>
+              Add Event
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Calendar Widget */}
-          <Card className="lg:col-span-2 bg-white/60 backdrop-blur-sm border-slate-200/60">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CalendarIcon className="w-5 h-5 text-slate-600" />
-                {format(currentMonth, 'MMMM yyyy')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => date && setSelectedDate(date)}
-                month={currentMonth}
-                onMonthChange={setCurrentMonth}
-                className="rounded-lg border border-slate-200/60 bg-white/40 p-3 pointer-events-auto"
-                modifiers={{
-                  hasEvents: (date) => getEventsForDate(date).length > 0
-                }}
-                modifiersStyles={{
-                  hasEvents: {
-                    backgroundColor: 'rgb(219 234 254)',
-                    color: 'rgb(30 64 175)',
-                    fontWeight: 'bold',
-                    borderRadius: '6px'
-                  }
-                }}
-              />
-              
-              {/* Quick stats */}
-              <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-slate-200/60">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {allEvents.filter(e => e.event_type === 'virtual_meeting').length}
-                  </div>
-                  <div className="text-sm text-slate-600">Virtual Meetings</div>
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/20 border-blue-200/60">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg flex items-center justify-center">
+                  <CalendarIcon className="w-5 h-5 text-blue-600" />
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">
-                    {allEvents.filter(e => e.event_type === 'collaboration').length}
-                  </div>
-                  <div className="text-sm text-slate-600">Collaborations</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">
-                    {allEvents.filter(e => e.event_type === 'event').length}
-                  </div>
-                  <div className="text-sm text-slate-600">Events</div>
+                <div>
+                  <p className="text-sm text-slate-600">Total Events</p>
+                  <p className="text-2xl font-bold text-slate-900">{events.length}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Events for Selected Date */}
-          <Card className="bg-white/60 backdrop-blur-sm border-slate-200/60">
-            <CardHeader>
-              <CardTitle className="text-lg">
-                {format(selectedDate, 'MMM dd, yyyy')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {selectedDateEvents.length === 0 ? (
-                <div className="text-center py-8">
-                  <CalendarIcon className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                  <p className="text-slate-500">No events scheduled</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsEventFormOpen(true)}
-                    className="mt-3"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Event
-                  </Button>
+          <Card className="bg-gradient-to-br from-white via-green-50/30 to-emerald-50/20 border-green-200/60">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-100 to-emerald-100 rounded-lg flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-green-600" />
                 </div>
-              ) : (
-                selectedDateEvents.map((event) => {
-                  const EventIcon = getEventIcon(event.event_type);
-                  return (
-                    <div 
-                      key={event.id} 
-                      className="border border-slate-200/60 rounded-lg p-4 bg-white/80 hover:bg-white/90 transition-all duration-300 cursor-pointer group hover:shadow-md"
-                      onClick={() => handleEventClick(event)}
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg flex items-center justify-center">
-                            <EventIcon className="w-4 h-4 text-blue-600" />
-                          </div>
-                          <h3 className="font-medium text-slate-900 group-hover:text-blue-600 transition-colors">
-                            {event.title}
-                          </h3>
-                        </div>
-                        <Badge className={getEventTypeColor(event.event_type)}>
-                          {event.event_type.replace('_', ' ')}
-                        </Badge>
-                      </div>
-                      
-                      <div className="space-y-2 text-sm text-slate-600">
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4" />
-                          {format(new Date(event.start_time), 'HH:mm')} - {format(new Date(event.end_time), 'HH:mm')}
-                        </div>
-                        
-                        {event.location && (
-                          <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4" />
-                            <span className="truncate">{event.location}</span>
-                          </div>
-                        )}
-                        
-                        {event.attendees.length > 0 && (
-                          <div className="flex items-center gap-2">
-                            <Users className="w-4 h-4" />
-                            {event.attendees.length} participant{event.attendees.length > 1 ? 's' : ''}
-                          </div>
-                        )}
-                      </div>
-                      
-                      {event.description && (
-                        <p className="text-sm text-slate-600 mt-3 line-clamp-2">
-                          {event.description}
-                        </p>
-                      )}
-                    </div>
-                  );
-                })
-              )}
+                <div>
+                  <p className="text-sm text-slate-600">Upcoming</p>
+                  <p className="text-2xl font-bold text-slate-900">
+                    {events.filter(e => e.status === 'upcoming').length}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-white via-purple-50/30 to-violet-50/20 border-purple-200/60">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-100 to-violet-100 rounded-lg flex items-center justify-center">
+                  <Users className="w-5 h-5 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600">Collaborations</p>
+                  <p className="text-2xl font-bold text-slate-900">
+                    {events.filter(e => e.event_type === 'collaboration').length}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-white via-orange-50/30 to-amber-50/20 border-orange-200/60">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-amber-100 rounded-lg flex items-center justify-center">
+                  <MapPin className="w-5 h-5 text-orange-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600">This Week</p>
+                  <p className="text-2xl font-bold text-slate-900">
+                    {events.filter(e => {
+                      const eventDate = new Date(e.start_time);
+                      const now = new Date();
+                      const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+                      return eventDate >= now && eventDate <= weekFromNow;
+                    }).length}
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Upcoming Events Overview */}
-        <Card className="bg-white/60 backdrop-blur-sm border-slate-200/60">
+        {/* Events List */}
+        <Card className="bg-gradient-to-br from-white via-slate-50/60 to-green-50/40 backdrop-blur-sm border-slate-200/60">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CalendarComponent className="w-5 h-5 text-slate-600" />
-              Upcoming Events & Collaborations
+            <CardTitle className="bg-gradient-to-r from-slate-900 via-green-700 to-emerald-700 bg-clip-text text-transparent">
+              All Events
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {allEvents.slice(0, 6).map((event) => {
-                const EventIcon = getEventIcon(event.event_type);
-                return (
-                  <div 
-                    key={event.id} 
-                    className="border border-slate-200/60 rounded-lg p-4 bg-white/80 hover:bg-white/90 hover:shadow-lg transition-all duration-300 cursor-pointer group"
-                    onClick={() => handleEventClick(event)}
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg flex items-center justify-center">
-                        <EventIcon className="w-5 h-5 text-blue-600" />
+            {isLoading ? (
+              <div className="text-center py-8">
+                <div className="text-slate-600">Loading events...</div>
+              </div>
+            ) : events.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-slate-600 mb-2">No events found</div>
+                <p className="text-sm text-slate-500">Create your first event to get started</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {events.map((event) => (
+                  <Card key={event.id} className="bg-gradient-to-br from-white via-blue-50/20 to-green-50/20 border-slate-200/60 hover:shadow-lg transition-all duration-300 group">
+                    <CardContent className="p-4">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-start gap-4 flex-1 min-w-0">
+                          {event.thumbnail_url ? (
+                            <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                              <img 
+                                src={event.thumbnail_url} 
+                                alt={event.title}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <CalendarIcon className="w-8 h-8 text-green-600" />
+                            </div>
+                          )}
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                              <h3 className="font-semibold text-slate-900 truncate">{event.title}</h3>
+                              <div className="flex gap-2">
+                                <Badge className={getStatusColor(event.status)}>
+                                  {event.status}
+                                </Badge>
+                                <Badge className={getEventTypeColor(event.event_type)}>
+                                  {event.event_type}
+                                </Badge>
+                              </div>
+                            </div>
+                            
+                            {event.description && (
+                              <p className="text-slate-600 text-sm line-clamp-2 mb-2">
+                                {event.description}
+                              </p>
+                            )}
+                            
+                            <div className="flex items-center gap-4 text-xs text-slate-500">
+                              <span className="flex items-center gap-1">
+                                <CalendarIcon className="w-3 h-3" />
+                                {formatDate(event.start_time)}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {formatTime(event.start_time)} - {formatTime(event.end_time)}
+                              </span>
+                              {event.location && (
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="w-3 h-3" />
+                                  {event.location}
+                                </span>
+                              )}
+                              {event.attendees.length > 0 && (
+                                <span className="flex items-center gap-1">
+                                  <Users className="w-3 h-3" />
+                                  {event.attendees.length} attendees
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2 flex-shrink-0">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewEvent(event.id)}
+                            className="h-8 w-8 p-0 bg-gradient-to-r from-emerald-50 to-cyan-50 hover:from-emerald-100 hover:to-cyan-100 border-emerald-200"
+                          >
+                            <Eye className="w-4 h-4 text-emerald-600" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditEvent(event.id)}
+                            className="h-8 w-8 p-0 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border-blue-200"
+                          >
+                            <Edit className="w-4 h-4 text-blue-600" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteEvent(event.id)}
+                            className="h-8 w-8 p-0 bg-gradient-to-r from-red-50 to-pink-50 hover:from-red-100 hover:to-pink-100 border-red-200"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-600" />
+                          </Button>
+                        </div>
                       </div>
-                      <Badge className={getEventTypeColor(event.event_type)}>
-                        {event.event_type.replace('_', ' ')}
-                      </Badge>
-                    </div>
-                    
-                    <h3 className="font-medium text-slate-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
-                      {event.title}
-                    </h3>
-                    
-                    <div className="space-y-1 text-sm text-slate-600">
-                      <p>{format(new Date(event.start_time), 'MMM dd, HH:mm')}</p>
-                      {event.location && (
-                        <p className="truncate">{event.location}</p>
-                      )}
-                      <div className="flex items-center gap-1 text-xs">
-                        <Users className="w-3 h-3" />
-                        {event.attendees.length} participants
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Event Form Modal */}
+        {/* Add Event Modal */}
         <EventForm
-          isOpen={isEventFormOpen}
-          onClose={() => setIsEventFormOpen(false)}
-          onSave={handleCreateEvent}
+          isOpen={isAddEventOpen}
+          onClose={() => setIsAddEventOpen(false)}
+          onSave={(eventData) => {
+            console.log('Save event:', eventData);
+            setIsAddEventOpen(false);
+          }}
         />
       </div>
     </div>
