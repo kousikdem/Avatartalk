@@ -67,57 +67,59 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
       className="border-r border-gray-200 bg-white shadow-sm"
       collapsible="icon"
     >
-      <SidebarHeader className="p-4 border-b border-gray-200 bg-white">
+      <SidebarHeader className="p-3 sm:p-4 border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between">
           <div 
-            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all duration-300 flex-1"
+            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all duration-300 flex-1 min-w-0"
             onClick={handleLogoClick}
           >
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg">
-              <span className="text-white font-bold text-sm">A</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg">
+              <span className="text-white font-bold text-xs sm:text-sm">A</span>
             </div>
             {!isCollapsed && (
               <div className="min-w-0 flex-1">
-                <h2 className="font-semibold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent truncate text-sm md:text-base">AvatarTalk.bio</h2>
+                <h2 className="font-semibold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent truncate text-sm sm:text-base">AvatarTalk.bio</h2>
                 <p className="text-xs text-gray-500 truncate">Dashboard</p>
               </div>
             )}
           </div>
           
-          {/* Minimize/Maximize Button */}
-          <Button
-            onClick={toggleSidebar}
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 p-1 hover:bg-gray-100 transition-colors flex-shrink-0"
-            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {isCollapsed ? (
-              <ChevronRight className="h-4 w-4 text-gray-600" />
-            ) : (
-              <ChevronLeft className="h-4 w-4 text-gray-600" />
-            )}
-          </Button>
+          {/* Minimize/Maximize Button - Hide on mobile when sidebar is open */}
+          {!isMobile && (
+            <Button
+              onClick={toggleSidebar}
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 sm:h-8 sm:w-8 p-1 hover:bg-gray-100 transition-colors flex-shrink-0"
+              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {isCollapsed ? (
+                <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600" />
+              ) : (
+                <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600" />
+              )}
+            </Button>
+          )}
         </div>
       </SidebarHeader>
 
       <SidebarContent className="p-2 bg-white">
         <SidebarGroup>
           <SidebarGroupContent>
-            <div className="mb-4">
+            <div className="mb-3 sm:mb-4">
               <Button
                 onClick={onCreatePost}
                 className={`w-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white ${
-                  isCollapsed ? 'px-2 py-2' : 'px-4 py-2'
+                  isCollapsed ? 'px-2 py-2' : 'px-3 sm:px-4 py-2'
                 }`}
                 size={isCollapsed ? "icon" : "default"}
               >
                 <Plus className="w-4 h-4 flex-shrink-0" />
-                {!isCollapsed && <span className="ml-2 text-sm md:text-base">Create Post</span>}
+                {!isCollapsed && <span className="ml-2 text-sm">Create Post</span>}
               </Button>
             </div>
 
-            <SidebarMenu className="space-y-2">
+            <SidebarMenu className="space-y-1 sm:space-y-2">
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
@@ -128,13 +130,13 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
                     <a 
                       href={item.url} 
                       className={`flex items-center w-full ${
-                        isCollapsed ? 'justify-center p-3' : 'gap-3 p-3'
+                        isCollapsed ? 'justify-center p-2 sm:p-3' : 'gap-2 sm:gap-3 p-2 sm:p-3'
                       }`}
                       onClick={handleMenuItemClick}
                     >
-                      <item.icon className="w-5 h-5 flex-shrink-0 text-gray-600" />
+                      <item.icon className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-gray-600" />
                       {!isCollapsed && (
-                        <span className="truncate text-sm md:text-base font-medium text-gray-700">{item.title}</span>
+                        <span className="truncate text-sm font-medium text-gray-700">{item.title}</span>
                       )}
                     </a>
                   </SidebarMenuButton>

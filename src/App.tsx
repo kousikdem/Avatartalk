@@ -77,13 +77,13 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
       <div className="min-h-screen flex w-full bg-white">
         <DashboardSidebar onCreatePost={() => setIsCreatePostOpen(true)} />
         
-        <SidebarInset className="flex-1 w-full">
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 bg-white sticky top-0 z-50 w-full">
-            <SidebarTrigger className="h-8 w-8 p-1" />
+        <SidebarInset className="flex-1 w-full min-w-0">
+          <header className="flex h-12 sm:h-16 shrink-0 items-center gap-2 border-b px-3 sm:px-4 bg-white sticky top-0 z-50 w-full">
+            <SidebarTrigger className="h-6 w-6 sm:h-8 sm:w-8 p-1" />
           </header>
           
           <main className="flex-1 overflow-auto w-full">
-            <div className="w-full max-w-full">
+            <div className="w-full max-w-full p-3 sm:p-4 md:p-6">
               {children}
             </div>
           </main>
