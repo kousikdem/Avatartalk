@@ -13,7 +13,8 @@ import {
   Brain,
   User,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Package
 } from 'lucide-react';
 import {
   Sidebar,
@@ -35,6 +36,7 @@ interface DashboardSidebarProps {
 
 const navigationItems = [
   { title: "Dashboard", icon: Home, url: "/dashboard" },
+  { title: "Products", icon: Package, url: "/products" },
   { title: "Feed", icon: MessageSquare, url: "/feed" },
   { title: "Avatar", icon: User, url: "/avatar" },
   { title: "AI Training", icon: Brain, url: "/ai-training" },
