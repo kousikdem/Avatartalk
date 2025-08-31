@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,9 +8,11 @@ import ProductForm from '@/components/ProductForm';
 import ProductCard from '@/components/ProductCard';
 import ProductUpdatesFeed from '@/components/ProductUpdatesFeed';
 
+type ViewMode = 'grid' | 'list';
+
 const ProductsPage = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [viewMode, setViewMode] = useState('grid');
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
   // Mock products data
   const [products] = useState([
