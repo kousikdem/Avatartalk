@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Smile, Frown, Meh, Heart, Zap, AlertTriangle } from 'lucide-react';
+import { Smile, Frown, Meh, Heart, Zap, AlertTriangle, Laugh, Angry } from 'lucide-react';
 
 interface ExpressionPanelProps {
   currentExpression: string;
@@ -11,12 +11,14 @@ interface ExpressionPanelProps {
 
 const ExpressionPanel: React.FC<ExpressionPanelProps> = ({ currentExpression, onExpressionSelect }) => {
   const expressions = [
-    { id: 'neutral', name: 'Neutral', icon: Meh, color: 'bg-gray-500' },
-    { id: 'smiling', name: 'Happy', icon: Smile, color: 'bg-yellow-500' },
-    { id: 'sad', name: 'Sad', icon: Frown, color: 'bg-blue-500' },
-    { id: 'angry', name: 'Angry', icon: Zap, color: 'bg-red-500' },
-    { id: 'surprised', name: 'Surprised', icon: AlertTriangle, color: 'bg-orange-500' },
-    { id: 'loving', name: 'Loving', icon: Heart, color: 'bg-pink-500' },
+    { id: 'neutral', name: 'Neutral', icon: Meh, color: 'bg-gray-500', description: 'Calm and composed' },
+    { id: 'smiling', name: 'Happy', icon: Smile, color: 'bg-yellow-500', description: 'Cheerful smile' },
+    { id: 'laughing', name: 'Laughing', icon: Laugh, color: 'bg-orange-500', description: 'Joyful laughter' },
+    { id: 'sad', name: 'Sad', icon: Frown, color: 'bg-blue-500', description: 'Melancholy expression' },
+    { id: 'angry', name: 'Angry', icon: Angry, color: 'bg-red-500', description: 'Intense anger' },
+    { id: 'surprised', name: 'Surprised', icon: AlertTriangle, color: 'bg-purple-500', description: 'Shocked reaction' },
+    { id: 'loving', name: 'Loving', icon: Heart, color: 'bg-pink-500', description: 'Warm affection' },
+    { id: 'confident', name: 'Confident', icon: Zap, color: 'bg-green-500', description: 'Self-assured look' },
   ];
 
   return (
@@ -28,25 +30,43 @@ const ExpressionPanel: React.FC<ExpressionPanelProps> = ({ currentExpression, on
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-3">
           {expressions.map((expression) => {
             const IconComponent = expression.icon;
+            const isSelected = currentExpression === expression.id;
+            
             return (
               <Button
                 key={expression.id}
-                variant={currentExpression === expression.id ? "default" : "outline"}
-                className={`h-16 flex flex-col items-center gap-1 ${
-                  currentExpression === expression.id ? 'bg-blue-600 hover:bg-blue-700' : ''
+                variant={isSelected ? "default" : "outline"}
+                className={`h-20 flex flex-col items-center gap-2 p-3 transition-all duration-200 ${
+                  isSelected 
+                    ? 'bg-gradient-to-br from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0' 
+                    : 'hover:bg-gray-50 hover:border-gray-300'
                 }`}
                 onClick={() => onExpressionSelect(expression.id)}
               >
-                <div className={`w-6 h-6 rounded-full ${expression.color} flex items-center justify-center`}>
-                  <IconComponent className="w-3 h-3 text-white" />
+                <div className={`w-8 h-8 rounded-full ${expression.color} flex items-center justify-center transition-all duration-200 ${
+                  isSelected ? 'bg-white/20' : ''
+                }`}>
+                  <IconComponent className={`w-4 h-4 ${isSelected ? 'text-white' : 'text-white'}`} />
                 </div>
-                <span className="text-xs">{expression.name}</span>
+                <div className="text-center">
+                  <div className="text-xs font-medium">{expression.name}</div>
+                  <div className={`text-xs ${isSelected ? 'text-white/80' : 'text-gray-500'} leading-tight`}>
+                    {expression.description}
+                  </div>
+                </div>
               </Button>
             );
           })}
+        </div>
+
+        <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
+          <h4 className="font-medium text-blue-900 text-sm mb-1">Expression Tips</h4>
+          <p className="text-blue-700 text-xs">
+            Choose expressions that match your avatar's personality and intended use case.
+          </p>
         </div>
       </CardContent>
     </Card>

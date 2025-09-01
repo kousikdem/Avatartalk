@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { User, Zap, PlayCircle, Users } from 'lucide-react';
+import { User, Zap, PlayCircle, Users, Coffee, Dumbbell, Dancing, Swords } from 'lucide-react';
 
 interface PoseSelectorProps {
   currentPose: string;
@@ -11,12 +11,16 @@ interface PoseSelectorProps {
 
 const PoseSelector: React.FC<PoseSelectorProps> = ({ currentPose, onPoseSelect }) => {
   const poses = [
-    { id: 'standing', name: 'Standing', icon: User, description: 'Natural standing pose' },
-    { id: 'sitting', name: 'Sitting', icon: Users, description: 'Relaxed sitting position' },
-    { id: 'running', name: 'Running', icon: Zap, description: 'Dynamic running motion' },
-    { id: 'dancing', name: 'Dancing', icon: PlayCircle, description: 'Expressive dance pose' },
-    { id: 'fighting', name: 'Action', icon: Zap, description: 'Combat ready stance' },
+    { id: 'standing', name: 'Standing', icon: User, description: 'Natural standing pose', category: 'Basic' },
+    { id: 'relaxed', name: 'Relaxed', icon: Coffee, description: 'Casual relaxed stance', category: 'Basic' },
+    { id: 'sitting', name: 'Sitting', icon: Users, description: 'Comfortable sitting position', category: 'Basic' },
+    { id: 'running', name: 'Running', icon: Zap, description: 'Dynamic running motion', category: 'Action' },
+    { id: 'dancing', name: 'Dancing', icon: Dancing, description: 'Expressive dance pose', category: 'Action' },
+    { id: 'fighting', name: 'Combat', icon: Swords, description: 'Combat ready stance', category: 'Action' },
+    { id: 'workout', name: 'Exercise', icon: Dumbbell, description: 'Fitness workout pose', category: 'Sports' },
   ];
+
+  const categories = [...new Set(poses.map(pose => pose.category))];
 
   return (
     <Card>
@@ -27,26 +31,47 @@ const PoseSelector: React.FC<PoseSelectorProps> = ({ currentPose, onPoseSelect }
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 gap-2">
-          {poses.map((pose) => {
-            const IconComponent = pose.icon;
-            return (
-              <Button
-                key={pose.id}
-                variant={currentPose === pose.id ? "default" : "outline"}
-                className={`h-16 justify-start gap-3 ${
-                  currentPose === pose.id ? 'bg-blue-600 hover:bg-blue-700' : ''
-                }`}
-                onClick={() => onPoseSelect(pose.id)}
-              >
-                <IconComponent className="w-5 h-5" />
-                <div className="text-left">
-                  <div className="font-medium">{pose.name}</div>
-                  <div className="text-xs text-gray-500">{pose.description}</div>
-                </div>
-              </Button>
-            );
-          })}
+        <div className="space-y-4">
+          {categories.map(category => (
+            <div key={category}>
+              <h4 className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">{category}</h4>
+              <div className="grid grid-cols-1 gap-2">
+                {poses
+                  .filter(pose => pose.category === category)
+                  .map((pose) => {
+                    const IconComponent = pose.icon;
+                    return (
+                      <Button
+                        key={pose.id}
+                        variant={currentPose === pose.id ? "default" : "outline"}
+                        className={`h-14 justify-start gap-3 transition-all duration-200 ${
+                          currentPose === pose.id 
+                            ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white' 
+                            : 'hover:bg-blue-50 hover:border-blue-300'
+                        }`}
+                        onClick={() => onPoseSelect(pose.id)}
+                      >
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          currentPose === pose.id ? 'bg-white/20' : 'bg-gray-100'
+                        }`}>
+                          <IconComponent className={`w-4 h-4 ${
+                            currentPose === pose.id ? 'text-white' : 'text-gray-600'
+                          }`} />
+                        </div>
+                        <div className="text-left">
+                          <div className="font-medium text-sm">{pose.name}</div>
+                          <div className={`text-xs ${
+                            currentPose === pose.id ? 'text-white/80' : 'text-gray-500'
+                          }`}>
+                            {pose.description}
+                          </div>
+                        </div>
+                      </Button>
+                    );
+                  })}
+              </div>
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>
