@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { User, Zap, PlayCircle, Users, Coffee, Dumbbell, Dancing, Swords } from 'lucide-react';
+import { User, Zap, PlayCircle, Users, Coffee, Dumbbell, Music, Swords } from 'lucide-react';
 
 interface PoseSelectorProps {
   currentPose: string;
@@ -15,7 +15,7 @@ const PoseSelector: React.FC<PoseSelectorProps> = ({ currentPose, onPoseSelect }
     { id: 'relaxed', name: 'Relaxed', icon: Coffee, description: 'Casual relaxed stance', category: 'Basic' },
     { id: 'sitting', name: 'Sitting', icon: Users, description: 'Comfortable sitting position', category: 'Basic' },
     { id: 'running', name: 'Running', icon: Zap, description: 'Dynamic running motion', category: 'Action' },
-    { id: 'dancing', name: 'Dancing', icon: Dancing, description: 'Expressive dance pose', category: 'Action' },
+    { id: 'dancing', name: 'Dancing', icon: Music, description: 'Expressive dance pose', category: 'Action' },
     { id: 'fighting', name: 'Combat', icon: Swords, description: 'Combat ready stance', category: 'Action' },
     { id: 'workout', name: 'Exercise', icon: Dumbbell, description: 'Fitness workout pose', category: 'Sports' },
   ];

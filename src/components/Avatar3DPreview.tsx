@@ -177,31 +177,31 @@ const Avatar3DPreview: React.FC<Avatar3DPreviewProps> = ({ config }) => {
     switch (config.pose) {
       case 'standing':
         return {
-          left: [-0.8, 0.5, 0],
-          right: [0.8, 0.5, 0],
-          leftRotation: [0, 0, 0.2],
-          rightRotation: [0, 0, -0.2]
+          left: [-0.8, 0.5, 0] as [number, number, number],
+          right: [0.8, 0.5, 0] as [number, number, number],
+          leftRotation: [0, 0, 0.2] as [number, number, number],
+          rightRotation: [0, 0, -0.2] as [number, number, number]
         };
       case 'running':
         return {
-          left: [-0.6, 0.8, 0.3],
-          right: [0.6, 0.2, -0.3],
-          leftRotation: [-0.5, 0, 0.3],
-          rightRotation: [0.5, 0, -0.3]
+          left: [-0.6, 0.8, 0.3] as [number, number, number],
+          right: [0.6, 0.2, -0.3] as [number, number, number],
+          leftRotation: [-0.5, 0, 0.3] as [number, number, number],
+          rightRotation: [0.5, 0, -0.3] as [number, number, number]
         };
       case 'dancing':
         return {
-          left: [-1.0, 1.2, 0],
-          right: [1.0, 1.2, 0],
-          leftRotation: [0, 0, 0.8],
-          rightRotation: [0, 0, -0.8]
+          left: [-1.0, 1.2, 0] as [number, number, number],
+          right: [1.0, 1.2, 0] as [number, number, number],
+          leftRotation: [0, 0, 0.8] as [number, number, number],
+          rightRotation: [0, 0, -0.8] as [number, number, number]
         };
       default:
         return {
-          left: [-0.8, 0.5, 0],
-          right: [0.8, 0.5, 0],
-          leftRotation: [0, 0, 0.2],
-          rightRotation: [0, 0, -0.2]
+          left: [-0.8, 0.5, 0] as [number, number, number],
+          right: [0.8, 0.5, 0] as [number, number, number],
+          leftRotation: [0, 0, 0.2] as [number, number, number],
+          rightRotation: [0, 0, -0.2] as [number, number, number]
         };
     }
   };
