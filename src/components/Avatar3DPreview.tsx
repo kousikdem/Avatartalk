@@ -112,7 +112,7 @@ const Avatar3DPreview: React.FC<Avatar3DPreviewProps> = ({ config }) => {
     <group ref={groupRef} rotation={getPoseRotation()}>
       {/* Body */}
       <mesh ref={bodyRef} position={[0, 0, 0]} geometry={getBodyGeometry()}>
-        <meshStandardMaterial {...getSkinMaterial()} />
+        <meshStandardMaterial color={config.face.skinTone} roughness={0.6} metalness={0.1} />
       </mesh>
 
       {/* Clothing */}
@@ -125,7 +125,7 @@ const Avatar3DPreview: React.FC<Avatar3DPreviewProps> = ({ config }) => {
 
       {/* Head */}
       <mesh ref={headRef} position={[0, 2.2, 0]} geometry={getHeadGeometry()}>
-        <meshStandardMaterial {...getSkinMaterial()} />
+        <meshStandardMaterial color={config.face.skinTone} roughness={0.6} metalness={0.1} />
       </mesh>
 
       {/* Hair */}
@@ -136,7 +136,7 @@ const Avatar3DPreview: React.FC<Avatar3DPreviewProps> = ({ config }) => {
       >
         <meshStandardMaterial 
           color={config.face.hairColor}
-          roughness={0.9
+          roughness={0.9}
         />
       </mesh>
 
