@@ -1,233 +1,301 @@
-
-import React from 'react';
-import { Slider } from '@/components/ui/slider';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, Ruler, Palette } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import Avatar3DPreview from '@/components/Avatar3DPreview';
+import AvatarBodyCustomizer from '@/components/AvatarBodyCustomizer';
+import AvatarFaceCustomizer from '@/components/AvatarFaceCustomizer';
+import AvatarClothingCustomizer from '@/components/AvatarClothingCustomizer';
+import PoseSelector from '@/components/PoseSelector';
+import ExpressionPanel from '@/components/ExpressionPanel';
+import ImageToAvatar from '@/components/ImageToAvatar';
+import PresetAvatars from '@/components/PresetAvatars';
+import AvatarExporter from '@/components/AvatarExporter';
+import { useAvatarConfigurations, AvatarConfiguration } from '@/hooks/useAvatarConfigurations';
+import { Save, Trash2, Play, User, Shirt, Camera, Palette } from 'lucide-react';
 
-interface AvatarCustomizerProps {
-  config: any;
-  onConfigChange: (category: string, key: string, value: any) => void;
-}
+const AvatarCustomizer: React.FC = () => {
+  const {
+    configurations,
+    currentConfig,
+    loading,
+    saveConfiguration,
+    deleteConfiguration,
+    setActiveConfiguration,
+    updateCurrentConfig,
+  } = useAvatarConfigurations();
 
-const AvatarCustomizer: React.FC<AvatarCustomizerProps> = ({ config, onConfigChange }) => {
+  const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
+
+  const handleConfigChange = (category: string, key: string, value: any) => {
+    if (category === 'basic') {
+      updateCurrentConfig({ [key]: value });
+    } else if (category === 'body') {
+      updateCurrentConfig({ [key]: value });
+    } else if (category === 'face') {
+      updateCurrentConfig({ [key]: value });
+    } else if (category === 'clothing') {
+      updateCurrentConfig({ [key]: value });
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      await saveConfiguration(currentConfig);
+    } catch (error) {
+      console.error('Failed to save avatar:', error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this avatar configuration?')) {
+      await deleteConfiguration(id);
+    }
+  };
+
+  const handlePresetSelect = (preset: any) => {
+    setSelectedPreset(preset.id);
+    updateCurrentConfig({
+      ...preset,
+      avatar_name: `${preset.name} Avatar`,
+    });
+  };
+
+  const handlePoseSelect = (pose: string) => {
+    updateCurrentConfig({ current_pose: pose });
+  };
+
+  const handleExpressionSelect = (expression: string) => {
+    updateCurrentConfig({ current_expression: expression });
+  };
+
+  // Convert AvatarConfiguration to the expected format for Avatar3DPreview
+  const convertConfigForPreview = (config: AvatarConfiguration) => ({
+    body: {
+      gender: config.gender,
+      age: config.age_category === 'child' ? 12 : config.age_category === 'teen' ? 16 : 
+           config.age_category === 'adult' ? 30 : 50,
+      ethnicity: 'mixed',
+      height: config.height,
+      weight: config.weight,
+      muscle: config.muscle_definition,
+      fat: config.body_fat,
+    },
+    face: {
+      eyeColor: config.eye_color,
+      skinTone: config.skin_tone,
+      hairStyle: config.hair_style,
+      hairColor: config.hair_color,
+      faceShape: config.head_shape,
+      eyeShape: config.eye_shape,
+      noseShape: config.nose_shape,
+      lipShape: config.lip_shape,
+    },
+    clothing: {
+      outfit: `${config.clothing_top || 'casual_shirt'}_${config.clothing_bottom || 'jeans'}`,
+      accessories: config.accessories || [],
+    },
+    pose: config.current_pose,
+    expression: config.current_expression,
+  });
+
+  const handleImageProcessed = (faceData: { 
+    skinTone: string; 
+    eyeColor: string; 
+    hairColor?: string;
+    faceShape?: string;
+    age?: number;
+    gender?: string;
+  }) => {
+    updateCurrentConfig({
+      skin_tone: faceData.skinTone,
+      eye_color: faceData.eyeColor,
+      hair_color: faceData.hairColor || currentConfig.hair_color,
+      head_shape: faceData.faceShape || currentConfig.head_shape,
+      gender: (faceData.gender as any) || currentConfig.gender,
+    });
+  };
+
+  const previewConfig = convertConfigForPreview(currentConfig);
+
   return (
-    <div className="space-y-6">
-      {/* Basic Information */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-sm">
-            <User className="w-4 h-4" />
-            Basic Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted">
+      <div className="container mx-auto px-4 py-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <Label className="text-sm font-medium">Gender</Label>
-            <Select 
-              value={config.body.gender} 
-              onValueChange={(value) => onConfigChange('body', 'gender', value)}
-            >
-              <SelectTrigger className="mt-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="male">Male</SelectItem>
-                <SelectItem value="female">Female</SelectItem>
-                <SelectItem value="non-binary">Non-binary</SelectItem>
-              </SelectContent>
-            </Select>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+              3D Avatar Studio
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Create your perfect 3D avatar with advanced customization
+            </p>
           </div>
-
-          <div>
-            <Label className="text-sm font-medium">Ethnicity</Label>
-            <Select 
-              value={config.body.ethnicity} 
-              onValueChange={(value) => onConfigChange('body', 'ethnicity', value)}
-            >
-              <SelectTrigger className="mt-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="caucasian">Caucasian</SelectItem>
-                <SelectItem value="african">African</SelectItem>
-                <SelectItem value="asian">Asian</SelectItem>
-                <SelectItem value="hispanic">Hispanic</SelectItem>
-                <SelectItem value="mixed">Mixed</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label className="text-sm font-medium">
-              Age: <span className="text-blue-600">{config.body.age}</span>
-            </Label>
-            <Slider
-              value={[config.body.age]}
-              onValueChange={([value]) => onConfigChange('body', 'age', value)}
-              min={16}
-              max={80}
-              step={1}
-              className="mt-2"
+          
+          <div className="flex items-center gap-3">
+            <Input
+              placeholder="Avatar name..."
+              value={currentConfig.avatar_name}
+              onChange={(e) => updateCurrentConfig({ avatar_name: e.target.value })}
+              className="w-48"
             />
+            <Button onClick={handleSave} disabled={loading} className="flex items-center gap-2">
+              <Save className="w-4 h-4" />
+              Save Avatar
+            </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Physical Features */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-sm">
-            <Ruler className="w-4 h-4" />
-            Physical Features
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label className="text-sm font-medium">
-              Height: <span className="text-blue-600">{config.body.height}cm</span>
-            </Label>
-            <Slider
-              value={[config.body.height]}
-              onValueChange={([value]) => onConfigChange('body', 'height', value)}
-              min={150}
-              max={200}
-              step={1}
-              className="mt-2"
-            />
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Sidebar - Avatar Configurations */}
+          <div className="space-y-6">
+            {/* Saved Avatars */}
+            <Card className="avatar-control-panel">
+              <CardHeader className="avatar-section-header">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <User className="w-5 h-5 text-primary" />
+                  Saved Avatars
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {configurations.map((config) => (
+                  <div
+                    key={config.id}
+                    className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                      config.is_active
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                    onClick={() => config.id && setActiveConfiguration(config.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded bg-gradient-to-br from-primary to-primary-glow" />
+                        <div>
+                          <p className="font-medium text-sm">{config.avatar_name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {config.gender} • {config.age_category}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {config.is_active && (
+                          <Badge variant="secondary" className="text-xs">Active</Badge>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            config.id && handleDelete(config.id);
+                          }}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
 
-          <div>
-            <Label className="text-sm font-medium">
-              Weight: <span className="text-blue-600">{config.body.weight}kg</span>
-            </Label>
-            <Slider
-              value={[config.body.weight]}
-              onValueChange={([value]) => onConfigChange('body', 'weight', value)}
-              min={40}
-              max={120}
-              step={1}
-              className="mt-2"
-            />
-          </div>
-
-          <div>
-            <Label className="text-sm font-medium">
-              Muscle: <span className="text-blue-600">{config.body.muscle}%</span>
-            </Label>
-            <Slider
-              value={[config.body.muscle]}
-              onValueChange={([value]) => onConfigChange('body', 'muscle', value)}
-              min={0}
-              max={100}
-              step={1}
-              className="mt-2"
-            />
-          </div>
-
-          <div>
-            <Label className="text-sm font-medium">
-              Body Fat: <span className="text-blue-600">{config.body.fat}%</span>
-            </Label>
-            <Slider
-              value={[config.body.fat]}
-              onValueChange={([value]) => onConfigChange('body', 'fat', value)}
-              min={5}
-              max={50}
-              step={1}
-              className="mt-2"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Appearance */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-sm">
-            <Palette className="w-4 h-4" />
-            Appearance
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label className="text-sm font-medium">Skin Tone</Label>
-            <div className="flex gap-2 mt-2">
-              {[
-                '#F5DEB3', '#DEB887', '#D2B48C', '#BC9A6A', 
-                '#8B7355', '#654321', '#4A2C2A', '#2F1B14'
-              ].map((color) => (
-                <button
-                  key={color}
-                  className={`w-8 h-8 rounded-full border-2 transition-colors ${
-                    config.face.skinTone === color ? 'border-blue-500' : 'border-gray-300'
-                  }`}
-                  style={{ backgroundColor: color }}
-                  onClick={() => onConfigChange('face', 'skinTone', color)}
+            {/* Quick Actions */}
+            <Card className="avatar-control-panel">
+              <CardHeader className="avatar-section-header">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Play className="w-5 h-5 text-primary" />
+                  Quick Actions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <PoseSelector
+                  currentPose={currentConfig.current_pose}
+                  onPoseSelect={handlePoseSelect}
                 />
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <Label className="text-sm font-medium">Hair Style</Label>
-            <Select 
-              value={config.face.hairStyle} 
-              onValueChange={(value) => onConfigChange('face', 'hairStyle', value)}
-            >
-              <SelectTrigger className="mt-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="short">Short</SelectItem>
-                <SelectItem value="long">Long</SelectItem>
-                <SelectItem value="curly">Curly</SelectItem>
-                <SelectItem value="bald">Bald</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label className="text-sm font-medium">Hair Color</Label>
-            <div className="flex gap-2 mt-2">
-              {[
-                '#000000', '#8B4513', '#DAA520', '#FF4500', 
-                '#DC143C', '#4B0082', '#008000', '#808080'
-              ].map((color) => (
-                <button
-                  key={color}
-                  className={`w-8 h-8 rounded-full border-2 transition-colors ${
-                    config.face.hairColor === color ? 'border-blue-500' : 'border-gray-300'
-                  }`}
-                  style={{ backgroundColor: color }}
-                  onClick={() => onConfigChange('face', 'hairColor', color)}
+                <ExpressionPanel
+                  currentExpression={currentConfig.current_expression}
+                  onExpressionSelect={handleExpressionSelect}
                 />
-              ))}
-            </div>
+              </CardContent>
+            </Card>
           </div>
 
-          <div>
-            <Label className="text-sm font-medium">Eye Color</Label>
-            <Select 
-              value={config.face.eyeColor} 
-              onValueChange={(value) => onConfigChange('face', 'eyeColor', value)}
-            >
-              <SelectTrigger className="mt-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="brown">Brown</SelectItem>
-                <SelectItem value="blue">Blue</SelectItem>
-                <SelectItem value="green">Green</SelectItem>
-                <SelectItem value="hazel">Hazel</SelectItem>
-                <SelectItem value="gray">Gray</SelectItem>
-                <SelectItem value="amber">Amber</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Center - 3D Preview */}
+          <div className="space-y-6">
+            <Avatar3DPreview
+              config={previewConfig}
+            />
+            
+            {/* Export Options */}
+            <AvatarExporter config={currentConfig} />
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Right Sidebar - Customization */}
+          <div>
+            <Tabs defaultValue="presets" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="presets" className="flex items-center gap-1">
+                  <Palette className="w-4 h-4" />
+                  <span className="hidden sm:inline">Presets</span>
+                </TabsTrigger>
+                <TabsTrigger value="body" className="flex items-center gap-1">
+                  <User className="w-4 h-4" />
+                  <span className="hidden sm:inline">Body</span>
+                </TabsTrigger>
+                <TabsTrigger value="face" className="flex items-center gap-1">
+                  <User className="w-4 h-4" />
+                  <span className="hidden sm:inline">Face</span>
+                </TabsTrigger>
+                <TabsTrigger value="clothing" className="flex items-center gap-1">
+                  <Shirt className="w-4 h-4" />
+                  <span className="hidden sm:inline">Style</span>
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="presets" className="space-y-4">
+                <Card className="avatar-control-panel">
+                  <CardHeader className="avatar-section-header">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Camera className="w-5 h-5 text-primary" />
+                      AI Face Generation
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ImageToAvatar onImageProcessed={handleImageProcessed} />
+                  </CardContent>
+                </Card>
+                
+                <PresetAvatars
+                  onPresetSelect={handlePresetSelect}
+                />
+              </TabsContent>
+
+              <TabsContent value="body" className="space-y-4">
+                <AvatarBodyCustomizer
+                  config={currentConfig}
+                  onConfigChange={handleConfigChange}
+                />
+              </TabsContent>
+
+              <TabsContent value="face" className="space-y-4">
+                <AvatarFaceCustomizer
+                  config={currentConfig}
+                  onConfigChange={handleConfigChange}
+                />
+              </TabsContent>
+
+              <TabsContent value="clothing" className="space-y-4">
+                <AvatarClothingCustomizer
+                  config={currentConfig}
+                  onConfigChange={handleConfigChange}
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
