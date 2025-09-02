@@ -89,21 +89,31 @@ const Avatar3DPreview: React.FC<Avatar3DPreviewProps> = ({ config }) => {
 
   // Realistic skin material based on ethnicity and skin tone
   const getSkinMaterial = () => {
-    const roughness = 0.6;
-    const subsurface = 0.3;
+    const roughness = 0.4;
+    const subsurface = 0.8;
+    const skinTone = config.face?.skinTone || '#F1C27D';
     
     return {
-      color: config.face.skinTone,
+      color: skinTone,
       roughness: roughness,
       metalness: 0.0,
       transparent: true,
-      opacity: 0.95,
+      opacity: 0.98,
+      // Add realistic skin properties
+      clearcoat: 0.1,
+      clearcoatRoughness: 0.2,
     };
   };
 
   // Enhanced hair geometry based on style and gender
   const getHairGeometry = () => {
-    switch (config.face.hairStyle) {
+    const hairStyle = config.face?.hairStyle || 'medium';
+    
+    switch (hairStyle) {
+      case 'bald':
+        return null;
+      case 'buzz':
+        return new THREE.SphereGeometry(0.62, 12, 12);
       case 'short':
         return new THREE.SphereGeometry(0.65, 16, 16);
       case 'medium':
@@ -112,10 +122,14 @@ const Avatar3DPreview: React.FC<Avatar3DPreviewProps> = ({ config }) => {
         return new THREE.CylinderGeometry(0.4, 0.7, 1.4, 8);
       case 'curly':
         return new THREE.TorusKnotGeometry(0.35, 0.18, 64, 12);
-      case 'buzz':
-        return new THREE.SphereGeometry(0.62, 12, 12);
       case 'ponytail':
         return new THREE.ConeGeometry(0.3, 1.2, 8);
+      case 'braids':
+        return new THREE.CylinderGeometry(0.5, 0.6, 1.0, 8);
+      case 'afro':
+        return new THREE.SphereGeometry(0.8, 16, 16);
+      case 'dreadlocks':
+        return new THREE.CylinderGeometry(0.45, 0.65, 1.2, 12);
       default:
         return new THREE.SphereGeometry(0.65, 16, 16);
     }
@@ -268,14 +282,14 @@ const Avatar3DPreview: React.FC<Avatar3DPreviewProps> = ({ config }) => {
       </mesh>
 
       {/* Hair */}
-      {config.face.hairStyle !== 'bald' && (
+      {config.face?.hairStyle !== 'bald' && getHairGeometry() && (
         <mesh 
           ref={hairRef} 
           position={[0, 2.6, 0]} 
           geometry={getHairGeometry()}
         >
           <meshStandardMaterial 
-            color={config.face.hairColor}
+            color={config.face?.hairColor || '#8B4513'}
             roughness={0.9}
             metalness={0.0}
           />

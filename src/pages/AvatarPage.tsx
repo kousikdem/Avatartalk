@@ -7,14 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import AvatarCustomizer from '@/components/AvatarCustomizer';
 import Avatar3DPreview from '@/components/Avatar3DPreview';
-import AssetLibrary from '@/components/AssetLibrary';
+import PresetAvatars from '@/components/PresetAvatars';
+import AvatarBodyCustomizer from '@/components/AvatarBodyCustomizer';
+import AvatarFaceCustomizer from '@/components/AvatarFaceCustomizer';
+import AvatarClothingCustomizer from '@/components/AvatarClothingCustomizer';
 import PoseSelector from '@/components/PoseSelector';
 import ExpressionPanel from '@/components/ExpressionPanel';
 import ImageToAvatar from '@/components/ImageToAvatar';
-import PresetAvatars from '@/components/PresetAvatars';
-import AdvancedCustomizer from '@/components/AdvancedCustomizer';
 
 const AvatarPage = () => {
   const [activeTab, setActiveTab] = useState('presets');
@@ -239,14 +239,14 @@ const AvatarPage = () => {
                 </TabsContent>
 
                 <TabsContent value="body" className="space-y-4">
-                  <AvatarCustomizer 
+                  <AvatarBodyCustomizer 
                     config={avatarConfig} 
                     onConfigChange={handleConfigChange}
                   />
                 </TabsContent>
 
                 <TabsContent value="face" className="space-y-4">
-                  <AdvancedCustomizer 
+                  <AvatarFaceCustomizer 
                     config={avatarConfig}
                     onConfigChange={handleConfigChange}
                   />
@@ -254,9 +254,9 @@ const AvatarPage = () => {
 
                 <TabsContent value="style" className="space-y-4">
                   <div className="space-y-4">
-                    <AssetLibrary 
-                      category="clothing"
-                      onAssetSelect={(asset) => handleConfigChange('clothing', 'outfit', asset)}
+                    <AvatarClothingCustomizer 
+                      config={avatarConfig}
+                      onConfigChange={handleConfigChange}
                     />
                     <PoseSelector 
                       currentPose={avatarConfig.pose}

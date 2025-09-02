@@ -138,4 +138,39 @@
   .gradient-card {
     @apply bg-gradient-to-br from-white via-gray-50/30 to-white border-gray-200 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-300;
   }
+
+  /* Avatar System Styles */
+  .avatar-preview-container {
+    @apply bg-gradient-to-br from-slate-50 to-gray-100 border border-gray-200 rounded-xl shadow-inner;
+  }
+
+  .avatar-control-panel {
+    @apply bg-gradient-to-br from-white to-gray-50/50 border border-gray-200 rounded-lg shadow-sm;
+  }
+
+  .avatar-section-header {
+    @apply bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200 px-4 py-3 rounded-t-lg;
+  }
+
+  .avatar-slider-track {
+    @apply bg-gradient-to-r from-gray-200 to-gray-300 rounded-full;
+  }
+
+  .avatar-slider-thumb {
+    @apply bg-gradient-to-r from-blue-500 to-purple-600 shadow-lg hover:shadow-xl;
+  }
+
+  .avatar-color-swatch {
+    @apply rounded-full border-2 border-white shadow-md hover:shadow-lg hover:scale-110 transition-all duration-300;
+  }
+
+  .avatar-pose-button {
+    @apply bg-gradient-to-br from-white to-gray-50 border border-gray-200 hover:border-blue-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 rounded-lg shadow-sm hover:shadow-md transition-all duration-300;
+  }
+
+  .realistic-avatar-lighting {
+    background: radial-gradient(circle at 50% 50%, 
+      rgba(255, 255, 255, 0.1) 0%, 
+      rgba(0, 0, 0, 0.05) 100%);
+  }
 }
