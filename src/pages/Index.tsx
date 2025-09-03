@@ -5,6 +5,7 @@ import Navbar from '@/components/Navbar';
 import LandingPage from '@/components/LandingPage';
 import Dashboard from '@/components/Dashboard';
 import PricingPage from '@/components/PricingPage';
+import RealisticAvatarBuilder from '@/components/RealisticAvatarBuilder';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect, useState } from 'react';
 
@@ -40,8 +41,11 @@ const Index = () => {
     );
   }
 
-  // If user is authenticated, always show dashboard (no landing page access)
+  // If user is authenticated, show appropriate view
   if (user) {
+    if (view === 'avatar') {
+      return <RealisticAvatarBuilder />;
+    }
     return <Dashboard />;
   }
 
