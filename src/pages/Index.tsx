@@ -4,7 +4,6 @@ import { useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import LandingPage from '@/components/LandingPage';
 import Dashboard from '@/components/Dashboard';
-import FaceBuilder from '@/components/FaceBuilder';
 import PricingPage from '@/components/PricingPage';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect, useState } from 'react';
@@ -41,11 +40,8 @@ const Index = () => {
     );
   }
 
-  // If user is authenticated, show appropriate view
+  // If user is authenticated, always show dashboard (no landing page access)
   if (user) {
-    if (view === 'facebuilder') {
-      return <FaceBuilder />;
-    }
     return <Dashboard />;
   }
 
