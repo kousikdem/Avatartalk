@@ -10,43 +10,38 @@ import ShareModal from './ShareModal';
 
 const Dashboard = () => {
   const [isShareOpen, setIsShareOpen] = useState(false);
-  const { profileData, loading: profileLoading } = useUserProfile();
-  const { currentConfig, loading: configLoading } = useAvatarConfigurations();
-  
-  const loading = profileLoading || configLoading;
+  const { profileData, loading } = useUserProfile();
+  const { currentConfig } = useAvatarConfigurations();
   
   // Convert AvatarConfiguration to the expected format for Avatar3DPreview
-  const convertConfigForPreview = (config: any) => {
-    if (!config) return null;
-    return {
-      body: {
-        gender: config.gender || 'male',
-        age: config.age_category === 'child' ? 12 : config.age_category === 'teen' ? 16 : 
-             config.age_category === 'adult' ? 30 : 50,
-        ethnicity: 'mixed',
-        height: config.height || 170,
-        weight: config.weight || 70,
-        muscle: config.muscle_definition || 50,
-        fat: config.body_fat || 20,
-      },
-      face: {
-        eyeColor: config.eye_color || '#8B4513',
-        skinTone: config.skin_tone || '#F1C27D',
-        hairStyle: config.hair_style || 'medium',
-        hairColor: config.hair_color || '#8B4513',
-        faceShape: config.head_shape || 'oval',
-        eyeShape: config.eye_shape || 'almond',
-        noseShape: config.nose_shape || 'straight',
-        lipShape: config.lip_shape || 'normal',
-      },
-      clothing: {
-        outfit: `${config.clothing_top || 'casual_shirt'}_${config.clothing_bottom || 'jeans'}`,
-        accessories: config.accessories || [],
-      },
-      pose: config.current_pose || 'standing',
-      expression: config.current_expression || 'neutral',
-    };
-  };
+  const convertConfigForPreview = (config: any) => ({
+    body: {
+      gender: config.gender || 'male',
+      age: config.age_category === 'child' ? 12 : config.age_category === 'teen' ? 16 : 
+           config.age_category === 'adult' ? 30 : 50,
+      ethnicity: 'mixed',
+      height: config.height || 170,
+      weight: config.weight || 70,
+      muscle: config.muscle_definition || 50,
+      fat: config.body_fat || 20,
+    },
+    face: {
+      eyeColor: config.eye_color || '#8B4513',
+      skinTone: config.skin_tone || '#F1C27D',
+      hairStyle: config.hair_style || 'medium',
+      hairColor: config.hair_color || '#8B4513',
+      faceShape: config.head_shape || 'oval',
+      eyeShape: config.eye_shape || 'almond',
+      noseShape: config.nose_shape || 'straight',
+      lipShape: config.lip_shape || 'normal',
+    },
+    clothing: {
+      outfit: `${config.clothing_top || 'casual_shirt'}_${config.clothing_bottom || 'jeans'}`,
+      accessories: config.accessories || [],
+    },
+    pose: config.current_pose || 'standing',
+    expression: config.current_expression || 'neutral',
+  });
 
   if (loading) {
     return (
@@ -81,30 +76,21 @@ const Dashboard = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
         {/* 3D Avatar Preview Card */}
-        <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20 hover:shadow-lg transition-all duration-300">
+        <Card className="bg-gradient-to-br from-primary-light to-primary border border-primary/20 hover:shadow-lg transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-foreground">Your 3D Avatar</CardTitle>
-            <User className="h-4 w-4 text-primary" />
+            <CardTitle className="text-sm font-medium text-primary-foreground">Your 3D Avatar</CardTitle>
+            <User className="h-4 w-4 text-primary-foreground" />
           </CardHeader>
           <CardContent className="p-2">
             <div className="h-32 flex items-center justify-center">
-              {currentConfig ? (
-                <Avatar3DPreview
-                  config={convertConfigForPreview(currentConfig)}
-                />
-              ) : (
-                <div className="text-center">
-                  <User className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground">No Avatar</p>
-                </div>
-              )}
+              <Avatar3DPreview
+                config={convertConfigForPreview(currentConfig)}
+              />
             </div>
             <div className="mt-2 text-center">
-              <p className="text-xs font-medium text-foreground">
-                {currentConfig?.avatar_name || 'No Avatar'}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {currentConfig?.gender || 'Unknown'} • {currentConfig?.age_category || 'Unknown'}
+              <p className="text-xs font-medium text-primary-foreground">{currentConfig.avatar_name}</p>
+              <p className="text-xs text-primary-foreground/70">
+                {currentConfig.gender} • {currentConfig.age_category}
               </p>
             </div>
           </CardContent>
