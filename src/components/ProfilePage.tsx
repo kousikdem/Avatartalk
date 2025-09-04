@@ -3,8 +3,6 @@ import { useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,9 +12,8 @@ import {
   MessageCircle,
   UserPlus,
   UserMinus,
-  Share,
+  Share2,
   Heart,
-  Eye,
   Twitter,
   Linkedin,
   Facebook,
@@ -24,13 +21,16 @@ import {
   Youtube,
   Mic,
   Smile,
-  Send,
-  Sparkles,
   Users,
   TrendingUp,
+  Gift,
+  ChevronRight,
+  Sparkles,
+  Send,
   Globe
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Separator } from '@/components/ui/separator';
 
 interface Profile {
   id: string;
@@ -234,109 +234,123 @@ const ProfilePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Header Section */}
+      <div className="max-w-md mx-auto px-4 py-6">
+        {/* Header */}
         <motion.div
-          className="relative mb-8"
-          initial={{ opacity: 0, y: 20 }}
+          className="text-center mb-6"
+          initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
+              AvatarTalk.bio
+            </h1>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={shareProfile}
+                className="text-white/60 hover:text-white p-2"
+              >
+                <Share2 className="h-5 w-5" />
+              </Button>
+              <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                <Users className="h-4 w-4 text-white" />
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Profile Card */}
+        <motion.div
+          className="space-y-6"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6 }}
         >
-          <Card className="bg-gradient-to-br from-slate-800/80 to-purple-800/50 border-purple-500/30 backdrop-blur-sm shadow-2xl rounded-3xl overflow-hidden">
-            <CardContent className="p-8">
-              <div className="flex flex-col lg:flex-row gap-8 items-center">
-                {/* 3D Avatar */}
-                <div className="flex-shrink-0">
-                  <FuturisticAvatar3D
-                    isLarge={true}
-                    isTalking={isTalking}
-                    avatarStyle="holographic"
-                    className="w-80 h-80"
-                    onInteraction={() => setIsTalking(!isTalking)}
-                  />
+          <Card className="bg-gradient-to-br from-slate-800/90 to-purple-800/60 border-purple-500/30 backdrop-blur-sm shadow-2xl rounded-3xl overflow-hidden">
+            <CardContent className="p-6">
+              {/* Profile Header */}
+              <div className="text-center mb-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-purple-500 to-cyan-500 p-1">
+                    <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center text-2xl font-bold">
+                      {profile.display_name?.[0] || profile.username[0]}
+                    </div>
+                  </div>
+                  <div className="w-3 h-3 bg-green-500 rounded-full" />
                 </div>
+                <h2 className="text-2xl font-bold text-white">
+                  {profile.display_name || profile.username}
+                </h2>
+                <p className="text-purple-300 mb-3">@{profile.username}</p>
+                <p className="text-white/80 text-sm leading-relaxed">
+                  {profile.bio || "Exploring the boundaries of AI conversation. Let's create something amazing!"}
+                </p>
+              </div>
 
-                {/* Profile Info */}
-                <div className="flex-1 space-y-6 text-center lg:text-left">
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                        {profile.display_name || profile.username}
-                      </h1>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={shareProfile}
-                        className="text-purple-400 hover:text-purple-300"
-                      >
-                        <Share className="h-5 w-5" />
-                      </Button>
-                    </div>
-                    <p className="text-xl text-cyan-400 mb-2">@{profile.username}</p>
-                    {profile.profession && (
-                      <Badge className="bg-gradient-to-r from-purple-500/20 to-cyan-500/20 text-purple-300 border-purple-500/30">
-                        {profile.profession}
-                      </Badge>
+              {/* 3D Avatar */}
+              <div className="mb-6">
+                <FuturisticAvatar3D
+                  isLarge={false}
+                  isTalking={isTalking}
+                  avatarStyle="holographic"
+                  className="w-full h-64 rounded-2xl"
+                  onInteraction={() => setIsTalking(!isTalking)}
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-3 mb-6">
+                <Button
+                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-4 rounded-2xl text-lg font-semibold shadow-lg"
+                  onClick={() => setIsTalking(true)}
+                >
+                  Talk to Me
+                </Button>
+                
+                {!isOwnProfile && currentUser && (
+                  <Button
+                    variant="outline"
+                    className="w-full border-white/30 text-white hover:bg-white/10 py-4 rounded-2xl text-lg font-semibold"
+                    onClick={handleFollow}
+                    disabled={followsLoading}
+                  >
+                    {isFollowing(profile.id) ? (
+                      <>
+                        <UserMinus className="w-5 h-5 mr-2" />
+                        Following
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="w-5 h-5 mr-2" />
+                        Follow
+                      </>
                     )}
-                  </div>
+                  </Button>
+                )}
+              </div>
 
-                  <p className="text-lg text-white/80 leading-relaxed">
-                    {profile.bio || "Exploring the boundaries of AI conversation. Let's create something amazing!"}
-                  </p>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-4 justify-center lg:justify-start">
-                    <Button
-                      className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-purple-500/30"
-                      onClick={() => setIsTalking(true)}
-                    >
-                      <MessageCircle className="w-5 h-5 mr-2" />
-                      Talk to Me
-                    </Button>
-                    
-                    {!isOwnProfile && currentUser && (
-                      <Button
-                        variant="outline"
-                        className="border-purple-500/50 text-purple-300 hover:bg-purple-500/20 px-8 py-3 rounded-full"
-                        onClick={handleFollow}
-                        disabled={followsLoading}
-                      >
-                        {isFollowing(profile.id) ? (
-                          <>
-                            <UserMinus className="w-5 h-5 mr-2" />
-                            Following
-                          </>
-                        ) : (
-                          <>
-                            <UserPlus className="w-5 h-5 mr-2" />
-                            Follow
-                          </>
-                        )}
-                      </Button>
-                    )}
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {userStats?.total_conversations || 352}
                   </div>
-
-                  {/* Stats */}
-                  <div className="grid grid-cols-3 gap-6 pt-6 border-t border-purple-500/30">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-cyan-400 mb-1">
-                        {userStats?.total_conversations || 352}
-                      </div>
-                      <div className="text-sm text-white/60">Total Conversations</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-purple-400 mb-1">
-                        {followersCount || 1200}
-                      </div>
-                      <div className="text-sm text-white/60">Followers</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-pink-400 mb-1">
-                        {userStats?.engagement_score || 89}
-                      </div>
-                      <div className="text-sm text-white/60">Engagement Score</div>
-                    </div>
+                  <div className="text-xs text-white/60">Total Conversations</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {followersCount >= 1000 ? `${(followersCount/1000).toFixed(1)}K` : followersCount || '1.2K'}
                   </div>
+                  <div className="text-xs text-white/60">Followers</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {userStats?.engagement_score || 89}
+                  </div>
+                  <div className="text-xs text-white/60">Engagement Score</div>
                 </div>
               </div>
             </CardContent>
@@ -347,30 +361,28 @@ const ProfilePage: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="mt-6"
         >
-          <Tabs defaultValue="posts" className="space-y-6">
+          <Tabs defaultValue="posts" className="space-y-4">
             <TabsList className="grid w-full grid-cols-3 bg-slate-800/50 border border-purple-500/30 rounded-2xl p-1">
               <TabsTrigger 
                 value="posts" 
-                className="rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-cyan-600"
+                className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-slate-900 text-white/80"
               >
-                <Sparkles className="w-4 h-4 mr-2" />
                 Posts
               </TabsTrigger>
               <TabsTrigger 
                 value="chat"
-                className="rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-cyan-600"
+                className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-slate-900 text-white/80"
               >
-                <MessageCircle className="w-4 h-4 mr-2" />
                 Chat
               </TabsTrigger>
               <TabsTrigger 
-                value="products"
-                className="rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-cyan-600"
+                value="projects"
+                className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-slate-900 text-white/80"
               >
-                <Globe className="w-4 h-4 mr-2" />
-                Products
+                Projects/Gifts
               </TabsTrigger>
             </TabsList>
 
@@ -470,8 +482,8 @@ const ProfilePage: React.FC = () => {
               </Card>
             </TabsContent>
 
-            {/* Products Tab */}
-            <TabsContent value="products">
+            {/* Projects/Gifts Tab */}
+            <TabsContent value="projects">
               {products.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {products.map((product) => (
@@ -508,33 +520,100 @@ const ProfilePage: React.FC = () => {
           </Tabs>
         </motion.div>
 
-        {/* Social Links Footer */}
+        {/* Chat Input */}
         <motion.div
-          className="mt-12 pt-8 border-t border-purple-500/30"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          className="mt-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
         >
-          <div className="flex items-center justify-center gap-6">
-            <Button variant="ghost" size="sm" className="text-purple-400 hover:text-purple-300">
-              <Twitter className="w-5 h-5" />
+          <div className="relative">
+            <Input
+              value={chatMessage}
+              onChange={(e) => setChatMessage(e.target.value)}
+              placeholder="Ask me anything..."
+              className="bg-slate-800/80 border-purple-500/30 text-white placeholder:text-white/50 pr-20 py-4 text-base rounded-2xl"
+              onKeyPress={(e) => e.key === 'Enter' && handleChatSubmit(e as any)}
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost" 
+                className="text-white/60 hover:text-white p-2"
+              >
+                <Mic className="w-5 h-5" />
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="text-white/60 hover:text-white p-2"
+              >
+                <Smile className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Social Links */}
+        <motion.div
+          className="mt-6 pb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+        >
+          <div className="flex justify-center items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white/50 hover:text-white p-3 rounded-full hover:bg-white/10"
+            >
+              <Twitter className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="sm" className="text-purple-400 hover:text-purple-300">
-              <Linkedin className="w-5 h-5" />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white/50 hover:text-white p-3 rounded-full hover:bg-white/10"
+            >
+              <Linkedin className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="sm" className="text-purple-400 hover:text-purple-300">
-              <Facebook className="w-5 h-5" />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white/50 hover:text-white p-3 rounded-full hover:bg-white/10"
+            >
+              <Facebook className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="sm" className="text-purple-400 hover:text-purple-300">
-              <Instagram className="w-5 h-5" />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white/50 hover:text-white p-3 rounded-full hover:bg-white/10"
+            >
+              <Instagram className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="sm" className="text-purple-400 hover:text-purple-300">
-              <Youtube className="w-5 h-5" />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white/50 hover:text-white p-3 rounded-full hover:bg-white/10"
+            >
+              <Youtube className="h-5 w-5" />
             </Button>
-            <Separator orientation="vertical" className="h-6 bg-purple-500/30" />
-            <Button variant="ghost" size="sm" onClick={shareProfile} className="text-cyan-400 hover:text-cyan-300">
-              <Share className="w-5 h-5 mr-2" />
-              Share
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white/50 hover:text-white p-3 rounded-full hover:bg-white/10"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+            <Separator orientation="vertical" className="h-6 bg-purple-500/30 mx-2" />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={shareProfile}
+              className="text-cyan-400 hover:text-cyan-300 p-3 rounded-full hover:bg-cyan-500/10"
+            >
+              <Share2 className="h-5 w-5" />
             </Button>
           </div>
         </motion.div>

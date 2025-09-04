@@ -169,9 +169,9 @@ const Dashboard = () => {
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900">
-                          {follow.following?.display_name || follow.following?.username}
+                          {follow.following?.display_name || follow.following?.username || 'User'}
                         </p>
-                        <p className="text-xs text-gray-500">@{follow.following?.username}</p>
+                        <p className="text-xs text-gray-500">@{follow.following?.username || 'username'}</p>
                       </div>
                     </div>
                   ))}
