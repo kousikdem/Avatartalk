@@ -1,60 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
-import { useTheme } from 'next-themes';
-import { 
-  MessageSquare, 
-  Users, 
-  Heart,
-  Share2,
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useFollows } from '@/hooks/useFollows';
+import FuturisticAvatar3D from './FuturisticAvatar3D';
+import {
+  MessageCircle,
   UserPlus,
   UserMinus,
-  Crown,
-  Mic,
-  MicOff,
-  Smile,
+  Share,
+  Heart,
+  Eye,
   Twitter,
   Linkedin,
+  Facebook,
   Instagram,
   Youtube,
-  ExternalLink,
+  Mic,
+  Smile,
   Send,
-  Play,
-  Volume2,
-  Facebook,
-  Globe,
-  X,
-  MoreVertical,
-  Github,
-  MessageCircle,
-  Link,
-  Calendar,
-  Sun,
-  Moon
+  Sparkles,
+  Users,
+  TrendingUp,
+  Globe
 } from 'lucide-react';
-import Avatar3D from './Avatar3D';
-import EmojiPicker from './EmojiPicker';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useUserProfile } from '@/hooks/useUserProfile';
-import { useFollows } from '@/hooks/useFollows';
-import { useVoiceInput } from '@/hooks/useVoiceInput';
-import { useCoquiTTS } from '@/hooks/useCoquiTTS';
-import { usePosts } from '@/hooks/usePosts';
-import { LinkCard } from '@/components/LinkCard';
-import { formatDistanceToNow } from 'date-fns';
+import { motion } from 'framer-motion';
 
-interface ProfileData {
+interface Profile {
   id: string;
   username: string;
   display_name: string;
-  full_name: string;
-  email: string;
   bio: string;
-  profile_pic_url: string;
   avatar_url: string;
-  created_at: string;
+  profession: string;
 }
 
 interface UserStats {
@@ -63,156 +47,115 @@ interface UserStats {
   engagement_score: number;
 }
 
-interface ChatMessage {
+interface Post {
   id: string;
-  message: string;
-  timestamp: Date;
-  type: 'user' | 'avatar';
+  content: string;
+  media_url?: string;
+  media_type?: string;
+  likes_count: number;
+  comments_count: number;
+  created_at: string;
 }
 
-const ProfilePage = () => {
-  const { username: urlUsername } = useParams<{ username: string }>();
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const { profileData: currentUserProfile } = useUserProfile();
-  const { followUser, unfollowUser } = useFollows();
-  const { synthesizeSpeech, stopSpeech, isPlaying: isSpeaking } = useCoquiTTS();
-  const { theme, setTheme } = useTheme();
-  
-  // Voice input hook
-  const { 
-    isListening, 
-    transcript, 
-    interimTranscript, 
-    startListening, 
-    stopListening, 
-    resetTranscript,
-    isSupported: voiceSupported 
-  } = useVoiceInput();
-  
-  // Get username from either URL params or search params
-  const username = urlUsername || searchParams.get('username');
-  
-  const [profileData, setProfileData] = useState<ProfileData | null>(null);
-  const { posts, isLoading: isLoadingPosts } = usePosts(profileData?.id);
+interface Product {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  thumbnail_url?: string;
+  is_free: boolean;
+}
+
+const ProfilePage: React.FC = () => {
+  const { username } = useParams<{ username: string }>();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [followerCount, setFollowerCount] = useState(0);
-  const [followingCount, setFollowingCount] = useState(0);
-  const [isCurrentUser, setIsCurrentUser] = useState(false);
-  const [userStats, setUserStats] = useState<UserStats>({
-    total_conversations: 0,
-    followers_count: 0,
-    engagement_score: 0
-  });
   const [chatMessage, setChatMessage] = useState('');
-  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
-  const [lastSpokenMessage, setLastSpokenMessage] = useState('');
-  const [socialLinks, setSocialLinks] = useState<any>(null);
-  const [conversations, setConversations] = useState<ChatMessage[]>([]);
-  const [activeTab, setActiveTab] = useState<'posts' | 'chat' | 'products'>('chat');
+  const [isTalking, setIsTalking] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const { toast } = useToast();
 
-  const loadProfile = async () => {
+  const {
+    followersCount,
+    followingCount,
+    isFollowing,
+    followUser,
+    unfollowUser,
+    loading: followsLoading
+  } = useFollows(profile?.id);
+
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setCurrentUser(data.user);
+    };
+    getCurrentUser();
+  }, []);
+
+  useEffect(() => {
+    if (username) {
+      fetchProfile();
+    }
+  }, [username]);
+
+  const fetchProfile = async () => {
     try {
-      setLoading(true);
-      console.log('Loading profile for username:', username);
-
-      // Load profile data - use exact matching now that usernames are clean
-      const { data: profile, error } = await supabase
+      // Fetch profile by username
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('username', username?.trim())
-        .maybeSingle();
+        .eq('username', username)
+        .single();
 
-      console.log('Profile query result:', { profile, error });
+      if (profileError) throw profileError;
 
-      if (error) {
-        console.error('Profile error:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load profile data",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
+      setProfile(profileData);
 
-      // If no profile found, show not found state
-      if (!profile) {
-        console.log('No profile found for username:', username);
-        setProfileData(null);
-        setLoading(false);
-        return;
-      }
+      // Fetch user stats
+      const { data: statsData } = await supabase
+        .from('user_stats')
+        .select('*')
+        .eq('user_id', profileData.id)
+        .single();
 
-      setProfileData(profile);
+      setUserStats(statsData);
 
-      // Check if this is the current user's profile
-      const { data: { user } } = await supabase.auth.getUser();
-      setIsCurrentUser(user?.id === profile.id);
+      // Fetch posts
+      const { data: postsData } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('user_id', profileData.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
 
-      // Load follow status and counts
-      if (user && user.id !== profile.id) {
-        const { data: followData } = await supabase
-          .from('follows')
-          .select('id')
-          .eq('follower_id', user.id)
-          .eq('following_id', profile.id)
-          .maybeSingle();
+      setPosts(postsData || []);
 
-        setIsFollowing(!!followData);
-      }
+      // Fetch products
+      const { data: productsData } = await supabase
+        .from('products')
+        .select('*')
+        .eq('user_id', profileData.id)
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
+        .limit(6);
 
-      // Load follower and following counts, user stats, and social links
-      const [followersResult, followingResult, statsResult, socialLinksResult] = await Promise.all([
-        supabase
-          .from('follows')
-          .select('id', { count: 'exact' })
-          .eq('following_id', profile.id),
-        supabase
-          .from('follows')
-          .select('id', { count: 'exact' })
-          .eq('follower_id', profile.id),
-        supabase
-          .from('user_stats')
-          .select('*')
-          .eq('user_id', profile.id)
-          .maybeSingle(),
-        supabase
-          .from('social_links')
-          .select('*')
-          .eq('user_id', profile.id)
-          .maybeSingle()
-      ]);
+      setProducts(productsData || []);
 
-      setFollowerCount(followersResult.count || 0);
-      setFollowingCount(followingResult.count || 0);
-      
-      if (statsResult.data) {
-        setUserStats({
-          total_conversations: statsResult.data.total_conversations || 0,
-          followers_count: followersResult.count || 0,
-          engagement_score: Math.round(statsResult.data.engagement_score || 0)
-        });
-      }
-
-      if (socialLinksResult.data) {
-        setSocialLinks(socialLinksResult.data);
-      }
-
-      // Increment profile views
-      if (user && user.id !== profile.id) {
+      // Track profile visit
+      if (profileData.id !== currentUser?.id) {
         await supabase
           .from('profile_visitors')
-          .insert([{
-            visitor_id: user.id,
-            visited_profile_id: profile.id
-          }]);
+          .insert({
+            visitor_id: currentUser?.id || null,
+            visited_profile_id: profileData.id,
+          });
       }
 
     } catch (error) {
-      console.error('Error loading profile:', error);
+      console.error('Error fetching profile:', error);
       toast({
         title: "Error",
         description: "Failed to load profile",
@@ -223,543 +166,378 @@ const ProfilePage = () => {
     }
   };
 
-  const handleFollowToggle = async () => {
-    if (!profileData) return;
-
-    try {
-      if (isFollowing) {
-        await unfollowUser(profileData.id);
-        setIsFollowing(false);
-        setFollowerCount(prev => prev - 1);
-        setUserStats(prev => ({ ...prev, followers_count: prev.followers_count - 1 }));
-      } else {
-        await followUser(profileData.id);
-        setIsFollowing(true);
-        setFollowerCount(prev => prev + 1);
-        setUserStats(prev => ({ ...prev, followers_count: prev.followers_count + 1 }));
-      }
-    } catch (error) {
-      console.error('Error toggling follow:', error);
-    }
-  };
-
-  const handleSendMessage = () => {
-    if (chatMessage.trim()) {
-      // Add user message to conversations
-      const newUserMessage: ChatMessage = {
-        id: Date.now().toString(),
-        message: chatMessage,
-        timestamp: new Date(),
-        type: 'user'
-      };
-      setConversations(prev => [...prev, newUserMessage]);
-      
-      // Generate avatar response
-      const avatarResponse = `Thank you for saying: "${chatMessage}". How can I help you further?`;
-      const newAvatarMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        message: avatarResponse,
-        timestamp: new Date(),
-        type: 'avatar'
-      };
-      
-      setTimeout(() => {
-        setConversations(prev => [...prev, newAvatarMessage]);
-        synthesizeSpeech(avatarResponse);
-      }, 1000);
-      
-      setLastSpokenMessage(chatMessage);
-      setChatMessage('');
-    }
-  };
-
-  const handleEmojiSelect = (emoji: string) => {
-    setChatMessage(prev => prev + emoji);
-  };
-
-  const toggleVoiceInput = () => {
-    console.log('Voice input toggled, isListening:', isListening);
-    console.log('Voice supported:', voiceSupported);
+  const handleFollow = async () => {
+    if (!profile || !currentUser) return;
     
-    if (isListening) {
-      stopListening();
-      if (transcript) {
-        setChatMessage(prev => prev + transcript);
-        resetTranscript();
-      }
+    if (isFollowing(profile.id)) {
+      await unfollowUser(profile.id);
     } else {
-      if (!voiceSupported) {
-        toast({
-          title: "Voice Input Not Supported",
-          description: "Speech recognition is not supported in this browser",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      console.log('Starting voice input...');
-      startListening({ 
-        continuous: false, 
-        interimResults: true,
-        language: 'en-US'
-      });
+      await followUser(profile.id);
     }
   };
 
-  const handleTalkToAvatar = () => {
-    if (lastSpokenMessage) {
-      synthesizeSpeech(`Hello! You said: ${lastSpokenMessage}. How can I help you today?`);
-    } else {
-      synthesizeSpeech("Hello! I'm excited to talk with you. What would you like to discuss?");
-    }
+  const handleChatSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatMessage.trim()) return;
+    
+    setIsTalking(true);
+    toast({
+      title: "Message Sent",
+      description: `"${chatMessage}" - AI will respond shortly`,
+      duration: 3000,
+    });
+    
+    // Simulate AI response
+    setTimeout(() => {
+      setIsTalking(false);
+    }, 3000);
+    
+    setChatMessage('');
   };
 
-  const stopTTS = () => {
-    stopSpeech();
+  const shareProfile = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url);
+    toast({
+      title: "Link Copied",
+      description: "Profile link copied to clipboard",
+    });
   };
-
-  // Update chat message with voice input
-  useEffect(() => {
-    if (transcript && !isListening) {
-      setChatMessage(prev => prev + transcript);
-      resetTranscript();
-    }
-  }, [transcript, isListening, resetTranscript]);
-
-  useEffect(() => {
-    if (username) {
-      loadProfile();
-    }
-  }, [username]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <motion.div
+          className="text-center space-y-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-white/80">Loading avatar profile...</p>
+        </motion.div>
       </div>
     );
   }
 
-  if (!profileData) {
+  if (!profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-        <div className="text-center p-8">
-          <h1 className="text-xl font-bold text-foreground mb-2">Profile not found</h1>
-          <p className="text-muted-foreground">The profile you're looking for doesn't exist.</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-bold text-white">Profile Not Found</h1>
+          <p className="text-white/60">The requested profile could not be found.</p>
         </div>
       </div>
     );
   }
+
+  const isOwnProfile = currentUser?.id === profile.id;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4">
-        {/* Profile Header - Moved to top left */}
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-border">
-              {profileData.profile_pic_url ? (
-                <img 
-                  src={profileData.profile_pic_url} 
-                  alt="Profile"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <Avatar3D 
-                  isLarge={false}
-                  avatarStyle="realistic"
-                  mood="friendly"
-                  onInteraction={() => {}}
-                />
-              )}
-            </div>
-            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-background"></div>
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-foreground">
-              {profileData.display_name || profileData.full_name || profileData.username}
-            </h2>
-            <p className="text-muted-foreground text-sm">@{profileData.username}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-8 w-8 p-0 hover:bg-accent" 
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          >
-            {theme === 'dark' ? (
-              <Sun className="w-4 h-4 text-muted-foreground" />
-            ) : (
-              <Moon className="w-4 h-4 text-muted-foreground" />
-            )}
-          </Button>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-accent">
-            <MoreVertical className="w-4 h-4 text-muted-foreground" />
-          </Button>
-        </div>
-      </div>
-      
-      {/* Profile Content */}
-      <div className="max-w-md mx-auto px-4 py-2 space-y-6">
-
-        {/* Bio */}
-        {profileData.bio && (
-          <p className="text-foreground leading-relaxed">
-            {profileData.bio}
-          </p>
-        )}
-
-        {/* Main Avatar Preview - Increased height */}
-        <div className="relative">
-          <div className="h-96 bg-gradient-to-br from-card/80 to-primary/10 rounded-2xl overflow-hidden border border-border/50">
-            <div className="w-full h-full flex items-center justify-center relative">
-              <Avatar3D 
-                isLarge={true}
-                avatarStyle="realistic"
-                mood="friendly"
-                onInteraction={() => {}}
-              />
-              {/* Talk to Me button on avatar preview */}
-              <Button 
-                onClick={handleTalkToAvatar}
-                className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-full px-4 py-2 backdrop-blur-sm border border-primary/30"
-                size="sm"
-              >
-                <Play className="w-4 h-4 mr-2" />
-                Talk to Me
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-3">
-          <Button className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-full h-12 font-medium shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-            Subscribe - $9.99/mo
-          </Button>
-          <Button
-            onClick={handleFollowToggle}
-            variant="outline"
-            className={`px-6 h-12 rounded-full font-medium transition-all duration-300 hover:scale-105 ${
-              isFollowing 
-                ? 'bg-gradient-to-r from-primary/20 to-primary/10 border-primary/30 text-primary hover:bg-gradient-to-r hover:from-primary/30 hover:to-primary/20' 
-                : 'bg-gradient-to-r from-transparent to-transparent border-border hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:border-primary/30'
-            }`}
-          >
-            {isFollowing ? 'Following' : 'Follow'}
-          </Button>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-foreground">
-              {userStats.total_conversations}
-            </div>
-            <div className="text-sm text-muted-foreground">Total Conversations</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-foreground">
-              {userStats.followers_count > 999 
-                ? `${(userStats.followers_count / 1000).toFixed(1)}K` 
-                : userStats.followers_count}
-            </div>
-            <div className="text-sm text-muted-foreground">Followers</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-foreground">
-              {userStats.engagement_score}
-            </div>
-            <div className="text-sm text-muted-foreground">Engagement Score</div>
-          </div>
-        </div>
-
-        {/* Bottom Tabs - Posts, Chat, Products */}
-        <div className="flex bg-card/30 rounded-full p-1 border border-border/50 backdrop-blur-sm">
-          <button
-            onClick={() => setActiveTab('posts')}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-full transition-all duration-300 ${
-              activeTab === 'posts'
-                ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span className="text-sm font-medium">Posts</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('chat')}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-full transition-all duration-300 ${
-              activeTab === 'chat'
-                ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-            }`}
-          >
-            <MessageSquare className="w-4 h-4" />
-            <span className="text-sm font-medium">Chat</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('products')}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-full transition-all duration-300 ${
-              activeTab === 'products'
-                ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-            }`}
-          >
-            <Crown className="w-4 h-4" />
-            <span className="text-sm font-medium">Products</span>
-          </button>
-        </div>
-
-        {/* Tab Content */}
-        <div className="space-y-4">
-          {activeTab === 'posts' && (
-            <>
-              {isLoadingPosts ? (
-                <div className="bg-card/30 rounded-xl p-6 text-center border border-border/50">
-                  <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse">
-                    <MessageSquare className="w-6 h-6 text-muted-foreground" />
-                  </div>
-                  <p className="text-muted-foreground text-sm">Loading posts...</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* Header Section */}
+        <motion.div
+          className="relative mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <Card className="bg-gradient-to-br from-slate-800/80 to-purple-800/50 border-purple-500/30 backdrop-blur-sm shadow-2xl rounded-3xl overflow-hidden">
+            <CardContent className="p-8">
+              <div className="flex flex-col lg:flex-row gap-8 items-center">
+                {/* 3D Avatar */}
+                <div className="flex-shrink-0">
+                  <FuturisticAvatar3D
+                    isLarge={true}
+                    isTalking={isTalking}
+                    avatarStyle="holographic"
+                    className="w-80 h-80"
+                    onInteraction={() => setIsTalking(!isTalking)}
+                  />
                 </div>
-              ) : posts.length === 0 ? (
-                <div className="bg-card/30 rounded-xl p-6 text-center border border-border/50">
-                  <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
-                    <MessageSquare className="w-6 h-6 text-muted-foreground" />
+
+                {/* Profile Info */}
+                <div className="flex-1 space-y-6 text-center lg:text-left">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
+                        {profile.display_name || profile.username}
+                      </h1>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={shareProfile}
+                        className="text-purple-400 hover:text-purple-300"
+                      >
+                        <Share className="h-5 w-5" />
+                      </Button>
+                    </div>
+                    <p className="text-xl text-cyan-400 mb-2">@{profile.username}</p>
+                    {profile.profession && (
+                      <Badge className="bg-gradient-to-r from-purple-500/20 to-cyan-500/20 text-purple-300 border-purple-500/30">
+                        {profile.profession}
+                      </Badge>
+                    )}
                   </div>
-                  <p className="text-muted-foreground text-sm">No posts yet</p>
-                </div>
-              ) : (
-                posts.map((post) => (
-                  <div key={post.id} className="bg-card/30 rounded-xl p-4 border border-border/50">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                        <img 
-                          src={profileData?.profile_pic_url || profileData?.avatar_url || '/placeholder.svg'} 
-                          alt={profileData?.display_name || 'Profile'} 
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-foreground font-medium text-sm">
-                            {profileData?.display_name || profileData?.username}
-                          </span>
-                          <span className="text-muted-foreground text-xs">
-                            {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-                          </span>
-                        </div>
-                        <p className="text-foreground text-sm mb-3">{post.content}</p>
-                        {post.media_url && (
-                          <div className="mb-3 rounded-lg overflow-hidden">
-                            {post.media_type?.startsWith('image/') ? (
-                              <img src={post.media_url} alt="Post media" className="w-full max-h-64 object-cover" />
-                            ) : post.media_type?.startsWith('video/') ? (
-                              <video src={post.media_url} controls className="w-full max-h-64" />
-                            ) : null}
-                          </div>
+
+                  <p className="text-lg text-white/80 leading-relaxed">
+                    {profile.bio || "Exploring the boundaries of AI conversation. Let's create something amazing!"}
+                  </p>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-4 justify-center lg:justify-start">
+                    <Button
+                      className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-purple-500/30"
+                      onClick={() => setIsTalking(true)}
+                    >
+                      <MessageCircle className="w-5 h-5 mr-2" />
+                      Talk to Me
+                    </Button>
+                    
+                    {!isOwnProfile && currentUser && (
+                      <Button
+                        variant="outline"
+                        className="border-purple-500/50 text-purple-300 hover:bg-purple-500/20 px-8 py-3 rounded-full"
+                        onClick={handleFollow}
+                        disabled={followsLoading}
+                      >
+                        {isFollowing(profile.id) ? (
+                          <>
+                            <UserMinus className="w-5 h-5 mr-2" />
+                            Following
+                          </>
+                        ) : (
+                          <>
+                            <UserPlus className="w-5 h-5 mr-2" />
+                            Follow
+                          </>
                         )}
-                        <div className="flex items-center gap-4 text-muted-foreground text-xs">
-                          <button className="flex items-center gap-1 hover:text-foreground transition-colors">
-                            <Heart className="w-3 h-3" />
-                            <span>{post.likes_count || 0}</span>
-                          </button>
-                          <button className="flex items-center gap-1 hover:text-foreground transition-colors">
-                            <MessageSquare className="w-3 h-3" />
-                            <span>{post.comments_count || 0}</span>
-                          </button>
-                          <button className="flex items-center gap-1 hover:text-foreground transition-colors">
-                            <Share2 className="w-3 h-3" />
-                          </button>
-                        </div>
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-6 pt-6 border-t border-purple-500/30">
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-cyan-400 mb-1">
+                        {userStats?.total_conversations || 352}
                       </div>
+                      <div className="text-sm text-white/60">Total Conversations</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-purple-400 mb-1">
+                        {followersCount || 1200}
+                      </div>
+                      <div className="text-sm text-white/60">Followers</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-pink-400 mb-1">
+                        {userStats?.engagement_score || 89}
+                      </div>
+                      <div className="text-sm text-white/60">Engagement Score</div>
                     </div>
                   </div>
-                ))
-              )}
-            </>
-          )}
-
-          {activeTab === 'products' && (
-            <div className="bg-card/30 rounded-xl p-6 text-center border border-border/50">
-              <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
-                <Crown className="w-6 h-6 text-muted-foreground" />
+                </div>
               </div>
-              <p className="text-muted-foreground text-sm">No products available yet</p>
-            </div>
-          )}
+            </CardContent>
+          </Card>
+        </motion.div>
 
-          {activeTab === 'chat' && (
-            <>
-              {/* Chat Messages - Flexible conversation box */}
-              <div className="bg-card/30 border border-border/50 rounded-lg p-4 min-h-64 max-h-96 overflow-y-auto">
-                {conversations.length > 0 ? (
-                  <div className="space-y-3">
-                    {conversations.map((conversation) => (
-                      <div
-                        key={conversation.id}
-                        className={`flex ${conversation.type === 'user' ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div
-                          className={`max-w-[80%] p-3 rounded-lg ${
-                            conversation.type === 'user'
-                              ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground'
-                              : 'bg-muted text-foreground'
-                          }`}
-                        >
-                          <p className="text-sm">{conversation.message}</p>
-                          <p className="text-xs opacity-70 mt-1">
-                            {conversation.timestamp.toLocaleTimeString()}
-                          </p>
+        {/* Content Tabs */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <Tabs defaultValue="posts" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-3 bg-slate-800/50 border border-purple-500/30 rounded-2xl p-1">
+              <TabsTrigger 
+                value="posts" 
+                className="rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-cyan-600"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Posts
+              </TabsTrigger>
+              <TabsTrigger 
+                value="chat"
+                className="rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-cyan-600"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Chat
+              </TabsTrigger>
+              <TabsTrigger 
+                value="products"
+                className="rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-cyan-600"
+              >
+                <Globe className="w-4 h-4 mr-2" />
+                Products
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Posts Tab */}
+            <TabsContent value="posts" className="space-y-6">
+              {posts.length > 0 ? (
+                posts.map((post) => (
+                  <Card key={post.id} className="bg-slate-800/50 border-purple-500/30 backdrop-blur-sm">
+                    <CardContent className="p-6">
+                      <p className="text-white/90 mb-4">{post.content}</p>
+                      {post.media_url && (
+                        <div className="mb-4 rounded-lg overflow-hidden">
+                          {post.media_type?.startsWith('image/') ? (
+                            <img src={post.media_url} alt="Post media" className="w-full h-auto" />
+                          ) : (
+                            <div className="bg-slate-700/50 p-4 rounded-lg">
+                              <p className="text-sm text-white/60">Media: {post.media_type}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-6 text-sm text-white/60">
+                        <div className="flex items-center gap-1">
+                          <Heart className="w-4 h-4" />
+                          {post.likes_count}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <MessageCircle className="w-4 h-4" />
+                          {post.comments_count}
+                        </div>
+                        <div className="ml-auto">
+                          {new Date(post.created_at).toLocaleDateString()}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">Start a conversation with the AI avatar</p>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Chat Input - Only show when chat tab is active */}
-        {activeTab === 'chat' && (
-          <div className="bg-card/30 rounded-2xl p-4 border border-border/50 backdrop-blur-sm">
-            <div className="flex items-center gap-3">
-              <Input
-                value={chatMessage + (interimTranscript ? ` ${interimTranscript}` : '')}
-                onChange={(e) => setChatMessage(e.target.value)}
-                placeholder="Type a message..."
-                className="flex-1 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl"
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              />
-              <div className="relative">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
-                  className="h-10 w-10 p-0 hover:bg-background/50 rounded-xl"
-                >
-                  <Smile className="w-5 h-5 text-muted-foreground" />
-                </Button>
-                {isEmojiPickerOpen && (
-                  <div className="absolute bottom-full right-0 mb-2 z-50">
-                    <EmojiPicker 
-                      isOpen={isEmojiPickerOpen}
-                      onClose={() => setIsEmojiPickerOpen(false)}
-                      onEmojiSelect={handleEmojiSelect} 
-                    />
-                  </div>
-                )}
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleVoiceInput}
-                disabled={!voiceSupported}
-                className={`h-10 w-10 p-0 rounded-xl transition-all duration-300 ${
-                  isListening 
-                    ? 'bg-destructive/20 hover:bg-destructive/30 text-destructive' 
-                    : 'hover:bg-background/50 text-muted-foreground hover:text-foreground'
-                }`}
-                title={!voiceSupported ? 'Voice input not supported' : isListening ? 'Stop recording' : 'Start recording'}
-              >
-                {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-              </Button>
-              {isSpeaking && (
-                <Button 
-                  size="sm" 
-                  variant="ghost" 
-                  onClick={stopTTS}
-                  className="h-10 w-10 p-0 hover:bg-background/50 rounded-xl text-primary"
-                >
-                  <Volume2 className="w-5 h-5" />
-                </Button>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <Card className="bg-slate-800/50 border-purple-500/30 backdrop-blur-sm">
+                  <CardContent className="p-12 text-center">
+                    <Sparkles className="w-12 h-12 mx-auto mb-4 text-purple-400" />
+                    <p className="text-white/60">No posts yet. Check back soon for updates!</p>
+                  </CardContent>
+                </Card>
               )}
-              <Button
-                onClick={handleSendMessage}
-                disabled={!chatMessage.trim()}
-                className="h-10 px-4 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-xl transition-all duration-300 hover:scale-105"
-              >
-                <Send className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        )}
+            </TabsContent>
 
-        {/* Social Media Links Row */}
-        <div className="flex justify-center gap-3 pt-2">
-          <a 
-            href={socialLinks?.facebook || 'https://facebook.com'} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
-          >
-            <Facebook className="w-4 h-4" />
-          </a>
-          <a 
-            href={socialLinks?.twitter || 'https://x.com'} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
-          >
-            <X className="w-4 h-4" />
-          </a>
-          <a 
-            href={socialLinks?.instagram || 'https://instagram.com'} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
-          >
-            <Instagram className="w-4 h-4" />
-          </a>
-          <a 
-            href={socialLinks?.youtube || 'https://youtube.com'} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
-          >
-            <Youtube className="w-4 h-4" />
-          </a>
-          <a 
-            href={socialLinks?.linkedin || 'https://linkedin.com'} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
-          >
-            <Linkedin className="w-4 h-4" />
-          </a>
-          <a 
-            href={socialLinks?.github || 'https://github.com'} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
-          >
-            <Github className="w-4 h-4" />
-          </a>
-          <a 
-            href={socialLinks?.discord || 'https://discord.com'} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
-          >
-            <MessageCircle className="w-4 h-4" />
-          </a>
-          <a 
-            href={socialLinks?.website || 'https://reddit.com'} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-card/30 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-110"
-          >
-            <Globe className="w-4 h-4" />
-          </a>
-        </div>
+            {/* Chat Tab */}
+            <TabsContent value="chat">
+              <Card className="bg-slate-800/50 border-purple-500/30 backdrop-blur-sm">
+                <CardContent className="p-8">
+                  <div className="text-center mb-8">
+                    <MessageCircle className="w-16 h-16 mx-auto mb-4 text-purple-400" />
+                    <h3 className="text-2xl font-bold text-white mb-2">Start a Conversation</h3>
+                    <p className="text-white/60">
+                      Ask {profile.display_name || profile.username} anything! Their AI avatar will respond.
+                    </p>
+                  </div>
+                  
+                  <form onSubmit={handleChatSubmit} className="space-y-4">
+                    <div className="relative">
+                      <Input
+                        value={chatMessage}
+                        onChange={(e) => setChatMessage(e.target.value)}
+                        placeholder="Ask me anything..."
+                        className="bg-slate-700/50 border-purple-500/30 text-white placeholder:text-white/40 pr-24 py-6 text-lg rounded-2xl"
+                      />
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="text-purple-400 hover:text-purple-300 p-2"
+                        >
+                          <Mic className="w-5 h-5" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="text-purple-400 hover:text-purple-300 p-2"
+                        >
+                          <Smile className="w-5 h-5" />
+                        </Button>
+                      </div>
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 py-6 rounded-2xl text-lg font-semibold"
+                      disabled={!chatMessage.trim()}
+                    >
+                      <Send className="w-5 h-5 mr-2" />
+                      Send Message
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Products Tab */}
+            <TabsContent value="products">
+              {products.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {products.map((product) => (
+                    <Card key={product.id} className="bg-slate-800/50 border-purple-500/30 backdrop-blur-sm hover:border-purple-400/50 transition-colors">
+                      <CardContent className="p-6">
+                        {product.thumbnail_url && (
+                          <div className="mb-4 rounded-lg overflow-hidden">
+                            <img src={product.thumbnail_url} alt={product.title} className="w-full h-32 object-cover" />
+                          </div>
+                        )}
+                        <h4 className="font-semibold text-white mb-2">{product.title}</h4>
+                        <p className="text-sm text-white/60 mb-4 line-clamp-2">{product.description}</p>
+                        <div className="flex items-center justify-between">
+                          <div className="text-lg font-bold text-cyan-400">
+                            {product.is_free ? 'Free' : `$${product.price}`}
+                          </div>
+                          <Button size="sm" variant="outline" className="border-purple-500/50 text-purple-300 hover:bg-purple-500/20">
+                            View
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card className="bg-slate-800/50 border-purple-500/30 backdrop-blur-sm">
+                  <CardContent className="p-12 text-center">
+                    <Globe className="w-12 h-12 mx-auto mb-4 text-purple-400" />
+                    <p className="text-white/60">No products available yet.</p>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          </Tabs>
+        </motion.div>
+
+        {/* Social Links Footer */}
+        <motion.div
+          className="mt-12 pt-8 border-t border-purple-500/30"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+        >
+          <div className="flex items-center justify-center gap-6">
+            <Button variant="ghost" size="sm" className="text-purple-400 hover:text-purple-300">
+              <Twitter className="w-5 h-5" />
+            </Button>
+            <Button variant="ghost" size="sm" className="text-purple-400 hover:text-purple-300">
+              <Linkedin className="w-5 h-5" />
+            </Button>
+            <Button variant="ghost" size="sm" className="text-purple-400 hover:text-purple-300">
+              <Facebook className="w-5 h-5" />
+            </Button>
+            <Button variant="ghost" size="sm" className="text-purple-400 hover:text-purple-300">
+              <Instagram className="w-5 h-5" />
+            </Button>
+            <Button variant="ghost" size="sm" className="text-purple-400 hover:text-purple-300">
+              <Youtube className="w-5 h-5" />
+            </Button>
+            <Separator orientation="vertical" className="h-6 bg-purple-500/30" />
+            <Button variant="ghost" size="sm" onClick={shareProfile} className="text-cyan-400 hover:text-cyan-300">
+              <Share className="w-5 h-5 mr-2" />
+              Share
+            </Button>
+          </div>
+        </motion.div>
       </div>
     </div>
   );

@@ -6,10 +6,12 @@ import { Share2, Users, MessageSquare, BarChart3, Calendar } from 'lucide-react'
 import { useUserProfile } from '@/hooks/useUserProfile';
 import ShareModal from './ShareModal';
 import RealisticAvatarBuilder from './RealisticAvatarBuilder';
+import { useFollows } from '@/hooks/useFollows';
 
 const Dashboard = () => {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const { profileData, loading } = useUserProfile();
+  const { following, followersCount, followingCount } = useFollows();
 
   if (loading) {
     return (
@@ -49,7 +51,7 @@ const Dashboard = () => {
             <Users className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">1,234</div>
+            <div className="text-2xl font-bold text-gray-900">{followersCount}</div>
             <p className="text-xs text-gray-600">+20% from last month</p>
           </CardContent>
         </Card>
@@ -148,6 +150,40 @@ const Dashboard = () => {
         {/* 3D Avatar Preview - Enhanced Full Body Preview */}
         <div className="lg:col-span-1">
           <RealisticAvatarBuilder showInDashboard={true} />
+          
+          {/* Following Section */}
+          {following.length > 0 && (
+            <Card className="mt-6 bg-gradient-to-br from-slate-50 to-gray-50 border border-slate-200">
+              <CardHeader>
+                <CardTitle className="text-gray-900 flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Following ({followingCount})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {following.slice(0, 3).map((follow) => (
+                    <div key={follow.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                        {follow.following?.display_name?.[0] || follow.following?.username?.[0] || 'U'}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          {follow.following?.display_name || follow.following?.username}
+                        </p>
+                        <p className="text-xs text-gray-500">@{follow.following?.username}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {following.length > 3 && (
+                    <p className="text-xs text-gray-500 text-center pt-2">
+                      +{following.length - 3} more
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 

@@ -50,6 +50,144 @@ export type Database = {
         }
         Relationships: []
       }
+      avatar_configurations: {
+        Row: {
+          accessories: Json | null
+          age_category: string
+          avatar_name: string
+          body_fat: number
+          cheekbones: number
+          clothing_bottom: string | null
+          clothing_top: string | null
+          created_at: string
+          current_expression: string
+          current_pose: string
+          ear_position: number
+          ear_shape: string
+          ear_size: number
+          eye_color: string
+          eye_distance: number
+          eye_shape: string
+          eye_size: number
+          face_width: number
+          gender: string
+          hair_color: string
+          hair_length: number
+          hair_style: string
+          head_shape: string
+          head_size: number
+          height: number
+          id: string
+          is_active: boolean
+          jawline: number
+          lip_shape: string
+          lip_thickness: number
+          model_url: string | null
+          mouth_width: number
+          muscle_definition: number
+          nose_shape: string
+          nose_size: number
+          nose_width: number
+          shoes: string | null
+          skin_texture: string
+          skin_tone: string
+          thumbnail_url: string | null
+          updated_at: string
+          user_id: string
+          weight: number
+        }
+        Insert: {
+          accessories?: Json | null
+          age_category?: string
+          avatar_name?: string
+          body_fat?: number
+          cheekbones?: number
+          clothing_bottom?: string | null
+          clothing_top?: string | null
+          created_at?: string
+          current_expression?: string
+          current_pose?: string
+          ear_position?: number
+          ear_shape?: string
+          ear_size?: number
+          eye_color?: string
+          eye_distance?: number
+          eye_shape?: string
+          eye_size?: number
+          face_width?: number
+          gender?: string
+          hair_color?: string
+          hair_length?: number
+          hair_style?: string
+          head_shape?: string
+          head_size?: number
+          height?: number
+          id?: string
+          is_active?: boolean
+          jawline?: number
+          lip_shape?: string
+          lip_thickness?: number
+          model_url?: string | null
+          mouth_width?: number
+          muscle_definition?: number
+          nose_shape?: string
+          nose_size?: number
+          nose_width?: number
+          shoes?: string | null
+          skin_texture?: string
+          skin_tone?: string
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id: string
+          weight?: number
+        }
+        Update: {
+          accessories?: Json | null
+          age_category?: string
+          avatar_name?: string
+          body_fat?: number
+          cheekbones?: number
+          clothing_bottom?: string | null
+          clothing_top?: string | null
+          created_at?: string
+          current_expression?: string
+          current_pose?: string
+          ear_position?: number
+          ear_shape?: string
+          ear_size?: number
+          eye_color?: string
+          eye_distance?: number
+          eye_shape?: string
+          eye_size?: number
+          face_width?: number
+          gender?: string
+          hair_color?: string
+          hair_length?: number
+          hair_style?: string
+          head_shape?: string
+          head_size?: number
+          height?: number
+          id?: string
+          is_active?: boolean
+          jawline?: number
+          lip_shape?: string
+          lip_thickness?: number
+          model_url?: string | null
+          mouth_width?: number
+          muscle_definition?: number
+          nose_shape?: string
+          nose_size?: number
+          nose_width?: number
+          shoes?: string | null
+          skin_texture?: string
+          skin_tone?: string
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id?: string
+          weight?: number
+        }
+        Relationships: []
+      }
       avatar_settings: {
         Row: {
           avatar_mood: string | null

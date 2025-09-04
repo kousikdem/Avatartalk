@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -10,37 +9,56 @@ interface Follow {
   created_at: string;
   follower?: {
     id: string;
-    full_name: string;
-    email: string;
-    avatar_url?: string;
+    username: string;
+    display_name: string;
+    avatar_url: string;
   };
   following?: {
     id: string;
-    full_name: string;
-    email: string;
-    avatar_url?: string;
+    username: string;
+    display_name: string;
+    avatar_url: string;
   };
 }
 
-export const useFollows = () => {
+interface UseFollowsReturn {
+  followers: Follow[];
+  following: Follow[];
+  followersCount: number;
+  followingCount: number;
+  loading: boolean;
+  followUser: (followingId: string) => Promise<void>;
+  unfollowUser: (followingId: string) => Promise<void>;
+  isFollowing: (userId: string) => boolean;
+  refetch: () => Promise<void>;
+}
+
+export const useFollows = (userId?: string): UseFollowsReturn => {
   const [followers, setFollowers] = useState<Follow[]>([]);
   const [following, setFollowing] = useState<Follow[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchFollows = async () => {
+  const fetchFollows = async (targetUserId?: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const currentUser = await supabase.auth.getUser();
+      const queryUserId = targetUserId || currentUser.data.user?.id;
+      
+      if (!queryUserId) return;
 
       // Fetch followers
       const { data: followersData, error: followersError } = await supabase
         .from('follows')
         .select(`
           *,
-          follower:profiles!follows_follower_id_fkey(*)
+          follower:profiles!follows_follower_id_fkey(
+            id,
+            username,
+            display_name,
+            avatar_url
+          )
         `)
-        .eq('following_id', user.id);
+        .eq('following_id', queryUserId);
 
       if (followersError) throw followersError;
 
@@ -49,9 +67,14 @@ export const useFollows = () => {
         .from('follows')
         .select(`
           *,
-          following:profiles!follows_following_id_fkey(*)
+          following:profiles!follows_following_id_fkey(
+            id,
+            username,
+            display_name,
+            avatar_url
+          )
         `)
-        .eq('follower_id', user.id);
+        .eq('follower_id', queryUserId);
 
       if (followingError) throw followingError;
 
@@ -71,21 +94,27 @@ export const useFollows = () => {
 
   const followUser = async (followingId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { data: currentUser } = await supabase.auth.getUser();
+      if (!currentUser.user) throw new Error('Not authenticated');
 
       const { error } = await supabase
         .from('follows')
-        .insert([{ follower_id: user.id, following_id: followingId }]);
+        .insert([
+          {
+            follower_id: currentUser.user.id,
+            following_id: followingId,
+          },
+        ]);
 
       if (error) throw error;
-      
-      await fetchFollows();
+
       toast({
         title: "Success",
         description: "Successfully followed user",
       });
-    } catch (error) {
+
+      await fetchFollows();
+    } catch (error: any) {
       console.error('Error following user:', error);
       toast({
         title: "Error",
@@ -97,23 +126,24 @@ export const useFollows = () => {
 
   const unfollowUser = async (followingId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { data: currentUser } = await supabase.auth.getUser();
+      if (!currentUser.user) throw new Error('Not authenticated');
 
       const { error } = await supabase
         .from('follows')
         .delete()
-        .eq('follower_id', user.id)
+        .eq('follower_id', currentUser.user.id)
         .eq('following_id', followingId);
 
       if (error) throw error;
-      
-      await fetchFollows();
+
       toast({
         title: "Success",
         description: "Successfully unfollowed user",
       });
-    } catch (error) {
+
+      await fetchFollows();
+    } catch (error: any) {
       console.error('Error unfollowing user:', error);
       toast({
         title: "Error",
@@ -123,16 +153,28 @@ export const useFollows = () => {
     }
   };
 
+  const isFollowing = (targetUserId: string): boolean => {
+    return following.some(follow => follow.following_id === targetUserId);
+  };
+
+  const refetch = async () => {
+    setLoading(true);
+    await fetchFollows(userId);
+  };
+
   useEffect(() => {
-    fetchFollows();
-  }, []);
+    fetchFollows(userId);
+  }, [userId]);
 
   return {
     followers,
     following,
+    followersCount: followers.length,
+    followingCount: following.length,
     loading,
     followUser,
     unfollowUser,
-    refetch: fetchFollows
+    isFollowing,
+    refetch,
   };
 };
