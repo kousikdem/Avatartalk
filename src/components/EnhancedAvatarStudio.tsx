@@ -15,6 +15,7 @@ import RealisticAvatarBuilder from './RealisticAvatarBuilder';
 import PiFuHDGenerator from './PiFuHDGenerator';
 import MakeHumanAssetLibrary from './MakeHumanAssetLibrary';
 import BlenderIntegration from './BlenderIntegration';
+import ComprehensiveAssetManager from './ComprehensiveAssetManager';
 
 interface EnhancedAvatarStudioProps {
   showInDashboard?: boolean;
@@ -106,11 +107,20 @@ const EnhancedAvatarStudio: React.FC<EnhancedAvatarStudioProps> = ({ showInDashb
 
         {/* Asset Library */}
         <TabsContent value="assets" className="space-y-6">
-          <MakeHumanAssetLibrary 
+          <ComprehensiveAssetManager
             onAssetSelect={(asset) => {
               console.log('Selected asset:', asset);
-              // Integrate selected asset into avatar configuration
+              setAvatarData(prevData => ({ ...prevData, selectedAsset: asset }));
             }}
+            onAssetApply={(type, asset) => {
+              console.log('Applying asset:', type, asset);
+              setAvatarData(prevData => ({ 
+                ...prevData, 
+                [type]: asset,
+                appliedAssets: [...(prevData?.appliedAssets || []), { type, asset }]
+              }));
+            }}
+            currentAvatar={avatarData}
           />
         </TabsContent>
 
