@@ -5,7 +5,7 @@ import Navbar from '@/components/Navbar';
 import LandingPage from '@/components/LandingPage';
 import Dashboard from '@/components/Dashboard';
 import PricingPage from '@/components/PricingPage';
-import RealisticAvatarBuilder from '@/components/RealisticAvatarBuilder';
+import EnhancedAvatarStudio from '@/components/EnhancedAvatarStudio';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect, useState } from 'react';
 
@@ -41,10 +41,10 @@ const Index = () => {
     );
   }
 
-  // If user is authenticated, show appropriate view
+  // Show Enhanced Avatar Studio if authenticated and view is 'avatar'
   if (user) {
     if (view === 'avatar') {
-      return <RealisticAvatarBuilder />;
+      return <EnhancedAvatarStudio />;
     }
     return <Dashboard />;
   }

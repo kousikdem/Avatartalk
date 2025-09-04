@@ -145,7 +145,7 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* 3D Avatar Preview */}
+        {/* 3D Avatar Preview - Enhanced Full Body Preview */}
         <div className="lg:col-span-1">
           <RealisticAvatarBuilder showInDashboard={true} />
         </div>

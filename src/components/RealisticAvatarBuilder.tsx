@@ -170,22 +170,24 @@ const RealisticAvatarBuilder: React.FC<RealisticAvatarBuilderProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-64 rounded-lg overflow-hidden realistic-avatar-lighting">
-            <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
-              <ambientLight intensity={0.6} />
-              <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
-              <spotLight position={[-10, -10, -5]} intensity={0.3} />
+          <div className="h-96 rounded-lg overflow-hidden realistic-avatar-lighting bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100">
+            <Canvas camera={{ position: [0, 1, 6], fov: 50 }}>
+              <ambientLight intensity={0.7} />
+              <directionalLight position={[10, 15, 5]} intensity={1.2} castShadow />
+              <spotLight position={[-10, -10, -5]} intensity={0.4} />
+              <pointLight position={[0, 8, 3]} intensity={0.6} color="#fff3e0" />
               
               <AdvancedAvatarPreview config={avatarConfig} />
               
               <OrbitControls 
                 enablePan={false} 
-                minDistance={3} 
-                maxDistance={8}
-                maxPolarAngle={Math.PI / 1.8}
+                minDistance={4} 
+                maxDistance={12}
+                maxPolarAngle={Math.PI / 1.5}
+                target={[0, 0.5, 0]}
               />
               <Environment preset="studio" />
-              <ContactShadows position={[0, -2.5, 0]} scale={5} blur={2} far={2.8} />
+              <ContactShadows position={[0, -3.5, 0]} scale={8} blur={2.5} far={4} opacity={0.6} />
             </Canvas>
           </div>
           
@@ -299,7 +301,9 @@ const RealisticAvatarBuilder: React.FC<RealisticAvatarBuilderProps> = ({
             </TabsContent>
 
             <TabsContent value="photo" className="space-y-4 max-h-[500px] overflow-y-auto">
-              <ImageToAvatarConverter onConfigGenerated={setAvatarConfig} />
+              <div className="space-y-4">
+                <ImageToAvatarConverter onConfigGenerated={setAvatarConfig} />
+              </div>
             </TabsContent>
           </Tabs>
         </div>
