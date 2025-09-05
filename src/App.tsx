@@ -15,6 +15,7 @@ import CalendarPage from "./components/CalendarPage";
 import ProductsPage from "./pages/ProductsPage";
 import CreatePostModal from "./components/CreatePostModal";  
 import ProfilePage from "./components/ProfilePage";
+import UsernameRedirect from "./components/UsernameRedirect";
 import { supabase } from "@/integrations/supabase/client";
 
 const queryClient = new QueryClient();
@@ -91,6 +92,7 @@ const App = () => {
                       <Route path="/calendar" element={<CalendarPage />} />
                       <Route path="/products" element={<ProductsPage />} />
                       <Route path="/profile/:username" element={<ProfilePage />} />
+                      <Route path="/:username" element={<UsernameRedirect />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </main>
@@ -120,6 +122,7 @@ const App = () => {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/profile/:username" element={<ProfilePage />} />
+                <Route path="/:username" element={<UsernameRedirect />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </div>

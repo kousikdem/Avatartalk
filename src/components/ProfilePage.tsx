@@ -107,26 +107,36 @@ const ProfilePage: React.FC = () => {
 
   const fetchProfile = async () => {
     try {
-      // Use Promise.all for concurrent fetching
-      const [profileResponse, statsResponse, postsResponse, productsResponse] = await Promise.all([
-        supabase.from('profiles').select('*').eq('username', username).single(),
-        supabase.from('user_stats').select('*').eq('user_id', profile?.id).single(),
-        supabase.from('posts').select('*').eq('user_id', profile?.id).order('created_at', { ascending: false }).limit(10),
-        supabase.from('products').select('*').eq('user_id', profile?.id).eq('status', 'published').order('created_at', { ascending: false }).limit(6)
+      // First fetch profile by username
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('username', username)
+        .maybeSingle();
+
+      if (profileError) throw profileError;
+      if (!profileData) {
+        throw new Error('Profile not found');
+      }
+
+      setProfile(profileData);
+
+      // Now fetch related data using the profile ID
+      const [statsResponse, postsResponse, productsResponse] = await Promise.all([
+        supabase.from('user_stats').select('*').eq('user_id', profileData.id).maybeSingle(),
+        supabase.from('posts').select('*').eq('user_id', profileData.id).order('created_at', { ascending: false }).limit(10),
+        supabase.from('products').select('*').eq('user_id', profileData.id).eq('status', 'published').order('created_at', { ascending: false }).limit(6)
       ]);
 
-      if (profileResponse.error) throw profileResponse.error;
-
-      setProfile(profileResponse.data);
       setUserStats(statsResponse.data);
       setPosts(postsResponse.data || []);
       setProducts(productsResponse.data || []);
 
       // Track profile visit (fire and forget)
-      if (profileResponse.data.id !== currentUser?.id) {
+      if (profileData.id !== currentUser?.id) {
         supabase.from('profile_visitors').insert({
           visitor_id: currentUser?.id || null,
-          visited_profile_id: profileResponse.data.id,
+          visited_profile_id: profileData.id,
         });
       }
 

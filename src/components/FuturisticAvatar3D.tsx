@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Environment, PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import { motion } from 'framer-motion';
 import * as THREE from 'three';
 
@@ -66,10 +66,8 @@ const AvatarMesh: React.FC<{
         scale={hovered ? 1.05 : 1}
       >
         <sphereGeometry args={[0.8, 32, 32]} />
-        <meshStandardMaterial
+        <meshBasicMaterial
           color={getAvatarColor()}
-          emissive={getAvatarColor()}
-          emissiveIntensity={getEmissiveIntensity()}
           transparent
           opacity={avatarStyle === 'holographic' ? 0.8 : 1}
           wireframe={avatarStyle === 'holographic'}
@@ -79,51 +77,37 @@ const AvatarMesh: React.FC<{
       {/* Eyes */}
       <mesh position={[-0.25, 0.15, 0.7]}>
         <sphereGeometry args={[0.08, 16, 16]} />
-        <meshStandardMaterial
-          color="#ffffff"
-          emissive="#00ffff"
-          emissiveIntensity={0.5}
-        />
+        <meshBasicMaterial color="#ffffff" />
       </mesh>
       <mesh position={[0.25, 0.15, 0.7]}>
         <sphereGeometry args={[0.08, 16, 16]} />
-        <meshStandardMaterial
-          color="#ffffff"
-          emissive="#00ffff"
-          emissiveIntensity={0.5}
-        />
+        <meshBasicMaterial color="#ffffff" />
       </mesh>
 
       {/* Pupils */}
       <mesh position={[-0.25, 0.15, 0.76]}>
         <sphereGeometry args={[0.03, 16, 16]} />
-        <meshStandardMaterial color="#000000" />
+        <meshBasicMaterial color="#000000" />
       </mesh>
       <mesh position={[0.25, 0.15, 0.76]}>
         <sphereGeometry args={[0.03, 16, 16]} />
-        <meshStandardMaterial color="#000000" />
+        <meshBasicMaterial color="#000000" />
       </mesh>
 
       {/* Mouth - animated when talking */}
       <mesh position={[0, -0.15, 0.7]} scale={isTalking ? [1.2, 0.8, 1] : [1, 1, 1]}>
         <ringGeometry args={[0.05, 0.12, 16]} />
-        <meshStandardMaterial
-          color={getAvatarColor()}
-          emissive={getAvatarColor()}
-          emissiveIntensity={0.3}
-        />
+        <meshBasicMaterial color={getAvatarColor()} />
       </mesh>
 
       {/* Futuristic aura/glow effect */}
       {avatarStyle !== 'realistic' && (
         <mesh scale={1.5}>
           <sphereGeometry args={[0.8, 16, 16]} />
-          <meshStandardMaterial
+          <meshBasicMaterial
             color={getAvatarColor()}
             transparent
             opacity={0.1}
-            emissive={getAvatarColor()}
-            emissiveIntensity={0.2}
           />
         </mesh>
       )}
@@ -155,28 +139,16 @@ const FuturisticAvatar3D: React.FC<FuturisticAvatar3DProps> = ({
         onClick={onInteraction}
         style={{ cursor: onInteraction ? 'pointer' : 'default' }}
       >
-        {/* Lighting setup for futuristic look */}
-        <ambientLight intensity={0.4} color="#4338ca" />
-        <pointLight position={[2, 2, 2]} intensity={1} color="#8b5cf6" />
-        <pointLight position={[-2, -2, 2]} intensity={0.5} color="#06b6d4" />
-        <spotLight
-          position={[0, 5, 0]}
-          angle={0.3}
-          penumbra={1}
-          intensity={0.8}
-          color="#ffffff"
-          castShadow
-        />
-
+        {/* Simplified lighting setup */}
+        <ambientLight intensity={0.6} />
+        <pointLight position={[2, 2, 2]} intensity={0.8} />
+        
         {/* Avatar */}
         <AvatarMesh
           isTalking={isTalking}
           avatarStyle={avatarStyle}
           mood={mood}
         />
-
-        {/* Environment */}
-        <Environment preset="night" />
         
         {/* Camera Controls */}
         <OrbitControls
