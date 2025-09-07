@@ -231,88 +231,94 @@ const ProfilePage: React.FC = () => {
         <Card className="bg-slate-900/95 border-slate-700/30 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl shadow-blue-950/50">
           <CardContent className="p-0">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 pb-4 border-b border-slate-700/30">
-              <h1 className="text-xl font-semibold text-white tracking-wide">AvatarTalk.bio</h1>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700/20">
+              <h1 className="text-lg font-medium text-white tracking-wide">AvatarTalk.bio</h1>
               <div className="flex gap-3">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={shareProfile}
-                  className="text-slate-400 hover:text-white p-2 rounded-full bg-slate-800/50 hover:bg-slate-700/50 transition-all duration-200"
+                  className="text-slate-400 hover:text-white p-2 rounded-full bg-slate-800/30 hover:bg-slate-700/50 transition-all duration-200"
                 >
                   <ArrowDown className="h-4 w-4" />
                 </Button>
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center shadow-lg">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
                   <User className="h-4 w-4 text-white" />
                 </div>
               </div>
             </div>
 
-            {/* Profile Info */}
+            {/* Profile Header */}
             <div className="px-6 pt-6 pb-4">
-              <div className="flex items-center gap-4 mb-4">
+              <div className="flex items-center gap-3 mb-4">
                 <div className="relative">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
-                    <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center">
-                      <span className="text-xl font-bold text-white">
-                        {profileData.avatarInitial}
-                      </span>
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
+                    <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                      {profile?.avatar_url ? (
+                        <img 
+                          src={profile.avatar_url} 
+                          alt={profileData.displayName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-lg font-bold text-white">
+                          {profileData.avatarInitial}
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 shadow-md" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-slate-900 shadow-sm" />
                 </div>
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-white leading-tight mb-1">
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-xl font-bold text-white leading-tight mb-0.5 truncate">
                     {profileData.displayName}
                   </h2>
-                  <p className="text-slate-400 text-base">@{profileData.username}</p>
+                  <p className="text-slate-400 text-sm">@{profileData.username}</p>
                 </div>
               </div>
 
-              <p className="text-slate-300 text-sm leading-relaxed">
+              <p className="text-slate-300 text-sm leading-relaxed mb-6">
                 {profileData.bio}
               </p>
             </div>
 
-            {/* 3D Avatar Preview */}
+            {/* 3D Avatar Preview - Larger and More Prominent */}
             <div className="px-6 pb-6">
-              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-slate-800/50 via-blue-900/30 to-slate-800/50 border border-slate-600/30 shadow-inner">
+              <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-800/40 via-blue-900/20 to-slate-800/40 border border-slate-600/30 shadow-inner">
                 <FuturisticAvatar3D
                   isLarge={true}
                   isTalking={isTalking}
                   avatarStyle="holographic"
-                  className="w-full h-72"
+                  className="w-full h-80"
                   onInteraction={() => setIsTalking(!isTalking)}
                 />
-                <div className="absolute inset-0 rounded-2xl border border-blue-400/20 pointer-events-none" />
+                <div className="absolute inset-0 rounded-3xl border border-blue-400/10 pointer-events-none" />
               </div>
             </div>
 
-            {/* Action Buttons */}
+            {/* Action Buttons - Side by Side */}
             <div className="px-6 pb-6">
               <div className="flex gap-3">
                 <Button
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-4 rounded-2xl text-base font-semibold shadow-lg shadow-blue-600/25 hover:shadow-blue-600/40 transition-all duration-300 hover:scale-[1.02]"
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-4 rounded-2xl text-base font-semibold shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 transition-all duration-300 hover:scale-[1.02] border-0"
                   onClick={() => setIsTalking(true)}
                 >
                   Talk to Me
                 </Button>
                 
-                {!isOwnProfile && currentUser && (
+                {!isOwnProfile && currentUser ? (
                   <Button
                     variant="outline"
-                    className="flex-1 border-slate-500/50 bg-slate-800/30 text-slate-200 hover:bg-slate-700/50 hover:text-white hover:border-slate-400/50 py-4 rounded-2xl text-base font-semibold transition-all duration-300 hover:scale-[1.02]"
+                    className="flex-1 border-slate-500/30 bg-slate-800/40 text-slate-200 hover:bg-slate-700/50 hover:text-white hover:border-slate-400/40 py-4 rounded-2xl text-base font-semibold transition-all duration-300 hover:scale-[1.02]"
                     onClick={handleFollow}
                     disabled={followsLoading}
                   >
                     {isFollowing(profile.id) ? 'Following' : 'Follow'}
                   </Button>
-                )}
-                
-                {(!currentUser || isOwnProfile) && (
+                ) : (
                   <Button
                     variant="outline"
-                    className="px-4 border-slate-500/50 bg-slate-800/30 text-slate-200 hover:bg-slate-700/50 hover:text-white hover:border-slate-400/50 py-4 rounded-2xl transition-all duration-300 hover:scale-[1.02]"
+                    className="w-16 border-slate-500/30 bg-slate-800/40 text-slate-200 hover:bg-slate-700/50 hover:text-white hover:border-slate-400/40 py-4 rounded-2xl transition-all duration-300 hover:scale-[1.02] flex items-center justify-center"
                   >
                     <Users className="h-5 w-5" />
                   </Button>
@@ -320,22 +326,22 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Stats */}
+            {/* Stats - Three Column Layout */}
             <div className="px-6 pb-6">
               <div className="grid grid-cols-3 gap-4">
-                <div className="text-center bg-slate-800/40 rounded-2xl py-5 backdrop-blur-sm border border-slate-700/30 shadow-sm">
+                <div className="text-center bg-slate-800/30 rounded-2xl py-4 backdrop-blur-sm border border-slate-700/20">
                   <div className="text-2xl font-bold text-white mb-1">
                     {userStats?.total_conversations || 352}
                   </div>
                   <div className="text-xs text-slate-400 font-medium">Total Conversations</div>
                 </div>
-                <div className="text-center bg-slate-800/40 rounded-2xl py-5 backdrop-blur-sm border border-slate-700/30 shadow-sm">
+                <div className="text-center bg-slate-800/30 rounded-2xl py-4 backdrop-blur-sm border border-slate-700/20">
                   <div className="text-2xl font-bold text-white mb-1">
                     {followersCount >= 1000 ? `${(followersCount/1000).toFixed(1)}K` : followersCount || '1.2K'}
                   </div>
                   <div className="text-xs text-slate-400 font-medium">Followers</div>
                 </div>
-                <div className="text-center bg-slate-800/40 rounded-2xl py-5 backdrop-blur-sm border border-slate-700/30 shadow-sm">
+                <div className="text-center bg-slate-800/30 rounded-2xl py-4 backdrop-blur-sm border border-slate-700/20">
                   <div className="text-2xl font-bold text-white mb-1">
                     {userStats?.engagement_score || 89}
                   </div>
@@ -345,24 +351,24 @@ const ProfilePage: React.FC = () => {
             </div>
 
             {/* Content Tabs */}
-            <div className="px-6 pb-6">
-              <Tabs defaultValue="posts" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-3 bg-transparent border-b border-slate-700/50 rounded-none p-0 h-auto">
+            <div className="px-6 pb-4">
+              <Tabs defaultValue="posts" className="space-y-4">
+                <TabsList className="grid w-full grid-cols-3 bg-transparent border-b border-slate-700/30 rounded-none p-0 h-auto">
                   <TabsTrigger 
                     value="posts" 
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent bg-transparent text-slate-400 data-[state=active]:text-white py-4 font-medium text-base transition-all duration-200 hover:text-slate-200"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent bg-transparent text-slate-400 data-[state=active]:text-white py-3 font-medium text-base transition-all duration-200 hover:text-slate-200"
                   >
                     Posts
                   </TabsTrigger>
                   <TabsTrigger 
                     value="chat"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent bg-transparent text-slate-400 data-[state=active]:text-white py-4 font-medium text-base transition-all duration-200 hover:text-slate-200"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent bg-transparent text-slate-400 data-[state=active]:text-white py-3 font-medium text-base transition-all duration-200 hover:text-slate-200"
                   >
                     Chat
                   </TabsTrigger>
                   <TabsTrigger 
                     value="projects"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent bg-transparent text-slate-400 data-[state=active]:text-white py-4 font-medium text-base transition-all duration-200 hover:text-slate-200"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent bg-transparent text-slate-400 data-[state=active]:text-white py-3 font-medium text-base transition-all duration-200 hover:text-slate-200"
                   >
                     Projects/Gifts
                   </TabsTrigger>
@@ -492,7 +498,7 @@ const ProfilePage: React.FC = () => {
             </div>
 
             {/* Chat Input */}
-            <div className="p-6 pt-4 border-t border-slate-700/30">
+            <div className="px-6 pt-4 pb-6 border-t border-slate-700/20">
               <form onSubmit={handleChatSubmit} className="mb-6">
                 <div className="relative">
                   <Input
@@ -500,22 +506,14 @@ const ProfilePage: React.FC = () => {
                     placeholder="Ask me anything..."
                     value={chatMessage}
                     onChange={(e) => setChatMessage(e.target.value)}
-                    className="w-full bg-slate-800/50 border-slate-600/50 text-white placeholder-slate-400 pr-20 py-4 text-base rounded-2xl focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/25 shadow-sm transition-all duration-200"
+                    className="w-full bg-slate-800/40 border-slate-600/30 text-white placeholder-slate-400 pr-16 py-4 text-base rounded-2xl focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 shadow-sm transition-all duration-200"
                   />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200"
-                    >
-                      <Smile className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200"
+                      className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200"
                     >
                       <Mic className="h-4 w-4" />
                     </Button>
@@ -523,59 +521,56 @@ const ProfilePage: React.FC = () => {
                 </div>
               </form>
 
-              {/* Social Links & Share */}
-              <div className="flex items-center justify-between">
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="p-3 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200"
-                  >
-                    <Twitter className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="p-3 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200"
-                  >
-                    <Linkedin className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="p-3 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200"
-                  >
-                    <Youtube className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="p-3 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200"
-                  >
-                    <Facebook className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="p-3 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200"
-                  >
-                    <Instagram className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="p-3 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200"
-                  >
-                    <Globe className="h-4 w-4" />
-                  </Button>
-                </div>
-                
+              {/* Social Links Row */}
+              <div className="flex items-center justify-center gap-1 overflow-x-auto scrollbar-hide">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
+                >
+                  <Twitter className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
+                >
+                  <Linkedin className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
+                >
+                  <Youtube className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
+                >
+                  <Facebook className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
+                >
+                  <Instagram className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
+                >
+                  <Globe className="h-4 w-4" />
+                </Button>
                 <Button
                   variant="ghost"
                   onClick={shareProfile}
-                  className="p-3 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200"
+                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px] ml-2"
                 >
-                  <ChevronRight className="h-5 w-5" />
+                  <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
             </div>
