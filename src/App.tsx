@@ -11,6 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AvatarPage from "./pages/AvatarPage";
+import FeedPage from "./pages/FeedPage";
 import CalendarPage from "./components/CalendarPage";
 import ProductsPage from "./pages/ProductsPage";
 import CreatePostModal from "./components/CreatePostModal";  
@@ -91,6 +92,7 @@ const App = () => {
                       <Route path="/avatar" element={<AvatarPage />} />
                       <Route path="/calendar" element={<CalendarPage />} />
                       <Route path="/products" element={<ProductsPage />} />
+                      <Route path="/feed" element={<FeedPage />} />
                       <Route path="/profile/:username" element={<ProfilePage />} />
                       <Route path="/:username" element={<UsernameRedirect />} />
                       <Route path="*" element={<NotFound />} />

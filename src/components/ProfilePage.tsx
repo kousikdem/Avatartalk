@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useFollows } from '@/hooks/useFollows';
 import FuturisticAvatar3D from './FuturisticAvatar3D';
+import LikeButton from './LikeButton';
 import {
   MessageCircle,
   Share2,
@@ -393,16 +394,24 @@ const ProfilePage: React.FC = () => {
                                   )}
                                 </div>
                               )}
-                              <div className="flex items-center gap-4 text-xs text-slate-400">
-                                <div className="flex items-center gap-1">
-                                  <Heart className="w-3 h-3" />
-                                  {post.likes_count}
+                              <div className="flex items-center justify-between pt-2 border-t border-slate-600/20">
+                                <div className="flex items-center gap-4">
+                                  <LikeButton 
+                                    itemId={post.id} 
+                                    itemType="post" 
+                                    showCount={true}
+                                    className="text-slate-400 hover:text-red-400" 
+                                  />
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="flex items-center gap-1 text-slate-400 hover:text-blue-400 p-1"
+                                  >
+                                    <MessageCircle className="w-3 h-3" />
+                                    <span className="text-xs">{post.comments_count}</span>
+                                  </Button>
                                 </div>
-                                <div className="flex items-center gap-1">
-                                  <MessageCircle className="w-3 h-3" />
-                                  {post.comments_count}
-                                </div>
-                                <div className="ml-auto">
+                                <div className="text-xs text-slate-500">
                                   {new Date(post.created_at).toLocaleDateString()}
                                 </div>
                               </div>
