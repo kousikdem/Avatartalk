@@ -34,6 +34,7 @@ interface Profile {
   display_name: string;
   bio: string;
   avatar_url: string;
+  profile_pic_url?: string;
   profession: string;
 }
 
@@ -221,42 +222,24 @@ const ProfilePage: React.FC = () => {
   const isOwnProfile = currentUser?.id === profile.id;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-2">
       <motion.div
-        className="w-full max-w-md mx-auto"
+        className="w-full max-w-lg mx-auto"
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6 }}
       >
-        <Card className="bg-slate-900/95 border-slate-700/30 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl shadow-blue-950/50">
+        <Card className="bg-slate-900/95 border-slate-700/30 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl shadow-blue-950/50 min-h-[90vh]">
           <CardContent className="p-0">
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700/20">
-              <h1 className="text-lg font-medium text-white tracking-wide">AvatarTalk.bio</h1>
-              <div className="flex gap-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={shareProfile}
-                  className="text-slate-400 hover:text-white p-2 rounded-full bg-slate-800/30 hover:bg-slate-700/50 transition-all duration-200"
-                >
-                  <ArrowDown className="h-4 w-4" />
-                </Button>
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
-                  <User className="h-4 w-4 text-white" />
-                </div>
-              </div>
-            </div>
-
-            {/* Profile Header */}
-            <div className="px-6 pt-6 pb-4">
-              <div className="flex items-center gap-3 mb-4">
+            {/* Profile Header - Top Left Corner */}
+            <div className="flex items-center justify-between px-6 pt-6 pb-4">
+              <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
                     <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
-                      {profile?.avatar_url ? (
+                      {profile?.avatar_url || profile?.profile_pic_url ? (
                         <img 
-                          src={profile.avatar_url} 
+                          src={profile.avatar_url || profile.profile_pic_url} 
                           alt={profileData.displayName}
                           className="w-full h-full object-cover"
                         />
@@ -267,7 +250,7 @@ const ProfilePage: React.FC = () => {
                       )}
                     </div>
                   </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-slate-900 shadow-sm" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 shadow-sm" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h2 className="text-xl font-bold text-white leading-tight mb-0.5 truncate">
@@ -276,8 +259,19 @@ const ProfilePage: React.FC = () => {
                   <p className="text-slate-400 text-sm">@{profileData.username}</p>
                 </div>
               </div>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={shareProfile}
+                className="text-slate-400 hover:text-white p-2 rounded-full bg-slate-800/30 hover:bg-slate-700/50 transition-all duration-200"
+              >
+                <Share2 className="h-4 w-4" />
+              </Button>
+            </div>
 
-              <p className="text-slate-300 text-sm leading-relaxed mb-6">
+            <div className="px-6 pb-4">
+              <p className="text-slate-300 text-sm leading-relaxed">
                 {profileData.bio}
               </p>
             </div>
@@ -367,10 +361,10 @@ const ProfilePage: React.FC = () => {
                     Chat
                   </TabsTrigger>
                   <TabsTrigger 
-                    value="projects"
+                    value="products"
                     className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent bg-transparent text-slate-400 data-[state=active]:text-white py-3 font-medium text-base transition-all duration-200 hover:text-slate-200"
                   >
-                    Projects/Gifts
+                    Products
                   </TabsTrigger>
                 </TabsList>
 
@@ -445,8 +439,8 @@ const ProfilePage: React.FC = () => {
                   </Card>
                 </TabsContent>
 
-                {/* Projects/Gifts Tab */}
-                <TabsContent value="projects" className="mt-6">
+                {/* Products Tab */}
+                <TabsContent value="products" className="mt-6">
                   <AnimatePresence>
                     {products.length > 0 ? (
                       <div className="space-y-4">
