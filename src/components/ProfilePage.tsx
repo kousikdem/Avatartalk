@@ -23,6 +23,7 @@ import {
   Users,
   ArrowDown,
   ChevronRight,
+  HelpCircle,
   Sparkles,
   Globe,
   User
@@ -288,10 +289,28 @@ const ProfilePage: React.FC = () => {
                   onInteraction={() => setIsTalking(!isTalking)}
                 />
                 <div className="absolute inset-0 rounded-3xl border border-blue-400/10 pointer-events-none" />
+                
+                {/* Floating Talk/Ask Buttons */}
+                <div className="absolute bottom-4 right-4 flex flex-col gap-2">
+                  <Button
+                    size="sm"
+                    className="bg-blue-600/90 hover:bg-blue-700/90 text-white rounded-full w-12 h-12 p-0 backdrop-blur-sm border border-blue-400/30 shadow-lg hover:shadow-blue-500/30 transition-all duration-300"
+                    onClick={() => setIsTalking(true)}
+                  >
+                    <MessageCircle className="h-5 w-5" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-purple-600/90 hover:bg-purple-700/90 text-white rounded-full w-12 h-12 p-0 backdrop-blur-sm border border-purple-400/30 shadow-lg hover:shadow-purple-500/30 transition-all duration-300"
+                    onClick={() => setIsTalking(true)}
+                  >
+                    <HelpCircle className="h-5 w-5" />
+                  </Button>
+                </div>
               </div>
             </div>
 
-            {/* Action Buttons - Side by Side */}
+            {/* Action Buttons - Talk to Me with Follow Button */}
             <div className="px-6 pb-6">
               <div className="flex gap-3">
                 <Button
@@ -301,21 +320,15 @@ const ProfilePage: React.FC = () => {
                   Talk to Me
                 </Button>
                 
-                {!isOwnProfile && currentUser ? (
+                {!isOwnProfile && currentUser && (
                   <Button
                     variant="outline"
-                    className="flex-1 border-slate-500/30 bg-slate-800/40 text-slate-200 hover:bg-slate-700/50 hover:text-white hover:border-slate-400/40 py-4 rounded-2xl text-base font-semibold transition-all duration-300 hover:scale-[1.02]"
+                    className="px-6 border-slate-500/30 bg-slate-800/40 text-slate-200 hover:bg-slate-700/50 hover:text-white hover:border-slate-400/40 py-4 rounded-2xl text-base font-semibold transition-all duration-300 hover:scale-[1.02] flex items-center gap-2"
                     onClick={handleFollow}
                     disabled={followsLoading}
                   >
+                    <Users className="h-4 w-4" />
                     {isFollowing(profile.id) ? 'Following' : 'Follow'}
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    className="w-16 border-slate-500/30 bg-slate-800/40 text-slate-200 hover:bg-slate-700/50 hover:text-white hover:border-slate-400/40 py-4 rounded-2xl transition-all duration-300 hover:scale-[1.02] flex items-center justify-center"
-                  >
-                    <Users className="h-5 w-5" />
                   </Button>
                 )}
               </div>

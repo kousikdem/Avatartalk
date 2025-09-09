@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Users, UserPlus, UserMinus, Search, Eye, MessageSquare } from 'lucide-react';
 import { useFollows } from '@/hooks/useFollows';
 import { formatDistanceToNow } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 
 interface User {
   id: string;
@@ -21,98 +22,89 @@ interface User {
 }
 
 const FollowersPage = () => {
-  const { followers, following, loading, followUser, unfollowUser } = useFollows();
+  const { followers, following, loading, followUser, unfollowUser, isFollowing } = useFollows();
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('followers');
+  const [visitors, setVisitors] = useState<User[]>([]);
 
-  const mockFollowers: User[] = [
-    {
-      id: '1',
-      full_name: 'Sarah Johnson',
-      email: 'sarah@example.com',
-      avatar_url: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face',
-      bio: 'AI enthusiast and tech lover',
-      followers_count: 245,
-      following_count: 189,
-      last_seen: new Date(Date.now() - 300000).toISOString()
-    },
-    {
-      id: '2',
-      full_name: 'John Smith',
-      email: 'john@example.com',
-      avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
-      bio: 'Developer and creator',
-      followers_count: 189,
-      following_count: 156,
-      last_seen: new Date(Date.now() - 3600000).toISOString()
-    },
-    {
-      id: '3',
-      full_name: 'Emily Davis',
-      email: 'emily@example.com',
-      avatar_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face',
-      bio: 'Digital marketing specialist',
-      followers_count: 567,
-      following_count: 234,
-      last_seen: new Date(Date.now() - 86400000).toISOString()
-    }
-  ];
+  // Fetch visitors from profile_visitors table
+  useEffect(() => {
+    const fetchVisitors = async () => {
+      try {
+        const { data: currentUser } = await supabase.auth.getUser();
+        if (!currentUser.user) return;
 
-  const mockFollowing: User[] = [
-    {
-      id: '4',
-      full_name: 'Alex Chen',
-      email: 'alex@example.com',
-      avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
-      bio: 'AI researcher and educator',
-      followers_count: 1200,
-      following_count: 89,
-      last_seen: new Date(Date.now() - 1800000).toISOString()
-    },
-    {
-      id: '5',
-      full_name: 'Maria Rodriguez',
-      email: 'maria@example.com',
-      avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face',
-      bio: 'Content creator and influencer',
-      followers_count: 2340,
-      following_count: 456,
-      last_seen: new Date(Date.now() - 7200000).toISOString()
-    }
-  ];
+        const { data: visitorsData, error } = await supabase
+          .from('profile_visitors')
+          .select(`
+            visitor_id,
+            visited_at,
+            profiles!profile_visitors_visitor_id_fkey(
+              id,
+              full_name,
+              display_name,
+              avatar_url,
+              profile_pic_url,
+              bio
+            )
+          `)
+          .eq('visited_profile_id', currentUser.user.id)
+          .order('visited_at', { ascending: false })
+          .limit(50);
 
-  const mockVisitors: User[] = [
-    {
-      id: '6',
-      full_name: 'David Wilson',
-      email: 'david@example.com',
-      avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face',
-      bio: 'Curious about AI avatars',
-      last_seen: new Date(Date.now() - 900000).toISOString()
-    },
-    {
-      id: '7',
-      full_name: 'Lisa Brown',
-      email: 'lisa@example.com',
-      avatar_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face',
-      bio: 'Tech journalist',
-      last_seen: new Date(Date.now() - 1800000).toISOString()
-    }
-  ];
+        if (error) throw error;
 
-  const filteredFollowers = mockFollowers.filter(user =>
-    user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+        const formattedVisitors: User[] = visitorsData?.map(visitor => ({
+          id: visitor.profiles?.id || '',
+          full_name: visitor.profiles?.display_name || visitor.profiles?.full_name || 'Anonymous',
+          email: '', // Don't show email for privacy
+          avatar_url: visitor.profiles?.avatar_url || visitor.profiles?.profile_pic_url,
+          bio: visitor.profiles?.bio,
+          last_seen: visitor.visited_at
+        })).filter(visitor => visitor.id) || [];
+
+        setVisitors(formattedVisitors);
+      } catch (error) {
+        console.error('Error fetching visitors:', error);
+      }
+    };
+
+    fetchVisitors();
+  }, []);
+
+  // Transform followers data for display
+  const displayFollowers: User[] = followers.map(follow => ({
+    id: follow.follower?.id || '',
+    full_name: follow.follower?.display_name || follow.follower?.username || 'Unknown',
+    email: '', // Don't show email for privacy
+    avatar_url: follow.follower?.avatar_url,
+    bio: '', // Add bio if needed
+    followers_count: 0,
+    following_count: 0,
+    last_seen: follow.created_at
+  }));
+
+  // Transform following data for display
+  const displayFollowing: User[] = following.map(follow => ({
+    id: follow.following?.id || '',
+    full_name: follow.following?.display_name || follow.following?.username || 'Unknown',
+    email: '', // Don't show email for privacy
+    avatar_url: follow.following?.avatar_url,
+    bio: '', // Add bio if needed
+    followers_count: 0,
+    following_count: 0,
+    last_seen: follow.created_at
+  }));
+
+  const filteredFollowers = displayFollowers.filter(user =>
+    user.full_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredFollowing = mockFollowing.filter(user =>
-    user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredFollowing = displayFollowing.filter(user =>
+    user.full_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredVisitors = mockVisitors.filter(user =>
-    user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredVisitors = visitors.filter(user =>
+    user.full_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleFollow = async (userId: string) => {
@@ -177,6 +169,7 @@ const FollowersPage = () => {
                 size="sm"
                 variant={isFollowing ? "outline" : "default"}
                 onClick={() => isFollowing ? handleUnfollow(user.id) : handleFollow(user.id)}
+                disabled={loading}
               >
                 {isFollowing ? (
                   <>
@@ -273,7 +266,7 @@ const FollowersPage = () => {
                   key={user.id}
                   user={user}
                   showFollowButton={true}
-                  isFollowing={true}
+                  isFollowing={isFollowing(user.id)}
                   showMessageButton={true}
                 />
               ))
@@ -296,7 +289,7 @@ const FollowersPage = () => {
                   key={user.id}
                   user={user}
                   showFollowButton={true}
-                  isFollowing={false}
+                  isFollowing={isFollowing(user.id)}
                 />
               ))
             )}
