@@ -19,6 +19,8 @@ import {
   Paperclip
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { usePosts } from '@/hooks/usePosts';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CreatePostModalProps {
   isOpen: boolean;
@@ -34,7 +36,18 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [linkUrl, setLinkUrl] = useState('');
   const [integrationApp, setIntegrationApp] = useState('');
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { createPost } = usePosts(currentUser?.id);
+
+  React.useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setCurrentUser(data.user);
+    };
+    getCurrentUser();
+  }, []);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -47,31 +60,99 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
     }
   };
 
-  const handleCreatePost = () => {
-    if (!content.trim() && !selectedFile) {
+  const handleCreatePost = async () => {
+    if (!content.trim() && !selectedFile && !linkUrl.trim()) {
       toast({
         title: "Error",
-        description: "Please add content or upload a file",
+        description: "Please add content, upload a file, or provide a link",
         variant: "destructive",
       });
       return;
     }
 
-    // Here you would typically send the post data to your backend
-    toast({
-      title: "Post Created!",
-      description: "Your post has been published successfully",
-    });
+    if (!currentUser) {
+      toast({
+        title: "Error",
+        description: "Please sign in to create posts",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    // Reset form
-    setContent('');
-    setTitle('');
-    setSelectedFile(null);
-    setLinkUrl('');
-    setIntegrationApp('');
-    setIsPaid(false);
-    setPrice('');
-    onClose();
+    setIsSubmitting(true);
+    
+    try {
+      let mediaUrl = '';
+      let mediaType = '';
+
+      // Handle file upload to Supabase storage if file is selected
+      if (selectedFile) {
+        const fileExt = selectedFile.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const filePath = `${currentUser.id}/${fileName}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('thumbnails')
+          .upload(filePath, selectedFile);
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('thumbnails')
+          .getPublicUrl(filePath);
+
+        mediaUrl = publicUrl;
+        mediaType = selectedFile.type;
+      }
+
+      // For link posts, use the link URL as media
+      if (postType === 'link' && linkUrl.trim()) {
+        mediaUrl = linkUrl;
+        mediaType = 'link';
+      }
+
+      // Create post data
+      const postData = {
+        user_id: currentUser.id,
+        content: content.trim(),
+        post_type: postType,
+        media_url: mediaUrl || null,
+        media_type: mediaType || null,
+        is_paid: isPaid,
+        price: isPaid ? parseFloat(price) || 0 : null,
+        likes_count: 0,
+        comments_count: 0,
+        views_count: 0,
+        metadata: {
+          title: title.trim() || null,
+          integration_app: integrationApp || null,
+        }
+      };
+
+      await createPost(postData);
+
+      // Reset form
+      setContent('');
+      setTitle('');
+      setSelectedFile(null);
+      setLinkUrl('');
+      setIntegrationApp('');
+      setIsPaid(false);
+      setPrice('');
+      setPostType('text');
+      onClose();
+    } catch (error) {
+      console.error('Error creating post:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create post. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -335,9 +416,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
             </Button>
             <Button 
               onClick={handleCreatePost}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              disabled={isSubmitting}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50"
             >
-              Create Post
+              {isSubmitting ? 'Creating...' : 'Create Post'}
             </Button>
           </div>
         </CardContent>

@@ -151,6 +151,21 @@ const Dashboard = () => {
         <div className="lg:col-span-1">
           <RealisticAvatarBuilder showInDashboard={true} />
           
+          {/* Avatar Link */}
+          <Card className="mt-6 bg-gradient-to-br from-slate-50 to-gray-50 border border-slate-200">
+            <CardContent className="p-4 text-center">
+              <p className="text-sm text-gray-600 mb-3">Your avatar is connected to your profile</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.location.href = `/profile/${profileData?.username || 'user'}`}
+                className="bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0 hover:from-blue-600 hover:to-purple-700"
+              >
+                View Profile
+              </Button>
+            </CardContent>
+          </Card>
+          
           {/* Following Section */}
           {following.length > 0 && (
             <Card className="mt-6 bg-gradient-to-br from-slate-50 to-gray-50 border border-slate-200">
