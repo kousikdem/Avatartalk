@@ -308,14 +308,14 @@ const ProfilePage: React.FC = () => {
                 />
                 <div className="absolute inset-0 rounded-3xl border border-blue-400/10 pointer-events-none" />
                 
-                {/* Floating Ask Me Button */}
-                <div className="absolute bottom-4 right-4">
+                {/* Floating Talk to Me Button */}
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
                   <Button
                     size="sm"
-                    className="bg-gradient-to-r from-purple-600/90 to-pink-600/90 hover:from-purple-700/90 hover:to-pink-700/90 text-white rounded-full w-14 h-14 p-0 backdrop-blur-sm border border-purple-400/30 shadow-lg hover:shadow-purple-500/30 transition-all duration-300 hover:scale-110"
+                    className="bg-gradient-to-r from-blue-600/90 to-cyan-600/90 hover:from-blue-700/90 hover:to-cyan-700/90 text-white rounded-full w-14 h-14 p-0 backdrop-blur-sm border border-blue-400/30 shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-110"
                     onClick={() => setIsTalking(true)}
                   >
-                    <HelpCircle className="h-6 w-6" />
+                    <MessageCircle className="h-6 w-6" />
                   </Button>
                 </div>
               </div>
@@ -339,7 +339,7 @@ const ProfilePage: React.FC = () => {
                     onClick={handleFollow}
                     disabled={followsLoading}
                   >
-                    <Users className="h-4 w-4" />
+                    <User className="h-4 w-4" />
                     {isFollowing(profile.id) ? 'Following' : 'Follow'}
                   </Button>
                 )}
