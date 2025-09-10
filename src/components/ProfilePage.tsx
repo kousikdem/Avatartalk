@@ -321,7 +321,7 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Action Buttons - Subscribe with Follow Button */}
+            {/* Action Buttons - Subscribe and Follow Side by Side */}
             <div className="px-6 pb-6">
               <div className="flex gap-3">
                 <Button
@@ -335,11 +335,11 @@ const ProfilePage: React.FC = () => {
                 {!isOwnProfile && currentUser && (
                   <Button
                     variant="outline"
-                    className="px-6 border-slate-500/30 bg-slate-800/40 text-slate-200 hover:bg-slate-700/50 hover:text-white hover:border-slate-400/40 py-4 rounded-2xl text-base font-semibold transition-all duration-300 hover:scale-[1.02] flex items-center gap-2"
+                    className="flex-1 border-slate-500/30 bg-slate-800/40 text-slate-200 hover:bg-slate-700/50 hover:text-white hover:border-slate-400/40 py-4 rounded-2xl text-base font-semibold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2"
                     onClick={handleFollow}
                     disabled={followsLoading}
                   >
-                    <User className="h-4 w-4" />
+                    <User className="h-5 w-5" />
                     {isFollowing(profile.id) ? 'Following' : 'Follow'}
                   </Button>
                 )}
@@ -430,10 +430,17 @@ const ProfilePage: React.FC = () => {
                                   <Button 
                                     variant="ghost" 
                                     size="sm" 
-                                    className="flex items-center gap-1 text-slate-400 hover:text-blue-400 p-1"
+                                    className="flex items-center gap-1 text-slate-400 hover:text-blue-400 p-1 hover:bg-blue-500/10 rounded-lg transition-all duration-200"
                                   >
                                     <MessageCircle className="w-3 h-3" />
-                                    <span className="text-xs">{post.comments_count}</span>
+                                    <span className="text-xs">{post.comments_count || 0}</span>
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="flex items-center gap-1 text-slate-400 hover:text-green-400 p-1 hover:bg-green-500/10 rounded-lg transition-all duration-200"
+                                  >
+                                    <Share2 className="w-3 h-3" />
                                   </Button>
                                 </div>
                                 <div className="text-xs text-slate-500">
