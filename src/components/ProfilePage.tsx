@@ -40,6 +40,21 @@ interface Profile {
   profession: string;
 }
 
+interface AvatarConfiguration {
+  id: string;
+  user_id: string;
+  avatar_name: string;
+  gender: string;
+  age_category: string;
+  skin_tone: string;
+  hair_style: string;
+  hair_color: string;
+  eye_color: string;
+  height: number;
+  current_pose: string;
+  current_expression: string;
+}
+
 interface UserStats {
   total_conversations: number;
   followers_count: number;
@@ -71,6 +86,7 @@ const ProfilePage: React.FC = () => {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [avatarConfig, setAvatarConfig] = useState<AvatarConfiguration | null>(null);
   const [loading, setLoading] = useState(true);
   const [chatMessage, setChatMessage] = useState('');
   const [isTalking, setIsTalking] = useState(false);
@@ -125,15 +141,17 @@ const ProfilePage: React.FC = () => {
       setProfile(profileData);
 
       // Now fetch related data using the profile ID
-      const [statsResponse, postsResponse, productsResponse] = await Promise.all([
+      const [statsResponse, postsResponse, productsResponse, avatarResponse] = await Promise.all([
         supabase.from('user_stats').select('*').eq('user_id', profileData.id).maybeSingle(),
         supabase.from('posts').select('*').eq('user_id', profileData.id).order('created_at', { ascending: false }).limit(10),
-        supabase.from('products').select('*').eq('user_id', profileData.id).eq('status', 'published').order('created_at', { ascending: false }).limit(6)
+        supabase.from('products').select('*').eq('user_id', profileData.id).eq('status', 'published').order('created_at', { ascending: false }).limit(6),
+        supabase.from('avatar_configurations').select('*').eq('user_id', profileData.id).eq('is_active', true).maybeSingle()
       ]);
 
       setUserStats(statsResponse.data);
       setPosts(postsResponse.data || []);
       setProducts(productsResponse.data || []);
+      setAvatarConfig(avatarResponse.data);
 
       // Track profile visit (fire and forget)
       if (profileData.id !== currentUser?.id) {
@@ -290,34 +308,28 @@ const ProfilePage: React.FC = () => {
                 />
                 <div className="absolute inset-0 rounded-3xl border border-blue-400/10 pointer-events-none" />
                 
-                {/* Floating Talk/Ask Buttons */}
-                <div className="absolute bottom-4 right-4 flex flex-col gap-2">
+                {/* Floating Ask Me Button */}
+                <div className="absolute bottom-4 right-4">
                   <Button
                     size="sm"
-                    className="bg-blue-600/90 hover:bg-blue-700/90 text-white rounded-full w-12 h-12 p-0 backdrop-blur-sm border border-blue-400/30 shadow-lg hover:shadow-blue-500/30 transition-all duration-300"
+                    className="bg-gradient-to-r from-purple-600/90 to-pink-600/90 hover:from-purple-700/90 hover:to-pink-700/90 text-white rounded-full w-14 h-14 p-0 backdrop-blur-sm border border-purple-400/30 shadow-lg hover:shadow-purple-500/30 transition-all duration-300 hover:scale-110"
                     onClick={() => setIsTalking(true)}
                   >
-                    <MessageCircle className="h-5 w-5" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="bg-purple-600/90 hover:bg-purple-700/90 text-white rounded-full w-12 h-12 p-0 backdrop-blur-sm border border-purple-400/30 shadow-lg hover:shadow-purple-500/30 transition-all duration-300"
-                    onClick={() => setIsTalking(true)}
-                  >
-                    <HelpCircle className="h-5 w-5" />
+                    <HelpCircle className="h-6 w-6" />
                   </Button>
                 </div>
               </div>
             </div>
 
-            {/* Action Buttons - Talk to Me with Follow Button */}
+            {/* Action Buttons - Subscribe with Follow Button */}
             <div className="px-6 pb-6">
               <div className="flex gap-3">
                 <Button
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-4 rounded-2xl text-base font-semibold shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 transition-all duration-300 hover:scale-[1.02] border-0"
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white py-4 rounded-2xl text-base font-semibold shadow-lg shadow-purple-600/20 hover:shadow-purple-600/30 transition-all duration-300 hover:scale-[1.02] border-0 flex items-center justify-center gap-2"
                   onClick={() => setIsTalking(true)}
                 >
-                  Talk to Me
+                  <Sparkles className="h-5 w-5" />
+                  Subscribe $9.99/mo
                 </Button>
                 
                 {!isOwnProfile && currentUser && (
