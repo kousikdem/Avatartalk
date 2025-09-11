@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useFollows } from '@/hooks/useFollows';
-import { usePersonalizedAI } from '@/hooks/usePersonalizedAI';
 import FuturisticAvatar3D from './FuturisticAvatar3D';
 import LikeButton from './LikeButton';
 import {
@@ -91,9 +90,7 @@ const ProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [chatMessage, setChatMessage] = useState('');
   const [isTalking, setIsTalking] = useState(false);
-  const [conversations, setConversations] = useState<any[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const { trainings } = usePersonalizedAI();
   const { toast } = useToast();
 
   const {
@@ -105,23 +102,13 @@ const ProfilePage: React.FC = () => {
     loading: followsLoading
   } = useFollows(profile?.id);
 
+  // Memoize profile data for performance
   const profileData = useMemo(() => ({
     displayName: profile?.display_name || profile?.username || 'Unknown User',
     username: profile?.username || '',
     bio: profile?.bio || "Exploring the boundaries of AI conversation. Let's create something amazing!",
-    profession: profile?.profession || 'AI Enthusiast',
-    avatarInitial: profile?.display_name?.[0] || profile?.username?.[0] || 'U',
-    socialLinks: {
-      twitter: '#',
-      linkedin: '#',
-      youtube: '#',
-      facebook: '#',
-      instagram: '#',
-      website: '#'
-    }
+    avatarInitial: (profile?.display_name?.[0] || profile?.username?.[0] || 'U').toUpperCase()
   }), [profile]);
-
-  const isOwnProfile = currentUser?.id === profile?.id;
 
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -134,31 +121,8 @@ const ProfilePage: React.FC = () => {
   useEffect(() => {
     if (username) {
       fetchProfile();
-      fetchConversations();
     }
   }, [username]);
-
-  const fetchConversations = async () => {
-    try {
-      // This could be expanded to fetch real conversation history from database
-      // For now, we'll use sample data
-      const sampleConversations = [
-        {
-          sender: 'user',
-          message: 'Hi! Tell me about your AI expertise.',
-          timestamp: '2 hours ago'
-        },
-        {
-          sender: 'ai',
-          message: 'Hello! I specialize in conversational AI and machine learning. I have over 5 years of experience in developing intelligent systems.',
-          timestamp: '2 hours ago'
-        }
-      ];
-      setConversations(sampleConversations);
-    } catch (error) {
-      console.error('Error fetching conversations:', error);
-    }
-  };
 
   const fetchProfile = async () => {
     try {
@@ -171,65 +135,25 @@ const ProfilePage: React.FC = () => {
 
       if (profileError) throw profileError;
       if (!profileData) {
-        toast({
-          title: "Error",
-          description: "Profile not found",
-          variant: "destructive",
-        });
-        return;
+        throw new Error('Profile not found');
       }
 
       setProfile(profileData);
 
-      // Fetch avatar configuration
-      const { data: avatarData } = await supabase
-        .from('avatar_configurations')
-        .select('*')
-        .eq('user_id', profileData.id)
-        .eq('is_active', true)
-        .maybeSingle();
+      // Now fetch related data using the profile ID
+      const [statsResponse, postsResponse, productsResponse, avatarResponse] = await Promise.all([
+        supabase.from('user_stats').select('*').eq('user_id', profileData.id).maybeSingle(),
+        supabase.from('posts').select('*').eq('user_id', profileData.id).order('created_at', { ascending: false }).limit(10),
+        supabase.from('products').select('*').eq('user_id', profileData.id).eq('status', 'published').order('created_at', { ascending: false }).limit(6),
+        supabase.from('avatar_configurations').select('*').eq('user_id', profileData.id).eq('is_active', true).maybeSingle()
+      ]);
 
-      if (avatarData) {
-        setAvatarConfig(avatarData);
-      }
+      setUserStats(statsResponse.data);
+      setPosts(postsResponse.data || []);
+      setProducts(productsResponse.data || []);
+      setAvatarConfig(avatarResponse.data);
 
-      // Fetch user stats
-      const { data: statsData } = await supabase
-        .from('user_stats')
-        .select('*')
-        .eq('user_id', profileData.id)
-        .maybeSingle();
-
-      if (statsData) {
-        setUserStats(statsData);
-      }
-
-      // Fetch posts
-      const { data: postsData } = await supabase
-        .from('posts')
-        .select('*')
-        .eq('user_id', profileData.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (postsData) {
-        setPosts(postsData);
-      }
-
-      // Fetch products
-      const { data: productsData } = await supabase
-        .from('products')
-        .select('*')
-        .eq('user_id', profileData.id)
-        .eq('status', 'published')
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (productsData) {
-        setProducts(productsData);
-      }
-
-      // Record profile visit
+      // Track profile visit (fire and forget)
       if (profileData.id !== currentUser?.id) {
         supabase.from('profile_visitors').insert({
           visitor_id: currentUser?.id || null,
@@ -259,118 +183,117 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  const handleChatSubmit = async (e: React.FormEvent) => {
+  const handleChatSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (chatMessage.trim() && !isTalking) {
-      const userMessage = chatMessage.trim();
-      setChatMessage('');
-      setIsTalking(true);
-
-      // Add user message to conversations
-      const newUserMessage = {
-        sender: 'user',
-        message: userMessage,
-        timestamp: 'Just now'
-      };
-      setConversations(prev => [...prev, newUserMessage]);
-
-      try {
-        // Use personalized AI for response if available
-        if (trainings.length > 0) {
-          // Call personalized AI endpoint
-          const response = await supabase.functions.invoke('personalized-ai-training', {
-            body: {
-              action: 'chat',
-              message: userMessage,
-              trainingId: trainings[0]?.id
-            }
-          });
-
-          if (response.data?.success) {
-            const aiResponse = {
-              sender: 'ai',
-              message: response.data.response || 'Thank you for your message! How can I help you today?',
-              timestamp: 'Just now'
-            };
-            setConversations(prev => [...prev, aiResponse]);
-          } else {
-            throw new Error('AI response failed');
-          }
-        } else {
-          // Fallback to simple response
-          const aiResponse = {
-            sender: 'ai',
-            message: 'Thank you for your message! This is my personalized AI speaking. How can I help you today?',
-            timestamp: 'Just now'
-          };
-          setTimeout(() => {
-            setConversations(prev => [...prev, aiResponse]);
-          }, 1500);
-        }
-      } catch (error) {
-        console.error('Chat error:', error);
-        const errorResponse = {
-          sender: 'ai',
-          message: 'I apologize, but I\'m having trouble responding right now. Please try again later.',
-          timestamp: 'Just now'
-        };
-        setConversations(prev => [...prev, errorResponse]);
-      } finally {
-        setIsTalking(false);
-      }
-    }
+    if (!chatMessage.trim()) return;
+    
+    setIsTalking(true);
+    toast({
+      title: "Message Sent",
+      description: `"${chatMessage}" - AI will respond shortly`,
+      duration: 3000,
+    });
+    
+    // Simulate AI response
+    setTimeout(() => {
+      setIsTalking(false);
+    }, 3000);
+    
+    setChatMessage('');
   };
 
   const shareProfile = () => {
-    if (navigator.share && profile) {
-      navigator.share({
-        title: `${profileData.displayName}'s Profile`,
-        text: profileData.bio,
-        url: window.location.href,
-      }).catch(console.error);
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast({
-        title: "Link Copied",
-        description: "Profile link copied to clipboard",
-      });
-    }
+    const url = window.location.href;
+    navigator.clipboard.writeText(url);
+    toast({
+      title: "Link Copied",
+      description: "Profile link copied to clipboard",
+    });
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900/20 to-slate-900 flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-4">
+        <motion.div
+          className="text-center space-y-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-white/80">Loading avatar profile...</p>
+        </motion.div>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900/20 to-slate-900 flex items-center justify-center">
-        <div className="text-white">Profile not found</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-4">
+        <Card className="bg-slate-900/80 border-slate-700/50 backdrop-blur-xl max-w-md w-full">
+          <CardContent className="p-8 text-center">
+            <h1 className="text-2xl font-bold text-white mb-2">Profile Not Found</h1>
+            <p className="text-slate-400">The requested profile could not be found.</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
+  const isOwnProfile = currentUser?.id === profile.id;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900/20 to-slate-900 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-2">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="max-w-md mx-auto"
+        className="w-full max-w-lg mx-auto"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6 }}
       >
-        <Card className="bg-gradient-to-br from-slate-800/90 via-slate-800/95 to-slate-900/90 border-slate-700/50 shadow-2xl backdrop-blur-xl">
+        <Card className="bg-slate-900/95 border-slate-700/30 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl shadow-blue-950/50 min-h-[90vh]">
           <CardContent className="p-0">
-            {/* Header Section */}
-            <div className="relative bg-gradient-to-br from-blue-600/20 via-purple-600/10 to-slate-800/40 p-6 rounded-t-xl border-b border-slate-700/30">
-              <div className="text-center">
-                <h1 className="text-2xl font-bold text-white mb-2">{profileData.displayName}</h1>
-                <p className="text-blue-300 text-sm mb-1">@{profileData.username}</p>
-                <p className="text-slate-300 text-xs font-medium mb-3">{profileData.profession}</p>
-                <p className="text-slate-400 text-sm leading-relaxed">{profileData.bio}</p>
+            {/* Profile Header - Top Left Corner */}
+            <div className="flex items-center justify-between px-6 pt-6 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
+                    <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                      {profile?.avatar_url || profile?.profile_pic_url ? (
+                        <img 
+                          src={profile.avatar_url || profile.profile_pic_url} 
+                          alt={profileData.displayName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-lg font-bold text-white">
+                          {profileData.avatarInitial}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 shadow-sm" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-xl font-bold text-white leading-tight mb-0.5 truncate">
+                    {profileData.displayName}
+                  </h2>
+                  <p className="text-slate-400 text-sm">@{profileData.username}</p>
+                </div>
               </div>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={shareProfile}
+                className="text-slate-400 hover:text-white p-2 rounded-full bg-slate-800/30 hover:bg-slate-700/50 transition-all duration-200"
+              >
+                <Share2 className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="px-6 pb-4">
+              <p className="text-slate-300 text-sm leading-relaxed">
+                {profileData.bio}
+              </p>
             </div>
 
             {/* 3D Avatar Preview - Larger and More Prominent */}
@@ -398,24 +321,23 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Action Buttons - Responsive Subscribe and Follow */}
-            <div className="px-4 sm:px-6 pb-6">
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                {/* Subscribe Button */}
+            {/* Action Buttons - Divided into two parts: Subscribe (left) and Follow (right) */}
+            <div className="px-6 pb-6">
+              <div className="grid grid-cols-2 gap-3">
+                {/* Left Side - Subscribe Button */}
                 <Button
-                  className="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white py-3 sm:py-4 rounded-xl sm:rounded-2xl text-sm sm:text-base font-semibold shadow-lg shadow-purple-600/20 hover:shadow-purple-600/30 transition-all duration-300 hover:scale-[1.02] border-0 flex items-center justify-center gap-2"
+                  className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white py-4 rounded-2xl text-base font-semibold shadow-lg shadow-purple-600/20 hover:shadow-purple-600/30 transition-all duration-300 hover:scale-[1.02] border-0 flex items-center justify-center gap-2"
                   onClick={() => setIsTalking(true)}
                 >
-                  <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="hidden sm:inline">Subscribe $9.99/mo</span>
-                  <span className="sm:hidden">Subscribe</span>
+                  <Sparkles className="h-5 w-5" />
+                  Subscribe $9.99/mo
                 </Button>
                 
-                {/* Follow Button */}
+                {/* Right Side - Follow Button */}
                 {!isOwnProfile && currentUser ? (
                   <Button
                     variant={isFollowing(profile.id) ? "default" : "outline"}
-                    className={`flex-1 py-3 sm:py-4 rounded-xl sm:rounded-2xl text-sm sm:text-base font-semibold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 ${
+                    className={`py-4 rounded-2xl text-base font-semibold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 ${
                       isFollowing(profile.id) 
                         ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0 shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30' 
                         : 'border-slate-500/30 bg-slate-800/40 text-slate-200 hover:bg-slate-700/50 hover:text-white hover:border-slate-400/40'
@@ -424,22 +346,20 @@ const ProfilePage: React.FC = () => {
                     disabled={followsLoading}
                   >
                     {followsLoading ? (
-                      <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
                     ) : (
-                      <Users className="h-4 w-4 sm:h-5 sm:w-5" />
+                      <Users className="h-5 w-5" />
                     )}
-                    <span className="hidden sm:inline">{isFollowing(profile.id) ? 'Following' : 'Follow'}</span>
-                    <span className="sm:hidden">{isFollowing(profile.id) ? 'Following' : 'Follow'}</span>
+                    {isFollowing(profile.id) ? 'Following' : 'Follow'}
                   </Button>
                 ) : (
                   <Button
                     variant="outline"
-                    className="flex-1 border-slate-500/30 bg-slate-800/40 text-slate-400 py-3 sm:py-4 rounded-xl sm:rounded-2xl text-sm sm:text-base font-semibold cursor-not-allowed flex items-center justify-center gap-2"
+                    className="border-slate-500/30 bg-slate-800/40 text-slate-400 py-4 rounded-2xl text-base font-semibold cursor-not-allowed flex items-center justify-center gap-2"
                     disabled
                   >
-                    <Users className="h-4 w-4 sm:h-5 sm:w-5" />
-                    <span className="hidden sm:inline">Follow</span>
-                    <span className="sm:hidden">Follow</span>
+                    <Users className="h-5 w-5" />
+                    Follow
                   </Button>
                 )}
               </div>
@@ -494,7 +414,7 @@ const ProfilePage: React.FC = () => {
                 </TabsList>
 
                 {/* Posts Tab */}
-                <TabsContent value="posts" className="mt-6">
+                <TabsContent value="posts" className="space-y-4 mt-6">
                   <AnimatePresence>
                     {posts.length > 0 ? (
                       posts.map((post, index) => (
@@ -502,28 +422,30 @@ const ProfilePage: React.FC = () => {
                           key={post.id}
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -20 }}
                           transition={{ delay: index * 0.1 }}
-                          className="mb-4"
                         >
-                          <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm hover:border-slate-600/50 transition-colors">
+                          <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm">
                             <CardContent className="p-4">
+                              <p className="text-slate-300 mb-3 text-sm">{post.content}</p>
                               {post.media_url && (
                                 <div className="mb-3 rounded-lg overflow-hidden">
-                                  <img src={post.media_url} alt="Post media" className="w-full h-32 object-cover" />
+                                  {post.media_type?.startsWith('image/') ? (
+                                    <img src={post.media_url} alt="Post media" className="w-full h-auto" />
+                                  ) : (
+                                    <div className="bg-slate-700/50 p-3 rounded-lg">
+                                      <p className="text-xs text-slate-400">Media: {post.media_type}</p>
+                                    </div>
+                                  )}
                                 </div>
                               )}
-                              <p className="text-white text-sm mb-3 leading-relaxed">{post.content}</p>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="flex items-center gap-1 text-slate-400 hover:text-red-400 p-1 hover:bg-red-500/10 rounded-lg transition-all duration-200"
-                                  >
-                                    <Heart className="w-3 h-3" />
-                                    <span className="text-xs">{post.likes_count || 0}</span>
-                                  </Button>
+                              <div className="flex items-center justify-between pt-2 border-t border-slate-600/20">
+                                <div className="flex items-center gap-4">
+                                  <LikeButton 
+                                    itemId={post.id} 
+                                    itemType="post" 
+                                    showCount={true}
+                                    className="text-slate-400 hover:text-red-400" 
+                                  />
                                   <Button 
                                     variant="ghost" 
                                     size="sm" 
@@ -564,62 +486,75 @@ const ProfilePage: React.FC = () => {
                   </AnimatePresence>
                 </TabsContent>
 
-                {/* Chat Tab - Connected to Database and Personalized AI */}
+                {/* Chat Tab */}
                 <TabsContent value="chat" className="mt-6 space-y-4">
                   <div className="flex flex-col space-y-4 max-h-80 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
-                    {conversations.length > 0 ? (
-                      conversations.map((conversation, index) => (
-                        <div key={index} className={`flex items-start gap-3 ${conversation.sender === 'user' ? '' : 'flex-row-reverse'}`}>
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
-                            <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
-                              {conversation.sender === 'user' ? (
-                                currentUser ? (
-                                  <span className="text-xs font-bold text-white">
-                                    {currentUser.email?.[0]?.toUpperCase() || 'U'}
-                                  </span>
-                                ) : (
-                                  <User className="w-4 h-4 text-white" />
-                                )
-                              ) : (
-                                profile?.avatar_url || profile?.profile_pic_url ? (
-                                  <img 
-                                    src={profile.avatar_url || profile.profile_pic_url} 
-                                    alt={profileData.displayName}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <span className="text-xs font-bold text-white">
-                                    {profileData.avatarInitial}
-                                  </span>
-                                )
-                              )}
-                            </div>
-                          </div>
-                          <div className={`flex-1 ${conversation.sender === 'user' ? '' : 'flex justify-end'}`}>
-                            <div>
-                              <div className={`px-4 py-3 max-w-xs rounded-2xl ${
-                                conversation.sender === 'user' 
-                                  ? 'bg-blue-600/20 border border-blue-500/30 rounded-tl-md' 
-                                  : 'bg-slate-700/50 border border-slate-600/30 rounded-tr-md'
-                              }`}>
-                                <p className={`text-sm ${conversation.sender === 'user' ? 'text-blue-100' : 'text-slate-200'}`}>
-                                  {conversation.message}
-                                </p>
-                              </div>
-                              <p className={`text-xs text-slate-500 mt-1 ${conversation.sender === 'user' ? '' : 'text-right'}`}>
-                                {conversation.timestamp}
-                              </p>
-                            </div>
-                          </div>
+                    {/* Sample conversation messages */}
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                        <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                          {currentUser ? (
+                            <span className="text-xs font-bold text-white">
+                              {currentUser.email?.[0]?.toUpperCase() || 'U'}
+                            </span>
+                          ) : (
+                            <User className="w-4 h-4 text-white" />
+                          )}
                         </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-8">
-                        <MessageCircle className="w-12 h-12 mx-auto mb-4 text-slate-400" />
-                        <p className="text-slate-400 mb-2">No conversations yet</p>
-                        <p className="text-sm text-slate-500">Start a conversation to see AI responses here</p>
                       </div>
-                    )}
+                      <div className="flex-1">
+                        <div className="bg-blue-600/20 border border-blue-500/30 rounded-2xl rounded-tl-md px-4 py-3 max-w-xs">
+                          <p className="text-sm text-blue-100">Hey! Can you tell me about your experience in AI development?</p>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1">2 minutes ago</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3 flex-row-reverse">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                        <div className="w-full h-8 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                          {profile?.avatar_url || profile?.profile_pic_url ? (
+                            <img 
+                              src={profile.avatar_url || profile.profile_pic_url} 
+                              alt={profileData.displayName}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-xs font-bold text-white">
+                              {profileData.avatarInitial}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-1 flex justify-end">
+                        <div>
+                          <div className="bg-slate-700/50 border border-slate-600/30 rounded-2xl rounded-tr-md px-4 py-3 max-w-xs">
+                            <p className="text-sm text-slate-200">I've been working with AI for over 5 years! I specialize in conversational AI and machine learning. What specific area interests you most?</p>
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1 text-right">1 minute ago</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                        <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                          {currentUser ? (
+                            <span className="text-xs font-bold text-white">
+                              {currentUser.email?.[0]?.toUpperCase() || 'U'}
+                            </span>
+                          ) : (
+                            <User className="w-4 h-4 text-white" />
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="bg-blue-600/20 border border-blue-500/30 rounded-2xl rounded-tl-md px-4 py-3 max-w-xs">
+                          <p className="text-sm text-blue-100">That's amazing! I'm particularly interested in natural language processing.</p>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1">Just now</p>
+                      </div>
+                    </div>
 
                     {isTalking && (
                       <div className="flex items-start gap-3 flex-row-reverse">
@@ -647,7 +582,7 @@ const ProfilePage: React.FC = () => {
                                   <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
                                   <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                                 </div>
-                                <span className="text-xs text-slate-400">AI is thinking...</span>
+                                <span className="text-xs text-slate-400">typing...</span>
                               </div>
                             </div>
                           </div>
@@ -656,23 +591,20 @@ const ProfilePage: React.FC = () => {
                     )}
                   </div>
                   
-                  {/* Single Chat Input */}
                   <div className="border-t border-slate-700/30 pt-4">
                     <form onSubmit={handleChatSubmit}>
                       <div className="relative">
                         <Input
                           type="text"
-                          placeholder="Ask the AI a question..."
+                          placeholder="Type your message..."
                           value={chatMessage}
                           onChange={(e) => setChatMessage(e.target.value)}
                           className="w-full bg-slate-800/40 border-slate-600/30 text-white placeholder-slate-400 pr-12 py-3 text-sm rounded-xl focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
-                          disabled={isTalking}
                         />
                         <Button
                           type="submit"
                           size="sm"
-                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg disabled:opacity-50"
-                          disabled={isTalking || !chatMessage.trim()}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg"
                         >
                           <MessageCircle className="w-4 h-4" />
                         </Button>
@@ -733,8 +665,31 @@ const ProfilePage: React.FC = () => {
               </Tabs>
             </div>
 
-            {/* Social Links Row */}
-            <div className="px-6 pb-6 border-t border-slate-700/20 pt-4">
+            {/* Chat Input */}
+            <div className="px-6 pt-4 pb-6 border-t border-slate-700/20">
+              <form onSubmit={handleChatSubmit} className="mb-6">
+                <div className="relative">
+                  <Input
+                    type="text"
+                    placeholder="Ask me anything..."
+                    value={chatMessage}
+                    onChange={(e) => setChatMessage(e.target.value)}
+                    className="w-full bg-slate-800/40 border-slate-600/30 text-white placeholder-slate-400 pr-16 py-4 text-base rounded-2xl focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 shadow-sm transition-all duration-200"
+                  />
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200"
+                    >
+                      <Mic className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </form>
+
+              {/* Social Links Row */}
               <div className="flex items-center justify-center gap-1 overflow-x-auto scrollbar-hide">
                 <Button
                   variant="ghost"
