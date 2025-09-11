@@ -321,9 +321,9 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Action Buttons - Subscribe and Follow Side by Side */}
+            {/* Action Buttons - Subscribe and Two Follow Buttons */}
             <div className="px-6 pb-6">
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <Button
                   className="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white py-4 rounded-2xl text-base font-semibold shadow-lg shadow-purple-600/20 hover:shadow-purple-600/30 transition-all duration-300 hover:scale-[1.02] border-0 flex items-center justify-center gap-2"
                   onClick={() => setIsTalking(true)}
@@ -333,15 +333,26 @@ const ProfilePage: React.FC = () => {
                 </Button>
                 
                 {!isOwnProfile && currentUser && (
-                  <Button
-                    variant="outline"
-                    className="flex-1 border-slate-500/30 bg-slate-800/40 text-slate-200 hover:bg-slate-700/50 hover:text-white hover:border-slate-400/40 py-4 rounded-2xl text-base font-semibold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2"
-                    onClick={handleFollow}
-                    disabled={followsLoading}
-                  >
-                    <User className="h-5 w-5" />
-                    {isFollowing(profile.id) ? 'Following' : 'Follow'}
-                  </Button>
+                  <>
+                    <Button
+                      variant="outline"
+                      className="px-6 border-slate-500/30 bg-slate-800/40 text-slate-200 hover:bg-slate-700/50 hover:text-white hover:border-slate-400/40 py-4 rounded-2xl text-base font-semibold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2"
+                      onClick={handleFollow}
+                      disabled={followsLoading}
+                    >
+                      <User className="h-5 w-5" />
+                      {isFollowing(profile.id) ? 'Following' : 'Follow'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="px-6 border-slate-500/30 bg-slate-800/40 text-slate-200 hover:bg-slate-700/50 hover:text-white hover:border-slate-400/40 py-4 rounded-2xl text-base font-semibold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2"
+                      onClick={handleFollow}
+                      disabled={followsLoading}
+                    >
+                      <Users className="h-5 w-5" />
+                      {isFollowing(profile.id) ? 'Following' : 'Follow'}
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
@@ -468,16 +479,130 @@ const ProfilePage: React.FC = () => {
                 </TabsContent>
 
                 {/* Chat Tab */}
-                <TabsContent value="chat" className="mt-6">
-                  <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm">
-                    <CardContent className="p-8 text-center">
-                      <MessageCircle className="w-12 h-12 mx-auto mb-4 text-blue-400" />
-                      <h3 className="text-lg font-semibold text-white mb-2">Start a Conversation</h3>
-                      <p className="text-slate-400 text-sm">
-                        Ask {profileData.displayName} anything!
-                      </p>
-                    </CardContent>
-                  </Card>
+                <TabsContent value="chat" className="mt-6 space-y-4">
+                  <div className="flex flex-col space-y-4 max-h-80 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
+                    {/* Sample conversation messages */}
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                        <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                          {currentUser ? (
+                            <span className="text-xs font-bold text-white">
+                              {currentUser.email?.[0]?.toUpperCase() || 'U'}
+                            </span>
+                          ) : (
+                            <User className="w-4 h-4 text-white" />
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="bg-blue-600/20 border border-blue-500/30 rounded-2xl rounded-tl-md px-4 py-3 max-w-xs">
+                          <p className="text-sm text-blue-100">Hey! Can you tell me about your experience in AI development?</p>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1">2 minutes ago</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3 flex-row-reverse">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                        <div className="w-full h-8 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                          {profile?.avatar_url || profile?.profile_pic_url ? (
+                            <img 
+                              src={profile.avatar_url || profile.profile_pic_url} 
+                              alt={profileData.displayName}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-xs font-bold text-white">
+                              {profileData.avatarInitial}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-1 flex justify-end">
+                        <div>
+                          <div className="bg-slate-700/50 border border-slate-600/30 rounded-2xl rounded-tr-md px-4 py-3 max-w-xs">
+                            <p className="text-sm text-slate-200">I've been working with AI for over 5 years! I specialize in conversational AI and machine learning. What specific area interests you most?</p>
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1 text-right">1 minute ago</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                        <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                          {currentUser ? (
+                            <span className="text-xs font-bold text-white">
+                              {currentUser.email?.[0]?.toUpperCase() || 'U'}
+                            </span>
+                          ) : (
+                            <User className="w-4 h-4 text-white" />
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="bg-blue-600/20 border border-blue-500/30 rounded-2xl rounded-tl-md px-4 py-3 max-w-xs">
+                          <p className="text-sm text-blue-100">That's amazing! I'm particularly interested in natural language processing.</p>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1">Just now</p>
+                      </div>
+                    </div>
+
+                    {isTalking && (
+                      <div className="flex items-start gap-3 flex-row-reverse">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                          <div className="w-full h-8 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                            {profile?.avatar_url || profile?.profile_pic_url ? (
+                              <img 
+                                src={profile.avatar_url || profile.profile_pic_url} 
+                                alt={profileData.displayName}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-xs font-bold text-white">
+                                {profileData.avatarInitial}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex-1 flex justify-end">
+                          <div>
+                            <div className="bg-slate-700/50 border border-slate-600/30 rounded-2xl rounded-tr-md px-4 py-3 max-w-xs">
+                              <div className="flex items-center gap-2">
+                                <div className="flex space-x-1">
+                                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
+                                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                                </div>
+                                <span className="text-xs text-slate-400">typing...</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="border-t border-slate-700/30 pt-4">
+                    <form onSubmit={handleChatSubmit}>
+                      <div className="relative">
+                        <Input
+                          type="text"
+                          placeholder="Type your message..."
+                          value={chatMessage}
+                          onChange={(e) => setChatMessage(e.target.value)}
+                          className="w-full bg-slate-800/40 border-slate-600/30 text-white placeholder-slate-400 pr-12 py-3 text-sm rounded-xl focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
+                        />
+                        <Button
+                          type="submit"
+                          size="sm"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
                 </TabsContent>
 
                 {/* Products Tab */}
