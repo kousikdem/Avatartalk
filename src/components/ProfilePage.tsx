@@ -321,38 +321,46 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Action Buttons - Subscribe and Two Follow Buttons */}
+            {/* Action Buttons - Divided into two parts: Subscribe (left) and Follow (right) */}
             <div className="px-6 pb-6">
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-3">
+                {/* Left Side - Subscribe Button */}
                 <Button
-                  className="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white py-4 rounded-2xl text-base font-semibold shadow-lg shadow-purple-600/20 hover:shadow-purple-600/30 transition-all duration-300 hover:scale-[1.02] border-0 flex items-center justify-center gap-2"
+                  className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white py-4 rounded-2xl text-base font-semibold shadow-lg shadow-purple-600/20 hover:shadow-purple-600/30 transition-all duration-300 hover:scale-[1.02] border-0 flex items-center justify-center gap-2"
                   onClick={() => setIsTalking(true)}
                 >
                   <Sparkles className="h-5 w-5" />
                   Subscribe $9.99/mo
                 </Button>
                 
-                {!isOwnProfile && currentUser && (
-                  <>
-                    <Button
-                      variant="outline"
-                      className="px-6 border-slate-500/30 bg-slate-800/40 text-slate-200 hover:bg-slate-700/50 hover:text-white hover:border-slate-400/40 py-4 rounded-2xl text-base font-semibold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2"
-                      onClick={handleFollow}
-                      disabled={followsLoading}
-                    >
-                      <User className="h-5 w-5" />
-                      {isFollowing(profile.id) ? 'Following' : 'Follow'}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="px-6 border-slate-500/30 bg-slate-800/40 text-slate-200 hover:bg-slate-700/50 hover:text-white hover:border-slate-400/40 py-4 rounded-2xl text-base font-semibold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2"
-                      onClick={handleFollow}
-                      disabled={followsLoading}
-                    >
+                {/* Right Side - Follow Button */}
+                {!isOwnProfile && currentUser ? (
+                  <Button
+                    variant={isFollowing(profile.id) ? "default" : "outline"}
+                    className={`py-4 rounded-2xl text-base font-semibold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 ${
+                      isFollowing(profile.id) 
+                        ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0 shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30' 
+                        : 'border-slate-500/30 bg-slate-800/40 text-slate-200 hover:bg-slate-700/50 hover:text-white hover:border-slate-400/40'
+                    }`}
+                    onClick={handleFollow}
+                    disabled={followsLoading}
+                  >
+                    {followsLoading ? (
+                      <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
                       <Users className="h-5 w-5" />
-                      {isFollowing(profile.id) ? 'Following' : 'Follow'}
-                    </Button>
-                  </>
+                    )}
+                    {isFollowing(profile.id) ? 'Following' : 'Follow'}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="border-slate-500/30 bg-slate-800/40 text-slate-400 py-4 rounded-2xl text-base font-semibold cursor-not-allowed flex items-center justify-center gap-2"
+                    disabled
+                  >
+                    <Users className="h-5 w-5" />
+                    Follow
+                  </Button>
                 )}
               </div>
             </div>
