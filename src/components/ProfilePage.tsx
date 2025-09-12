@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useFollows } from '@/hooks/useFollows';
 import { usePersonalizedAI } from '@/hooks/usePersonalizedAI';
+import { usePosts } from '@/hooks/usePosts';
 import FuturisticAvatar3D from './FuturisticAvatar3D';
 import LikeButton from './LikeButton';
 import {
@@ -102,6 +103,7 @@ const ProfilePage: React.FC = () => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isTalking, setIsTalking] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [topChatMessage, setTopChatMessage] = useState('');
   const { toast } = useToast();
 
   const {
@@ -114,6 +116,7 @@ const ProfilePage: React.FC = () => {
   } = useFollows(profile?.id);
 
   const { trainings, currentTraining } = usePersonalizedAI();
+  const { posts: userPosts, isLoading: postsLoading, fetchPosts } = usePosts(profile?.id);
 
   // Initialize chat messages
   useEffect(() => {
@@ -187,15 +190,13 @@ const ProfilePage: React.FC = () => {
       setProfile(profileData);
 
       // Now fetch related data using the profile ID
-      const [statsResponse, postsResponse, productsResponse, avatarResponse] = await Promise.all([
+      const [statsResponse, productsResponse, avatarResponse] = await Promise.all([
         supabase.from('user_stats').select('*').eq('user_id', profileData.id).maybeSingle(),
-        supabase.from('posts').select('*').eq('user_id', profileData.id).order('created_at', { ascending: false }).limit(10),
         supabase.from('products').select('*').eq('user_id', profileData.id).eq('status', 'published').order('created_at', { ascending: false }).limit(6),
         supabase.from('avatar_configurations').select('*').eq('user_id', profileData.id).eq('is_active', true).maybeSingle()
       ]);
 
       setUserStats(statsResponse.data);
-      setPosts(postsResponse.data || []);
       setProducts(productsResponse.data || []);
       setAvatarConfig(avatarResponse.data);
 
@@ -231,12 +232,13 @@ const ProfilePage: React.FC = () => {
 
   const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chatMessage.trim() || !profile || !currentUser) return;
+    const messageContent = chatMessage.trim() || topChatMessage.trim();
+    if (!messageContent || !profile || !currentUser) return;
     
     // Add user message
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
-      content: chatMessage.trim(),
+      content: messageContent,
       timestamp: new Date().toISOString(),
       sender: 'user',
       senderName: currentUser.email?.split('@')[0] || 'User',
@@ -245,10 +247,27 @@ const ProfilePage: React.FC = () => {
     
     setChatMessages(prev => [...prev, userMessage]);
     setChatMessage('');
+    setTopChatMessage('');
     setIsTalking(true);
     
+    // Store conversation in database
+    try {
+      await supabase.from('behavior_learning_data').insert({
+        user_id: profile.id,
+        interaction_type: 'chat_message',
+        user_input: messageContent,
+        ai_response: '',
+        context_data: { 
+          timestamp: new Date().toISOString(),
+          sender: currentUser.email?.split('@')[0] || 'User'
+        }
+      });
+    } catch (error) {
+      console.error('Error storing chat message:', error);
+    }
+    
     // Simulate AI response based on personalized training
-    setTimeout(() => {
+    setTimeout(async () => {
       const aiResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
         content: `That's a great question! Based on my training, I can share some insights about that. ${profile.bio || 'Let me think about the best way to help you with this.'} Would you like me to elaborate on any specific aspect?`,
@@ -260,6 +279,19 @@ const ProfilePage: React.FC = () => {
       
       setChatMessages(prev => [...prev, aiResponse]);
       setIsTalking(false);
+      
+      // Update conversation count in stats
+      try {
+        await supabase
+          .from('user_stats')
+          .update({ 
+            total_conversations: (userStats?.total_conversations || 0) + 1,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', profile.id);
+      } catch (error) {
+        console.error('Error updating conversation count:', error);
+      }
       
       toast({
         title: "AI Response",
@@ -397,7 +429,7 @@ const ProfilePage: React.FC = () => {
                   onClick={() => setIsTalking(true)}
                 >
                   <Sparkles className="h-5 w-5" />
-                  Premium Access
+                  Subscribe - $9.99/mo
                 </Button>
                 
                 {/* Right Side - Follow Button (2 columns) with gradient */}
@@ -406,8 +438,8 @@ const ProfilePage: React.FC = () => {
                     variant={isFollowing(profile.id) ? "default" : "outline"}
                     className={`col-span-2 py-4 rounded-2xl text-base font-semibold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 ${
                       isFollowing(profile.id) 
-                        ? 'bg-gradient-to-r from-emerald-500 via-cyan-500 to-blue-500 hover:from-emerald-600 hover:via-cyan-600 hover:to-blue-600 text-white border-0 shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30' 
-                        : 'bg-gradient-to-r from-slate-600/20 via-slate-500/20 to-slate-600/20 border border-slate-500/30 text-slate-200 hover:from-emerald-500/20 hover:via-cyan-500/20 hover:to-blue-500/20 hover:text-white hover:border-cyan-400/40'
+                        ? 'bg-gradient-to-r from-pink-500 via-rose-500 to-red-500 hover:from-pink-600 hover:via-rose-600 hover:to-red-600 text-white border-0 shadow-lg shadow-rose-500/30 hover:shadow-rose-500/40' 
+                        : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 border-0 text-white shadow-lg shadow-purple-500/30 hover:shadow-purple-500/40'
                     }`}
                     onClick={handleFollow}
                     disabled={followsLoading}
@@ -437,21 +469,21 @@ const ProfilePage: React.FC = () => {
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center bg-slate-800/30 rounded-2xl py-4 backdrop-blur-sm border border-slate-700/20">
                   <div className="text-2xl font-bold text-white mb-1">
-                    {userStats?.total_conversations || 352}
+                    {userStats?.total_conversations || 0}
                   </div>
-                  <div className="text-xs text-slate-400 font-medium">Total Conversations</div>
+                  <div className="text-xs text-slate-400 font-medium">Conversations</div>
                 </div>
                 <div className="text-center bg-slate-800/30 rounded-2xl py-4 backdrop-blur-sm border border-slate-700/20">
                   <div className="text-2xl font-bold text-white mb-1">
-                    {followersCount >= 1000 ? `${(followersCount/1000).toFixed(1)}K` : followersCount || '1.2K'}
+                    {followersCount >= 1000 ? `${(followersCount/1000).toFixed(1)}K` : followersCount}
                   </div>
                   <div className="text-xs text-slate-400 font-medium">Followers</div>
                 </div>
                 <div className="text-center bg-slate-800/30 rounded-2xl py-4 backdrop-blur-sm border border-slate-700/20">
                   <div className="text-2xl font-bold text-white mb-1">
-                    {userStats?.engagement_score || 89}
+                    {Math.round(userStats?.engagement_score || 0)}%
                   </div>
-                  <div className="text-xs text-slate-400 font-medium">Engagement Score</div>
+                  <div className="text-xs text-slate-400 font-medium">Engagement</div>
                 </div>
               </div>
             </div>
@@ -483,8 +515,8 @@ const ProfilePage: React.FC = () => {
                 {/* Posts Tab */}
                 <TabsContent value="posts" className="space-y-4 mt-6">
                   <AnimatePresence>
-                    {posts.length > 0 ? (
-                      posts.map((post, index) => (
+                    {userPosts.length > 0 ? (
+                      userPosts.map((post, index) => (
                         <motion.div
                           key={post.id}
                           initial={{ opacity: 0, y: 20 }}
@@ -507,12 +539,14 @@ const ProfilePage: React.FC = () => {
                               )}
                               <div className="flex items-center justify-between pt-2 border-t border-slate-600/20">
                                 <div className="flex items-center gap-4">
-                                  <LikeButton 
-                                    itemId={post.id} 
-                                    itemType="post" 
-                                    showCount={true}
-                                    className="text-slate-400 hover:text-red-400" 
-                                  />
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="flex items-center gap-1 text-slate-400 hover:text-red-400 p-1 hover:bg-red-500/10 rounded-lg transition-all duration-200"
+                                  >
+                                    <Heart className="w-3 h-3" />
+                                    <span className="text-xs">{post.likes_count || 0}</span>
+                                  </Button>
                                   <Button 
                                     variant="ghost" 
                                     size="sm" 
@@ -716,8 +750,32 @@ const ProfilePage: React.FC = () => {
               </Tabs>
             </div>
 
-            {/* Social Links Section - Removed top typing box */}
+            {/* Top Chat Input Box */}
             <div className="px-6 pt-4 pb-6 border-t border-slate-700/20">
+              <form onSubmit={handleChatSubmit}>
+                <div className="relative">
+                  <Input
+                    type="text"
+                    placeholder="Send a quick message..."
+                    value={topChatMessage}
+                    onChange={(e) => setTopChatMessage(e.target.value)}
+                    className="w-full bg-slate-800/40 border-slate-600/30 text-white placeholder-slate-400 pr-12 py-3 text-sm rounded-xl focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
+                    disabled={isTalking}
+                  />
+                  <Button
+                    type="submit"
+                    size="sm"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg disabled:opacity-50"
+                    disabled={isTalking || !topChatMessage.trim()}
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                  </Button>
+                </div>
+              </form>
+            </div>
+
+            {/* Social Links Section */}
+            <div className="px-6 pt-0 pb-6">
 
               {/* Social Links Row */}
               <div className="flex items-center justify-center gap-1 overflow-x-auto scrollbar-hide">
