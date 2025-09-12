@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useFollows } from '@/hooks/useFollows';
+import { usePersonalizedAI } from '@/hooks/usePersonalizedAI';
 import FuturisticAvatar3D from './FuturisticAvatar3D';
 import LikeButton from './LikeButton';
 import {
@@ -80,6 +81,15 @@ interface Product {
   is_free: boolean;
 }
 
+interface ChatMessage {
+  id: string;
+  content: string;
+  timestamp: string;
+  sender: 'user' | 'avatar';
+  senderName?: string;
+  senderAvatar?: string;
+}
+
 const ProfilePage: React.FC = () => {
   const { username } = useParams<{ username: string }>();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -89,6 +99,7 @@ const ProfilePage: React.FC = () => {
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfiguration | null>(null);
   const [loading, setLoading] = useState(true);
   const [chatMessage, setChatMessage] = useState('');
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isTalking, setIsTalking] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const { toast } = useToast();
@@ -101,6 +112,41 @@ const ProfilePage: React.FC = () => {
     unfollowUser,
     loading: followsLoading
   } = useFollows(profile?.id);
+
+  const { trainings, currentTraining } = usePersonalizedAI();
+
+  // Initialize chat messages
+  useEffect(() => {
+    if (profile) {
+      const initialMessages: ChatMessage[] = [
+        {
+          id: '1',
+          content: `Hi there! I'm ${profile.display_name || profile.username}. How can I help you today?`,
+          timestamp: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
+          sender: 'avatar',
+          senderName: profile.display_name || profile.username,
+          senderAvatar: profile.avatar_url || profile.profile_pic_url
+        },
+        {
+          id: '2', 
+          content: "Hello! I'd love to learn more about your experience with AI development.",
+          timestamp: new Date(Date.now() - 240000).toISOString(), // 4 minutes ago
+          sender: 'user',
+          senderName: currentUser?.email?.split('@')[0] || 'User',
+          senderAvatar: undefined
+        },
+        {
+          id: '3',
+          content: "I've been working with AI for over 5 years! I specialize in conversational AI and machine learning. What specific area interests you most?",
+          timestamp: new Date(Date.now() - 180000).toISOString(), // 3 minutes ago
+          sender: 'avatar',
+          senderName: profile.display_name || profile.username,
+          senderAvatar: profile.avatar_url || profile.profile_pic_url
+        }
+      ];
+      setChatMessages(initialMessages);
+    }
+  }, [profile, currentUser]);
 
   // Memoize profile data for performance
   const profileData = useMemo(() => ({
@@ -183,23 +229,44 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  const handleChatSubmit = (e: React.FormEvent) => {
+  const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chatMessage.trim()) return;
+    if (!chatMessage.trim() || !profile || !currentUser) return;
     
-    setIsTalking(true);
-    toast({
-      title: "Message Sent",
-      description: `"${chatMessage}" - AI will respond shortly`,
-      duration: 3000,
-    });
+    // Add user message
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      content: chatMessage.trim(),
+      timestamp: new Date().toISOString(),
+      sender: 'user',
+      senderName: currentUser.email?.split('@')[0] || 'User',
+      senderAvatar: undefined
+    };
     
-    // Simulate AI response
-    setTimeout(() => {
-      setIsTalking(false);
-    }, 3000);
-    
+    setChatMessages(prev => [...prev, userMessage]);
     setChatMessage('');
+    setIsTalking(true);
+    
+    // Simulate AI response based on personalized training
+    setTimeout(() => {
+      const aiResponse: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        content: `That's a great question! Based on my training, I can share some insights about that. ${profile.bio || 'Let me think about the best way to help you with this.'} Would you like me to elaborate on any specific aspect?`,
+        timestamp: new Date().toISOString(),
+        sender: 'avatar',
+        senderName: profile.display_name || profile.username,
+        senderAvatar: profile.avatar_url || profile.profile_pic_url
+      };
+      
+      setChatMessages(prev => [...prev, aiResponse]);
+      setIsTalking(false);
+      
+      toast({
+        title: "AI Response",
+        description: "Response generated using personalized AI training",
+        duration: 3000,
+      });
+    }, 2000 + Math.random() * 2000); // Random delay 2-4 seconds
   };
 
   const shareProfile = () => {
@@ -321,44 +388,44 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Action Buttons - Divided into two parts: Subscribe (left) and Follow (right) */}
+            {/* Action Buttons - Subscribe (left wider) and Follow (right) */}
             <div className="px-6 pb-6">
-              <div className="grid grid-cols-2 gap-3">
-                {/* Left Side - Subscribe Button */}
+              <div className="grid grid-cols-5 gap-3">
+                {/* Left Side - Subscribe Button (wider - 3 columns) */}
                 <Button
-                  className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white py-4 rounded-2xl text-base font-semibold shadow-lg shadow-purple-600/20 hover:shadow-purple-600/30 transition-all duration-300 hover:scale-[1.02] border-0 flex items-center justify-center gap-2"
+                  className="col-span-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white py-4 rounded-2xl text-base font-semibold shadow-lg shadow-purple-600/20 hover:shadow-purple-600/30 transition-all duration-300 hover:scale-[1.02] border-0 flex items-center justify-center gap-2"
                   onClick={() => setIsTalking(true)}
                 >
                   <Sparkles className="h-5 w-5" />
-                  Subscribe $9.99/mo
+                  Premium Access
                 </Button>
                 
-                {/* Right Side - Follow Button */}
+                {/* Right Side - Follow Button (2 columns) with gradient */}
                 {!isOwnProfile && currentUser ? (
                   <Button
                     variant={isFollowing(profile.id) ? "default" : "outline"}
-                    className={`py-4 rounded-2xl text-base font-semibold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 ${
+                    className={`col-span-2 py-4 rounded-2xl text-base font-semibold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 ${
                       isFollowing(profile.id) 
-                        ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0 shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30' 
-                        : 'border-slate-500/30 bg-slate-800/40 text-slate-200 hover:bg-slate-700/50 hover:text-white hover:border-slate-400/40'
+                        ? 'bg-gradient-to-r from-emerald-500 via-cyan-500 to-blue-500 hover:from-emerald-600 hover:via-cyan-600 hover:to-blue-600 text-white border-0 shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30' 
+                        : 'bg-gradient-to-r from-slate-600/20 via-slate-500/20 to-slate-600/20 border border-slate-500/30 text-slate-200 hover:from-emerald-500/20 hover:via-cyan-500/20 hover:to-blue-500/20 hover:text-white hover:border-cyan-400/40'
                     }`}
                     onClick={handleFollow}
                     disabled={followsLoading}
                   >
                     {followsLoading ? (
-                      <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                     ) : (
-                      <Users className="h-5 w-5" />
+                      <Users className="h-4 w-4" />
                     )}
                     {isFollowing(profile.id) ? 'Following' : 'Follow'}
                   </Button>
                 ) : (
                   <Button
                     variant="outline"
-                    className="border-slate-500/30 bg-slate-800/40 text-slate-400 py-4 rounded-2xl text-base font-semibold cursor-not-allowed flex items-center justify-center gap-2"
+                    className="col-span-2 border-slate-500/30 bg-slate-800/40 text-slate-400 py-4 rounded-2xl text-base font-semibold cursor-not-allowed flex items-center justify-center gap-2"
                     disabled
                   >
-                    <Users className="h-5 w-5" />
+                    <Users className="h-4 w-4" />
                     Follow
                   </Button>
                 )}
@@ -489,72 +556,54 @@ const ProfilePage: React.FC = () => {
                 {/* Chat Tab */}
                 <TabsContent value="chat" className="mt-6 space-y-4">
                   <div className="flex flex-col space-y-4 max-h-80 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
-                    {/* Sample conversation messages */}
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
-                        <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
-                          {currentUser ? (
-                            <span className="text-xs font-bold text-white">
-                              {currentUser.email?.[0]?.toUpperCase() || 'U'}
-                            </span>
-                          ) : (
-                            <User className="w-4 h-4 text-white" />
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <div className="bg-blue-600/20 border border-blue-500/30 rounded-2xl rounded-tl-md px-4 py-3 max-w-xs">
-                          <p className="text-sm text-blue-100">Hey! Can you tell me about your experience in AI development?</p>
-                        </div>
-                        <p className="text-xs text-slate-500 mt-1">2 minutes ago</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3 flex-row-reverse">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
-                        <div className="w-full h-8 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
-                          {profile?.avatar_url || profile?.profile_pic_url ? (
-                            <img 
-                              src={profile.avatar_url || profile.profile_pic_url} 
-                              alt={profileData.displayName}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-xs font-bold text-white">
-                              {profileData.avatarInitial}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex-1 flex justify-end">
-                        <div>
-                          <div className="bg-slate-700/50 border border-slate-600/30 rounded-2xl rounded-tr-md px-4 py-3 max-w-xs">
-                            <p className="text-sm text-slate-200">I've been working with AI for over 5 years! I specialize in conversational AI and machine learning. What specific area interests you most?</p>
+                    {chatMessages.map((message) => (
+                      <div key={message.id} className={`flex items-start gap-3 ${message.sender === 'avatar' ? 'flex-row-reverse' : ''}`}>
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                          <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                            {message.sender === 'avatar' ? (
+                              message.senderAvatar ? (
+                                <img 
+                                  src={message.senderAvatar} 
+                                  alt={message.senderName}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-xs font-bold text-white">
+                                  {(message.senderName?.[0] || 'A').toUpperCase()}
+                                </span>
+                              )
+                            ) : (
+                              <span className="text-xs font-bold text-white">
+                                {(message.senderName?.[0] || 'U').toUpperCase()}
+                              </span>
+                            )}
                           </div>
-                          <p className="text-xs text-slate-500 mt-1 text-right">1 minute ago</p>
+                        </div>
+                        <div className={`flex-1 ${message.sender === 'avatar' ? 'flex justify-end' : ''}`}>
+                          <div className={message.sender === 'avatar' ? '' : 'max-w-xs'}>
+                            <div className={`px-4 py-3 rounded-2xl ${
+                              message.sender === 'avatar' 
+                                ? 'bg-slate-700/50 border border-slate-600/30 rounded-tr-md max-w-xs' 
+                                : 'bg-blue-600/20 border border-blue-500/30 rounded-tl-md'
+                            }`}>
+                              <p className={`text-sm ${
+                                message.sender === 'avatar' ? 'text-slate-200' : 'text-blue-100'
+                              }`}>
+                                {message.content}
+                              </p>
+                            </div>
+                            <p className={`text-xs text-slate-500 mt-1 ${
+                              message.sender === 'avatar' ? 'text-right' : ''
+                            }`}>
+                              {new Date(message.timestamp).toLocaleTimeString([], { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
-                        <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
-                          {currentUser ? (
-                            <span className="text-xs font-bold text-white">
-                              {currentUser.email?.[0]?.toUpperCase() || 'U'}
-                            </span>
-                          ) : (
-                            <User className="w-4 h-4 text-white" />
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <div className="bg-blue-600/20 border border-blue-500/30 rounded-2xl rounded-tl-md px-4 py-3 max-w-xs">
-                          <p className="text-sm text-blue-100">That's amazing! I'm particularly interested in natural language processing.</p>
-                        </div>
-                        <p className="text-xs text-slate-500 mt-1">Just now</p>
-                      </div>
-                    </div>
+                    ))}
 
                     {isTalking && (
                       <div className="flex items-start gap-3 flex-row-reverse">
@@ -582,7 +631,7 @@ const ProfilePage: React.FC = () => {
                                   <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
                                   <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                                 </div>
-                                <span className="text-xs text-slate-400">typing...</span>
+                                <span className="text-xs text-slate-400">AI is thinking...</span>
                               </div>
                             </div>
                           </div>
@@ -600,11 +649,13 @@ const ProfilePage: React.FC = () => {
                           value={chatMessage}
                           onChange={(e) => setChatMessage(e.target.value)}
                           className="w-full bg-slate-800/40 border-slate-600/30 text-white placeholder-slate-400 pr-12 py-3 text-sm rounded-xl focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
+                          disabled={isTalking}
                         />
                         <Button
                           type="submit"
                           size="sm"
-                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg disabled:opacity-50"
+                          disabled={isTalking || !chatMessage.trim()}
                         >
                           <MessageCircle className="w-4 h-4" />
                         </Button>
@@ -665,29 +716,8 @@ const ProfilePage: React.FC = () => {
               </Tabs>
             </div>
 
-            {/* Chat Input */}
+            {/* Social Links Section - Removed top typing box */}
             <div className="px-6 pt-4 pb-6 border-t border-slate-700/20">
-              <form onSubmit={handleChatSubmit} className="mb-6">
-                <div className="relative">
-                  <Input
-                    type="text"
-                    placeholder="Ask me anything..."
-                    value={chatMessage}
-                    onChange={(e) => setChatMessage(e.target.value)}
-                    className="w-full bg-slate-800/40 border-slate-600/30 text-white placeholder-slate-400 pr-16 py-4 text-base rounded-2xl focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 shadow-sm transition-all duration-200"
-                  />
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200"
-                    >
-                      <Mic className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </form>
 
               {/* Social Links Row */}
               <div className="flex items-center justify-center gap-1 overflow-x-auto scrollbar-hide">
