@@ -113,7 +113,7 @@ const ProfilePage: React.FC = () => {
     followUser,
     unfollowUser,
     loading: followsLoading
-  } = useFollows(profile?.id);
+  } = useFollows();
 
   const { trainings, currentTraining } = usePersonalizedAI();
   const { posts: userPosts, isLoading: postsLoading, fetchPosts } = usePosts(profile?.id);
@@ -422,24 +422,24 @@ const ProfilePage: React.FC = () => {
 
             {/* Action Buttons - Subscribe (left wider) and Follow (right) */}
             <div className="px-6 pb-6">
-              <div className="grid grid-cols-5 gap-3">
+              <div className="grid grid-cols-4 gap-3">
                 {/* Left Side - Subscribe Button (wider - 3 columns) */}
                 <Button
-                  className="col-span-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white py-4 rounded-2xl text-base font-semibold shadow-lg shadow-purple-600/20 hover:shadow-purple-600/30 transition-all duration-300 hover:scale-[1.02] border-0 flex items-center justify-center gap-2"
+                  className="col-span-3 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white py-4 rounded-2xl text-base font-semibold shadow-md hover:shadow-lg transition-all duration-300 border-0 flex items-center justify-center gap-2"
                   onClick={() => setIsTalking(true)}
                 >
                   <Sparkles className="h-5 w-5" />
                   Subscribe - $9.99/mo
                 </Button>
                 
-                {/* Right Side - Follow Button (2 columns) with gradient */}
+                {/* Right Side - Follow Button (1 column) with gradient */}
                 {!isOwnProfile && currentUser ? (
                   <Button
                     variant={isFollowing(profile.id) ? "default" : "outline"}
-                    className={`col-span-2 py-4 rounded-2xl text-base font-semibold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 ${
+                    className={`col-span-1 py-4 rounded-2xl text-base font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${
                       isFollowing(profile.id) 
-                        ? 'bg-gradient-to-r from-pink-500 via-rose-500 to-red-500 hover:from-pink-600 hover:via-rose-600 hover:to-red-600 text-white border-0 shadow-lg shadow-rose-500/30 hover:shadow-rose-500/40' 
-                        : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 border-0 text-white shadow-lg shadow-purple-500/30 hover:shadow-purple-500/40'
+                        ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white border-0 shadow-md hover:shadow-lg' 
+                        : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 border-0 text-white shadow-md hover:shadow-lg'
                     }`}
                     onClick={handleFollow}
                     disabled={followsLoading}
@@ -454,7 +454,7 @@ const ProfilePage: React.FC = () => {
                 ) : (
                   <Button
                     variant="outline"
-                    className="col-span-2 border-slate-500/30 bg-slate-800/40 text-slate-400 py-4 rounded-2xl text-base font-semibold cursor-not-allowed flex items-center justify-center gap-2"
+                    className="col-span-1 border-slate-500/30 bg-slate-800/40 text-slate-400 py-4 rounded-2xl text-base font-semibold cursor-not-allowed flex items-center justify-center gap-2"
                     disabled
                   >
                     <Users className="h-4 w-4" />
@@ -723,8 +723,8 @@ const ProfilePage: React.FC = () => {
                                   <div className="text-base font-bold text-blue-400">
                                     {product.is_free ? 'Free' : `$${product.price}`}
                                   </div>
-                                  <Button size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white text-xs">
-                                    View
+                                  <Button size="sm" className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs">
+                                    Buy now
                                   </Button>
                                 </div>
                               </CardContent>
@@ -750,29 +750,6 @@ const ProfilePage: React.FC = () => {
               </Tabs>
             </div>
 
-            {/* Top Chat Input Box */}
-            <div className="px-6 pt-4 pb-6 border-t border-slate-700/20">
-              <form onSubmit={handleChatSubmit}>
-                <div className="relative">
-                  <Input
-                    type="text"
-                    placeholder="Send a quick message..."
-                    value={topChatMessage}
-                    onChange={(e) => setTopChatMessage(e.target.value)}
-                    className="w-full bg-slate-800/40 border-slate-600/30 text-white placeholder-slate-400 pr-12 py-3 text-sm rounded-xl focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
-                    disabled={isTalking}
-                  />
-                  <Button
-                    type="submit"
-                    size="sm"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg disabled:opacity-50"
-                    disabled={isTalking || !topChatMessage.trim()}
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                  </Button>
-                </div>
-              </form>
-            </div>
 
             {/* Social Links Section */}
             <div className="px-6 pt-0 pb-6">
