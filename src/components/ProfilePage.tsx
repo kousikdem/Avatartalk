@@ -9,8 +9,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useFollows } from '@/hooks/useFollows';
 import { usePersonalizedAI } from '@/hooks/usePersonalizedAI';
 import { usePosts } from '@/hooks/usePosts';
+import { useVoiceInput } from '@/hooks/useVoiceInput';
+import { useCoquiTTS } from '@/hooks/useCoquiTTS';
 import FuturisticAvatar3D from './FuturisticAvatar3D';
 import LikeButton from './LikeButton';
+import EmojiPicker from './EmojiPicker';
 import {
   MessageCircle,
   Share2,
@@ -21,6 +24,10 @@ import {
   Instagram,
   Youtube,
   Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+  Send,
   Smile,
   Users,
   ArrowDown,
@@ -104,6 +111,7 @@ const ProfilePage: React.FC = () => {
   const [isTalking, setIsTalking] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [topChatMessage, setTopChatMessage] = useState('');
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const { toast } = useToast();
 
   const {
@@ -112,11 +120,16 @@ const ProfilePage: React.FC = () => {
     isFollowing,
     followUser,
     unfollowUser,
-    loading: followsLoading
+    loading: followsLoading,
+    refetch: refetchFollows
   } = useFollows();
 
   const { trainings, currentTraining } = usePersonalizedAI();
   const { posts: userPosts, isLoading: postsLoading, fetchPosts } = usePosts(profile?.id);
+  
+  // Voice functionality
+  const { isListening, transcript, startListening, stopListening, resetTranscript } = useVoiceInput();
+  const { synthesizeSpeech, isLoading: ttsLoading, isPlaying, stopSpeech } = useCoquiTTS();
 
   // Initialize chat messages
   useEffect(() => {
@@ -223,10 +236,28 @@ const ProfilePage: React.FC = () => {
   const handleFollow = async () => {
     if (!profile || !currentUser) return;
     
-    if (isFollowing(profile.id)) {
-      await unfollowUser(profile.id);
-    } else {
-      await followUser(profile.id);
+    try {
+      if (isFollowing(profile.id)) {
+        await unfollowUser(profile.id);
+        toast({
+          title: "Unfollowed",
+          description: `You unfollowed ${profile.display_name || profile.username}`,
+        });
+      } else {
+        await followUser(profile.id);
+        toast({
+          title: "Following",
+          description: `You are now following ${profile.display_name || profile.username}`,
+        });
+      }
+      await refetchFollows();
+    } catch (error) {
+      console.error('Error following user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update follow status",
+        variant: "destructive",
+      });
     }
   };
 
@@ -308,6 +339,38 @@ const ProfilePage: React.FC = () => {
       title: "Link Copied",
       description: "Profile link copied to clipboard",
     });
+  };
+
+  // Voice input effects
+  useEffect(() => {
+    if (transcript && transcript.trim()) {
+      setChatMessage(transcript);
+    }
+  }, [transcript]);
+
+  const handleVoiceToggle = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      resetTranscript();
+      startListening({ continuous: true, interimResults: true });
+    }
+  };
+
+  const handleVoiceOutput = async () => {
+    if (isPlaying) {
+      stopSpeech();
+    } else {
+      const lastAiMessage = chatMessages.filter(msg => msg.sender === 'avatar').pop();
+      if (lastAiMessage) {
+        await synthesizeSpeech(lastAiMessage.content);
+      }
+    }
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setChatMessage(prev => prev + emoji);
+    setIsEmojiPickerOpen(false);
   };
 
   if (loading) {
@@ -422,24 +485,24 @@ const ProfilePage: React.FC = () => {
 
             {/* Action Buttons - Subscribe (left wider) and Follow (right) */}
             <div className="px-6 pb-6">
-              <div className="grid grid-cols-4 gap-3">
-                {/* Left Side - Subscribe Button (wider - 3 columns) */}
+              <div className="grid grid-cols-5 gap-3">
+                {/* Left Side - Subscribe Button (wider - 3 columns, moved left) */}
                 <Button
-                  className="col-span-3 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white py-4 rounded-2xl text-base font-semibold shadow-md hover:shadow-lg transition-all duration-300 border-0 flex items-center justify-center gap-2"
+                  className="col-span-3 bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
                   onClick={() => setIsTalking(true)}
                 >
                   <Sparkles className="h-5 w-5" />
                   Subscribe - $9.99/mo
                 </Button>
                 
-                {/* Right Side - Follow Button (1 column) with gradient */}
+                {/* Right Side - Follow Button (2 columns) with enhanced gradient */}
                 {!isOwnProfile && currentUser ? (
                   <Button
                     variant={isFollowing(profile.id) ? "default" : "outline"}
-                    className={`col-span-1 py-4 rounded-2xl text-base font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${
+                    className={`col-span-2 py-4 rounded-2xl text-base font-semibold transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${
                       isFollowing(profile.id) 
-                        ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white border-0 shadow-md hover:shadow-lg' 
-                        : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 border-0 text-white shadow-md hover:shadow-lg'
+                        ? 'bg-gradient-to-r from-emerald-500 via-teal-600 to-cyan-600 hover:from-emerald-600 hover:via-teal-700 hover:to-cyan-700 text-white border-0 shadow-lg hover:shadow-xl' 
+                        : 'bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:via-indigo-700 hover:to-blue-700 border-0 text-white shadow-lg hover:shadow-xl'
                     }`}
                     onClick={handleFollow}
                     disabled={followsLoading}
@@ -454,7 +517,7 @@ const ProfilePage: React.FC = () => {
                 ) : (
                   <Button
                     variant="outline"
-                    className="col-span-1 border-slate-500/30 bg-slate-800/40 text-slate-400 py-4 rounded-2xl text-base font-semibold cursor-not-allowed flex items-center justify-center gap-2"
+                    className="col-span-2 border-slate-500/30 bg-slate-800/40 text-slate-400 py-4 rounded-2xl text-base font-semibold cursor-not-allowed flex items-center justify-center gap-2"
                     disabled
                   >
                     <Users className="h-4 w-4" />
@@ -679,20 +742,68 @@ const ProfilePage: React.FC = () => {
                       <div className="relative">
                         <Input
                           type="text"
-                          placeholder="Type your message..."
+                          placeholder={isListening ? "Listening..." : "Type your message..."}
                           value={chatMessage}
                           onChange={(e) => setChatMessage(e.target.value)}
-                          className="w-full bg-slate-800/40 border-slate-600/30 text-white placeholder-slate-400 pr-12 py-3 text-sm rounded-xl focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
-                          disabled={isTalking}
+                          className="w-full bg-slate-800/40 border-slate-600/30 text-white placeholder-slate-400 pr-32 py-3 text-sm rounded-xl focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
+                          disabled={isTalking || isListening}
                         />
+                        
+                        {/* Voice Control Button */}
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleVoiceToggle}
+                          className={`absolute right-20 top-1/2 -translate-y-1/2 px-2 py-1.5 rounded-lg transition-all duration-200 ${
+                            isListening 
+                              ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse' 
+                              : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+                          }`}
+                        >
+                          {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                        </Button>
+
+                        {/* Voice Output Button */}
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleVoiceOutput}
+                          className={`absolute right-14 top-1/2 -translate-y-1/2 px-2 py-1.5 rounded-lg transition-all duration-200 ${
+                            isPlaying 
+                              ? 'bg-green-600 hover:bg-green-700 text-white animate-pulse' 
+                              : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+                          }`}
+                          disabled={ttsLoading}
+                        >
+                          {isPlaying ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                        </Button>
+
+                        {/* Emoji Button */}
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
+                          className="absolute right-8 top-1/2 -translate-y-1/2 bg-slate-700 hover:bg-slate-600 text-slate-300 px-2 py-1.5 rounded-lg"
+                        >
+                          <Smile className="w-4 h-4" />
+                        </Button>
+                        
+                        {/* Send Button */}
                         <Button
                           type="submit"
                           size="sm"
-                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg disabled:opacity-50"
-                          disabled={isTalking || !chatMessage.trim()}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded-lg disabled:opacity-50"
+                          disabled={isTalking || (!chatMessage.trim() && !transcript.trim())}
                         >
-                          <MessageCircle className="w-4 h-4" />
+                          <Send className="w-4 h-4" />
                         </Button>
+
+                        {/* Emoji Picker */}
+                        <EmojiPicker 
+                          isOpen={isEmojiPickerOpen}
+                          onClose={() => setIsEmojiPickerOpen(false)}
+                          onEmojiSelect={handleEmojiSelect}
+                        />
                       </div>
                     </form>
                   </div>
