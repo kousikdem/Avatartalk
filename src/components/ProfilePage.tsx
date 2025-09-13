@@ -263,7 +263,8 @@ const ProfilePage: React.FC = () => {
 
   const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const messageContent = chatMessage.trim() || topChatMessage.trim();
+    const messageContent = chatMessage.trim() || transcript.trim();
+    
     if (!messageContent || !profile || !currentUser) return;
     
     // Add user message
@@ -278,7 +279,7 @@ const ProfilePage: React.FC = () => {
     
     setChatMessages(prev => [...prev, userMessage]);
     setChatMessage('');
-    setTopChatMessage('');
+    resetTranscript();
     setIsTalking(true);
     
     // Store conversation in database
@@ -301,7 +302,7 @@ const ProfilePage: React.FC = () => {
     setTimeout(async () => {
       const aiResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        content: `That's a great question! Based on my training, I can share some insights about that. ${profile.bio || 'Let me think about the best way to help you with this.'} Would you like me to elaborate on any specific aspect?`,
+        content: `That's a great question! Based on my personalized training, I can share some insights about that. ${profile.bio || 'Let me think about the best way to help you with this.'} Would you like me to elaborate on any specific aspect?`,
         timestamp: new Date().toISOString(),
         sender: 'avatar',
         senderName: profile.display_name || profile.username,
@@ -310,6 +311,17 @@ const ProfilePage: React.FC = () => {
       
       setChatMessages(prev => [...prev, aiResponse]);
       setIsTalking(false);
+      
+      // Auto-play AI response with personalized voice
+      try {
+        await synthesizeSpeech(aiResponse.content, {
+          voice: 'neural',
+          speed: 1.0,
+          language: 'en-US'
+        });
+      } catch (error) {
+        console.error('Error with voice synthesis:', error);
+      }
       
       // Update conversation count in stats
       try {
@@ -341,29 +353,82 @@ const ProfilePage: React.FC = () => {
     });
   };
 
-  // Voice input effects
+  // Voice input effects - update chat message with transcript
   useEffect(() => {
     if (transcript && transcript.trim()) {
       setChatMessage(transcript);
     }
   }, [transcript]);
 
-  const handleVoiceToggle = () => {
+  const handleVoiceToggle = async () => {
     if (isListening) {
       stopListening();
+      toast({
+        title: "Voice Recording Stopped",
+        description: "Processing your voice input...",
+      });
     } else {
       resetTranscript();
-      startListening({ continuous: true, interimResults: true });
+      setChatMessage('');
+      
+      try {
+        // Use Coqui STT for better voice recognition
+        await startListening({ 
+          continuous: true, 
+          interimResults: true,
+          language: 'en-US' 
+        });
+        
+        toast({
+          title: "Voice Recording Started",
+          description: "Speak your message...",
+        });
+      } catch (error) {
+        console.error('Voice input error:', error);
+        toast({
+          title: "Voice Input Error",
+          description: "Failed to start voice recording",
+          variant: "destructive",
+        });
+      }
     }
   };
 
   const handleVoiceOutput = async () => {
     if (isPlaying) {
       stopSpeech();
+      toast({
+        title: "Voice Output Stopped",
+        description: "Audio playback stopped",
+      });
     } else {
       const lastAiMessage = chatMessages.filter(msg => msg.sender === 'avatar').pop();
       if (lastAiMessage) {
-        await synthesizeSpeech(lastAiMessage.content);
+        try {
+          await synthesizeSpeech(lastAiMessage.content, {
+            voice: 'neural',
+            speed: 1.0,
+            language: 'en-US'
+          });
+          
+          toast({
+            title: "Playing AI Response",
+            description: "Voice output with personalized tone",
+          });
+        } catch (error) {
+          console.error('Voice output error:', error);
+          toast({
+            title: "Voice Output Error",
+            description: "Failed to play audio",
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: "No Message",
+          description: "No AI message to play",
+          variant: "destructive",
+        });
       }
     }
   };
@@ -738,72 +803,111 @@ const ProfilePage: React.FC = () => {
                   </div>
                   
                   <div className="border-t border-slate-700/30 pt-4">
-                    <form onSubmit={handleChatSubmit}>
+                    <form onSubmit={handleChatSubmit} className="space-y-4">
                       <div className="relative">
                         <Input
                           type="text"
-                          placeholder={isListening ? "Listening..." : "Type your message..."}
+                          placeholder={
+                            isListening 
+                              ? "🎤 Listening... Speak now" 
+                              : ttsLoading 
+                              ? "🔊 Processing audio..." 
+                              : "💬 Type your message or use voice..."
+                          }
                           value={chatMessage}
                           onChange={(e) => setChatMessage(e.target.value)}
-                          className="w-full bg-slate-800/40 border-slate-600/30 text-white placeholder-slate-400 pr-32 py-3 text-sm rounded-xl focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
-                          disabled={isTalking || isListening}
+                          className={`w-full bg-gradient-to-r from-slate-800/50 to-slate-700/50 border-slate-600/40 text-white placeholder-slate-400 pr-40 py-4 text-sm rounded-2xl focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 shadow-lg backdrop-blur-sm transition-all duration-300 ${
+                            isListening ? 'border-red-500/60 shadow-red-500/20' : ''
+                          } ${
+                            isPlaying ? 'border-green-500/60 shadow-green-500/20' : ''
+                          }`}
+                          disabled={isTalking}
                         />
                         
-                        {/* Voice Control Button */}
+                        {/* Professional Voice Control Button */}
                         <Button
                           type="button"
                           size="sm"
                           onClick={handleVoiceToggle}
-                          className={`absolute right-20 top-1/2 -translate-y-1/2 px-2 py-1.5 rounded-lg transition-all duration-200 ${
+                          className={`absolute right-28 top-1/2 -translate-y-1/2 px-3 py-2 rounded-xl transition-all duration-300 shadow-lg border ${
                             isListening 
-                              ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse' 
-                              : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+                              ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white border-red-500/50 shadow-red-500/30 animate-pulse' 
+                              : 'bg-gradient-to-r from-slate-700 to-slate-600 hover:from-slate-600 hover:to-slate-500 text-slate-200 border-slate-500/30 hover:shadow-blue-500/20'
                           }`}
+                          title={isListening ? "Stop voice recording" : "Start voice recording with Coqui STT"}
                         >
                           {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                         </Button>
 
-                        {/* Voice Output Button */}
+                        {/* Professional Voice Output Button */}
                         <Button
                           type="button"
                           size="sm"
                           onClick={handleVoiceOutput}
-                          className={`absolute right-14 top-1/2 -translate-y-1/2 px-2 py-1.5 rounded-lg transition-all duration-200 ${
+                          className={`absolute right-20 top-1/2 -translate-y-1/2 px-3 py-2 rounded-xl transition-all duration-300 shadow-lg border ${
                             isPlaying 
-                              ? 'bg-green-600 hover:bg-green-700 text-white animate-pulse' 
-                              : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+                              ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white border-green-500/50 shadow-green-500/30 animate-pulse' 
+                              : 'bg-gradient-to-r from-slate-700 to-slate-600 hover:from-slate-600 hover:to-slate-500 text-slate-200 border-slate-500/30 hover:shadow-green-500/20'
                           }`}
                           disabled={ttsLoading}
+                          title={isPlaying ? "Stop personalized voice output" : "Play with personalized voice"}
                         >
                           {isPlaying ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                         </Button>
 
-                        {/* Emoji Button */}
+                        {/* Professional Emoji Button */}
                         <Button
                           type="button"
                           size="sm"
                           onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
-                          className="absolute right-8 top-1/2 -translate-y-1/2 bg-slate-700 hover:bg-slate-600 text-slate-300 px-2 py-1.5 rounded-lg"
+                          className={`absolute right-12 top-1/2 -translate-y-1/2 px-3 py-2 rounded-xl transition-all duration-300 shadow-lg border ${
+                            isEmojiPickerOpen
+                              ? 'bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white border-yellow-500/50 shadow-yellow-500/30'
+                              : 'bg-gradient-to-r from-slate-700 to-slate-600 hover:from-slate-600 hover:to-slate-500 text-slate-200 border-slate-500/30 hover:shadow-yellow-500/20'
+                          }`}
+                          title="Add emoji to message"
                         >
                           <Smile className="w-4 h-4" />
                         </Button>
                         
-                        {/* Send Button */}
+                        {/* Professional Send Button */}
                         <Button
                           type="submit"
                           size="sm"
-                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded-lg disabled:opacity-50"
+                          className={`absolute right-2 top-1/2 -translate-y-1/2 px-3 py-2 rounded-xl transition-all duration-300 shadow-lg border ${
+                            chatMessage.trim() || transcript.trim()
+                              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-blue-500/50 shadow-blue-500/30 hover:scale-105'
+                              : 'bg-gradient-to-r from-slate-600 to-slate-700 text-slate-400 border-slate-600/30 cursor-not-allowed'
+                          }`}
                           disabled={isTalking || (!chatMessage.trim() && !transcript.trim())}
+                          title="Send message"
                         >
                           <Send className="w-4 h-4" />
                         </Button>
 
-                        {/* Emoji Picker */}
+                        {/* Enhanced Emoji Picker */}
                         <EmojiPicker 
                           isOpen={isEmojiPickerOpen}
                           onClose={() => setIsEmojiPickerOpen(false)}
                           onEmojiSelect={handleEmojiSelect}
                         />
+                        
+                        {/* Voice Status Indicator */}
+                        {isListening && (
+                          <div className="absolute -top-12 left-0 right-0 flex items-center justify-center">
+                            <div className="bg-red-600/90 text-white px-4 py-2 rounded-full text-xs font-medium shadow-lg backdrop-blur-sm">
+                              🎤 Recording with Coqui STT...
+                            </div>
+                          </div>
+                        )}
+                        
+                        {ttsLoading && (
+                          <div className="absolute -top-12 left-0 right-0 flex items-center justify-center">
+                            <div className="bg-blue-600/90 text-white px-4 py-2 rounded-full text-xs font-medium shadow-lg backdrop-blur-sm">
+                              🔊 Generating personalized voice...
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </form>
                   </div>
