@@ -642,19 +642,6 @@ const ProfilePage: React.FC = () => {
                   </Button>
                 </div>
                 
-                {/* Save as Default Avatar Button for first-time users */}
-                {isOwnProfile && avatarConfig && (
-                  <div className="absolute top-4 right-4">
-                    <Button
-                      size="sm"
-                      className="bg-gradient-to-r from-purple-600/90 to-indigo-600/90 hover:from-purple-700/90 hover:to-indigo-700/90 text-white rounded-xl px-3 py-2 backdrop-blur-sm border border-purple-400/30 shadow-lg hover:shadow-purple-500/30 transition-all duration-300 hover:scale-105"
-                      onClick={handleSaveAsDefault}
-                    >
-                      <User className="h-4 w-4 mr-1" />
-                      Set Default
-                    </Button>
-                  </div>
-                )}
               </div>
             </div>
 

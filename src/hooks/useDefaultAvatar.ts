@@ -84,11 +84,17 @@ export const useDefaultAvatar = () => {
 
       if (activateError) throw activateError;
 
-      // Update profile with avatar URL from the default avatar image
+      // Update profile with current profile pic or avatar URL
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('profile_pic_url, avatar_url')
+        .eq('id', user.id)
+        .single();
+
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ 
-          avatar_url: '/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png',
+          avatar_url: currentProfile?.profile_pic_url || currentProfile?.avatar_url || '/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png',
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);
@@ -132,11 +138,17 @@ export const useDefaultAvatar = () => {
 
       if (avatarError) throw avatarError;
 
-      // Update the profile with the avatar data
+      // Update the profile with current profile pic or default avatar
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('profile_pic_url, avatar_url')
+        .eq('id', user.id)
+        .single();
+
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
-          avatar_url: '/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png',
+          avatar_url: currentProfile?.profile_pic_url || currentProfile?.avatar_url || '/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png',
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);

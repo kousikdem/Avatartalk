@@ -21,14 +21,20 @@ const AvatarPreview: React.FC<AvatarPreviewProps> = ({
   const [isTalking, setIsTalking] = React.useState(false);
   const { defaultConfig } = useDefaultAvatar();
 
-  // Use avatar configuration data or default profile image
+  // Use profile data first, then avatar configuration, then default
   const getAvatarDisplay = () => {
-    if (profileData?.avatar_url || profileData?.profile_pic_url) {
-      return profileData.avatar_url || profileData.profile_pic_url;
+    // First priority: profile_pic_url or avatar_url from profile data
+    if (profileData?.profile_pic_url) {
+      return profileData.profile_pic_url;
     }
+    if (profileData?.avatar_url) {
+      return profileData.avatar_url;
+    }
+    // Second priority: avatar configuration exists (use default avatar image)
     if (avatarConfig || defaultConfig) {
       return "/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png";
     }
+    // Fallback: default avatar image
     return "/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png";
   };
 
