@@ -11,6 +11,7 @@ import { usePersonalizedAI } from '@/hooks/usePersonalizedAI';
 import { usePosts } from '@/hooks/usePosts';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { useCoquiTTS } from '@/hooks/useCoquiTTS';
+import { useDefaultAvatar } from '@/hooks/useDefaultAvatar';
 import FuturisticAvatar3D from './FuturisticAvatar3D';
 import LikeButton from './LikeButton';
 import EmojiPicker from './EmojiPicker';
@@ -126,6 +127,13 @@ const ProfilePage: React.FC = () => {
 
   const { trainings, currentTraining } = usePersonalizedAI();
   const { posts: userPosts, isLoading: postsLoading, fetchPosts } = usePosts(profile?.id);
+  const { 
+    defaultConfig, 
+    saveAsDefault, 
+    linkWithProfile, 
+    createDefaultForNewUsers,
+    loading: defaultAvatarLoading 
+  } = useDefaultAvatar();
   
   // Voice functionality
   const { isListening, transcript, startListening, stopListening, resetTranscript } = useVoiceInput();
@@ -184,6 +192,11 @@ const ProfilePage: React.FC = () => {
     const getCurrentUser = async () => {
       const { data } = await supabase.auth.getUser();
       setCurrentUser(data.user);
+      
+      // Create default avatar for new users
+      if (data.user) {
+        await createDefaultForNewUsers();
+      }
     };
     getCurrentUser();
   }, []);
@@ -501,6 +514,26 @@ const ProfilePage: React.FC = () => {
     setIsEmojiPickerOpen(false);
   };
 
+  const handleSaveAsDefault = async () => {
+    if (!profile || !avatarConfig || !currentUser) return;
+    
+    try {
+      // Use the default avatar hook to save as default
+      const success = await saveAsDefault(avatarConfig.id);
+      if (success) {
+        // Also link with profile for immediate display update
+        await linkWithProfile(avatarConfig.id);
+      }
+    } catch (error) {
+      console.error('Error setting default avatar:', error);
+      toast({
+        title: "Error",
+        description: "Failed to set default avatar",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-4">
@@ -586,7 +619,7 @@ const ProfilePage: React.FC = () => {
               </p>
             </div>
 
-            {/* 3D Avatar Preview - Larger and More Prominent */}
+            {/* 3D Avatar Preview - Larger and More Prominent with Default Avatar Saving */}
             <div className="px-6 pb-6">
               <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-800/40 via-blue-900/20 to-slate-800/40 border border-slate-600/30 shadow-inner">
                 <FuturisticAvatar3D
@@ -608,6 +641,20 @@ const ProfilePage: React.FC = () => {
                     <MessageCircle className="h-6 w-6" />
                   </Button>
                 </div>
+                
+                {/* Save as Default Avatar Button for first-time users */}
+                {isOwnProfile && avatarConfig && (
+                  <div className="absolute top-4 right-4">
+                    <Button
+                      size="sm"
+                      className="bg-gradient-to-r from-purple-600/90 to-indigo-600/90 hover:from-purple-700/90 hover:to-indigo-700/90 text-white rounded-xl px-3 py-2 backdrop-blur-sm border border-purple-400/30 shadow-lg hover:shadow-purple-500/30 transition-all duration-300 hover:scale-105"
+                      onClick={handleSaveAsDefault}
+                    >
+                      <User className="h-4 w-4 mr-1" />
+                      Set Default
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -879,75 +926,71 @@ const ProfilePage: React.FC = () => {
                           }
                           value={chatMessage}
                           onChange={(e) => setChatMessage(e.target.value)}
-                          className={`w-full bg-gradient-to-r from-slate-800/60 to-slate-700/60 border-2 border-slate-600/50 text-white placeholder-slate-400 pr-44 py-5 text-sm rounded-2xl focus:border-blue-500/70 focus:ring-4 focus:ring-blue-500/20 shadow-xl backdrop-blur-md transition-all duration-300 ${
-                            isRecording ? 'border-red-500/70 shadow-red-500/30 bg-gradient-to-r from-red-900/20 to-slate-800/60' : ''
+                          className={`w-full bg-gradient-to-r from-slate-800/80 to-slate-700/80 border-2 border-slate-600/50 text-white placeholder-slate-400 pr-36 py-6 text-base rounded-3xl focus:border-blue-500/70 focus:ring-4 focus:ring-blue-500/20 shadow-2xl backdrop-blur-md transition-all duration-300 ${
+                            isRecording ? 'border-red-500/70 shadow-red-500/30 bg-gradient-to-r from-red-900/20 to-slate-800/80' : ''
                           } ${
-                            isPlaying ? 'border-green-500/70 shadow-green-500/30 bg-gradient-to-r from-green-900/20 to-slate-800/60' : ''
+                            isPlaying ? 'border-green-500/70 shadow-green-500/30 bg-gradient-to-r from-green-900/20 to-slate-800/80' : ''
                           }`}
                           disabled={isTalking || isLoading}
                         />
                         
-                        {/* Professional Voice Input Button with Coqui STT */}
-                        <Button
+                        {/* Redesigned Voice Input Button with Gradient */}
+                        <button
                           type="button"
-                          size="sm"
                           onClick={handleVoiceToggle}
-                          className={`absolute right-36 top-1/2 -translate-y-1/2 px-4 py-3 rounded-xl transition-all duration-300 shadow-xl border-2 ${
+                          className={`absolute right-28 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full transition-all duration-300 flex items-center justify-center ${
                             isRecording 
-                              ? 'bg-gradient-to-br from-red-600 via-red-700 to-red-800 hover:from-red-700 hover:via-red-800 hover:to-red-900 text-white border-red-400/60 shadow-red-500/40 animate-pulse scale-105' 
-                              : 'bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 hover:from-slate-600 hover:via-slate-500 hover:to-slate-600 text-slate-200 border-slate-400/40 hover:shadow-blue-500/30 hover:scale-105'
+                              ? 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/40 scale-110' 
+                              : 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 shadow-lg shadow-blue-500/30 hover:scale-110'
                           }`}
                           disabled={isLoading}
                           title={isRecording ? "Stop Coqui STT recording" : "Start Coqui STT voice input"}
                         >
-                          {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-                        </Button>
+                          {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                        </button>
 
-                        {/* Professional Voice Output Button with Personalized TTS */}
-                        <Button
+                        {/* Redesigned Voice Output Button with Gradient */}
+                        <button
                           type="button"
-                          size="sm"
                           onClick={handleVoiceOutput}
-                          className={`absolute right-28 top-1/2 -translate-y-1/2 px-4 py-3 rounded-xl transition-all duration-300 shadow-xl border-2 ${
+                          className={`absolute right-20 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full transition-all duration-300 flex items-center justify-center ${
                             isPlaying 
-                              ? 'bg-gradient-to-br from-green-600 via-green-700 to-green-800 hover:from-green-700 hover:via-green-800 hover:to-green-900 text-white border-green-400/60 shadow-green-500/40 animate-pulse scale-105' 
-                              : 'bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 hover:from-slate-600 hover:via-slate-500 hover:to-slate-600 text-slate-200 border-slate-400/40 hover:shadow-green-500/30 hover:scale-105'
+                              ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/40 scale-110' 
+                              : 'bg-gradient-to-br from-purple-500 to-violet-600 text-white hover:from-purple-600 hover:to-violet-700 shadow-lg shadow-purple-500/30 hover:scale-110'
                           }`}
                           disabled={isLoading}
                           title={isPlaying ? "Stop personalized voice output" : "Play last message with personalized voice"}
                         >
-                          {isPlaying ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-                        </Button>
+                          {isPlaying ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                        </button>
 
-                        {/* Professional Emoji Button */}
-                        <Button
+                        {/* Redesigned Emoji Button with Gradient */}
+                        <button
                           type="button"
-                          size="sm"
                           onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
-                          className={`absolute right-20 top-1/2 -translate-y-1/2 px-4 py-3 rounded-xl transition-all duration-300 shadow-xl border-2 ${
+                          className={`absolute right-12 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full transition-all duration-300 flex items-center justify-center ${
                             isEmojiPickerOpen
-                              ? 'bg-gradient-to-br from-yellow-600 via-orange-600 to-yellow-700 hover:from-yellow-700 hover:via-orange-700 hover:to-yellow-800 text-white border-yellow-400/60 shadow-yellow-500/40 scale-105'
-                              : 'bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 hover:from-slate-600 hover:via-slate-500 hover:to-slate-600 text-slate-200 border-slate-400/40 hover:shadow-yellow-500/30 hover:scale-105'
+                              ? 'bg-gradient-to-br from-yellow-500 to-orange-600 text-white shadow-lg shadow-yellow-500/40 scale-110'
+                              : 'bg-gradient-to-br from-amber-500 to-yellow-600 text-white hover:from-amber-600 hover:to-yellow-700 shadow-lg shadow-amber-500/30 hover:scale-110'
                           }`}
                           title="Add emoji to message"
                         >
-                          <Smile className="w-5 h-5" />
-                        </Button>
+                          <Smile className="w-4 h-4" />
+                        </button>
                         
-                        {/* Professional Send Button */}
-                        <Button
+                        {/* Redesigned Send Button with Enhanced Gradient */}
+                        <button
                           type="submit"
-                          size="sm"
-                          className={`absolute right-2 top-1/2 -translate-y-1/2 px-4 py-3 rounded-xl transition-all duration-300 shadow-xl border-2 ${
+                          className={`absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full transition-all duration-300 flex items-center justify-center ${
                             chatMessage.trim()
-                              ? 'bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 text-white border-blue-400/60 shadow-blue-500/40 hover:scale-110 active:scale-95'
-                              : 'bg-gradient-to-br from-slate-600 via-slate-700 to-slate-600 text-slate-400 border-slate-500/40 cursor-not-allowed opacity-60'
+                              ? 'bg-gradient-to-br from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white shadow-lg shadow-cyan-500/30 hover:scale-110 active:scale-95'
+                              : 'bg-gradient-to-br from-slate-600 to-slate-700 text-slate-400 cursor-not-allowed opacity-50'
                           }`}
                           disabled={isTalking || isLoading || !chatMessage.trim()}
                           title="Send message"
                         >
-                          <Send className="w-5 h-5" />
-                        </Button>
+                          <Send className="w-4 h-4" />
+                        </button>
 
                         {/* Enhanced Emoji Picker */}
                         <EmojiPicker 
