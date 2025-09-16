@@ -97,6 +97,8 @@ interface ChatMessage {
   sender: 'user' | 'avatar';
   senderName?: string;
   senderAvatar?: string;
+  isVoiceMessage?: boolean;
+  voiceTranscript?: string;
 }
 
 const ProfilePage: React.FC = () => {
@@ -113,6 +115,8 @@ const ProfilePage: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [topChatMessage, setTopChatMessage] = useState('');
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState('');
   const { toast } = useToast();
 
   const {
@@ -322,19 +326,24 @@ const ProfilePage: React.FC = () => {
       return;
     }
     
-    // Add user message
+    // Add user message (check if it's a voice message)
+    const isVoiceInput = transcript.trim() && transcript.trim() === messageContent;
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       content: messageContent,
       timestamp: new Date().toISOString(),
       sender: 'user',
       senderName: currentUser.email?.split('@')[0] || 'User',
-      senderAvatar: undefined
+      senderAvatar: currentUser?.user_metadata?.avatar_url,
+      isVoiceMessage: isVoiceInput,
+      voiceTranscript: isVoiceInput ? messageContent : undefined
     };
     
     setChatMessages(prev => [...prev, userMessage]);
     setChatMessage('');
     resetTranscript();
+    setVoiceTranscript('');
+    setIsTyping(true);
     setIsTalking(true);
     
     // Store conversation in database
@@ -379,6 +388,7 @@ const ProfilePage: React.FC = () => {
       };
       
       setChatMessages(prev => [...prev, aiResponse]);
+      setIsTyping(false);
       setIsTalking(false);
       
       // Auto-play AI response with personalized voice using Coqui TTS
@@ -426,6 +436,7 @@ const ProfilePage: React.FC = () => {
   useEffect(() => {
     if (transcript && transcript.trim()) {
       setChatMessage(transcript);
+      setVoiceTranscript(transcript);
     }
   }, [transcript]);
 
@@ -840,11 +851,17 @@ const ProfilePage: React.FC = () => {
                         </div>
                         <div className={`flex-1 ${message.sender === 'avatar' ? 'flex justify-end' : ''}`}>
                           <div className={message.sender === 'avatar' ? '' : 'max-w-xs'}>
-                            <div className={`px-4 py-3 rounded-2xl ${
+                             <div className={`px-4 py-3 rounded-2xl ${
                               message.sender === 'avatar' 
                                 ? 'bg-slate-700/50 border border-slate-600/30 rounded-tr-md max-w-xs' 
                                 : 'bg-blue-600/20 border border-blue-500/30 rounded-tl-md'
                             }`}>
+                              {message.isVoiceMessage && (
+                                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-600/20">
+                                  <Volume2 className="w-3 h-3 text-purple-400" />
+                                  <span className="text-xs text-purple-400 font-medium">Voice Message</span>
+                                </div>
+                              )}
                               <p className={`text-sm ${
                                 message.sender === 'avatar' ? 'text-slate-200' : 'text-blue-100'
                               }`}>
@@ -864,7 +881,7 @@ const ProfilePage: React.FC = () => {
                       </div>
                     ))}
 
-                    {isTalking && (
+                    {(isTalking || isTyping) && (
                       <div className="flex items-start gap-3 flex-row-reverse">
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
                           <div className="w-full h-8 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
@@ -890,7 +907,9 @@ const ProfilePage: React.FC = () => {
                                   <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
                                   <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                                 </div>
-                                <span className="text-xs text-slate-400">AI is thinking...</span>
+                                <span className="text-xs text-slate-400">
+                                  {isTyping ? "AI is generating response..." : "AI is thinking..."}
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -909,6 +928,8 @@ const ProfilePage: React.FC = () => {
                               ? "🎤 Recording with Coqui STT... Speak clearly" 
                               : isLoading 
                               ? "🔊 Processing with personalized voice..." 
+                              : isTyping
+                              ? "⏳ AI is generating response..."
                               : "💬 Type your message, use voice input, or add emojis..."
                           }
                           value={chatMessage}
@@ -917,8 +938,10 @@ const ProfilePage: React.FC = () => {
                             isRecording ? 'border-red-500/70 shadow-red-500/30 bg-gradient-to-r from-red-900/20 to-slate-800/80' : ''
                           } ${
                             isPlaying ? 'border-green-500/70 shadow-green-500/30 bg-gradient-to-r from-green-900/20 to-slate-800/80' : ''
+                          } ${
+                            isTyping ? 'border-yellow-500/70 shadow-yellow-500/30 bg-gradient-to-r from-yellow-900/20 to-slate-800/80' : ''
                           }`}
-                          disabled={isTalking || isLoading}
+                          disabled={isTalking || isLoading || isTyping}
                         />
                         
                         {/* Redesigned Voice Input Button with Gradient */}
@@ -973,7 +996,7 @@ const ProfilePage: React.FC = () => {
                               ? 'bg-gradient-to-br from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white shadow-lg shadow-cyan-500/30 hover:scale-110 active:scale-95'
                               : 'bg-gradient-to-br from-slate-600 to-slate-700 text-slate-400 cursor-not-allowed opacity-50'
                           }`}
-                          disabled={isTalking || isLoading || !chatMessage.trim()}
+                          disabled={isTalking || isLoading || isTyping || !chatMessage.trim()}
                           title="Send message"
                         >
                           <Send className="w-4 h-4" />
