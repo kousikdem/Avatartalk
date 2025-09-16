@@ -344,7 +344,7 @@ const ProfilePage: React.FC = () => {
     resetTranscript();
     setVoiceTranscript('');
     setIsTyping(true);
-    setIsTalking(true);
+    // Don't set isTalking to true here
     
     // Store conversation in database
     try {
@@ -362,65 +362,9 @@ const ProfilePage: React.FC = () => {
       console.error('Error storing chat message:', error);
     }
     
-    // Generate personalized AI response
-    setTimeout(async () => {
-      let responseContent = '';
-      
-      // Create more natural responses without AI origin references
-      const topics = messageContent.toLowerCase();
-      if (topics.includes('hello') || topics.includes('hi')) {
-        responseContent = `Hello there! It's wonderful to connect with you. I'm excited to share my experiences and insights with you. What would you like to know about?`;
-      } else if (topics.includes('help') || topics.includes('advice')) {
-        responseContent = `I'd be happy to help you with that! From my experience and knowledge in ${profile.profession || 'various fields'}, I can offer some valuable insights. What specific area would you like guidance on?`;
-      } else if (topics.includes('career') || topics.includes('work')) {
-        responseContent = `Career development is such an important topic! In my field of ${profile.profession || 'work'}, I've learned that success comes from continuous learning and authentic connections. What career aspect interests you most?`;
-      } else {
-        responseContent = `That's a fascinating topic! I love discussing these kinds of subjects. ${profile.bio ? `Given my background in ${profile.bio.slice(0, 50)}...` : 'From my experience,'} I believe there are several interesting angles to explore. What specific aspect would you like to dive deeper into?`;
-      }
-      
-      const aiResponse: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        content: responseContent,
-        timestamp: new Date().toISOString(),
-        sender: 'avatar',
-        senderName: profile.display_name || profile.username,
-        senderAvatar: profile.avatar_url || profile.profile_pic_url
-      };
-      
-      setChatMessages(prev => [...prev, aiResponse]);
-      setIsTyping(false);
-      setIsTalking(false);
-      
-      // Auto-play AI response with personalized voice using Coqui TTS
-      try {
-        await synthesizeSpeech(aiResponse.content, {
-          voice: 'neural',
-          speed: 1.0,
-          language: 'en-US'
-        });
-      } catch (error) {
-        console.error('Error with voice synthesis:', error);
-      }
-      
-      // Update conversation count in stats
-      try {
-        await supabase
-          .from('user_stats')
-          .update({ 
-            total_conversations: (userStats?.total_conversations || 0) + 1,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', profile.id);
-      } catch (error) {
-        console.error('Error updating conversation count:', error);
-      }
-      
-      toast({
-        title: "Response Generated",
-        description: "Personalized response with natural conversation flow",
-        duration: 3000,
-      });
-    }, 1500 + Math.random() * 1500); // Random delay 1.5-3 seconds
+    // Just finish the message sending without auto AI response
+    setIsTyping(false);
+    setIsTalking(false);
   };
 
   const shareProfile = () => {
@@ -647,7 +591,7 @@ const ProfilePage: React.FC = () => {
                   <Button
                     size="sm"
                     className="bg-gradient-to-r from-blue-600/90 to-cyan-600/90 hover:from-blue-700/90 hover:to-cyan-700/90 text-white rounded-full w-14 h-14 p-0 backdrop-blur-sm border border-blue-400/30 shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-110"
-                    onClick={() => setIsTalking(true)}
+                    onClick={() => {}} // Just enable conversation mode, no auto-response
                   >
                     <MessageCircle className="h-6 w-6" />
                   </Button>
@@ -662,7 +606,7 @@ const ProfilePage: React.FC = () => {
                 {/* Left Side - Subscribe Button (wider - 3 columns, moved left) */}
                 <Button
                   className="col-span-3 bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-                  onClick={() => setIsTalking(true)}
+                    onClick={() => {}} // Just a visual button, no auto-response
                 >
                   <Sparkles className="h-5 w-5" />
                   Subscribe - $9.99/mo
@@ -941,7 +885,7 @@ const ProfilePage: React.FC = () => {
                           } ${
                             isTyping ? 'border-yellow-500/70 shadow-yellow-500/30 bg-gradient-to-r from-yellow-900/20 to-slate-800/80' : ''
                           }`}
-                          disabled={isTalking || isLoading}
+                          disabled={isLoading}
                         />
                         
                         {/* Redesigned Voice Input Button with Gradient */}
@@ -996,7 +940,7 @@ const ProfilePage: React.FC = () => {
                               ? 'bg-gradient-to-br from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white shadow-lg shadow-cyan-500/30 hover:scale-110 active:scale-95'
                               : 'bg-gradient-to-br from-slate-600 to-slate-700 text-slate-400 cursor-not-allowed opacity-50'
                           }`}
-                          disabled={isTalking || isLoading || !chatMessage.trim()}
+                          disabled={isLoading || !chatMessage.trim()}
                           title="Send message"
                         >
                           <Send className="w-4 h-4" />
