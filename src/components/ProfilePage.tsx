@@ -941,7 +941,7 @@ const ProfilePage: React.FC = () => {
                           } ${
                             isTyping ? 'border-yellow-500/70 shadow-yellow-500/30 bg-gradient-to-r from-yellow-900/20 to-slate-800/80' : ''
                           }`}
-                          disabled={isTalking || isLoading || isTyping}
+                          disabled={isTalking || isLoading}
                         />
                         
                         {/* Redesigned Voice Input Button with Gradient */}
@@ -996,7 +996,7 @@ const ProfilePage: React.FC = () => {
                               ? 'bg-gradient-to-br from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white shadow-lg shadow-cyan-500/30 hover:scale-110 active:scale-95'
                               : 'bg-gradient-to-br from-slate-600 to-slate-700 text-slate-400 cursor-not-allowed opacity-50'
                           }`}
-                          disabled={isTalking || isLoading || isTyping || !chatMessage.trim()}
+                          disabled={isTalking || isLoading || !chatMessage.trim()}
                           title="Send message"
                         >
                           <Send className="w-4 h-4" />
@@ -1090,10 +1090,9 @@ const ProfilePage: React.FC = () => {
 
 
             {/* Social Links Section */}
-            <div className="px-6 pt-0 pb-6">
-
+            <div className="px-6 pt-4 pb-6 border-t border-slate-700/30">
               {/* Social Links Row */}
-              <div className="flex items-center justify-center gap-1 overflow-x-auto scrollbar-hide">
+              <div className="flex items-center justify-center gap-2 overflow-x-auto scrollbar-hide pt-2">
                 <Button
                   variant="ghost"
                   size="sm"
