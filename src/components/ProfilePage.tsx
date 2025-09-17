@@ -211,6 +211,13 @@ const ProfilePage: React.FC = () => {
     }
   }, [username]);
 
+  // Load posts when profile is loaded
+  useEffect(() => {
+    if (profile?.id) {
+      fetchPosts();
+    }
+  }, [profile?.id, fetchPosts]);
+
   const fetchProfile = async () => {
     try {
       // First fetch profile by username
