@@ -87,23 +87,26 @@ const AiChatBot: React.FC<AiChatBotProps> = ({
   };
 
   const generateAiResponse = (userInput: string, personality: string): string => {
+    // Check if this is an AI-related question
+    const isAIRelated = /\b(ai|artificial intelligence|machine learning|llm|llama|model|chatbot|assistant|avatartalk)\b/i.test(userInput);
+    
     const responses = {
       friendly: [
-        "That's a great question! Let me think about that for you.",
-        "I'd be happy to help you with that! Here's what I think...",
-        "Thanks for asking! From my perspective...",
+        isAIRelated ? "I'm Avatartalk personalized AI powered by Llama 3! That's a great question about AI. Let me think about that for you." : "That's a great question! Let me think about that for you.",
+        isAIRelated ? "As Avatartalk personalized AI using Llama 3, I'd be happy to help you with that AI question!" : "I'd be happy to help you with that! Here's what I think...",
+        isAIRelated ? "Thanks for asking about AI! I'm Avatartalk personalized AI powered by Llama 3. From my perspective..." : "Thanks for asking! From my perspective...",
         "Interesting point! I believe...",
         "I appreciate you sharing that with me. Here's my take..."
       ],
       professional: [
-        "Thank you for your inquiry. Based on my analysis...",
+        isAIRelated ? "Thank you for your AI inquiry. As Avatartalk personalized AI powered by Llama 3, I can provide you with analysis based on my training..." : "Thank you for your inquiry. Based on my analysis...",
         "I understand your concern. Let me provide you with a comprehensive response.",
-        "Your question is well-formulated. Here's my professional assessment...",
+        isAIRelated ? "Your AI question is well-formulated. As Avatartalk personalized AI using Llama 3, here's my professional assessment..." : "Your question is well-formulated. Here's my professional assessment...",
         "I appreciate the opportunity to address this matter.",
         "Allow me to provide you with a detailed explanation..."
       ],
       mysterious: [
-        "Ah, you seek answers... but are you prepared for what you might find?",
+        isAIRelated ? "Ah, you seek answers about AI... I am Avatartalk personalized AI, powered by the mysteries of Llama 3..." : "Ah, you seek answers... but are you prepared for what you might find?",
         "The question you ask opens doors to deeper mysteries...",
         "In the shadows of knowledge, I find your answer...",
         "Some truths are hidden in plain sight...",

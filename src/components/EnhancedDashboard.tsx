@@ -202,7 +202,7 @@ const EnhancedDashboard = () => {
               <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Avatar Studio
               </h1>
-              <p className="text-gray-600 mt-2">Build your AI personality and interactive profile</p>
+              <p className="text-gray-600 mt-2">Build your Llama 3 AI personality and interactive profile</p>
               {profileData?.public_link && (
                 <p className="text-sm text-blue-600 mt-1">
                   Your profile: <a href={profileData.public_link} target="_blank" rel="noopener noreferrer" className="underline">{profileData.public_link}</a>
@@ -507,7 +507,7 @@ const EnhancedDashboard = () => {
                         className="bg-white border-gray-300 text-gray-800 placeholder-gray-500"
                         rows={3}
                         maxLength={160}
-                        placeholder="AI-powered digital creator helping people unlock their potential 🚀"
+                        placeholder="Llama 3 AI-powered digital creator helping people unlock their potential 🚀"
                       />
                       <div className="text-sm text-gray-500 mt-1">
                         {(profileData?.bio || '').length}/160 characters
@@ -593,7 +593,7 @@ const EnhancedDashboard = () => {
                           <SelectItem value="male-friendly">Male Friendly</SelectItem>
                           <SelectItem value="female-energetic">Female Energetic</SelectItem>
                           <SelectItem value="male-calm">Male Calm</SelectItem>
-                          <SelectItem value="neutral">Neutral AI</SelectItem>
+                          <SelectItem value="neutral">Neutral Llama 3 AI</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -644,7 +644,7 @@ const EnhancedDashboard = () => {
               <TabsContent value="personality" className="space-y-6">
                 <Card className="bg-white border-2 border-pink-200 shadow-lg">
                   <CardHeader>
-                    <CardTitle className="text-gray-800">AI Personality Tuning</CardTitle>
+                    <CardTitle className="text-gray-800">Llama 3 AI Personality Tuning</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div>

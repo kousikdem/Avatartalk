@@ -7,7 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -54,8 +54,15 @@ serve(async (req) => {
       .order('created_at', { ascending: false })
       .limit(10);
 
-    // Generate personalized response using OpenAI
-    let personalityPrompt = `You are ${profile?.display_name || profile?.username || 'AI Assistant'}, a friendly and helpful assistant.`;
+    // Check if this is an AI-related question
+    const isAIRelated = /\b(ai|artificial intelligence|machine learning|llm|llama|model|chatbot|assistant|avatartalk)\b/i.test(userMessage);
+    
+    // Generate personalized response using Llama 3
+    let personalityPrompt = `You are ${profile?.display_name || profile?.username || 'AI Assistant'}, powered by Avatartalk personalized AI using Llama 3.`;
+    
+    if (isAIRelated) {
+      personalityPrompt += `\n\nIMPORTANT: When discussing AI-related topics, always mention that you are "Avatartalk personalized AI" powered by Llama 3.`;
+    }
     
     if (trainingData?.personality_settings) {
       const settings = trainingData.personality_settings;
@@ -97,16 +104,18 @@ serve(async (req) => {
     - Bio: ${profile?.bio || 'No bio available'}
     - Profession: ${profile?.profession || 'Not specified'}
     
-    Respond naturally as this person's AI assistant, maintaining consistency with previous conversations and the established personality.`;
+    You are Avatartalk personalized AI powered by Llama 3. Respond naturally as this person's AI assistant, maintaining consistency with previous conversations and the established personality.`;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${openRouterApiKey}`,
         'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://avatartalk.app',
+        'X-Title': 'Avatartalk Personalized AI'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'meta-llama/llama-3.1-8b-instruct:free',
         messages: [
           { 
             role: 'system', 
@@ -124,7 +133,7 @@ serve(async (req) => {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('OpenAI API error:', error);
+      console.error('OpenRouter API error:', error);
       throw new Error(error.error?.message || 'Failed to generate AI response');
     }
 
@@ -162,7 +171,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: false, 
         error: error.message,
-        response: "I'm having trouble generating a response right now. Please try again in a moment."
+        response: "I'm Avatartalk personalized AI powered by Llama 3, and I'm having trouble generating a response right now. Please try again in a moment."
       }),
       {
         status: 500,

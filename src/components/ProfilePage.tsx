@@ -400,10 +400,10 @@ const ProfilePage: React.FC = () => {
       // Add fallback response
       const fallbackMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        content: "I'm having trouble responding right now. Please try again in a moment.",
+        content: "I'm Avatartalk personalized AI powered by Llama 3, and I'm having trouble responding right now. Please try again in a moment.",
         timestamp: new Date().toISOString(),
         sender: 'avatar',
-        senderName: profile.display_name || profile.username || 'AI',
+        senderName: profile.display_name || profile.username || 'Avatartalk AI',
         senderAvatar: profile.avatar_url || profile.profile_pic_url,
         isVoiceMessage: false
       };
@@ -412,7 +412,7 @@ const ProfilePage: React.FC = () => {
       
       toast({
         title: "Response Error",
-        description: "Failed to generate AI response. Please try again.",
+        description: "Failed to generate Llama 3 AI response. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -497,8 +497,8 @@ const ProfilePage: React.FC = () => {
           });
           
           toast({
-            title: "Playing AI Response",
-            description: "Voice output with personalized tone",
+            title: "Playing Llama 3 AI Response",
+            description: "Voice output with Avatartalk personalized tone",
           });
         } catch (error) {
           console.error('Voice output error:', error);
@@ -917,9 +917,9 @@ const ProfilePage: React.FC = () => {
                                   <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
                                   <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                                 </div>
-                                <span className="text-xs text-slate-400">
-                                  {isTyping ? "AI is generating response..." : "AI is thinking..."}
-                                </span>
+                                 <span className="text-xs text-slate-400">
+                                   {isTyping ? "Llama 3 AI is generating response..." : "Avatartalk AI is thinking..."}
+                                 </span>
                               </div>
                             </div>
                           </div>
@@ -938,9 +938,9 @@ const ProfilePage: React.FC = () => {
                               ? "🎤 Recording with Coqui STT... Speak clearly" 
                               : isLoading 
                               ? "🔊 Processing with personalized voice..." 
-                              : isTyping
-                              ? "⏳ AI is generating response..."
-                              : "💬 Type your message, use voice input, or add emojis..."
+                               : isTyping
+                               ? "⏳ Llama 3 AI is generating response..."
+                               : "💬 Chat with Avatartalk personalized AI powered by Llama 3..."
                           }
                           value={chatMessage}
                           onChange={(e) => setChatMessage(e.target.value)}
@@ -1036,7 +1036,7 @@ const ProfilePage: React.FC = () => {
                             <div className="bg-gradient-to-r from-blue-600/95 to-indigo-700/95 text-white px-6 py-3 rounded-2xl text-sm font-semibold shadow-2xl backdrop-blur-md border border-blue-400/30">
                               <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                                🔊 Generating personalized voice response...
+                                🔊 Generating personalized Llama 3 voice response...
                               </div>
                             </div>
                           </div>
