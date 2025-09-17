@@ -344,27 +344,74 @@ const ProfilePage: React.FC = () => {
     resetTranscript();
     setVoiceTranscript('');
     setIsTyping(true);
-    // Don't set isTalking to true here
     
-    // Store conversation in database
     try {
-      await supabase.from('behavior_learning_data').insert({
-        user_id: profile.id,
-        interaction_type: 'chat_message',
-        user_input: messageContent,
-        ai_response: '',
-        context_data: { 
-          timestamp: new Date().toISOString(),
-          sender: currentUser.email?.split('@')[0] || 'User'
+      // Generate personalized AI response
+      const response = await supabase.functions.invoke('personalized-ai-response', {
+        body: {
+          userMessage: messageContent,
+          profileId: profile.id,
+          userId: currentUser.id
         }
       });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      const { response: aiResponse } = response.data;
+
+      // Add AI response
+      const aiMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        content: aiResponse,
+        timestamp: new Date().toISOString(),
+        sender: 'avatar',
+        senderName: profile.display_name || profile.username || 'AI',
+        senderAvatar: profile.avatar_url || profile.profile_pic_url,
+        isVoiceMessage: false
+      };
+
+      setChatMessages(prev => [...prev, aiMessage]);
+      
+      // Play voice response if available
+      if (aiResponse) {
+        try {
+          await synthesizeSpeech(aiResponse, {
+            voice: 'neural',
+            speed: 1.0,
+            language: 'en-US'
+          });
+        } catch (voiceError) {
+          console.error('Voice synthesis error:', voiceError);
+        }
+      }
+
     } catch (error) {
-      console.error('Error storing chat message:', error);
+      console.error('Error generating AI response:', error);
+      
+      // Add fallback response
+      const fallbackMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        content: "I'm having trouble responding right now. Please try again in a moment.",
+        timestamp: new Date().toISOString(),
+        sender: 'avatar',
+        senderName: profile.display_name || profile.username || 'AI',
+        senderAvatar: profile.avatar_url || profile.profile_pic_url,
+        isVoiceMessage: false
+      };
+
+      setChatMessages(prev => [...prev, fallbackMessage]);
+      
+      toast({
+        title: "Response Error",
+        description: "Failed to generate AI response. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTyping(false);
+      setIsTalking(false);
     }
-    
-    // Just finish the message sending without auto AI response
-    setIsTyping(false);
-    setIsTalking(false);
   };
 
   const shareProfile = () => {
@@ -535,17 +582,17 @@ const ProfilePage: React.FC = () => {
                 <div className="relative">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
                     <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
-                      {profile?.avatar_url || profile?.profile_pic_url ? (
-                        <img 
-                          src={profile.avatar_url || profile.profile_pic_url} 
-                          alt={profileData.displayName}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-lg font-bold text-white">
-                          {profileData.avatarInitial}
-                        </span>
-                      )}
+                       {profile?.profile_pic_url || profile?.avatar_url ? (
+                         <img 
+                           src={profile.profile_pic_url || profile.avatar_url} 
+                           alt={profileData.displayName}
+                           className="w-full h-full object-cover"
+                         />
+                       ) : (
+                         <span className="text-lg font-bold text-white">
+                           {profileData.avatarInitial}
+                         </span>
+                       )}
                     </div>
                   </div>
                   <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 shadow-sm" />
@@ -770,29 +817,41 @@ const ProfilePage: React.FC = () => {
                 {/* Chat Tab */}
                 <TabsContent value="chat" className="mt-6 space-y-4">
                   <div className="flex flex-col space-y-4 max-h-80 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
-                    {chatMessages.map((message) => (
-                      <div key={message.id} className={`flex items-start gap-3 ${message.sender === 'avatar' ? 'flex-row-reverse' : ''}`}>
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
-                          <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
-                            {message.sender === 'avatar' ? (
-                              message.senderAvatar ? (
-                                <img 
-                                  src={message.senderAvatar} 
-                                  alt={message.senderName}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <span className="text-xs font-bold text-white">
-                                  {(message.senderName?.[0] || 'A').toUpperCase()}
-                                </span>
-                              )
-                            ) : (
-                              <span className="text-xs font-bold text-white">
-                                {(message.senderName?.[0] || 'U').toUpperCase()}
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                     {chatMessages.filter(message => 
+                       // Show only messages from the current user or messages sent to/from the profile owner
+                       message.sender === 'user' && currentUser ? 
+                         (message.senderName === (currentUser.email?.split('@')[0] || 'User')) : true
+                     ).map((message) => (
+                       <div key={message.id} className={`flex items-start gap-3 ${message.sender === 'avatar' ? 'flex-row-reverse' : ''}`}>
+                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                           <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                             {message.sender === 'avatar' ? (
+                               message.senderAvatar ? (
+                                 <img 
+                                   src={message.senderAvatar} 
+                                   alt={message.senderName}
+                                   className="w-full h-full object-cover"
+                                 />
+                               ) : (
+                                 <span className="text-xs font-bold text-white">
+                                   {(message.senderName?.[0] || 'A').toUpperCase()}
+                                 </span>
+                               )
+                             ) : (
+                               currentUser?.user_metadata?.avatar_url ? (
+                                 <img 
+                                   src={currentUser.user_metadata.avatar_url} 
+                                   alt={message.senderName}
+                                   className="w-full h-full object-cover"
+                                 />
+                               ) : (
+                                 <span className="text-xs font-bold text-white">
+                                   {(message.senderName?.[0] || 'U').toUpperCase()}
+                                 </span>
+                               )
+                             )}
+                           </div>
+                         </div>
                         <div className={`flex-1 ${message.sender === 'avatar' ? 'flex justify-end' : ''}`}>
                           <div className={message.sender === 'avatar' ? '' : 'max-w-xs'}>
                              <div className={`px-4 py-3 rounded-2xl ${
@@ -829,17 +888,17 @@ const ProfilePage: React.FC = () => {
                       <div className="flex items-start gap-3 flex-row-reverse">
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
                           <div className="w-full h-8 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
-                            {profile?.avatar_url || profile?.profile_pic_url ? (
-                              <img 
-                                src={profile.avatar_url || profile.profile_pic_url} 
-                                alt={profileData.displayName}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-xs font-bold text-white">
-                                {profileData.avatarInitial}
-                              </span>
-                            )}
+                             {profile?.profile_pic_url || profile?.avatar_url ? (
+                               <img 
+                                 src={profile.profile_pic_url || profile.avatar_url} 
+                                 alt={profileData.displayName}
+                                 className="w-full h-full object-cover"
+                               />
+                             ) : (
+                               <span className="text-xs font-bold text-white">
+                                 {profileData.avatarInitial}
+                               </span>
+                             )}
                           </div>
                         </div>
                         <div className="flex-1 flex justify-end">
