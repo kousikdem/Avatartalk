@@ -13,6 +13,8 @@ import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { useCoquiTTS } from '@/hooks/useCoquiTTS';
 import { useDefaultAvatar } from '@/hooks/useDefaultAvatar';
 import FuturisticAvatar3D from './FuturisticAvatar3D';
+import EnhancedAvatarPreview from './EnhancedAvatarPreview';
+import SocialFeed from './SocialFeed';
 import LikeButton from './LikeButton';
 import EmojiPicker from './EmojiPicker';
 import {

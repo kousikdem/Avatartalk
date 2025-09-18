@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Share2, Users, MessageSquare, BarChart3, Calendar } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import ShareModal from './ShareModal';
-import RealisticAvatarBuilder from './RealisticAvatarBuilder';
+import EnhancedAvatarPreview from './EnhancedAvatarPreview';
+import RealtimeFollowWidget from './RealtimeFollowWidget';
 import { useFollows } from '@/hooks/useFollows';
 
 const Dashboard = () => {
@@ -147,58 +148,20 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* 3D Avatar Preview - Enhanced Full Body Preview */}
-        <div className="lg:col-span-1">
-          <RealisticAvatarBuilder showInDashboard={true} />
+        {/* Enhanced Avatar Preview and Social Activity */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* Enhanced Avatar with Real-time Features */}
+          <EnhancedAvatarPreview
+            userId={profileData?.id}
+            isLarge={true}
+            showControls={true}
+            enableVoice={true}
+            isInteractive={true}
+            onAvatarClick={() => window.location.href = '/avatar'}
+          />
           
-          {/* Avatar Link */}
-          <Card className="mt-6 bg-gradient-to-br from-slate-50 to-gray-50 border border-slate-200">
-            <CardContent className="p-4 text-center">
-              <p className="text-sm text-gray-600 mb-3">Your avatar is connected to your profile</p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => window.location.href = `/profile/${profileData?.username || 'user'}`}
-                className="bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0 hover:from-blue-600 hover:to-purple-700"
-              >
-                View Profile
-              </Button>
-            </CardContent>
-          </Card>
-          
-          {/* Following Section */}
-          {following.length > 0 && (
-            <Card className="mt-6 bg-gradient-to-br from-slate-50 to-gray-50 border border-slate-200">
-              <CardHeader>
-                <CardTitle className="text-gray-900 flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Following ({followingCount})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {following.slice(0, 3).map((follow) => (
-                    <div key={follow.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                        {follow.following?.display_name?.[0] || follow.following?.username?.[0] || 'U'}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">
-                          {follow.following?.display_name || follow.following?.username || 'User'}
-                        </p>
-                        <p className="text-xs text-gray-500">@{follow.following?.username || 'username'}</p>
-                      </div>
-                    </div>
-                  ))}
-                  {following.length > 3 && (
-                    <p className="text-xs text-gray-500 text-center pt-2">
-                      +{following.length - 3} more
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {/* Real-time Social Activity Widget */}
+          <RealtimeFollowWidget currentUserId={profileData?.id} />
         </div>
       </div>
 
