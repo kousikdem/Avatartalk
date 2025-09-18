@@ -152,7 +152,7 @@ const EnhancedAvatarPreview: React.FC<EnhancedAvatarPreviewProps> = ({
             onClick={handleAvatarInteraction}
           >
             <FuturisticAvatar3D
-              talking={talking || isPlaying}
+              isTalking={talking || isPlaying}
               avatarStyle={getAvatarStyle()}
               mood={getAvatarMood()}
               onInteraction={handleAvatarInteraction}
