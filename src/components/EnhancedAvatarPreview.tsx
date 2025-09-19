@@ -44,7 +44,7 @@ const EnhancedAvatarPreview: React.FC<EnhancedAvatarPreviewProps> = ({
   const { defaultConfig, loading: defaultLoading } = useDefaultAvatar();
   const { settings, loading: settingsLoading } = useAvatarSettings();
 
-  // Real-time avatar configuration updates
+  // Real-time avatar configuration updates with enhanced synchronization
   useEffect(() => {
     if (!userId) return;
 
@@ -67,9 +67,9 @@ const EnhancedAvatarPreview: React.FC<EnhancedAvatarPreviewProps> = ({
 
     fetchAvatarConfig();
 
-    // Set up real-time subscription
+    // Enhanced real-time subscription for avatar synchronization
     const channel = supabase
-      .channel('avatar-config-changes')
+      .channel(`avatar-sync-${userId}`)
       .on(
         'postgres_changes',
         {
@@ -79,8 +79,27 @@ const EnhancedAvatarPreview: React.FC<EnhancedAvatarPreviewProps> = ({
           filter: `user_id=eq.${userId}`
         },
         (payload) => {
+          console.log('Avatar config real-time update:', payload);
           if (payload.new && (payload.new as any).is_active) {
             setAvatarConfig(payload.new as AvatarConfig);
+          } else if (payload.eventType === 'DELETE') {
+            setAvatarConfig(null);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public', 
+          table: 'avatar_settings',
+          filter: `user_id=eq.${userId}`
+        },
+        (payload) => {
+          console.log('Avatar settings real-time update:', payload);
+          // Trigger a refresh when avatar settings change
+          if (payload.new) {
+            fetchAvatarConfig();
           }
         }
       )
