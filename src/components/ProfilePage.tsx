@@ -17,6 +17,10 @@ import EnhancedAvatarPreview from './EnhancedAvatarPreview';
 import SocialFeed from './SocialFeed';
 import LikeButton from './LikeButton';
 import EmojiPicker from './EmojiPicker';
+import FollowButton from './FollowButton';
+import SocialShareDropdown from './SocialShareDropdown';
+import EnhancedShareButton from './EnhancedShareButton';
+import PostCard from './PostCard';
 import {
   MessageCircle,
   Share2,
@@ -669,34 +673,13 @@ const ProfilePage: React.FC = () => {
                 </Button>
                 
                 {/* Right Side - Follow Button (2 columns) with enhanced gradient */}
-                {!isOwnProfile && currentUser ? (
-                  <Button
-                    variant={isFollowing(profile.id) ? "default" : "outline"}
-                    className={`col-span-2 py-4 rounded-2xl text-base font-semibold transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${
-                      isFollowing(profile.id) 
-                        ? 'bg-gradient-to-r from-emerald-500 via-teal-600 to-cyan-600 hover:from-emerald-600 hover:via-teal-700 hover:to-cyan-700 text-white border-0 shadow-lg hover:shadow-xl' 
-                        : 'bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:via-indigo-700 hover:to-blue-700 border-0 text-white shadow-lg hover:shadow-xl'
-                    }`}
-                    onClick={handleFollow}
-                    disabled={followsLoading}
-                  >
-                    {followsLoading ? (
-                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Users className="h-4 w-4" />
-                    )}
-                    {isFollowing(profile.id) ? 'Following' : 'Follow'}
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    className="col-span-2 border-slate-500/30 bg-slate-800/40 text-slate-400 py-4 rounded-2xl text-base font-semibold cursor-not-allowed flex items-center justify-center gap-2"
-                    disabled
-                  >
-                    <Users className="h-4 w-4" />
-                    Follow
-                  </Button>
-                )}
+                <FollowButton
+                  targetUserId={profile.id}
+                  targetUsername={profile.username}
+                  targetDisplayName={profile.display_name}
+                  currentUserId={currentUser?.id}
+                  className="col-span-2"
+                />
               </div>
             </div>
 
@@ -748,79 +731,15 @@ const ProfilePage: React.FC = () => {
                   </TabsTrigger>
                 </TabsList>
 
-                {/* Posts Tab */}
+                {/* Posts Tab - Enhanced with PostCard */}
                 <TabsContent value="posts" className="space-y-4 mt-6">
-                  <AnimatePresence>
-                    {userPosts.length > 0 ? (
-                      userPosts.map((post, index) => (
-                        <motion.div
-                          key={post.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                        >
-                          <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm">
-                            <CardContent className="p-4">
-                              <p className="text-slate-300 mb-3 text-sm">{post.content}</p>
-                              {post.media_url && (
-                                <div className="mb-3 rounded-lg overflow-hidden">
-                                  {post.media_type?.startsWith('image/') ? (
-                                    <img src={post.media_url} alt="Post media" className="w-full h-auto" />
-                                  ) : (
-                                    <div className="bg-slate-700/50 p-3 rounded-lg">
-                                      <p className="text-xs text-slate-400">Media: {post.media_type}</p>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                              <div className="flex items-center justify-between pt-2 border-t border-slate-600/20">
-                                <div className="flex items-center gap-4">
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="flex items-center gap-1 text-slate-400 hover:text-red-400 p-1 hover:bg-red-500/10 rounded-lg transition-all duration-200"
-                                  >
-                                    <Heart className="w-3 h-3" />
-                                    <span className="text-xs">{post.likes_count || 0}</span>
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="flex items-center gap-1 text-slate-400 hover:text-blue-400 p-1 hover:bg-blue-500/10 rounded-lg transition-all duration-200"
-                                  >
-                                    <MessageCircle className="w-3 h-3" />
-                                    <span className="text-xs">{post.comments_count || 0}</span>
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="flex items-center gap-1 text-slate-400 hover:text-green-400 p-1 hover:bg-green-500/10 rounded-lg transition-all duration-200"
-                                  >
-                                    <Share2 className="w-3 h-3" />
-                                  </Button>
-                                </div>
-                                <div className="text-xs text-slate-500">
-                                  {new Date(post.created_at).toLocaleDateString()}
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
-                      ))
-                    ) : (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                      >
-                        <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm">
-                          <CardContent className="p-8 text-center">
-                            <Sparkles className="w-8 h-8 mx-auto mb-3 text-blue-400" />
-                            <p className="text-slate-400 text-sm">No posts yet. Check back soon for updates!</p>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  <div className="bg-slate-800/20 rounded-xl p-1">
+                    <SocialFeed 
+                      userId={profile.id}
+                      showCreatePost={isOwnProfile}
+                      feedType="user"
+                    />
+                  </div>
                 </TabsContent>
 
                 {/* Chat Tab */}
@@ -1101,7 +1020,7 @@ const ProfilePage: React.FC = () => {
             </div>
 
 
-            {/* Social Links Section */}
+            {/* Enhanced Social Links Section */}
             <div className="px-6 pt-4 pb-6 border-t border-slate-700/30">
               {/* Social Links Row */}
               <div className="flex items-center justify-center gap-2 overflow-x-auto scrollbar-hide pt-2">
@@ -1133,27 +1052,22 @@ const ProfilePage: React.FC = () => {
                 >
                   <Facebook className="h-4 w-4" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
-                >
-                  <Instagram className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
-                >
-                  <Globe className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={shareProfile}
-                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px] ml-2"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+                
+                {/* Three Dot Button - After fourth button */}
+                <SocialShareDropdown
+                  profileUrl={window.location.href}
+                  username={profile.username}
+                />
+                
+                {/* Enhanced Share Button with Gradient */}
+                <EnhancedShareButton
+                  profileUrl={window.location.href}
+                  username={profile.username}
+                  displayName={profile.display_name}
+                  variant="gradient"
+                  showText={false}
+                  className="ml-2"
+                />
               </div>
             </div>
           </CardContent>
