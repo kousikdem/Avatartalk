@@ -734,11 +734,35 @@ const ProfilePage: React.FC = () => {
                 {/* Posts Tab - Enhanced with PostCard */}
                 <TabsContent value="posts" className="space-y-4 mt-6">
                   <div className="bg-slate-800/20 rounded-xl p-1">
-                    <SocialFeed 
-                      userId={profile.id}
-                      showCreatePost={isOwnProfile}
-                      feedType="user"
-                    />
+                    {userPosts.length > 0 ? (
+                      <div className="space-y-4">
+                        {userPosts.map((post) => (
+                          <PostCard
+                            key={post.id}
+                            post={{
+                              ...post,
+                              profile: {
+                                username: profile.username,
+                                display_name: profile.display_name,
+                                avatar_url: profile.avatar_url || profile.profile_pic_url
+                              }
+                            }}
+                            currentUserId={currentUser?.id}
+                            onPostUpdate={() => fetchPosts()}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12 text-slate-400">
+                        <div className="w-16 h-16 bg-slate-700/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <MessageCircle className="w-8 h-8" />
+                        </div>
+                        <p className="text-lg font-medium mb-2">No posts yet</p>
+                        <p className="text-sm opacity-70">
+                          {isOwnProfile ? "Share your first post to get started!" : "This user hasn't posted anything yet."}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
 

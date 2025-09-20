@@ -2,12 +2,15 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Share2, Users, MessageSquare, BarChart3, Calendar } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Share2, Users, MessageSquare, BarChart3, Calendar, Settings } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useFollows } from '@/hooks/useFollows';
 import ShareModal from './ShareModal';
 import EnhancedAvatarPreview from './EnhancedAvatarPreview';
 import RealtimeFollowWidget from './RealtimeFollowWidget';
-import { useFollows } from '@/hooks/useFollows';
+import DashboardFeed from './DashboardFeed';
+import AvatarSyncDashboard from './AvatarSyncDashboard';
 
 const Dashboard = () => {
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -27,11 +30,11 @@ const Dashboard = () => {
 
   return (
     <div className="w-full max-w-7xl mx-auto bg-white p-6">
-      {/* Header Section with Share Button */}
+      {/* Header */}
       <div className="flex items-center justify-between mb-6 sm:mb-8">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Welcome Back!</h1>
-          <p className="text-gray-600">Manage your AI avatar and track your interactions</p>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-blue-700 to-indigo-700 bg-clip-text text-transparent">Enhanced Dashboard</h1>
+          <p className="text-gray-600 mt-1">Manage your AI avatar and posts</p>
         </div>
         
         <Button 
@@ -93,59 +96,36 @@ const Dashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          {/* Quick Actions */}
-          <Card className="bg-gradient-to-br from-slate-50 to-gray-50 border border-slate-200">
-            <CardHeader>
-              <CardTitle className="text-gray-900">Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Button 
-                  variant="outline" 
-                  className="h-16 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 hover:from-blue-600 hover:via-purple-600 hover:to-indigo-700 text-white border-0"
-                  onClick={() => window.location.href = '/avatar'}
-                >
-                  <div className="text-center">
-                    <Users className="h-6 w-6 mx-auto mb-1" />
-                    <div className="text-sm">Setup Avatar</div>
-                  </div>
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  className="h-16 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 hover:from-purple-600 hover:via-pink-600 hover:to-red-600 text-white border-0"
-                  onClick={() => window.location.href = '/products'}
-                >
-                  <div className="text-center">
-                    <MessageSquare className="h-6 w-6 mx-auto mb-1" />
-                    <div className="text-sm">View Products</div>
-                  </div>
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  className="h-16 bg-gradient-to-r from-green-500 via-teal-500 to-blue-500 hover:from-green-600 hover:via-teal-600 hover:to-blue-600 text-white border-0"
-                  onClick={() => window.location.href = '/calendar'}
-                >
-                  <div className="text-center">
-                    <Calendar className="h-6 w-6 mx-auto mb-1" />
-                    <div className="text-sm">Calendar</div>
-                  </div>
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  className="h-16 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 hover:from-orange-600 hover:via-red-600 hover:to-pink-600 text-white border-0"
-                  onClick={() => window.location.href = '/analytics'}
-                >
-                  <div className="text-center">
-                    <BarChart3 className="h-6 w-6 mx-auto mb-1" />
-                    <div className="text-sm">Analytics</div>
-                  </div>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Dashboard Feed with Tabs */}
+          <Tabs defaultValue="feed" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 bg-white">
+              <TabsTrigger value="feed">Feed</TabsTrigger>
+              <TabsTrigger value="avatar">Avatar</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="feed" className="mt-6">
+              <DashboardFeed />
+            </TabsContent>
+
+            <TabsContent value="avatar" className="mt-6">
+              <AvatarSyncDashboard />
+            </TabsContent>
+
+            <TabsContent value="settings" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="w-5 h-5" />
+                    Dashboard Settings
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600">Settings panel coming soon...</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
 
         {/* Enhanced Avatar Preview and Social Activity */}

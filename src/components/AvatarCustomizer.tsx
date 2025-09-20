@@ -1,10 +1,14 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, Ruler, Palette } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { User, Ruler, Palette, Save, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useRealtimeAvatar } from '@/hooks/useRealtimeAvatar';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AvatarCustomizerProps {
   config: any;
@@ -12,6 +16,68 @@ interface AvatarCustomizerProps {
 }
 
 const AvatarCustomizer: React.FC<AvatarCustomizerProps> = ({ config, onConfigChange }) => {
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const { toast } = useToast();
+  const { updateAvatarConfig, saving } = useRealtimeAvatar();
+
+  React.useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setCurrentUser(data.user);
+    };
+    getCurrentUser();
+  }, []);
+
+  const handleSaveAvatar = async () => {
+    if (!currentUser) {
+      toast({
+        title: "Error",
+        description: "Please sign in to save avatar",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Flatten the config structure for database storage
+      const avatarData = {
+        user_id: currentUser.id,
+        avatar_name: config.name || 'My Avatar',
+        gender: config.body?.gender || 'male',
+        age_category: config.body?.age > 50 ? 'senior' : config.body?.age > 30 ? 'adult' : 'young',
+        height: config.body?.height || 170,
+        weight: config.body?.weight || 70,
+        muscle_definition: config.body?.muscle || 50,
+        body_fat: config.body?.fat || 20,
+        skin_tone: config.face?.skinTone || '#F1C27D',
+        hair_style: config.face?.hairStyle || 'short',
+        hair_color: config.face?.hairColor || '#8B4513',
+        eye_color: config.face?.eyeColor || 'brown',
+        eye_shape: 'almond',
+        nose_shape: 'straight',
+        lip_shape: 'normal',
+        ear_shape: 'normal',
+        head_shape: 'oval',
+        current_pose: 'standing',
+        current_expression: 'neutral',
+        is_active: true
+      };
+
+      await updateAvatarConfig(avatarData);
+      
+      toast({
+        title: "Avatar Saved",
+        description: "Your avatar has been saved successfully!",
+      });
+    } catch (error) {
+      console.error('Error saving avatar:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save avatar. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
   return (
     <div className="space-y-6">
       {/* Basic Information */}
@@ -226,6 +292,29 @@ const AvatarCustomizer: React.FC<AvatarCustomizerProps> = ({ config, onConfigCha
               </SelectContent>
             </Select>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Save Avatar Button */}
+      <Card>
+        <CardContent className="p-4">
+          <Button
+            onClick={handleSaveAvatar}
+            disabled={saving || !currentUser}
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving Avatar...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                Save Avatar
+              </>
+            )}
+          </Button>
         </CardContent>
       </Card>
     </div>
