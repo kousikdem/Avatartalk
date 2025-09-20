@@ -98,9 +98,10 @@ const Dashboard = () => {
         <div className="lg:col-span-2">
           {/* Dashboard Feed with Tabs */}
           <Tabs defaultValue="feed" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-white">
+            <TabsList className="grid w-full grid-cols-4 bg-white">
               <TabsTrigger value="feed">Feed</TabsTrigger>
               <TabsTrigger value="avatar">Avatar</TabsTrigger>
+              <TabsTrigger value="followers">Followers</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
 
@@ -110,6 +111,38 @@ const Dashboard = () => {
 
             <TabsContent value="avatar" className="mt-6">
               <AvatarSyncDashboard />
+            </TabsContent>
+
+            <TabsContent value="followers" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    Followers & Connections
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <Button 
+                      onClick={() => window.location.href = '/followers'} 
+                      className="w-full gradient-button"
+                    >
+                      <Users className="w-4 h-4 mr-2" />
+                      View All Followers & Visitors
+                    </Button>
+                    <div className="grid grid-cols-2 gap-4 text-center">
+                      <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg">
+                        <div className="text-2xl font-bold text-blue-600">{followersCount}</div>
+                        <div className="text-sm text-gray-600">Followers</div>
+                      </div>
+                      <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg">
+                        <div className="text-2xl font-bold text-purple-600">{followingCount}</div>
+                        <div className="text-sm text-gray-600">Following</div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="settings" className="mt-6">

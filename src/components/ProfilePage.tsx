@@ -12,14 +12,14 @@ import { usePosts } from '@/hooks/usePosts';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { useCoquiTTS } from '@/hooks/useCoquiTTS';
 import { useDefaultAvatar } from '@/hooks/useDefaultAvatar';
+import useVisitorTracking from '@/hooks/useVisitorTracking';
 import FuturisticAvatar3D from './FuturisticAvatar3D';
 import EnhancedAvatarPreview from './EnhancedAvatarPreview';
 import SocialFeed from './SocialFeed';
 import LikeButton from './LikeButton';
 import EmojiPicker from './EmojiPicker';
 import FollowButton from './FollowButton';
-import SocialShareDropdown from './SocialShareDropdown';
-import EnhancedShareButton from './EnhancedShareButton';
+import EnhancedSocialLinks from './EnhancedSocialLinks';
 import PostCard from './PostCard';
 import {
   MessageCircle,
@@ -54,6 +54,16 @@ interface Profile {
   avatar_url: string;
   profile_pic_url?: string;
   profession: string;
+}
+
+interface SocialLinks {
+  twitter?: string;
+  instagram?: string;
+  linkedin?: string;
+  facebook?: string;
+  youtube?: string;
+  website?: string;
+  [key: string]: string | undefined;
 }
 
 interface AvatarConfiguration {
@@ -110,6 +120,7 @@ interface ChatMessage {
 const ProfilePage: React.FC = () => {
   const { username } = useParams<{ username: string }>();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [socialLinks, setSocialLinks] = useState<SocialLinks>({});
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -134,6 +145,13 @@ const ProfilePage: React.FC = () => {
     loading: followsLoading,
     refetch: refetchFollows
   } = useFollows();
+
+  // Enable visitor tracking for this profile
+  useVisitorTracking({
+    profileId: profile?.id || '',
+    currentUserId: currentUser?.id,
+    enabled: !!profile?.id && currentUser?.id !== profile?.id
+  });
 
   const { trainings, currentTraining } = usePersonalizedAI();
   const { posts: userPosts, isLoading: postsLoading, fetchPosts } = usePosts(profile?.id);
@@ -241,21 +259,29 @@ const ProfilePage: React.FC = () => {
       setProfile(profileData);
 
       // Now fetch related data using the profile ID
-      const [statsResponse, productsResponse, avatarResponse] = await Promise.all([
+      const [statsResponse, productsResponse, avatarResponse, socialLinksResponse] = await Promise.all([
         supabase.from('user_stats').select('*').eq('user_id', profileData.id).maybeSingle(),
         supabase.from('products').select('*').eq('user_id', profileData.id).eq('status', 'published').order('created_at', { ascending: false }).limit(6),
-        supabase.from('avatar_configurations').select('*').eq('user_id', profileData.id).eq('is_active', true).maybeSingle()
+        supabase.from('avatar_configurations').select('*').eq('user_id', profileData.id).eq('is_active', true).maybeSingle(),
+        supabase.from('social_links').select('*').eq('user_id', profileData.id).maybeSingle()
       ]);
 
       setUserStats(statsResponse.data);
       setProducts(productsResponse.data || []);
       setAvatarConfig(avatarResponse.data);
+      setSocialLinks(socialLinksResponse.data || {});
 
       // Track profile visit (fire and forget)
       if (profileData.id !== currentUser?.id) {
+        // Don't await this to avoid blocking the UI
         supabase.from('profile_visitors').insert({
           visitor_id: currentUser?.id || null,
           visited_profile_id: profileData.id,
+        }).then(() => {
+          // Increment profile views in user_stats
+          supabase.from('user_stats')
+            .update({ profile_views: (statsResponse.data?.profile_views || 0) + 1 })
+            .eq('user_id', profileData.id);
         });
       }
 
@@ -707,6 +733,16 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
 
+            {/* Social Links Section - Enhanced with Gradients and Effects */}
+            <div className="px-6 pb-6">
+              <EnhancedSocialLinks
+                socialLinks={socialLinks}
+                profileUrl={`${window.location.origin}/${profile.username}`}
+                username={profile.username}
+                displayName={profile.display_name}
+              />
+            </div>
+
             {/* Content Tabs */}
             <div className="px-6 pb-4">
               <Tabs defaultValue="posts" className="space-y-4">
@@ -731,25 +767,27 @@ const ProfilePage: React.FC = () => {
                   </TabsTrigger>
                 </TabsList>
 
-                {/* Posts Tab - Enhanced with PostCard */}
+                {/* Posts Tab - Enhanced with Wider Width */}
                 <TabsContent value="posts" className="space-y-4 mt-6">
                   <div className="bg-slate-800/20 rounded-xl p-1">
                     {userPosts.length > 0 ? (
-                      <div className="space-y-4">
+                      <div className="space-y-6 px-2">
                         {userPosts.map((post) => (
-                          <PostCard
-                            key={post.id}
-                            post={{
-                              ...post,
-                              profile: {
-                                username: profile.username,
-                                display_name: profile.display_name,
-                                avatar_url: profile.avatar_url || profile.profile_pic_url
-                              }
-                            }}
-                            currentUserId={currentUser?.id}
-                            onPostUpdate={() => fetchPosts()}
-                          />
+                          <div key={post.id} className="w-full">
+                            <PostCard
+                              post={{
+                                ...post,
+                                profile: {
+                                  username: profile.username,
+                                  display_name: profile.display_name,
+                                  avatar_url: profile.avatar_url || profile.profile_pic_url
+                                }
+                              }}
+                              currentUserId={currentUser?.id}
+                              onPostUpdate={() => fetchPosts()}
+                              showComments={true}
+                            />
+                          </div>
                         ))}
                       </div>
                     ) : (
@@ -1075,25 +1113,9 @@ const ProfilePage: React.FC = () => {
                   className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
                 >
                   <Facebook className="h-4 w-4" />
-                </Button>
-                
-                {/* Three Dot Button - After fourth button */}
-                <SocialShareDropdown
-                  profileUrl={window.location.href}
-                  username={profile.username}
-                />
-                
-                {/* Enhanced Share Button with Gradient */}
-                <EnhancedShareButton
-                  profileUrl={window.location.href}
-                  username={profile.username}
-                  displayName={profile.display_name}
-                  variant="gradient"
-                  showText={false}
-                  className="ml-2"
-                />
-              </div>
-            </div>
+                 </Button>
+               </div>
+             </div>
           </CardContent>
         </Card>
       </motion.div>

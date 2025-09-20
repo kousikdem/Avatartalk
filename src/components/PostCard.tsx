@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Heart, MessageCircle, Share2, Send, MoreVertical } from 'lucide-react';
+import EnhancedPostShare from './EnhancedPostShare';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLikes } from '@/hooks/useLikes';
@@ -232,7 +233,7 @@ const PostCard: React.FC<PostCardProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <Card className="mb-6 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+      <Card className="mb-6 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow w-full max-w-none">
         <CardHeader className="pb-3">
           <div className="flex items-center space-x-3">
             <Avatar className="w-10 h-10">
@@ -311,15 +312,11 @@ const PostCard: React.FC<PostCardProps> = ({
               </Button>
             )}
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleShare}
-              className="flex items-center space-x-2 text-gray-500 hover:text-green-500"
-            >
-              <Share2 className="w-5 h-5" />
-              <span>Share</span>
-            </Button>
+            <EnhancedPostShare
+              postId={post.id}
+              postContent={post.content}
+              className="flex items-center space-x-2"
+            />
           </div>
 
           {/* Comments Section */}
