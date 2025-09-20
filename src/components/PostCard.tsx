@@ -233,7 +233,7 @@ const PostCard: React.FC<PostCardProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <Card className="mb-6 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow w-full max-w-4xl mx-auto">
+      <Card className="mb-6 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow w-full max-w-none">
         <CardHeader className="pb-3">
           <div className="flex items-center space-x-3">
             <Avatar className="w-10 h-10">
