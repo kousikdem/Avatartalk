@@ -1083,39 +1083,14 @@ const ProfilePage: React.FC = () => {
 
 
             {/* Enhanced Social Links Section */}
-            <div className="px-6 pt-4 pb-6 border-t border-slate-700/30">
-              {/* Social Links Row */}
-              <div className="flex items-center justify-center gap-2 overflow-x-auto scrollbar-hide pt-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
-                >
-                  <Twitter className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
-                >
-                  <Linkedin className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
-                >
-                  <Youtube className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
-                >
-                  <Facebook className="h-4 w-4" />
-                 </Button>
-               </div>
-             </div>
+            <div className="px-4 pt-3 pb-4 border-t border-slate-700/30">
+              <EnhancedSocialLinks 
+                profileUrl={`${window.location.origin}/${profile?.username}`}
+                username={profile?.username || ''}
+                displayName={profile?.display_name || ''}
+                socialLinks={null}
+              />
+            </div>
           </CardContent>
         </Card>
       </motion.div>

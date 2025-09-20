@@ -1,16 +1,23 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Mic, MicOff, Volume2, VolumeX, Send, Smile, Facebook, X, Instagram, Youtube, Linkedin, Loader2 } from 'lucide-react';
 import EmojiPicker from './EmojiPicker';
 import { LinkCard } from './LinkCard';
 import { useCoquiTTS } from '@/hooks/useCoquiTTS';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ChatMessage {
   message: string;
   timestamp: Date;
   type: 'user' | 'avatar';
+  profile?: {
+    username: string;
+    display_name: string;
+    avatar_url?: string;
+  };
 }
 
 interface SocialLinks {
@@ -32,6 +39,7 @@ interface ChatTabProps {
   setIsEmojiPickerOpen: (open: boolean) => void;
   onEmojiSelect: (emoji: string) => void;
   socialLinks: SocialLinks | null;
+  currentUser?: any;
 }
 
 export const ChatTab: React.FC<ChatTabProps> = ({
@@ -42,8 +50,33 @@ export const ChatTab: React.FC<ChatTabProps> = ({
   isEmojiPickerOpen,
   setIsEmojiPickerOpen,
   onEmojiSelect,
-  socialLinks
+  socialLinks,
+  currentUser
 }) => {
+  const [currentUserProfile, setCurrentUserProfile] = useState<any>(null);
+
+  // Fetch current user profile for chat display
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (currentUser?.id) {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('username, display_name, avatar_url')
+            .eq('id', currentUser.id)
+            .single();
+          
+          if (data && !error) {
+            setCurrentUserProfile(data);
+          }
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+        }
+      }
+    };
+
+    fetchUserProfile();
+  }, [currentUser?.id]);
   // Voice input hook
   const {
     isListening,
@@ -102,8 +135,14 @@ export const ChatTab: React.FC<ChatTabProps> = ({
             {conversations.map((conv, index) => (
               <div
                 key={index}
-                className={`flex ${conv.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex items-start gap-3 ${conv.type === 'user' ? 'justify-end' : 'justify-start'}`}
               >
+                {conv.type === 'avatar' && (
+                  <Avatar className="w-8 h-8 mt-1">
+                    <AvatarImage src="/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png" />
+                    <AvatarFallback>AI</AvatarFallback>
+                  </Avatar>
+                )}
                 <div
                   className={`max-w-[80%] p-3 rounded-lg ${
                     conv.type === 'user'
@@ -116,6 +155,14 @@ export const ChatTab: React.FC<ChatTabProps> = ({
                     {conv.timestamp.toLocaleTimeString()}
                   </p>
                 </div>
+                {conv.type === 'user' && currentUserProfile && (
+                  <Avatar className="w-8 h-8 mt-1">
+                    <AvatarImage src={currentUserProfile.avatar_url} />
+                    <AvatarFallback>
+                      {(currentUserProfile.display_name || currentUserProfile.username || 'U')[0].toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
               </div>
             ))}
             {/* AI suggested links */}
