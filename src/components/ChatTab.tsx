@@ -32,6 +32,8 @@ interface ChatTabProps {
   setIsEmojiPickerOpen: (open: boolean) => void;
   onEmojiSelect: (emoji: string) => void;
   socialLinks: SocialLinks | null;
+  profilePicture?: string;
+  currentUser?: any;
 }
 
 export const ChatTab: React.FC<ChatTabProps> = ({
@@ -42,7 +44,9 @@ export const ChatTab: React.FC<ChatTabProps> = ({
   isEmojiPickerOpen,
   setIsEmojiPickerOpen,
   onEmojiSelect,
-  socialLinks
+  socialLinks,
+  profilePicture,
+  currentUser
 }) => {
   // Voice input hook
   const {
