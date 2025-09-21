@@ -309,41 +309,37 @@ const EnhancedSocialLinks: React.FC<EnhancedSocialLinksProps> = ({
                   transition={{ duration: 0.2 }}
                   className="absolute bottom-full mb-3 right-0 z-50"
                 >
-                   <Card className="bg-slate-900/95 backdrop-blur-sm border border-slate-700/50 shadow-2xl min-w-[300px]">
-                     <CardContent className="p-4">
-                       <h4 className="text-sm font-medium text-white mb-3">More Social Links</h4>
-                       <div className="grid grid-cols-2 gap-3">
-                         {moreSocialLinks.map((social) => (
-                           <Button
-                             key={social.name}
-                             variant="ghost"
-                             size="sm"
-                             onClick={() => {
-                               handleSocialClick(social.url, social.name);
-                               setShowMoreLinks(false);
-                             }}
-                             className={`
-                               flex items-center justify-start gap-3 p-3 h-auto
-                               bg-gradient-to-r ${social.gradient} ${social.hoverGradient}
-                               text-white border-0 rounded-lg
-                               transform hover:scale-105 transition-all duration-200
-                               shadow-md hover:shadow-lg
-                             `}
-                           >
-                             <social.icon className="w-4 h-4" />
-                             <span className="text-sm font-medium">{social.name}</span>
-                           </Button>
-                         ))}
-                       </div>
-                     </CardContent>
-                   </Card>
+                  <Card className="bg-white/95 backdrop-blur-sm border border-gray-200 shadow-2xl min-w-[280px]">
+                    <CardContent className="p-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        {moreSocialLinks.map((social) => (
+                          <Button
+                            key={social.name}
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSocialClick(social.url, social.name)}
+                            className={`
+                              flex items-center justify-start gap-3 p-3 h-auto
+                              bg-gradient-to-r ${social.gradient} ${social.hoverGradient}
+                              text-white border-0 rounded-lg
+                              transform hover:scale-105 transition-all duration-200
+                              shadow-md hover:shadow-lg
+                            `}
+                          >
+                            <social.icon className="w-4 h-4" />
+                            <span className="text-sm font-medium">{social.name}</span>
+                          </Button>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
                 </motion.div>
               </>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Enhanced Share Button with Animation */}
+        {/* Share Button */}
         <div className="relative">
           <Button
             variant="ghost"
@@ -351,16 +347,14 @@ const EnhancedSocialLinks: React.FC<EnhancedSocialLinksProps> = ({
             onClick={() => setShowShareMenu(!showShareMenu)}
             className="
               relative flex items-center gap-2 px-4 py-3 rounded-xl border-0
-              bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500 
-              hover:from-violet-600 hover:via-purple-600 hover:to-indigo-600
-              text-white shadow-lg hover:shadow-xl
+              bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 
+              hover:from-purple-600 hover:via-pink-600 hover:to-red-600
+              text-white shadow-md hover:shadow-lg
               transform hover:scale-110 transition-all duration-300
-              animate-pulse hover:animate-none
-              shadow-violet-500/25 hover:shadow-violet-500/40
             "
           >
-            <Share2 className="w-5 h-5 animate-pulse" />
-            <span className="text-sm font-medium">Share Profile</span>
+            <Share2 className="w-5 h-5" />
+            <span className="text-sm font-medium">Share</span>
           </Button>
 
           {/* Share Menu */}
@@ -378,54 +372,31 @@ const EnhancedSocialLinks: React.FC<EnhancedSocialLinksProps> = ({
                   transition={{ duration: 0.2 }}
                   className="absolute bottom-full mb-3 right-0 z-50"
                 >
-                   <Card className="bg-slate-900/95 backdrop-blur-sm border border-slate-700/50 shadow-2xl min-w-[320px]">
-                     <CardContent className="p-4">
-                       <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-                         <Share2 className="w-4 h-4 text-violet-400" />
-                         Share Profile
-                       </h4>
-                       <div className="grid grid-cols-2 gap-2">
-                         {shareOptions.map((option) => (
-                           <Button
-                             key={option.action}
-                             variant="ghost"
-                             size="sm"
-                             onClick={() => handleShare(option.action)}
-                             className={`
-                               flex items-center justify-start gap-2 p-3 h-auto
-                               bg-gradient-to-r ${option.gradient} ${option.hoverGradient}
-                               text-white border-0 rounded-lg
-                               transform hover:scale-105 transition-all duration-200
-                               shadow-md hover:shadow-lg
-                             `}
-                           >
-                             <option.icon className="w-4 h-4" />
-                             <span className="text-sm font-medium">{option.name}</span>
-                           </Button>
-                         ))}
-                         {/* Copy Link Option */}
-                         <Button
-                           variant="ghost"
-                           size="sm"
-                           onClick={() => {
-                             navigator.clipboard.writeText(profileUrl || window.location.href);
-                             setShowShareMenu(false);
-                             // Show toast if available
-                           }}
-                           className="
-                             flex items-center justify-start gap-2 p-3 h-auto
-                             bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700
-                             text-white border-0 rounded-lg
-                             transform hover:scale-105 transition-all duration-200
-                             shadow-md hover:shadow-lg
-                           "
-                         >
-                           <Share2 className="w-4 h-4" />
-                           <span className="text-sm font-medium">Copy Link</span>
-                         </Button>
-                       </div>
-                     </CardContent>
-                   </Card>
+                  <Card className="bg-white/95 backdrop-blur-sm border border-gray-200 shadow-2xl min-w-[300px]">
+                    <CardContent className="p-4">
+                      <h4 className="text-sm font-medium text-gray-900 mb-3">Share Profile</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {shareOptions.map((option) => (
+                          <Button
+                            key={option.action}
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleShare(option.action)}
+                            className={`
+                              flex items-center justify-start gap-2 p-3 h-auto
+                              bg-gradient-to-r ${option.gradient} ${option.hoverGradient}
+                              text-white border-0 rounded-lg
+                              transform hover:scale-105 transition-all duration-200
+                              shadow-md hover:shadow-lg
+                            `}
+                          >
+                            <option.icon className="w-4 h-4" />
+                            <span className="text-sm font-medium">{option.name}</span>
+                          </Button>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
                 </motion.div>
               </>
             )}
