@@ -94,7 +94,7 @@ export const useDefaultAvatar = () => {
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ 
-          avatar_url: currentProfile?.profile_pic_url || currentProfile?.avatar_url || '/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png',
+          avatar_url: currentProfile?.profile_pic_url || currentProfile?.avatar_url,
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);
@@ -148,7 +148,7 @@ export const useDefaultAvatar = () => {
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
-          avatar_url: currentProfile?.profile_pic_url || currentProfile?.avatar_url || '/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png',
+          avatar_url: currentProfile?.profile_pic_url || currentProfile?.avatar_url,
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);
@@ -188,53 +188,8 @@ export const useDefaultAvatar = () => {
   };
 
   const createDefaultForNewUsers = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) return false;
-
-      // Check if user already has a default avatar
-      const { data: existingConfig } = await supabase
-        .from('avatar_configurations')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (existingConfig) return true; // Already has default
-
-      // Create a default avatar configuration for new users
-      const defaultAvatarConfig = {
-        user_id: user.id,
-        avatar_name: 'Default Avatar',
-        gender: 'male',
-        age_category: 'adult',
-        skin_tone: '#F1C27D',
-        hair_style: 'medium',
-        hair_color: '#8B4513',
-        eye_color: '#8B4513',
-        height: 170,
-        current_pose: 'standing',
-        current_expression: 'neutral',
-        is_active: true
-      };
-
-      const { data: newConfig, error } = await supabase
-        .from('avatar_configurations')
-        .insert(defaultAvatarConfig)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setDefaultConfig(newConfig);
-      await linkWithProfile(newConfig.id);
-
-      return true;
-    } catch (error) {
-      console.error('Error creating default avatar for new user:', error);
-      return false;
-    }
+    // Removed default avatar creation - users must create their own avatars
+    return true;
   };
 
   useEffect(() => {

@@ -89,11 +89,13 @@ interface UserStats {
 
 interface Post {
   id: string;
+  user_id: string;
   content: string;
   media_url?: string;
   media_type?: string;
   likes_count: number;
   comments_count: number;
+  views_count: number;
   created_at: string;
 }
 
@@ -238,9 +240,25 @@ const ProfilePage: React.FC = () => {
   // Load posts when profile is loaded
   useEffect(() => {
     if (profile?.id) {
-      fetchPosts();
+      const fetchUserPosts = async () => {
+        try {
+          const { data: postsData, error } = await supabase
+            .from('posts')
+            .select('*')
+            .eq('user_id', profile.id)
+            .order('created_at', { ascending: false })
+            .limit(10);
+
+          if (error) throw error;
+          setPosts(postsData || []);
+        } catch (error) {
+          console.error('Error fetching user posts:', error);
+        }
+      };
+      
+      fetchUserPosts();
     }
-  }, [profile?.id, fetchPosts]);
+  }, [profile?.id]);
 
   const fetchProfile = async () => {
     try {
@@ -771,10 +789,10 @@ const ProfilePage: React.FC = () => {
                 {/* Posts Tab - Enhanced with Wider Width */}
                 <TabsContent value="posts" className="space-y-4 mt-6">
                   <div className="bg-slate-800/20 rounded-xl p-1">
-                     {userPosts.length > 0 ? (
+                     {posts.length > 0 ? (
                        <div className="space-y-4 px-2">
-                         {userPosts.map((post) => (
-                           <div key={post.id} className="w-full max-w-2xl mx-auto">
+                         {posts.map((post) => (
+                           <div key={post.id} className="w-full max-w-4xl mx-auto">
                              <PostCard
                                post={{
                                  ...post,
@@ -785,7 +803,9 @@ const ProfilePage: React.FC = () => {
                                  }
                                }}
                                currentUserId={currentUser?.id}
-                               onPostUpdate={() => fetchPosts()}
+                               onPostUpdate={(updatedPost) => {
+                                 setPosts(prev => prev.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p));
+                               }}
                                showComments={true}
                              />
                            </div>
@@ -798,7 +818,7 @@ const ProfilePage: React.FC = () => {
                         </div>
                         <p className="text-lg font-medium mb-2">No posts yet</p>
                         <p className="text-sm opacity-70">
-                          {isOwnProfile ? "Share your first post to get started!" : "This user hasn't posted anything yet."}
+                          {currentUser?.id === profile?.id ? "Share your first post to get started!" : "This user hasn't posted anything yet."}
                         </p>
                       </div>
                     )}
@@ -1083,67 +1103,9 @@ const ProfilePage: React.FC = () => {
             </div>
 
 
-            {/* Enhanced Bottom Section */}
+            {/* Enhanced Bottom Section - Removed social media links, only EnhancedSocialLinks component */}
             <div className="px-6 pt-4 pb-6 border-t border-slate-700/30">
-              <div className="flex items-center justify-between">
-                {/* Social Links - Left Side (4 main links) */}
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => socialLinks?.twitter ? window.open(socialLinks.twitter, '_blank') : window.open('https://x.com', '_blank')}
-                    className="p-2 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 hover:from-blue-500/20 hover:to-cyan-500/20 text-blue-400 hover:text-blue-300 rounded-full transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
-                  >
-                    <Twitter className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => socialLinks?.linkedin ? window.open(socialLinks.linkedin, '_blank') : window.open('https://linkedin.com', '_blank')}
-                    className="p-2 bg-gradient-to-br from-blue-600/10 to-indigo-600/10 hover:from-blue-600/20 hover:to-indigo-600/20 text-blue-400 hover:text-blue-300 rounded-full transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
-                  >
-                    <Linkedin className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => socialLinks?.instagram ? window.open(socialLinks.instagram, '_blank') : window.open('https://instagram.com', '_blank')}
-                    className="p-2 bg-gradient-to-br from-pink-500/10 to-red-500/10 hover:from-pink-500/20 hover:to-red-500/20 text-pink-400 hover:text-pink-300 rounded-full transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
-                  >
-                    <Instagram className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => socialLinks?.youtube ? window.open(socialLinks.youtube, '_blank') : window.open('https://youtube.com', '_blank')}
-                    className="p-2 bg-gradient-to-br from-red-500/10 to-orange-500/10 hover:from-red-500/20 hover:to-orange-500/20 text-red-400 hover:text-red-300 rounded-full transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
-                  >
-                    <Youtube className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {/* Right Side - More Options & Share */}
-                <div className="flex items-center gap-2">
-                  {/* More Social Links Button */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="p-2 bg-gradient-to-br from-slate-600/10 to-slate-700/10 hover:from-slate-600/20 hover:to-slate-700/20 text-slate-400 hover:text-slate-300 rounded-full transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
-                  >
-                    <HelpCircle className="h-4 w-4" />
-                  </Button>
-                  
-                  {/* Share Button */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={shareProfile}
-                    className="p-2 bg-gradient-to-br from-green-500/10 to-emerald-500/10 hover:from-green-500/20 hover:to-emerald-500/20 text-green-400 hover:text-green-300 rounded-full transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
-                  >
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+              <EnhancedSocialLinks socialLinks={socialLinks} />
             </div>
           </CardContent>
         </Card>

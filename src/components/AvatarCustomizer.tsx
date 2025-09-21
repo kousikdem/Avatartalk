@@ -64,10 +64,23 @@ const AvatarCustomizer: React.FC<AvatarCustomizerProps> = ({ config, onConfigCha
       };
 
       await updateAvatarConfig(avatarData);
+
+      // Update profile with current avatar configuration
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          avatar_url: config.avatar_url || avatarData.skin_tone,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', currentUser.id);
+
+      if (profileError) {
+        console.error('Error updating profile:', profileError);
+      }
       
       toast({
         title: "Avatar Saved",
-        description: "Your avatar has been saved successfully!",
+        description: "Your avatar has been saved and linked to all previews!",
       });
     } catch (error) {
       console.error('Error saving avatar:', error);
