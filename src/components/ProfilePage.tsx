@@ -185,7 +185,7 @@ const ProfilePage: React.FC = () => {
           timestamp: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
           sender: 'avatar',
           senderName: profile.display_name || profile.username,
-          senderAvatar: profile.avatar_url || profile.profile_pic_url
+          senderAvatar: profile.profile_pic_url || profile.avatar_url
         },
         {
           id: '2', 
@@ -201,7 +201,7 @@ const ProfilePage: React.FC = () => {
           timestamp: new Date(Date.now() - 180000).toISOString(), // 3 minutes ago
           sender: 'avatar',
           senderName: profile.display_name || profile.username,
-          senderAvatar: profile.avatar_url || profile.profile_pic_url
+          senderAvatar: profile.profile_pic_url || profile.avatar_url
         }
       ];
       setChatMessages(initialMessages);
@@ -407,7 +407,7 @@ const ProfilePage: React.FC = () => {
         timestamp: new Date().toISOString(),
         sender: 'avatar',
         senderName: profile.display_name || profile.username || 'AI',
-        senderAvatar: profile.avatar_url || profile.profile_pic_url,
+        senderAvatar: profile.profile_pic_url || profile.avatar_url,
         isVoiceMessage: false
       };
 
@@ -436,7 +436,7 @@ const ProfilePage: React.FC = () => {
         timestamp: new Date().toISOString(),
         sender: 'avatar',
         senderName: profile.display_name || profile.username || 'Avatartalk AI',
-        senderAvatar: profile.avatar_url || profile.profile_pic_url,
+        senderAvatar: profile.profile_pic_url || profile.avatar_url,
         isVoiceMessage: false
       };
 
@@ -620,21 +620,21 @@ const ProfilePage: React.FC = () => {
             <div className="flex items-center justify-between px-6 pt-6 pb-4">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
-                     <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
-                        {profile?.avatar_url || profile?.profile_pic_url ? (
-                          <img 
-                            src={profile.avatar_url || profile.profile_pic_url} 
-                            alt={profileData.displayName}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-lg font-bold text-white">
-                            {profileData.avatarInitial}
-                          </span>
-                        )}
-                     </div>
-                   </div>
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
+                      <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                         {profile?.profile_pic_url || profile?.avatar_url ? (
+                           <img 
+                             src={profile.profile_pic_url || profile.avatar_url} 
+                             alt={profileData.displayName}
+                             className="w-full h-full object-cover"
+                           />
+                         ) : (
+                           <span className="text-lg font-bold text-white">
+                             {profileData.avatarInitial}
+                           </span>
+                         )}
+                      </div>
+                    </div>
                   <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 shadow-sm" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -776,14 +776,14 @@ const ProfilePage: React.FC = () => {
                          {userPosts.map((post) => (
                            <div key={post.id} className="w-full max-w-2xl mx-auto">
                              <PostCard
-                               post={{
-                                 ...post,
-                                 profile: {
-                                   username: profile.username,
-                                   display_name: profile.display_name,
-                                   avatar_url: profile.avatar_url || profile.profile_pic_url
-                                 }
-                               }}
+                                post={{
+                                  ...post,
+                                  profile: {
+                                    username: profile.username,
+                                    display_name: profile.display_name,
+                                    avatar_url: profile.profile_pic_url || profile.avatar_url
+                                  }
+                                }}
                                currentUserId={currentUser?.id}
                                onPostUpdate={() => fetchPosts()}
                                showComments={true}
@@ -814,35 +814,35 @@ const ProfilePage: React.FC = () => {
                          (message.senderName === (currentUser.email?.split('@')[0] || 'User')) : true
                      ).map((message) => (
                        <div key={message.id} className={`flex items-start gap-3 ${message.sender === 'avatar' ? 'flex-row-reverse' : ''}`}>
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
-                            <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
-                              {message.sender === 'avatar' ? (
-                                profile?.avatar_url || profile?.profile_pic_url ? (
-                                  <img 
-                                    src={profile.avatar_url || profile.profile_pic_url} 
-                                    alt={message.senderName}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <span className="text-xs font-bold text-white">
-                                    {(message.senderName?.[0] || 'A').toUpperCase()}
-                                  </span>
-                                )
-                              ) : (
-                                currentUser?.user_metadata?.avatar_url ? (
-                                  <img 
-                                    src={currentUser.user_metadata.avatar_url} 
-                                    alt={message.senderName}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <span className="text-xs font-bold text-white">
-                                    {(message.senderName?.[0] || 'U').toUpperCase()}
-                                  </span>
-                                )
-                              )}
-                            </div>
-                          </div>
+                           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                             <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                               {message.sender === 'avatar' ? (
+                                 profile?.profile_pic_url || profile?.avatar_url ? (
+                                   <img 
+                                     src={profile.profile_pic_url || profile.avatar_url} 
+                                     alt={message.senderName}
+                                     className="w-full h-full object-cover"
+                                   />
+                                 ) : (
+                                   <span className="text-xs font-bold text-white">
+                                     {(message.senderName?.[0] || 'A').toUpperCase()}
+                                   </span>
+                                 )
+                               ) : (
+                                 currentUser?.user_metadata?.avatar_url || currentUser?.user_metadata?.picture ? (
+                                   <img 
+                                     src={currentUser.user_metadata.avatar_url || currentUser.user_metadata.picture} 
+                                     alt={message.senderName}
+                                     className="w-full h-full object-cover"
+                                   />
+                                 ) : (
+                                   <span className="text-xs font-bold text-white">
+                                     {(message.senderName?.[0] || 'U').toUpperCase()}
+                                   </span>
+                                 )
+                               )}
+                             </div>
+                           </div>
                         <div className={`flex-1 ${message.sender === 'avatar' ? 'flex justify-end' : ''}`}>
                           <div className={message.sender === 'avatar' ? '' : 'max-w-xs'}>
                              <div className={`px-4 py-3 rounded-2xl ${
@@ -877,21 +877,21 @@ const ProfilePage: React.FC = () => {
 
                     {(isTalking || isTyping) && (
                       <div className="flex items-start gap-3 flex-row-reverse">
-                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
-                           <div className="w-full h-8 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
-                              {profile?.avatar_url || profile?.profile_pic_url ? (
-                                <img 
-                                  src={profile.avatar_url || profile.profile_pic_url} 
-                                  alt={profileData.displayName}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <span className="text-xs font-bold text-white">
-                                  {profileData.avatarInitial}
-                                </span>
-                              )}
-                           </div>
-                         </div>
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                            <div className="w-full h-8 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                               {profile?.profile_pic_url || profile?.avatar_url ? (
+                                 <img 
+                                   src={profile.profile_pic_url || profile.avatar_url} 
+                                   alt={profileData.displayName}
+                                   className="w-full h-full object-cover"
+                                 />
+                               ) : (
+                                 <span className="text-xs font-bold text-white">
+                                   {profileData.avatarInitial}
+                                 </span>
+                               )}
+                            </div>
+                          </div>
                         <div className="flex-1 flex justify-end">
                           <div>
                             <div className="bg-slate-700/50 border border-slate-600/30 rounded-2xl rounded-tr-md px-4 py-3 max-w-xs">
@@ -1083,68 +1083,6 @@ const ProfilePage: React.FC = () => {
             </div>
 
 
-            {/* Enhanced Bottom Section */}
-            <div className="px-6 pt-4 pb-6 border-t border-slate-700/30">
-              <div className="flex items-center justify-between">
-                {/* Social Links - Left Side (4 main links) */}
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => socialLinks?.twitter ? window.open(socialLinks.twitter, '_blank') : window.open('https://x.com', '_blank')}
-                    className="p-2 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 hover:from-blue-500/20 hover:to-cyan-500/20 text-blue-400 hover:text-blue-300 rounded-full transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
-                  >
-                    <Twitter className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => socialLinks?.linkedin ? window.open(socialLinks.linkedin, '_blank') : window.open('https://linkedin.com', '_blank')}
-                    className="p-2 bg-gradient-to-br from-blue-600/10 to-indigo-600/10 hover:from-blue-600/20 hover:to-indigo-600/20 text-blue-400 hover:text-blue-300 rounded-full transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
-                  >
-                    <Linkedin className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => socialLinks?.instagram ? window.open(socialLinks.instagram, '_blank') : window.open('https://instagram.com', '_blank')}
-                    className="p-2 bg-gradient-to-br from-pink-500/10 to-red-500/10 hover:from-pink-500/20 hover:to-red-500/20 text-pink-400 hover:text-pink-300 rounded-full transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
-                  >
-                    <Instagram className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => socialLinks?.youtube ? window.open(socialLinks.youtube, '_blank') : window.open('https://youtube.com', '_blank')}
-                    className="p-2 bg-gradient-to-br from-red-500/10 to-orange-500/10 hover:from-red-500/20 hover:to-orange-500/20 text-red-400 hover:text-red-300 rounded-full transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
-                  >
-                    <Youtube className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {/* Right Side - More Options & Share */}
-                <div className="flex items-center gap-2">
-                  {/* More Social Links Button */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="p-2 bg-gradient-to-br from-slate-600/10 to-slate-700/10 hover:from-slate-600/20 hover:to-slate-700/20 text-slate-400 hover:text-slate-300 rounded-full transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
-                  >
-                    <HelpCircle className="h-4 w-4" />
-                  </Button>
-                  
-                  {/* Share Button */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={shareProfile}
-                    className="p-2 bg-gradient-to-br from-green-500/10 to-emerald-500/10 hover:from-green-500/20 hover:to-emerald-500/20 text-green-400 hover:text-green-300 rounded-full transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
-                  >
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </motion.div>
