@@ -126,6 +126,7 @@ const ProfilePage: React.FC = () => {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfiguration | null>(null);
   const [loading, setLoading] = useState(true);
   const [chatMessage, setChatMessage] = useState('');
@@ -277,15 +278,17 @@ const ProfilePage: React.FC = () => {
       setProfile(profileData);
 
       // Now fetch related data using the profile ID
-      const [statsResponse, productsResponse, avatarResponse, socialLinksResponse] = await Promise.all([
+      const [statsResponse, productsResponse, eventsResponse, avatarResponse, socialLinksResponse] = await Promise.all([
         supabase.from('user_stats').select('*').eq('user_id', profileData.id).maybeSingle(),
         supabase.from('products').select('*').eq('user_id', profileData.id).eq('status', 'published').order('created_at', { ascending: false }).limit(6),
+        supabase.from('events').select('*').eq('user_id', profileData.id).order('created_at', { ascending: false }).limit(6),
         supabase.from('avatar_configurations').select('*').eq('user_id', profileData.id).eq('is_active', true).maybeSingle(),
         supabase.from('social_links').select('*').eq('user_id', profileData.id).maybeSingle()
       ]);
 
       setUserStats(statsResponse.data);
       setProducts(productsResponse.data || []);
+      setEvents(eventsResponse.data || []);
       setAvatarConfig(avatarResponse.data);
       setSocialLinks(socialLinksResponse.data || {});
 
@@ -693,7 +696,7 @@ const ProfilePage: React.FC = () => {
                 <div className="absolute inset-0 rounded-3xl border border-blue-400/10 pointer-events-none" />
                 
                 {/* Floating Talk to Me Button */}
-                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+                <div className="absolute bottom-4 left-4">
                   <Button
                     size="sm"
                     className="bg-gradient-to-r from-blue-600/90 to-cyan-600/90 hover:from-blue-700/90 hover:to-cyan-700/90 text-white rounded-full w-14 h-14 p-0 backdrop-blur-sm border border-blue-400/30 shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-110"
@@ -702,31 +705,33 @@ const ProfilePage: React.FC = () => {
                     <MessageCircle className="h-6 w-6" />
                   </Button>
                 </div>
+
+                {/* Follow Button at bottom right of avatar preview */}
+                {!isOwnProfile && (
+                  <div className="absolute bottom-4 right-4">
+                    <FollowButton
+                      targetUserId={profile.id}
+                      targetUsername={profile.username}
+                      targetDisplayName={profile.display_name}
+                      currentUserId={currentUser?.id}
+                      variant="compact"
+                      className="backdrop-blur-sm shadow-lg"
+                    />
+                  </div>
+                )}
                 
               </div>
             </div>
 
-            {/* Action Buttons - Subscribe (left wider) and Follow (right) */}
+            {/* Action Buttons - Just Subscribe for own profile or full width Subscribe for others */}
             <div className="px-6 pb-6">
-              <div className="grid grid-cols-5 gap-3">
-                {/* Left Side - Subscribe Button (wider - 3 columns, moved left) */}
-                <Button
-                  className="col-span-3 bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-                    onClick={() => {}} // Just a visual button, no auto-response
-                >
-                  <Sparkles className="h-5 w-5" />
-                  Subscribe - $9.99/mo
-                </Button>
-                
-                {/* Right Side - Follow Button (2 columns) with enhanced gradient */}
-                <FollowButton
-                  targetUserId={profile.id}
-                  targetUsername={profile.username}
-                  targetDisplayName={profile.display_name}
-                  currentUserId={currentUser?.id}
-                  className="col-span-2"
-                />
-              </div>
+              <Button
+                className="w-full bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                onClick={() => {}} // Just a visual button, no auto-response
+              >
+                <Sparkles className="h-5 w-5" />
+                Subscribe - $9.99/mo
+              </Button>
             </div>
 
             {/* Stats - Three Column Layout */}
@@ -1042,39 +1047,80 @@ const ProfilePage: React.FC = () => {
                   </div>
                 </TabsContent>
 
-                {/* Products Tab */}
+                {/* Products & Events Tab */}
                 <TabsContent value="products" className="mt-6">
                   <AnimatePresence>
-                    {products.length > 0 ? (
+                    {(products.length > 0 || events.length > 0) ? (
                       <div className="space-y-4">
-                        {products.map((product, index) => (
-                          <motion.div
-                            key={product.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.1 }}
-                          >
-                            <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm hover:border-slate-600/50 transition-colors">
-                              <CardContent className="p-4">
-                                {product.thumbnail_url && (
-                                  <div className="mb-3 rounded-lg overflow-hidden">
-                                    <img src={product.thumbnail_url} alt={product.title} className="w-full h-24 object-cover" />
-                                  </div>
-                                )}
-                                <h4 className="font-semibold text-white mb-2 text-sm">{product.title}</h4>
-                                <p className="text-xs text-slate-400 mb-3 line-clamp-2">{product.description}</p>
-                                <div className="flex items-center justify-between">
-                                  <div className="text-base font-bold text-blue-400">
-                                    {product.is_free ? 'Free' : `$${product.price}`}
-                                  </div>
-                                  <Button size="sm" className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs">
-                                    Buy now
-                                  </Button>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          </motion.div>
-                        ))}
+                        {/* Products Section */}
+                        {products.length > 0 && (
+                          <>
+                            <h3 className="text-lg font-semibold text-white mb-3">Products</h3>
+                            {products.map((product, index) => (
+                              <motion.div
+                                key={product.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.1 }}
+                              >
+                                <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm hover:border-slate-600/50 transition-colors">
+                                  <CardContent className="p-4">
+                                    {product.thumbnail_url && (
+                                      <div className="mb-3 rounded-lg overflow-hidden">
+                                        <img src={product.thumbnail_url} alt={product.title} className="w-full h-24 object-cover" />
+                                      </div>
+                                    )}
+                                    <h4 className="font-semibold text-white mb-2 text-sm">{product.title}</h4>
+                                    <p className="text-xs text-slate-400 mb-3 line-clamp-2">{product.description}</p>
+                                    <div className="flex items-center justify-between">
+                                      <div className="text-base font-bold text-blue-400">
+                                        {product.is_free ? 'Free' : `$${product.price}`}
+                                      </div>
+                                      <Button size="sm" className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs">
+                                        Buy now
+                                      </Button>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              </motion.div>
+                            ))}
+                          </>
+                        )}
+
+                        {/* Events Section */}
+                        {events.length > 0 && (
+                          <>
+                            <h3 className="text-lg font-semibold text-white mb-3 mt-6">Events</h3>
+                            {events.map((event, index) => (
+                              <motion.div
+                                key={event.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: (products.length + index) * 0.1 }}
+                              >
+                                <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm hover:border-slate-600/50 transition-colors">
+                                  <CardContent className="p-4">
+                                    {event.thumbnail_url && (
+                                      <div className="mb-3 rounded-lg overflow-hidden">
+                                        <img src={event.thumbnail_url} alt={event.title} className="w-full h-24 object-cover" />
+                                      </div>
+                                    )}
+                                    <h4 className="font-semibold text-white mb-2 text-sm">{event.title}</h4>
+                                    <p className="text-xs text-slate-400 mb-3 line-clamp-2">{event.description}</p>
+                                    <div className="flex items-center justify-between">
+                                      <div className="text-xs text-blue-400">
+                                        {new Date(event.start_time).toLocaleDateString()}
+                                      </div>
+                                      <Button size="sm" className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white text-xs">
+                                        Join Event
+                                      </Button>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              </motion.div>
+                            ))}
+                          </>
+                        )}
                       </div>
                     ) : (
                       <motion.div
@@ -1084,7 +1130,7 @@ const ProfilePage: React.FC = () => {
                         <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm">
                           <CardContent className="p-8 text-center">
                             <Globe className="w-8 h-8 mx-auto mb-3 text-blue-400" />
-                            <p className="text-slate-400 text-sm">No products available yet.</p>
+                            <p className="text-slate-400 text-sm">No products or events available yet.</p>
                           </CardContent>
                         </Card>
                       </motion.div>
