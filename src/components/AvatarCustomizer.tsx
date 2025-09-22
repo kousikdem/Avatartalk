@@ -65,11 +65,14 @@ const AvatarCustomizer: React.FC<AvatarCustomizerProps> = ({ config, onConfigCha
 
       await updateAvatarConfig(avatarData);
 
+      // Link avatar to profile with generated thumbnail/preview
+      const avatarPreviewUrl = generateAvatarPreview(avatarData);
+      
       // Update profile with current avatar configuration
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
-          avatar_url: config.avatar_url || avatarData.skin_tone,
+          avatar_url: avatarPreviewUrl,
           updated_at: new Date().toISOString()
         })
         .eq('id', currentUser.id);
@@ -91,6 +94,39 @@ const AvatarCustomizer: React.FC<AvatarCustomizerProps> = ({ config, onConfigCha
       });
     }
   };
+  
+  // Generate avatar preview URL from configuration
+  const generateAvatarPreview = (avatarData: any) => {
+    // Create a visual representation based on avatar configuration
+    const canvas = document.createElement('canvas');
+    canvas.width = 100;
+    canvas.height = 100;
+    const ctx = canvas.getContext('2d');
+    
+    if (ctx) {
+      // Background (skin tone)
+      ctx.fillStyle = avatarData.skin_tone;
+      ctx.fillRect(0, 0, 100, 100);
+      
+      // Simple avatar representation
+      ctx.beginPath();
+      ctx.arc(50, 50, 40, 0, Math.PI * 2);
+      ctx.fillStyle = avatarData.skin_tone;
+      ctx.fill();
+      
+      // Hair color indication
+      ctx.beginPath();
+      ctx.arc(50, 30, 35, Math.PI, Math.PI * 2);
+      ctx.fillStyle = avatarData.hair_color;
+      ctx.fill();
+      
+      return canvas.toDataURL();
+    }
+    
+    // Fallback to skin tone color
+    return avatarData.skin_tone;
+  };
+
   return (
     <div className="space-y-6">
       {/* Basic Information */}

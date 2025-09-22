@@ -596,15 +596,9 @@ const ProfilePage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-4">
-        <motion.div
-          className="text-center space-y-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          <div className="w-12 h-12 border-3 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-white/80 text-sm">Loading profile...</p>
-        </motion.div>
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+        </div>
       </div>
     );
   }
@@ -626,35 +620,42 @@ const ProfilePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-2">
-      <motion.div
-        className="w-full max-w-lg mx-auto"
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
-      >
+      <div className="w-full max-w-lg mx-auto">
         <Card className="bg-slate-900/95 border-slate-700/30 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl shadow-blue-950/50 min-h-[90vh]">
           <CardContent className="p-0">
             {/* Profile Header - Top Left Corner */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4">
               <div className="flex items-center gap-3">
-                <div className="relative">
-                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
-                     <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
-                        {profile?.avatar_url || profile?.profile_pic_url ? (
-                          <img 
-                            src={profile.avatar_url || profile.profile_pic_url} 
-                            alt={profileData.displayName}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-lg font-bold text-white">
-                            {profileData.avatarInitial}
-                          </span>
-                        )}
-                     </div>
-                   </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 shadow-sm" />
-                </div>
+                 <div className="relative">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
+                      <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                         {avatarConfig?.skin_tone || profile?.avatar_url || profile?.profile_pic_url ? (
+                           <div 
+                             className="w-full h-full rounded-full"
+                             style={{ 
+                               backgroundColor: avatarConfig?.skin_tone || '#F1C27D',
+                               backgroundImage: (profile?.avatar_url || profile?.profile_pic_url) ? `url(${profile.avatar_url || profile.profile_pic_url})` : undefined,
+                               backgroundSize: 'cover',
+                               backgroundPosition: 'center'
+                             }}
+                           >
+                             {!profile?.avatar_url && !profile?.profile_pic_url && (
+                               <div className="w-full h-full flex items-center justify-center">
+                                 <span className="text-lg font-bold text-white">
+                                   {profileData.avatarInitial}
+                                 </span>
+                               </div>
+                             )}
+                           </div>
+                         ) : (
+                           <span className="text-lg font-bold text-white">
+                             {profileData.avatarInitial}
+                           </span>
+                         )}
+                      </div>
+                    </div>
+                   <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 shadow-sm" />
+                 </div>
                 <div className="flex-1 min-w-0">
                   <h2 className="text-xl font-bold text-white leading-tight mb-0.5 truncate">
                     {profileData.displayName}
@@ -679,7 +680,7 @@ const ProfilePage: React.FC = () => {
               </p>
             </div>
 
-            {/* 3D Avatar Preview - Larger and More Prominent with Default Avatar Saving */}
+            {/* 3D Avatar Preview - Enhanced with Avatar Configuration Data */}
             <div className="px-6 pb-6">
               <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-800/40 via-blue-900/20 to-slate-800/40 border border-slate-600/30 shadow-inner">
                 <FuturisticAvatar3D
@@ -752,15 +753,6 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Social Links Section - Enhanced with Gradients and Effects */}
-            <div className="px-6 pb-6">
-              <EnhancedSocialLinks
-                socialLinks={socialLinks}
-                profileUrl={`${window.location.origin}/${profile.username}`}
-                username={profile.username}
-                displayName={profile.display_name}
-              />
-            </div>
 
             {/* Content Tabs */}
             <div className="px-6 pb-4">
@@ -1109,7 +1101,7 @@ const ProfilePage: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
     </div>
   );
 };
