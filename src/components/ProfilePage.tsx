@@ -683,41 +683,39 @@ const ProfilePage: React.FC = () => {
               </p>
             </div>
 
-            {/* 3D Avatar Preview - Enhanced with Real Avatar Configuration */}
+            {/* 3D Avatar Preview - Enhanced with Avatar Configuration Data */}
             <div className="px-6 pb-6">
               <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-800/40 via-blue-900/20 to-slate-800/40 border border-slate-600/30 shadow-inner">
-                <EnhancedAvatarPreview
-                  userId={profile?.id}
+                <FuturisticAvatar3D
                   isLarge={true}
-                  showControls={false}
-                  enableVoice={false}
-                  isInteractive={true}
-                  talking={isTalking}
-                  onAvatarClick={() => setIsTalking(!isTalking)}
+                  isTalking={isTalking}
+                  avatarStyle="holographic"
+                  className="w-full h-80"
+                  onInteraction={() => setIsTalking(!isTalking)}
                 />
                 <div className="absolute inset-0 rounded-3xl border border-blue-400/10 pointer-events-none" />
                 
                 {/* Floating Talk to Me Button */}
-                <div className="absolute bottom-4 left-4 z-10">
+                <div className="absolute bottom-4 left-4">
                   <Button
                     size="sm"
                     className="bg-gradient-to-r from-blue-600/90 to-cyan-600/90 hover:from-blue-700/90 hover:to-cyan-700/90 text-white rounded-full w-14 h-14 p-0 backdrop-blur-sm border border-blue-400/30 shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-110"
-                    onClick={() => setIsTalking(!isTalking)}
+                    onClick={() => {}} // Just enable conversation mode, no auto-response
                   >
                     <MessageCircle className="h-6 w-6" />
                   </Button>
                 </div>
 
-                {/* Follow Button at bottom right of avatar preview - Enhanced visibility */}
-                {!isOwnProfile && profile && currentUser && (
-                  <div className="absolute bottom-4 right-4 z-10">
+                {/* Follow Button at bottom right of avatar preview */}
+                {!isOwnProfile && (
+                  <div className="absolute bottom-4 right-4">
                     <FollowButton
                       targetUserId={profile.id}
                       targetUsername={profile.username}
                       targetDisplayName={profile.display_name}
-                      currentUserId={currentUser.id}
+                      currentUserId={currentUser?.id}
                       variant="compact"
-                      className="backdrop-blur-md shadow-2xl border-2 border-white/20"
+                      className="backdrop-blur-sm shadow-lg"
                     />
                   </div>
                 )}
@@ -725,35 +723,15 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Action Buttons - Subscribe and Follow side by side for others */}
+            {/* Action Buttons - Just Subscribe for own profile or full width Subscribe for others */}
             <div className="px-6 pb-6">
-              {!isOwnProfile && profile && currentUser ? (
-                <div className="flex gap-3">
-                  <Button
-                    className="flex-1 bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-                    onClick={() => {}}
-                  >
-                    <Sparkles className="h-5 w-5" />
-                    Subscribe - $9.99/mo
-                  </Button>
-                  <FollowButton
-                    targetUserId={profile.id}
-                    targetUsername={profile.username}
-                    targetDisplayName={profile.display_name}
-                    currentUserId={currentUser.id}
-                    variant="default"
-                    className="px-8"
-                  />
-                </div>
-              ) : (
-                <Button
-                  className="w-full bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-                  onClick={() => {}}
-                >
-                  <Sparkles className="h-5 w-5" />
-                  Subscribe - $9.99/mo
-                </Button>
-              )}
+              <Button
+                className="w-full bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                onClick={() => {}} // Just a visual button, no auto-response
+              >
+                <Sparkles className="h-5 w-5" />
+                Subscribe - $9.99/mo
+              </Button>
             </div>
 
             {/* Stats - Three Column Layout */}
