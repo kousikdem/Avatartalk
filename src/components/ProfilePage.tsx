@@ -79,6 +79,7 @@ interface AvatarConfiguration {
   height: number;
   current_pose: string;
   current_expression: string;
+  thumbnail_url?: string;
 }
 
 interface UserStats {
@@ -629,36 +630,60 @@ const ProfilePage: React.FC = () => {
             {/* Profile Header - Top Left Corner */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4">
               <div className="flex items-center gap-3">
-                 <div className="relative">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
-                      <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
-                         {avatarConfig?.skin_tone || profile?.avatar_url || profile?.profile_pic_url ? (
-                           <div 
-                             className="w-full h-full rounded-full"
-                             style={{ 
-                               backgroundColor: avatarConfig?.skin_tone || '#F1C27D',
-                               backgroundImage: (profile?.avatar_url || profile?.profile_pic_url) ? `url(${profile.avatar_url || profile.profile_pic_url})` : undefined,
-                               backgroundSize: 'cover',
-                               backgroundPosition: 'center'
-                             }}
-                           >
-                             {!profile?.avatar_url && !profile?.profile_pic_url && (
-                               <div className="w-full h-full flex items-center justify-center">
-                                 <span className="text-lg font-bold text-white">
-                                   {profileData.avatarInitial}
-                                 </span>
-                               </div>
-                             )}
-                           </div>
-                         ) : (
-                           <span className="text-lg font-bold text-white">
-                             {profileData.avatarInitial}
-                           </span>
-                         )}
-                      </div>
-                    </div>
-                   <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 shadow-sm" />
-                 </div>
+                  <div className="relative">
+                     <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
+                       <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                          {(() => {
+                            // Priority order: 1. Built avatar (thumbnail_url), 2. Profile pic, 3. Avatar URL, 4. Avatar config skin tone, 5. Fallback
+                            const builtAvatarUrl = avatarConfig?.thumbnail_url;
+                            const profilePicUrl = profile?.profile_pic_url;
+                            const avatarUrl = profile?.avatar_url;
+                            const skinTone = avatarConfig?.skin_tone;
+                            
+                            if (builtAvatarUrl || profilePicUrl || avatarUrl) {
+                              const imageUrl = builtAvatarUrl || profilePicUrl || avatarUrl;
+                              return (
+                                <img 
+                                  src={imageUrl} 
+                                  alt={profileData.displayName}
+                                  className="w-full h-full object-cover rounded-full"
+                                  onError={(e) => {
+                                    // Fallback to initials on image load error
+                                    e.currentTarget.style.display = 'none';
+                                    e.currentTarget.nextElementSibling?.setAttribute('style', 'display: flex');
+                                  }}
+                                />
+                              );
+                            } else if (skinTone) {
+                              return (
+                                <div 
+                                  className="w-full h-full rounded-full flex items-center justify-center"
+                                  style={{ backgroundColor: skinTone }}
+                                >
+                                  <span className="text-lg font-bold text-white">
+                                    {profileData.avatarInitial}
+                                  </span>
+                                </div>
+                              );
+                            } else {
+                              return (
+                                <span className="text-lg font-bold text-white">
+                                  {profileData.avatarInitial}
+                                </span>
+                              );
+                            }
+                          })()}
+                          
+                          {/* Fallback initials (hidden by default, shown on image error) */}
+                          <div className="w-full h-full rounded-full flex items-center justify-center" style={{ display: 'none' }}>
+                            <span className="text-lg font-bold text-white">
+                              {profileData.avatarInitial}
+                            </span>
+                          </div>
+                       </div>
+                     </div>
+                    <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 shadow-sm" />
+                  </div>
                 <div className="flex-1 min-w-0">
                   <h2 className="text-xl font-bold text-white leading-tight mb-0.5 truncate">
                     {profileData.displayName}
@@ -683,20 +708,22 @@ const ProfilePage: React.FC = () => {
               </p>
             </div>
 
-            {/* 3D Avatar Preview - Enhanced with Avatar Configuration Data */}
+            {/* Enhanced Avatar Preview with Database Integration */}
             <div className="px-6 pb-6">
               <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-800/40 via-blue-900/20 to-slate-800/40 border border-slate-600/30 shadow-inner">
-                <FuturisticAvatar3D
+                <EnhancedAvatarPreview
+                  userId={profile.id}
                   isLarge={true}
-                  isTalking={isTalking}
-                  avatarStyle="holographic"
-                  className="w-full h-80"
-                  onInteraction={() => setIsTalking(!isTalking)}
+                  showControls={false}
+                  enableVoice={true}
+                  isInteractive={true}
+                  talking={isTalking}
+                  onAvatarClick={() => setIsTalking(!isTalking)}
                 />
                 <div className="absolute inset-0 rounded-3xl border border-blue-400/10 pointer-events-none" />
                 
-                {/* Floating Talk to Me Button */}
-                <div className="absolute bottom-4 left-4">
+                {/* Centered Talk to Me Button */}
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
                   <Button
                     size="sm"
                     className="bg-gradient-to-r from-blue-600/90 to-cyan-600/90 hover:from-blue-700/90 hover:to-cyan-700/90 text-white rounded-full w-14 h-14 p-0 backdrop-blur-sm border border-blue-400/30 shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-110"
@@ -705,33 +732,45 @@ const ProfilePage: React.FC = () => {
                     <MessageCircle className="h-6 w-6" />
                   </Button>
                 </div>
-
-                {/* Follow Button at bottom right of avatar preview */}
-                {!isOwnProfile && (
-                  <div className="absolute bottom-4 right-4">
-                    <FollowButton
-                      targetUserId={profile.id}
-                      targetUsername={profile.username}
-                      targetDisplayName={profile.display_name}
-                      currentUserId={currentUser?.id}
-                      variant="compact"
-                      className="backdrop-blur-sm shadow-lg"
-                    />
-                  </div>
-                )}
                 
               </div>
             </div>
 
-            {/* Action Buttons - Just Subscribe for own profile or full width Subscribe for others */}
+            {/* Action Buttons - Split Layout with Subscribe (60%) and Follow (40%) */}
             <div className="px-6 pb-6">
-              <Button
-                className="w-full bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-                onClick={() => {}} // Just a visual button, no auto-response
-              >
-                <Sparkles className="h-5 w-5" />
-                Subscribe - $9.99/mo
-              </Button>
+              {isOwnProfile ? (
+                // Show only subscribe button for own profile
+                <Button
+                  className="w-full bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                  onClick={() => {}} // Just a visual button, no auto-response
+                >
+                  <Sparkles className="h-5 w-5" />
+                  Subscribe - $9.99/mo
+                </Button>
+              ) : (
+                // Show subscribe (60%) and follow (40%) buttons for other profiles
+                <div className="flex gap-3">
+                  <Button
+                    className="flex-[0.6] bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                    onClick={() => {}} // Just a visual button, no auto-response
+                  >
+                    <Sparkles className="h-5 w-5" />
+                    Subscribe
+                  </Button>
+                  <Button
+                    onClick={handleFollow}
+                    disabled={followsLoading}
+                    className={`flex-[0.4] py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${
+                      isFollowing(profile.id)
+                        ? 'bg-gradient-to-r from-slate-600 via-slate-700 to-slate-600 hover:from-slate-700 hover:via-slate-800 hover:to-slate-700 text-slate-300'
+                        : 'bg-gradient-to-r from-green-500 via-emerald-600 to-teal-600 hover:from-green-600 hover:via-emerald-700 hover:to-teal-700 text-white'
+                    }`}
+                  >
+                    <Users className="h-5 w-5" />
+                    {followsLoading ? 'Loading...' : isFollowing(profile.id) ? 'Following' : 'Follow'}
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Stats - Three Column Layout */}
