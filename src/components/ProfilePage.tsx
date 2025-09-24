@@ -632,23 +632,22 @@ const ProfilePage: React.FC = () => {
                  <div className="relative">
                     <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
                       <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
-                         {avatarConfig?.skin_tone || profile?.avatar_url || profile?.profile_pic_url ? (
+                         {profile?.profile_pic_url || profile?.avatar_url ? (
+                           <img 
+                             src={profile.profile_pic_url || profile.avatar_url} 
+                             alt={profileData.displayName}
+                             className="w-full h-full object-cover rounded-full"
+                           />
+                         ) : avatarConfig ? (
                            <div 
-                             className="w-full h-full rounded-full"
+                             className="w-full h-full rounded-full flex items-center justify-center"
                              style={{ 
-                               backgroundColor: avatarConfig?.skin_tone || '#F1C27D',
-                               backgroundImage: (profile?.avatar_url || profile?.profile_pic_url) ? `url(${profile.avatar_url || profile.profile_pic_url})` : undefined,
-                               backgroundSize: 'cover',
-                               backgroundPosition: 'center'
+                               backgroundColor: avatarConfig.skin_tone || '#F1C27D'
                              }}
                            >
-                             {!profile?.avatar_url && !profile?.profile_pic_url && (
-                               <div className="w-full h-full flex items-center justify-center">
-                                 <span className="text-lg font-bold text-white">
-                                   {profileData.avatarInitial}
-                                 </span>
-                               </div>
-                             )}
+                             <span className="text-lg font-bold text-white">
+                               {profileData.avatarInitial}
+                             </span>
                            </div>
                          ) : (
                            <span className="text-lg font-bold text-white">
@@ -686,17 +685,28 @@ const ProfilePage: React.FC = () => {
             {/* 3D Avatar Preview - Enhanced with Avatar Configuration Data */}
             <div className="px-6 pb-6">
               <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-800/40 via-blue-900/20 to-slate-800/40 border border-slate-600/30 shadow-inner">
-                <FuturisticAvatar3D
-                  isLarge={true}
-                  isTalking={isTalking}
-                  avatarStyle="holographic"
-                  className="w-full h-80"
-                  onInteraction={() => setIsTalking(!isTalking)}
-                />
+                {avatarConfig ? (
+                  <EnhancedAvatarPreview
+                    userId={profile.id}
+                    isLarge={true}
+                    talking={isTalking}
+                    showControls={false}
+                    isInteractive={true}
+                    onAvatarClick={() => setIsTalking(!isTalking)}
+                  />
+                ) : (
+                  <FuturisticAvatar3D
+                    isLarge={true}
+                    isTalking={isTalking}
+                    avatarStyle="holographic"
+                    className="w-full h-80"
+                    onInteraction={() => setIsTalking(!isTalking)}
+                  />
+                )}
                 <div className="absolute inset-0 rounded-3xl border border-blue-400/10 pointer-events-none" />
                 
-                {/* Floating Talk to Me Button */}
-                <div className="absolute bottom-4 left-4">
+                {/* Centered Talk to Me Button */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
                   <Button
                     size="sm"
                     className="bg-gradient-to-r from-blue-600/90 to-cyan-600/90 hover:from-blue-700/90 hover:to-cyan-700/90 text-white rounded-full w-14 h-14 p-0 backdrop-blur-sm border border-blue-400/30 shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-110"
@@ -705,33 +715,45 @@ const ProfilePage: React.FC = () => {
                     <MessageCircle className="h-6 w-6" />
                   </Button>
                 </div>
-
-                {/* Follow Button at bottom right of avatar preview */}
-                {!isOwnProfile && (
-                  <div className="absolute bottom-4 right-4">
-                    <FollowButton
-                      targetUserId={profile.id}
-                      targetUsername={profile.username}
-                      targetDisplayName={profile.display_name}
-                      currentUserId={currentUser?.id}
-                      variant="compact"
-                      className="backdrop-blur-sm shadow-lg"
-                    />
-                  </div>
-                )}
                 
               </div>
             </div>
 
-            {/* Action Buttons - Just Subscribe for own profile or full width Subscribe for others */}
+            {/* Action Buttons - Subscribe and Follow Layout */}
             <div className="px-6 pb-6">
-              <Button
-                className="w-full bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-                onClick={() => {}} // Just a visual button, no auto-response
-              >
-                <Sparkles className="h-5 w-5" />
-                Subscribe - $9.99/mo
-              </Button>
+              {isOwnProfile ? (
+                // For own profile, show only subscribe button
+                <Button
+                  className="w-full bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                  onClick={() => {}} // Just a visual button, no auto-response
+                >
+                  <Sparkles className="h-5 w-5" />
+                  Subscribe - $9.99/mo
+                </Button>
+              ) : (
+                // For other profiles, show subscribe (70%) and follow (30%) buttons
+                <div className="flex gap-3">
+                  <Button
+                    className="flex-[7] bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                    onClick={() => {}} // Just a visual button, no auto-response
+                  >
+                    <Sparkles className="h-5 w-5" />
+                    Subscribe - $9.99/mo
+                  </Button>
+                  <Button
+                    className={`flex-[3] py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${
+                      isFollowing(profile.id)
+                        ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white'
+                        : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white'
+                    }`}
+                    onClick={handleFollow}
+                    disabled={followsLoading}
+                  >
+                    <Users className="h-5 w-5" />
+                    {isFollowing(profile.id) ? 'Following' : 'Follow'}
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Stats - Three Column Layout */}
@@ -831,35 +853,35 @@ const ProfilePage: React.FC = () => {
                          (message.senderName === (currentUser.email?.split('@')[0] || 'User')) : true
                      ).map((message) => (
                        <div key={message.id} className={`flex items-start gap-3 ${message.sender === 'avatar' ? 'flex-row-reverse' : ''}`}>
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
-                            <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
-                              {message.sender === 'avatar' ? (
-                                profile?.avatar_url || profile?.profile_pic_url ? (
-                                  <img 
-                                    src={profile.avatar_url || profile.profile_pic_url} 
-                                    alt={message.senderName}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <span className="text-xs font-bold text-white">
-                                    {(message.senderName?.[0] || 'A').toUpperCase()}
-                                  </span>
-                                )
-                              ) : (
-                                currentUser?.user_metadata?.avatar_url ? (
-                                  <img 
-                                    src={currentUser.user_metadata.avatar_url} 
-                                    alt={message.senderName}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <span className="text-xs font-bold text-white">
-                                    {(message.senderName?.[0] || 'U').toUpperCase()}
-                                  </span>
-                                )
-                              )}
-                            </div>
-                          </div>
+                           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                             <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                               {message.sender === 'avatar' ? (
+                                 profile?.profile_pic_url || profile?.avatar_url ? (
+                                   <img 
+                                     src={profile.profile_pic_url || profile.avatar_url} 
+                                     alt={message.senderName}
+                                     className="w-full h-full object-cover rounded-full"
+                                   />
+                                 ) : (
+                                   <span className="text-xs font-bold text-white">
+                                     {(message.senderName?.[0] || 'A').toUpperCase()}
+                                   </span>
+                                 )
+                               ) : (
+                                 currentUser?.user_metadata?.avatar_url ? (
+                                   <img 
+                                     src={currentUser.user_metadata.avatar_url} 
+                                     alt={message.senderName}
+                                     className="w-full h-full object-cover rounded-full"
+                                   />
+                                 ) : (
+                                   <span className="text-xs font-bold text-white">
+                                     {(message.senderName?.[0] || 'U').toUpperCase()}
+                                   </span>
+                                 )
+                               )}
+                             </div>
+                           </div>
                         <div className={`flex-1 ${message.sender === 'avatar' ? 'flex justify-end' : ''}`}>
                           <div className={message.sender === 'avatar' ? '' : 'max-w-xs'}>
                              <div className={`px-4 py-3 rounded-2xl ${
@@ -895,20 +917,20 @@ const ProfilePage: React.FC = () => {
                     {(isTalking || isTyping) && (
                       <div className="flex items-start gap-3 flex-row-reverse">
                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
-                           <div className="w-full h-8 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
-                              {profile?.avatar_url || profile?.profile_pic_url ? (
-                                <img 
-                                  src={profile.avatar_url || profile.profile_pic_url} 
-                                  alt={profileData.displayName}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <span className="text-xs font-bold text-white">
-                                  {profileData.avatarInitial}
-                                </span>
-                              )}
-                           </div>
-                         </div>
+                            <div className="w-full h-8 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                               {profile?.profile_pic_url || profile?.avatar_url ? (
+                                 <img 
+                                   src={profile.profile_pic_url || profile.avatar_url} 
+                                   alt={profileData.displayName}
+                                   className="w-full h-full object-cover rounded-full"
+                                 />
+                               ) : (
+                                 <span className="text-xs font-bold text-white">
+                                   {profileData.avatarInitial}
+                                 </span>
+                               )}
+                            </div>
+                          </div>
                         <div className="flex-1 flex justify-end">
                           <div>
                             <div className="bg-slate-700/50 border border-slate-600/30 rounded-2xl rounded-tr-md px-4 py-3 max-w-xs">
