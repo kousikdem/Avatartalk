@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
+import FollowButton from './FollowButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useFollows } from '@/hooks/useFollows';
 import { usePersonalizedAI } from '@/hooks/usePersonalizedAI';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { usePosts } from '@/hooks/usePosts';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { useCoquiTTS } from '@/hooks/useCoquiTTS';
@@ -18,7 +19,7 @@ import EnhancedAvatarPreview from './EnhancedAvatarPreview';
 import SocialFeed from './SocialFeed';
 import LikeButton from './LikeButton';
 import EmojiPicker from './EmojiPicker';
-import FollowButton from './FollowButton';
+import { useToast } from '@/hooks/use-toast';
 import EnhancedSocialLinks from './EnhancedSocialLinks';
 import PostCard from './PostCard';
 import {
@@ -166,6 +167,9 @@ const ProfilePage: React.FC = () => {
     createDefaultForNewUsers,
     loading: defaultAvatarLoading 
   } = useDefaultAvatar();
+  
+  // Load current user profile for proper avatar display in chat
+  const { profileData: currentUserProfile } = useUserProfile();
   
   // Voice functionality
   const { isListening, transcript, startListening, stopListening, resetTranscript } = useVoiceInput();
@@ -577,6 +581,24 @@ const ProfilePage: React.FC = () => {
     setIsEmojiPickerOpen(false);
   };
 
+  // Handle voice output for individual messages
+  const handleMessageVoiceOutput = async (text: string) => {
+    try {
+      await synthesizeSpeech(text, {
+        voice: 'alloy',
+        speed: 1.0,
+        language: 'en'
+      });
+    } catch (error) {
+      console.error('Error with voice output:', error);
+      toast({
+        title: "Voice Error",
+        description: "Failed to play message with voice",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSaveAsDefault = async () => {
     if (!profile || !avatarConfig || !currentUser) return;
     
@@ -751,24 +773,20 @@ const ProfilePage: React.FC = () => {
                 // Show subscribe (60%) and follow (40%) buttons for other profiles
                 <div className="flex gap-3">
                   <Button
-                    className="flex-[0.6] bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-                    onClick={() => {}} // Just a visual button, no auto-response
+                    className="flex-[3] bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                    onClick={() => {}}
                   >
                     <Sparkles className="h-5 w-5" />
                     Subscribe
                   </Button>
-                  <Button
-                    onClick={handleFollow}
-                    disabled={followsLoading}
-                    className={`flex-[0.4] py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${
-                      isFollowing(profile.id)
-                        ? 'bg-gradient-to-r from-slate-600 via-slate-700 to-slate-600 hover:from-slate-700 hover:via-slate-800 hover:to-slate-700 text-slate-300'
-                        : 'bg-gradient-to-r from-green-500 via-emerald-600 to-teal-600 hover:from-green-600 hover:via-emerald-700 hover:to-teal-700 text-white'
-                    }`}
-                  >
-                    <Users className="h-5 w-5" />
-                    {followsLoading ? 'Loading...' : isFollowing(profile.id) ? 'Following' : 'Follow'}
-                  </Button>
+                  
+                  <FollowButton
+                    targetUserId={profile.id}
+                    targetUsername={profile.username}
+                    currentUserId={currentUser?.id}
+                    className="flex-[2] py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 hover:from-emerald-600 hover:via-green-700 hover:to-teal-700 text-white"
+                    variant="default"
+                  />
                 </div>
               )}
             </div>
@@ -871,32 +889,34 @@ const ProfilePage: React.FC = () => {
                      ).map((message) => (
                        <div key={message.id} className={`flex items-start gap-3 ${message.sender === 'avatar' ? 'flex-row-reverse' : ''}`}>
                           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
-                            <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
-                              {message.sender === 'avatar' ? (
-                                profile?.avatar_url || profile?.profile_pic_url ? (
-                                  <img 
-                                    src={profile.avatar_url || profile.profile_pic_url} 
-                                    alt={message.senderName}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <span className="text-xs font-bold text-white">
-                                    {(message.senderName?.[0] || 'A').toUpperCase()}
-                                  </span>
-                                )
-                              ) : (
-                                currentUser?.user_metadata?.avatar_url ? (
-                                  <img 
-                                    src={currentUser.user_metadata.avatar_url} 
-                                    alt={message.senderName}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <span className="text-xs font-bold text-white">
-                                    {(message.senderName?.[0] || 'U').toUpperCase()}
-                                  </span>
-                                )
-                              )}
+                             <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                               {message.sender === 'avatar' ? (
+                                 // Priority: built avatar thumbnail -> profile_pic_url -> avatar_url -> initials
+                                 avatarConfig?.thumbnail_url || profile?.profile_pic_url || profile?.avatar_url ? (
+                                   <img 
+                                     src={avatarConfig?.thumbnail_url || profile?.profile_pic_url || profile?.avatar_url} 
+                                     alt={message.senderName}
+                                     className="w-full h-full object-cover"
+                                   />
+                                 ) : (
+                                   <span className="text-xs font-bold text-white">
+                                     {(message.senderName?.[0] || 'A').toUpperCase()}
+                                   </span>
+                                 )
+                               ) : (
+                                 // For current user: profile_pic_url -> avatar_url -> initials  
+                                 currentUserProfile?.profile_pic_url || currentUser?.user_metadata?.avatar_url ? (
+                                   <img 
+                                     src={currentUserProfile?.profile_pic_url || currentUser?.user_metadata?.avatar_url} 
+                                     alt={message.senderName}
+                                     className="w-full h-full object-cover"
+                                   />
+                                 ) : (
+                                   <span className="text-xs font-bold text-white">
+                                     {(message.senderName?.[0] || 'U').toUpperCase()}
+                                   </span>
+                                 )
+                               )}
                             </div>
                           </div>
                         <div className={`flex-1 ${message.sender === 'avatar' ? 'flex justify-end' : ''}`}>
@@ -912,11 +932,21 @@ const ProfilePage: React.FC = () => {
                                   <span className="text-xs text-purple-400 font-medium">Voice Message</span>
                                 </div>
                               )}
-                              <p className={`text-sm ${
-                                message.sender === 'avatar' ? 'text-slate-200' : 'text-blue-100'
-                              }`}>
-                                {message.content}
-                              </p>
+                               <p className={`text-sm ${
+                                 message.sender === 'avatar' ? 'text-slate-200' : 'text-blue-100'
+                               }`}>
+                                 {message.content}
+                               </p>
+                               
+                               {/* Voice Output Button for Each Message */}
+                               <button
+                                 onClick={() => handleMessageVoiceOutput(message.content)}
+                                 className="mt-2 p-1 rounded-full bg-slate-600/50 hover:bg-slate-500/50 text-slate-300 hover:text-white transition-all duration-200 text-xs flex items-center gap-1"
+                                 title="Play with voice"
+                               >
+                                 <Volume2 className="w-3 h-3" />
+                                 <span className="text-xs">Play</span>
+                               </button>
                             </div>
                             <p className={`text-xs text-slate-500 mt-1 ${
                               message.sender === 'avatar' ? 'text-right' : ''

@@ -26,6 +26,7 @@ interface Post {
     username: string;
     display_name: string;
     avatar_url?: string;
+    profile_pic_url?: string;
   };
 }
 
@@ -38,6 +39,7 @@ interface Comment {
     username: string;
     display_name: string;
     avatar_url?: string;
+    profile_pic_url?: string;
   };
 }
 
@@ -118,7 +120,7 @@ const PostCard: React.FC<PostCardProps> = ({
         .from('posts')
         .select(`
           *,
-          profile:profiles!posts_user_id_fkey(username, display_name, avatar_url)
+          profile:profiles!posts_user_id_fkey(username, display_name, avatar_url, profile_pic_url)
         `)
         .eq('id', post.id)
         .single();
@@ -145,7 +147,8 @@ const PostCard: React.FC<PostCardProps> = ({
           profiles!comments_user_id_fkey(
             username,
             display_name,
-            avatar_url
+            avatar_url,
+            profile_pic_url
           )
         `)
         .eq('post_id', post.id)
@@ -237,7 +240,7 @@ const PostCard: React.FC<PostCardProps> = ({
         <CardHeader className="pb-3">
           <div className="flex items-center space-x-3">
             <Avatar className="w-10 h-10">
-              <AvatarImage src={post.profile?.avatar_url} />
+              <AvatarImage src={post.profile?.profile_pic_url || post.profile?.avatar_url} />
               <AvatarFallback>
                 {(post.profile?.display_name || post.profile?.username || 'U')[0].toUpperCase()}
               </AvatarFallback>
@@ -361,7 +364,7 @@ const PostCard: React.FC<PostCardProps> = ({
                         className="flex space-x-3"
                       >
                         <Avatar className="w-8 h-8">
-                          <AvatarImage src={comment.profile?.avatar_url} />
+                          <AvatarImage src={comment.profile?.profile_pic_url || comment.profile?.avatar_url} />
                           <AvatarFallback>
                             {(comment.profile?.display_name || comment.profile?.username || 'U')[0].toUpperCase()}
                           </AvatarFallback>
