@@ -12,6 +12,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { usePosts } from '@/hooks/usePosts';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { useCoquiTTS } from '@/hooks/useCoquiTTS';
+import { useElevenLabsTTS } from '@/hooks/useElevenLabsTTS';
 import { useDefaultAvatar } from '@/hooks/useDefaultAvatar';
 import useVisitorTracking from '@/hooks/useVisitorTracking';
 import FuturisticAvatar3D from './FuturisticAvatar3D';
@@ -175,12 +176,17 @@ const ProfilePage: React.FC = () => {
   const { isListening, transcript, startListening, stopListening, resetTranscript } = useVoiceInput();
   const { 
     synthesizeSpeech, 
+    stopSpeech,
+    isLoading, 
+    isPlaying,
+    getAvailableVoices
+  } = useElevenLabsTTS();
+  
+  // Keep recording functionality from original TTS hook
+  const { 
     startRecording, 
     stopRecording, 
-    isLoading, 
-    isRecording, 
-    isPlaying, 
-    stopSpeech 
+    isRecording
   } = useCoquiTTS();
 
   // Initialize chat messages
@@ -446,13 +452,11 @@ const ProfilePage: React.FC = () => {
 
       setChatMessages(prev => [...prev, aiMessage]);
       
-      // Play voice response if available
+      // Play voice response if available with ElevenLabs
       if (aiResponse) {
         try {
           await synthesizeSpeech(aiResponse, {
-            voice: 'neural',
-            speed: 1.0,
-            language: 'en-US'
+            voice_id: '9BWtsMINqrJLrRacOk9x' // Aria voice for natural AI responses
           });
         } catch (voiceError) {
           console.error('Voice synthesis error:', voiceError);
@@ -556,9 +560,7 @@ const ProfilePage: React.FC = () => {
       if (lastAiMessage) {
         try {
           await synthesizeSpeech(lastAiMessage.content, {
-            voice: 'neural',
-            speed: 1.0,
-            language: 'en-US'
+            voice_id: '9BWtsMINqrJLrRacOk9x' // Aria voice for natural playback
           });
           
           toast({
@@ -588,13 +590,11 @@ const ProfilePage: React.FC = () => {
     setIsEmojiPickerOpen(false);
   };
 
-  // Handle voice output for individual messages
+  // Handle voice output for individual messages with ElevenLabs
   const handleMessageVoiceOutput = async (text: string) => {
     try {
       await synthesizeSpeech(text, {
-        voice: 'alloy',
-        speed: 1.0,
-        language: 'en'
+        voice_id: '9BWtsMINqrJLrRacOk9x' // Aria voice for message playback
       });
     } catch (error) {
       console.error('Error with voice output:', error);
