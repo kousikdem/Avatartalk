@@ -767,35 +767,23 @@ const ProfilePage: React.FC = () => {
 
             {/* Action Buttons - Split Layout with Subscribe (60%) and Follow (40%) */}
             <div className="px-6 pb-6">
-              {isOwnProfile ? (
-                // Show only subscribe button for own profile
+              <div className="flex gap-3">
                 <Button
-                  className="w-full bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-                  onClick={() => {}} // Just a visual button, no auto-response
+                  className="flex-[3] bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                  onClick={() => {}}
                 >
                   <Sparkles className="h-5 w-5" />
-                  Subscribe - $9.99/mo
+                  {isOwnProfile ? 'Subscribe - $9.99/mo' : 'Subscribe'}
                 </Button>
-              ) : (
-                // Show subscribe (60%) and follow (40%) buttons for other profiles
-                <div className="flex gap-3">
-                  <Button
-                    className="flex-[3] bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-                    onClick={() => {}}
-                  >
-                    <Sparkles className="h-5 w-5" />
-                    Subscribe
-                  </Button>
-                  
-                  <FollowButton
-                    targetUserId={profile.id}
-                    targetUsername={profile.username}
-                    currentUserId={currentUser?.id}
-                    className="flex-[2] py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 hover:from-emerald-600 hover:via-green-700 hover:to-teal-700 text-white"
-                    variant="default"
-                  />
-                </div>
-              )}
+                
+                <FollowButton
+                  targetUserId={profile.id}
+                  targetUsername={profile.username}
+                  currentUserId={currentUser?.id}
+                  className="flex-[2] py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                  variant="default"
+                />
+              </div>
             </div>
 
             {/* Stats - Three Column Layout */}
