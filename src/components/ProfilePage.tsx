@@ -185,7 +185,7 @@ const ProfilePage: React.FC = () => {
 
   // Initialize chat messages
   useEffect(() => {
-    if (profile) {
+    if (profile && currentUser) {
       const initialMessages: ChatMessage[] = [
         {
           id: '1',
@@ -324,7 +324,14 @@ const ProfilePage: React.FC = () => {
   };
 
   const handleFollow = async () => {
-    if (!profile || !currentUser) return;
+    if (!profile || !currentUser) {
+      toast({
+        title: "Error",
+        description: "Please log in to follow users",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
       if (isFollowing(profile.id)) {
@@ -619,7 +626,7 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  if (loading || !currentUser) {
+  if (loading || !currentUser || !profile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-4">
         <div className="text-center">
