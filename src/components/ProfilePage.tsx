@@ -4,25 +4,19 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import FollowButton from './FollowButton';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useFollows } from '@/hooks/useFollows';
 import { usePersonalizedAI } from '@/hooks/usePersonalizedAI';
-import { useUserProfile } from '@/hooks/useUserProfile';
 import { usePosts } from '@/hooks/usePosts';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { useCoquiTTS } from '@/hooks/useCoquiTTS';
-import { useElevenLabsTTS } from '@/hooks/useElevenLabsTTS';
 import { useDefaultAvatar } from '@/hooks/useDefaultAvatar';
-import useVisitorTracking from '@/hooks/useVisitorTracking';
 import FuturisticAvatar3D from './FuturisticAvatar3D';
 import EnhancedAvatarPreview from './EnhancedAvatarPreview';
 import SocialFeed from './SocialFeed';
 import LikeButton from './LikeButton';
 import EmojiPicker from './EmojiPicker';
-import { useToast } from '@/hooks/use-toast';
-import EnhancedSocialLinks from './EnhancedSocialLinks';
-import PostCard from './PostCard';
 import {
   MessageCircle,
   Share2,
@@ -58,16 +52,6 @@ interface Profile {
   profession: string;
 }
 
-interface SocialLinks {
-  twitter?: string;
-  instagram?: string;
-  linkedin?: string;
-  facebook?: string;
-  youtube?: string;
-  website?: string;
-  [key: string]: string | undefined;
-}
-
 interface AvatarConfiguration {
   id: string;
   user_id: string;
@@ -81,7 +65,6 @@ interface AvatarConfiguration {
   height: number;
   current_pose: string;
   current_expression: string;
-  thumbnail_url?: string;
 }
 
 interface UserStats {
@@ -92,13 +75,11 @@ interface UserStats {
 
 interface Post {
   id: string;
-  user_id: string;
   content: string;
   media_url?: string;
   media_type?: string;
   likes_count: number;
   comments_count: number;
-  views_count: number;
   created_at: string;
 }
 
@@ -125,11 +106,9 @@ interface ChatMessage {
 const ProfilePage: React.FC = () => {
   const { username } = useParams<{ username: string }>();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [socialLinks, setSocialLinks] = useState<SocialLinks>({});
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [events, setEvents] = useState<any[]>([]);
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfiguration | null>(null);
   const [loading, setLoading] = useState(true);
   const [chatMessage, setChatMessage] = useState('');
@@ -152,13 +131,6 @@ const ProfilePage: React.FC = () => {
     refetch: refetchFollows
   } = useFollows();
 
-  // Enable visitor tracking for this profile
-  useVisitorTracking({
-    profileId: profile?.id || '',
-    currentUserId: currentUser?.id,
-    enabled: !!profile?.id && currentUser?.id !== profile?.id
-  });
-
   const { trainings, currentTraining } = usePersonalizedAI();
   const { posts: userPosts, isLoading: postsLoading, fetchPosts } = usePosts(profile?.id);
   const { 
@@ -169,29 +141,21 @@ const ProfilePage: React.FC = () => {
     loading: defaultAvatarLoading 
   } = useDefaultAvatar();
   
-  // Load current user profile for proper avatar display in chat
-  const { profileData: currentUserProfile } = useUserProfile();
-  
   // Voice functionality
   const { isListening, transcript, startListening, stopListening, resetTranscript } = useVoiceInput();
   const { 
     synthesizeSpeech, 
-    stopSpeech,
-    isLoading, 
-    isPlaying,
-    getAvailableVoices
-  } = useElevenLabsTTS();
-  
-  // Keep recording functionality from original TTS hook
-  const { 
     startRecording, 
     stopRecording, 
-    isRecording
+    isLoading, 
+    isRecording, 
+    isPlaying, 
+    stopSpeech 
   } = useCoquiTTS();
 
   // Initialize chat messages
   useEffect(() => {
-    if (profile && currentUser) {
+    if (profile) {
       const initialMessages: ChatMessage[] = [
         {
           id: '1',
@@ -252,25 +216,9 @@ const ProfilePage: React.FC = () => {
   // Load posts when profile is loaded
   useEffect(() => {
     if (profile?.id) {
-      const fetchUserPosts = async () => {
-        try {
-          const { data: postsData, error } = await supabase
-            .from('posts')
-            .select('*')
-            .eq('user_id', profile.id)
-            .order('created_at', { ascending: false })
-            .limit(10);
-
-          if (error) throw error;
-          setPosts(postsData || []);
-        } catch (error) {
-          console.error('Error fetching user posts:', error);
-        }
-      };
-      
-      fetchUserPosts();
+      fetchPosts();
     }
-  }, [profile?.id]);
+  }, [profile?.id, fetchPosts]);
 
   const fetchProfile = async () => {
     try {
@@ -289,31 +237,21 @@ const ProfilePage: React.FC = () => {
       setProfile(profileData);
 
       // Now fetch related data using the profile ID
-      const [statsResponse, productsResponse, eventsResponse, avatarResponse, socialLinksResponse] = await Promise.all([
+      const [statsResponse, productsResponse, avatarResponse] = await Promise.all([
         supabase.from('user_stats').select('*').eq('user_id', profileData.id).maybeSingle(),
         supabase.from('products').select('*').eq('user_id', profileData.id).eq('status', 'published').order('created_at', { ascending: false }).limit(6),
-        supabase.from('events').select('*').eq('user_id', profileData.id).order('created_at', { ascending: false }).limit(6),
-        supabase.from('avatar_configurations').select('*').eq('user_id', profileData.id).eq('is_active', true).maybeSingle(),
-        supabase.from('social_links').select('*').eq('user_id', profileData.id).maybeSingle()
+        supabase.from('avatar_configurations').select('*').eq('user_id', profileData.id).eq('is_active', true).maybeSingle()
       ]);
 
       setUserStats(statsResponse.data);
       setProducts(productsResponse.data || []);
-      setEvents(eventsResponse.data || []);
       setAvatarConfig(avatarResponse.data);
-      setSocialLinks(socialLinksResponse.data || {});
 
       // Track profile visit (fire and forget)
       if (profileData.id !== currentUser?.id) {
-        // Don't await this to avoid blocking the UI
         supabase.from('profile_visitors').insert({
           visitor_id: currentUser?.id || null,
           visited_profile_id: profileData.id,
-        }).then(() => {
-          // Increment profile views in user_stats
-          supabase.from('user_stats')
-            .update({ profile_views: (statsResponse.data?.profile_views || 0) + 1 })
-            .eq('user_id', profileData.id);
         });
       }
 
@@ -330,14 +268,7 @@ const ProfilePage: React.FC = () => {
   };
 
   const handleFollow = async () => {
-    if (!profile || !currentUser) {
-      toast({
-        title: "Error",
-        description: "Please log in to follow users",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!profile || !currentUser) return;
     
     try {
       if (isFollowing(profile.id)) {
@@ -452,11 +383,13 @@ const ProfilePage: React.FC = () => {
 
       setChatMessages(prev => [...prev, aiMessage]);
       
-      // Play voice response if available with ElevenLabs
+      // Play voice response if available
       if (aiResponse) {
         try {
           await synthesizeSpeech(aiResponse, {
-            voice_id: '9BWtsMINqrJLrRacOk9x' // Aria voice for natural AI responses
+            voice: 'neural',
+            speed: 1.0,
+            language: 'en-US'
           });
         } catch (voiceError) {
           console.error('Voice synthesis error:', voiceError);
@@ -560,7 +493,9 @@ const ProfilePage: React.FC = () => {
       if (lastAiMessage) {
         try {
           await synthesizeSpeech(lastAiMessage.content, {
-            voice_id: '9BWtsMINqrJLrRacOk9x' // Aria voice for natural playback
+            voice: 'neural',
+            speed: 1.0,
+            language: 'en-US'
           });
           
           toast({
@@ -590,22 +525,6 @@ const ProfilePage: React.FC = () => {
     setIsEmojiPickerOpen(false);
   };
 
-  // Handle voice output for individual messages with ElevenLabs
-  const handleMessageVoiceOutput = async (text: string) => {
-    try {
-      await synthesizeSpeech(text, {
-        voice_id: '9BWtsMINqrJLrRacOk9x' // Aria voice for message playback
-      });
-    } catch (error) {
-      console.error('Error with voice output:', error);
-      toast({
-        title: "Voice Error",
-        description: "Failed to play message with voice",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleSaveAsDefault = async () => {
     if (!profile || !avatarConfig || !currentUser) return;
     
@@ -626,12 +545,17 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  if (loading || !currentUser || !profile) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-        </div>
+        <motion.div
+          className="text-center space-y-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-white/80">Loading avatar profile...</p>
+        </motion.div>
       </div>
     );
   }
@@ -653,66 +577,35 @@ const ProfilePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-2">
-      <div className="w-full max-w-lg mx-auto">
+      <motion.div
+        className="w-full max-w-lg mx-auto"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6 }}
+      >
         <Card className="bg-slate-900/95 border-slate-700/30 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl shadow-blue-950/50 min-h-[90vh]">
           <CardContent className="p-0">
             {/* Profile Header - Top Left Corner */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4">
               <div className="flex items-center gap-3">
-                  <div className="relative">
-                     <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
-                       <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
-                          {(() => {
-                            // Priority order: 1. Built avatar (thumbnail_url), 2. Profile pic, 3. Avatar URL, 4. Avatar config skin tone, 5. Fallback
-                            const builtAvatarUrl = avatarConfig?.thumbnail_url;
-                            const profilePicUrl = profile?.profile_pic_url;
-                            const avatarUrl = profile?.avatar_url;
-                            const skinTone = avatarConfig?.skin_tone;
-                            
-                            if (builtAvatarUrl || profilePicUrl || avatarUrl) {
-                              const imageUrl = builtAvatarUrl || profilePicUrl || avatarUrl;
-                              return (
-                                <img 
-                                  src={imageUrl} 
-                                  alt={profileData.displayName}
-                                  className="w-full h-full object-cover rounded-full"
-                                  onError={(e) => {
-                                    // Fallback to initials on image load error
-                                    e.currentTarget.style.display = 'none';
-                                    e.currentTarget.nextElementSibling?.setAttribute('style', 'display: flex');
-                                  }}
-                                />
-                              );
-                            } else if (skinTone) {
-                              return (
-                                <div 
-                                  className="w-full h-full rounded-full flex items-center justify-center"
-                                  style={{ backgroundColor: skinTone }}
-                                >
-                                  <span className="text-lg font-bold text-white">
-                                    {profileData.avatarInitial}
-                                  </span>
-                                </div>
-                              );
-                            } else {
-                              return (
-                                <span className="text-lg font-bold text-white">
-                                  {profileData.avatarInitial}
-                                </span>
-                              );
-                            }
-                          })()}
-                          
-                          {/* Fallback initials (hidden by default, shown on image error) */}
-                          <div className="w-full h-full rounded-full flex items-center justify-center" style={{ display: 'none' }}>
-                            <span className="text-lg font-bold text-white">
-                              {profileData.avatarInitial}
-                            </span>
-                          </div>
-                       </div>
-                     </div>
-                    <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 shadow-sm" />
+                <div className="relative">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
+                    <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                       {profile?.profile_pic_url || profile?.avatar_url ? (
+                         <img 
+                           src={profile.profile_pic_url || profile.avatar_url} 
+                           alt={profileData.displayName}
+                           className="w-full h-full object-cover"
+                         />
+                       ) : (
+                         <span className="text-lg font-bold text-white">
+                           {profileData.avatarInitial}
+                         </span>
+                       )}
+                    </div>
                   </div>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 shadow-sm" />
+                </div>
                 <div className="flex-1 min-w-0">
                   <h2 className="text-xl font-bold text-white leading-tight mb-0.5 truncate">
                     {profileData.displayName}
@@ -737,21 +630,19 @@ const ProfilePage: React.FC = () => {
               </p>
             </div>
 
-            {/* Enhanced Avatar Preview with Database Integration */}
+            {/* 3D Avatar Preview - Larger and More Prominent with Default Avatar Saving */}
             <div className="px-6 pb-6">
               <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-800/40 via-blue-900/20 to-slate-800/40 border border-slate-600/30 shadow-inner">
-                <EnhancedAvatarPreview
-                  userId={profile.id}
+                <FuturisticAvatar3D
                   isLarge={true}
-                  showControls={false}
-                  enableVoice={true}
-                  isInteractive={true}
-                  talking={isTalking}
-                  onAvatarClick={() => setIsTalking(!isTalking)}
+                  isTalking={isTalking}
+                  avatarStyle="holographic"
+                  className="w-full h-80"
+                  onInteraction={() => setIsTalking(!isTalking)}
                 />
                 <div className="absolute inset-0 rounded-3xl border border-blue-400/10 pointer-events-none" />
                 
-                {/* Centered Talk to Me Button */}
+                {/* Floating Talk to Me Button */}
                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
                   <Button
                     size="sm"
@@ -765,24 +656,47 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Action Buttons - Split Layout with Subscribe (60%) and Follow (40%) */}
+            {/* Action Buttons - Subscribe (left wider) and Follow (right) */}
             <div className="px-6 pb-6">
-              <div className="flex gap-3">
+              <div className="grid grid-cols-5 gap-3">
+                {/* Left Side - Subscribe Button (wider - 3 columns, moved left) */}
                 <Button
-                  className="flex-[3] bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-                  onClick={() => {}}
+                  className="col-span-3 bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                    onClick={() => {}} // Just a visual button, no auto-response
                 >
                   <Sparkles className="h-5 w-5" />
-                  {isOwnProfile ? 'Subscribe - $9.99/mo' : 'Subscribe'}
+                  Subscribe - $9.99/mo
                 </Button>
                 
-                <FollowButton
-                  targetUserId={profile.id}
-                  targetUsername={profile.username}
-                  currentUserId={currentUser?.id}
-                  className="flex-[2] py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-                  variant="default"
-                />
+                {/* Right Side - Follow Button (2 columns) with enhanced gradient */}
+                {!isOwnProfile && currentUser ? (
+                  <Button
+                    variant={isFollowing(profile.id) ? "default" : "outline"}
+                    className={`col-span-2 py-4 rounded-2xl text-base font-semibold transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${
+                      isFollowing(profile.id) 
+                        ? 'bg-gradient-to-r from-emerald-500 via-teal-600 to-cyan-600 hover:from-emerald-600 hover:via-teal-700 hover:to-cyan-700 text-white border-0 shadow-lg hover:shadow-xl' 
+                        : 'bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:via-indigo-700 hover:to-blue-700 border-0 text-white shadow-lg hover:shadow-xl'
+                    }`}
+                    onClick={handleFollow}
+                    disabled={followsLoading}
+                  >
+                    {followsLoading ? (
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Users className="h-4 w-4" />
+                    )}
+                    {isFollowing(profile.id) ? 'Following' : 'Follow'}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="col-span-2 border-slate-500/30 bg-slate-800/40 text-slate-400 py-4 rounded-2xl text-base font-semibold cursor-not-allowed flex items-center justify-center gap-2"
+                    disabled
+                  >
+                    <Users className="h-4 w-4" />
+                    Follow
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -810,7 +724,6 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-
             {/* Content Tabs */}
             <div className="px-6 pb-4">
               <Tabs defaultValue="posts" className="space-y-4">
@@ -835,43 +748,79 @@ const ProfilePage: React.FC = () => {
                   </TabsTrigger>
                 </TabsList>
 
-                {/* Posts Tab - Enhanced with Wider Width */}
+                {/* Posts Tab */}
                 <TabsContent value="posts" className="space-y-4 mt-6">
-                  <div className="bg-slate-800/20 rounded-xl p-1">
-                     {posts.length > 0 ? (
-                       <div className="space-y-4 px-2">
-                         {posts.map((post) => (
-                           <div key={post.id} className="w-full max-w-4xl mx-auto">
-                             <PostCard
-                               post={{
-                                 ...post,
-                                 profile: {
-                                   username: profile.username,
-                                   display_name: profile.display_name,
-                                   avatar_url: profile.avatar_url || profile.profile_pic_url
-                                 }
-                               }}
-                               currentUserId={currentUser?.id}
-                               onPostUpdate={(updatedPost) => {
-                                 setPosts(prev => prev.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p));
-                               }}
-                               showComments={true}
-                             />
-                           </div>
-                         ))}
-                       </div>
+                  <AnimatePresence>
+                    {userPosts.length > 0 ? (
+                      userPosts.map((post, index) => (
+                        <motion.div
+                          key={post.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                        >
+                          <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm">
+                            <CardContent className="p-4">
+                              <p className="text-slate-300 mb-3 text-sm">{post.content}</p>
+                              {post.media_url && (
+                                <div className="mb-3 rounded-lg overflow-hidden">
+                                  {post.media_type?.startsWith('image/') ? (
+                                    <img src={post.media_url} alt="Post media" className="w-full h-auto" />
+                                  ) : (
+                                    <div className="bg-slate-700/50 p-3 rounded-lg">
+                                      <p className="text-xs text-slate-400">Media: {post.media_type}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              <div className="flex items-center justify-between pt-2 border-t border-slate-600/20">
+                                <div className="flex items-center gap-4">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="flex items-center gap-1 text-slate-400 hover:text-red-400 p-1 hover:bg-red-500/10 rounded-lg transition-all duration-200"
+                                  >
+                                    <Heart className="w-3 h-3" />
+                                    <span className="text-xs">{post.likes_count || 0}</span>
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="flex items-center gap-1 text-slate-400 hover:text-blue-400 p-1 hover:bg-blue-500/10 rounded-lg transition-all duration-200"
+                                  >
+                                    <MessageCircle className="w-3 h-3" />
+                                    <span className="text-xs">{post.comments_count || 0}</span>
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="flex items-center gap-1 text-slate-400 hover:text-green-400 p-1 hover:bg-green-500/10 rounded-lg transition-all duration-200"
+                                  >
+                                    <Share2 className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                                <div className="text-xs text-slate-500">
+                                  {new Date(post.created_at).toLocaleDateString()}
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </motion.div>
+                      ))
                     ) : (
-                      <div className="text-center py-12 text-slate-400">
-                        <div className="w-16 h-16 bg-slate-700/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <MessageCircle className="w-8 h-8" />
-                        </div>
-                        <p className="text-lg font-medium mb-2">No posts yet</p>
-                        <p className="text-sm opacity-70">
-                          {currentUser?.id === profile?.id ? "Share your first post to get started!" : "This user hasn't posted anything yet."}
-                        </p>
-                      </div>
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                      >
+                        <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm">
+                          <CardContent className="p-8 text-center">
+                            <Sparkles className="w-8 h-8 mx-auto mb-3 text-blue-400" />
+                            <p className="text-slate-400 text-sm">No posts yet. Check back soon for updates!</p>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
                     )}
-                  </div>
+                  </AnimatePresence>
                 </TabsContent>
 
                 {/* Chat Tab */}
@@ -883,37 +832,35 @@ const ProfilePage: React.FC = () => {
                          (message.senderName === (currentUser.email?.split('@')[0] || 'User')) : true
                      ).map((message) => (
                        <div key={message.id} className={`flex items-start gap-3 ${message.sender === 'avatar' ? 'flex-row-reverse' : ''}`}>
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
-                             <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
-                               {message.sender === 'avatar' ? (
-                                 // Priority: built avatar thumbnail -> profile_pic_url -> avatar_url -> initials
-                                 avatarConfig?.thumbnail_url || profile?.profile_pic_url || profile?.avatar_url ? (
-                                   <img 
-                                     src={avatarConfig?.thumbnail_url || profile?.profile_pic_url || profile?.avatar_url} 
-                                     alt={message.senderName}
-                                     className="w-full h-full object-cover"
-                                   />
-                                 ) : (
-                                   <span className="text-xs font-bold text-white">
-                                     {(message.senderName?.[0] || 'A').toUpperCase()}
-                                   </span>
-                                 )
+                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                           <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                             {message.sender === 'avatar' ? (
+                               message.senderAvatar ? (
+                                 <img 
+                                   src={message.senderAvatar} 
+                                   alt={message.senderName}
+                                   className="w-full h-full object-cover"
+                                 />
                                ) : (
-                                 // For current user: profile_pic_url -> avatar_url -> initials  
-                                 currentUserProfile?.profile_pic_url || currentUser?.user_metadata?.avatar_url ? (
-                                   <img 
-                                     src={currentUserProfile?.profile_pic_url || currentUser?.user_metadata?.avatar_url} 
-                                     alt={message.senderName}
-                                     className="w-full h-full object-cover"
-                                   />
-                                 ) : (
-                                   <span className="text-xs font-bold text-white">
-                                     {(message.senderName?.[0] || 'U').toUpperCase()}
-                                   </span>
-                                 )
-                               )}
-                            </div>
-                          </div>
+                                 <span className="text-xs font-bold text-white">
+                                   {(message.senderName?.[0] || 'A').toUpperCase()}
+                                 </span>
+                               )
+                             ) : (
+                               currentUser?.user_metadata?.avatar_url ? (
+                                 <img 
+                                   src={currentUser.user_metadata.avatar_url} 
+                                   alt={message.senderName}
+                                   className="w-full h-full object-cover"
+                                 />
+                               ) : (
+                                 <span className="text-xs font-bold text-white">
+                                   {(message.senderName?.[0] || 'U').toUpperCase()}
+                                 </span>
+                               )
+                             )}
+                           </div>
+                         </div>
                         <div className={`flex-1 ${message.sender === 'avatar' ? 'flex justify-end' : ''}`}>
                           <div className={message.sender === 'avatar' ? '' : 'max-w-xs'}>
                              <div className={`px-4 py-3 rounded-2xl ${
@@ -927,21 +874,11 @@ const ProfilePage: React.FC = () => {
                                   <span className="text-xs text-purple-400 font-medium">Voice Message</span>
                                 </div>
                               )}
-                               <p className={`text-sm ${
-                                 message.sender === 'avatar' ? 'text-slate-200' : 'text-blue-100'
-                               }`}>
-                                 {message.content}
-                               </p>
-                               
-                               {/* Voice Output Button for Each Message */}
-                               <button
-                                 onClick={() => handleMessageVoiceOutput(message.content)}
-                                 className="mt-2 p-1 rounded-full bg-slate-600/50 hover:bg-slate-500/50 text-slate-300 hover:text-white transition-all duration-200 text-xs flex items-center gap-1"
-                                 title="Play with voice"
-                               >
-                                 <Volume2 className="w-3 h-3" />
-                                 <span className="text-xs">Play</span>
-                               </button>
+                              <p className={`text-sm ${
+                                message.sender === 'avatar' ? 'text-slate-200' : 'text-blue-100'
+                              }`}>
+                                {message.content}
+                              </p>
                             </div>
                             <p className={`text-xs text-slate-500 mt-1 ${
                               message.sender === 'avatar' ? 'text-right' : ''
@@ -958,21 +895,21 @@ const ProfilePage: React.FC = () => {
 
                     {(isTalking || isTyping) && (
                       <div className="flex items-start gap-3 flex-row-reverse">
-                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
-                           <div className="w-full h-8 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
-                              {profile?.avatar_url || profile?.profile_pic_url ? (
-                                <img 
-                                  src={profile.avatar_url || profile.profile_pic_url} 
-                                  alt={profileData.displayName}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <span className="text-xs font-bold text-white">
-                                  {profileData.avatarInitial}
-                                </span>
-                              )}
-                           </div>
-                         </div>
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                          <div className="w-full h-8 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                             {profile?.profile_pic_url || profile?.avatar_url ? (
+                               <img 
+                                 src={profile.profile_pic_url || profile.avatar_url} 
+                                 alt={profileData.displayName}
+                                 className="w-full h-full object-cover"
+                               />
+                             ) : (
+                               <span className="text-xs font-bold text-white">
+                                 {profileData.avatarInitial}
+                               </span>
+                             )}
+                          </div>
+                        </div>
                         <div className="flex-1 flex justify-end">
                           <div>
                             <div className="bg-slate-700/50 border border-slate-600/30 rounded-2xl rounded-tr-md px-4 py-3 max-w-xs">
@@ -1111,80 +1048,39 @@ const ProfilePage: React.FC = () => {
                   </div>
                 </TabsContent>
 
-                {/* Products & Events Tab */}
+                {/* Products Tab */}
                 <TabsContent value="products" className="mt-6">
                   <AnimatePresence>
-                    {(products.length > 0 || events.length > 0) ? (
+                    {products.length > 0 ? (
                       <div className="space-y-4">
-                        {/* Products Section */}
-                        {products.length > 0 && (
-                          <>
-                            <h3 className="text-lg font-semibold text-white mb-3">Products</h3>
-                            {products.map((product, index) => (
-                              <motion.div
-                                key={product.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.1 }}
-                              >
-                                <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm hover:border-slate-600/50 transition-colors">
-                                  <CardContent className="p-4">
-                                    {product.thumbnail_url && (
-                                      <div className="mb-3 rounded-lg overflow-hidden">
-                                        <img src={product.thumbnail_url} alt={product.title} className="w-full h-24 object-cover" />
-                                      </div>
-                                    )}
-                                    <h4 className="font-semibold text-white mb-2 text-sm">{product.title}</h4>
-                                    <p className="text-xs text-slate-400 mb-3 line-clamp-2">{product.description}</p>
-                                    <div className="flex items-center justify-between">
-                                      <div className="text-base font-bold text-blue-400">
-                                        {product.is_free ? 'Free' : `$${product.price}`}
-                                      </div>
-                                      <Button size="sm" className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs">
-                                        Buy now
-                                      </Button>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              </motion.div>
-                            ))}
-                          </>
-                        )}
-
-                        {/* Events Section */}
-                        {events.length > 0 && (
-                          <>
-                            <h3 className="text-lg font-semibold text-white mb-3 mt-6">Events</h3>
-                            {events.map((event, index) => (
-                              <motion.div
-                                key={event.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: (products.length + index) * 0.1 }}
-                              >
-                                <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm hover:border-slate-600/50 transition-colors">
-                                  <CardContent className="p-4">
-                                    {event.thumbnail_url && (
-                                      <div className="mb-3 rounded-lg overflow-hidden">
-                                        <img src={event.thumbnail_url} alt={event.title} className="w-full h-24 object-cover" />
-                                      </div>
-                                    )}
-                                    <h4 className="font-semibold text-white mb-2 text-sm">{event.title}</h4>
-                                    <p className="text-xs text-slate-400 mb-3 line-clamp-2">{event.description}</p>
-                                    <div className="flex items-center justify-between">
-                                      <div className="text-xs text-blue-400">
-                                        {new Date(event.start_time).toLocaleDateString()}
-                                      </div>
-                                      <Button size="sm" className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white text-xs">
-                                        Join Event
-                                      </Button>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              </motion.div>
-                            ))}
-                          </>
-                        )}
+                        {products.map((product, index) => (
+                          <motion.div
+                            key={product.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                          >
+                            <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm hover:border-slate-600/50 transition-colors">
+                              <CardContent className="p-4">
+                                {product.thumbnail_url && (
+                                  <div className="mb-3 rounded-lg overflow-hidden">
+                                    <img src={product.thumbnail_url} alt={product.title} className="w-full h-24 object-cover" />
+                                  </div>
+                                )}
+                                <h4 className="font-semibold text-white mb-2 text-sm">{product.title}</h4>
+                                <p className="text-xs text-slate-400 mb-3 line-clamp-2">{product.description}</p>
+                                <div className="flex items-center justify-between">
+                                  <div className="text-base font-bold text-blue-400">
+                                    {product.is_free ? 'Free' : `$${product.price}`}
+                                  </div>
+                                  <Button size="sm" className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs">
+                                    Buy now
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </motion.div>
+                        ))}
                       </div>
                     ) : (
                       <motion.div
@@ -1194,7 +1090,7 @@ const ProfilePage: React.FC = () => {
                         <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm">
                           <CardContent className="p-8 text-center">
                             <Globe className="w-8 h-8 mx-auto mb-3 text-blue-400" />
-                            <p className="text-slate-400 text-sm">No products or events available yet.</p>
+                            <p className="text-slate-400 text-sm">No products available yet.</p>
                           </CardContent>
                         </Card>
                       </motion.div>
@@ -1205,13 +1101,64 @@ const ProfilePage: React.FC = () => {
             </div>
 
 
-            {/* Enhanced Bottom Section - Removed social media links, only EnhancedSocialLinks component */}
+            {/* Social Links Section */}
             <div className="px-6 pt-4 pb-6 border-t border-slate-700/30">
-              <EnhancedSocialLinks socialLinks={socialLinks} />
+              {/* Social Links Row */}
+              <div className="flex items-center justify-center gap-2 overflow-x-auto scrollbar-hide pt-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
+                >
+                  <Twitter className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
+                >
+                  <Linkedin className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
+                >
+                  <Youtube className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
+                >
+                  <Facebook className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
+                >
+                  <Instagram className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
+                >
+                  <Globe className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={shareProfile}
+                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px] ml-2"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
     </div>
   );
 };

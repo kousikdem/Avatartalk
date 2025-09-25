@@ -42,7 +42,7 @@ export const usePersonalizedAIChat = () => {
 
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: data.response || "I'm Avatartalk personalized AI powered by Llama 3.1. How can I assist you today?",
+        text: data.response || "I'm Avatartalk personalized AI powered by Llama 3. Sorry, I couldn't process that request.",
         sender: 'ai',
         timestamp: new Date()
       };
@@ -53,7 +53,7 @@ export const usePersonalizedAIChat = () => {
       
       const errorResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: "I'm Avatartalk personalized AI powered by Llama 3.1, and I'm experiencing some technical difficulties. Please try again in a moment.",
+        text: "I'm Avatartalk personalized AI powered by Llama 3, and I'm having trouble responding right now. Please try again.",
         sender: 'ai',
         timestamp: new Date()
       };
@@ -67,7 +67,7 @@ export const usePersonalizedAIChat = () => {
   const initializeChat = (avatarName: string) => {
     const initialMessage: Message = {
       id: '1',
-      text: `Hello! I'm ${avatarName}, your personalized AI assistant powered by Avatartalk's advanced Llama 3.1 technology. I've been trained on your personal data and preferences to provide tailored responses. How may I assist you today?`,
+      text: `Hi! I'm ${avatarName}, powered by Avatartalk personalized AI using Llama 3. How can I help you today?`,
       sender: 'ai',
       timestamp: new Date()
     };

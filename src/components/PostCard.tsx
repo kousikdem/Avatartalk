@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Heart, MessageCircle, Share2, Send, MoreVertical } from 'lucide-react';
-import EnhancedPostShare from './EnhancedPostShare';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLikes } from '@/hooks/useLikes';
@@ -26,7 +25,6 @@ interface Post {
     username: string;
     display_name: string;
     avatar_url?: string;
-    profile_pic_url?: string;
   };
 }
 
@@ -39,7 +37,6 @@ interface Comment {
     username: string;
     display_name: string;
     avatar_url?: string;
-    profile_pic_url?: string;
   };
 }
 
@@ -120,7 +117,7 @@ const PostCard: React.FC<PostCardProps> = ({
         .from('posts')
         .select(`
           *,
-          profile:profiles!posts_user_id_fkey(username, display_name, avatar_url, profile_pic_url)
+          profile:profiles!posts_user_id_fkey(username, display_name, avatar_url)
         `)
         .eq('id', post.id)
         .single();
@@ -147,8 +144,7 @@ const PostCard: React.FC<PostCardProps> = ({
           profiles!comments_user_id_fkey(
             username,
             display_name,
-            avatar_url,
-            profile_pic_url
+            avatar_url
           )
         `)
         .eq('post_id', post.id)
@@ -236,11 +232,11 @@ const PostCard: React.FC<PostCardProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <Card className="mb-6 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow w-full max-w-4xl mx-auto">
+      <Card className="mb-6 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
         <CardHeader className="pb-3">
           <div className="flex items-center space-x-3">
             <Avatar className="w-10 h-10">
-              <AvatarImage src={post.profile?.profile_pic_url || post.profile?.avatar_url} />
+              <AvatarImage src={post.profile?.avatar_url} />
               <AvatarFallback>
                 {(post.profile?.display_name || post.profile?.username || 'U')[0].toUpperCase()}
               </AvatarFallback>
@@ -315,11 +311,15 @@ const PostCard: React.FC<PostCardProps> = ({
               </Button>
             )}
 
-            <EnhancedPostShare
-              postId={post.id}
-              postContent={post.content}
-              className="flex items-center space-x-2"
-            />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleShare}
+              className="flex items-center space-x-2 text-gray-500 hover:text-green-500"
+            >
+              <Share2 className="w-5 h-5" />
+              <span>Share</span>
+            </Button>
           </div>
 
           {/* Comments Section */}
@@ -364,7 +364,7 @@ const PostCard: React.FC<PostCardProps> = ({
                         className="flex space-x-3"
                       >
                         <Avatar className="w-8 h-8">
-                          <AvatarImage src={comment.profile?.profile_pic_url || comment.profile?.avatar_url} />
+                          <AvatarImage src={comment.profile?.avatar_url} />
                           <AvatarFallback>
                             {(comment.profile?.display_name || comment.profile?.username || 'U')[0].toUpperCase()}
                           </AvatarFallback>

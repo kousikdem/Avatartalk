@@ -247,7 +247,7 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6">
       {/* Create Post Section */}
       {showCreatePost && currentUser && (
         <Card>
@@ -347,6 +347,7 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
       <div className="space-y-6">
         {loading ? (
           <div className="text-center py-8">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
             <p className="text-gray-500">Loading posts...</p>
           </div>
         ) : posts.length > 0 ? (

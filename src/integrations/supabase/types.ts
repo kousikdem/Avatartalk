@@ -1218,7 +1218,6 @@ export type Database = {
           created_at: string | null
           engagement_score: number | null
           followers_count: number | null
-          following_count: number | null
           id: string
           profile_views: number | null
           total_conversations: number | null
@@ -1229,7 +1228,6 @@ export type Database = {
           created_at?: string | null
           engagement_score?: number | null
           followers_count?: number | null
-          following_count?: number | null
           id?: string
           profile_views?: number | null
           total_conversations?: number | null
@@ -1240,7 +1238,6 @@ export type Database = {
           created_at?: string | null
           engagement_score?: number | null
           followers_count?: number | null
-          following_count?: number | null
           id?: string
           profile_views?: number | null
           total_conversations?: number | null

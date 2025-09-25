@@ -17,7 +17,6 @@ import ProductsPage from "./pages/ProductsPage";
 import SettingsPage from "./pages/SettingsPage";
 import CreatePostModal from "./components/CreatePostModal";  
 import ProfilePage from "./components/ProfilePage";
-import FollowersPage from "./components/FollowersPage";
 import UsernameRedirect from "./components/UsernameRedirect";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -96,7 +95,6 @@ const App = () => {
                       <Route path="/products" element={<ProductsPage />} />
                       <Route path="/settings" element={<SettingsPage />} />
                       <Route path="/feed" element={<FeedPage />} />
-                      <Route path="/followers" element={<FollowersPage />} />
                       <Route path="/profile/:username" element={<ProfilePage />} />
                       <Route path="/:username" element={<UsernameRedirect />} />
                       <Route path="*" element={<NotFound />} />
