@@ -191,13 +191,15 @@ const ProfilePage: React.FC = () => {
     }
   }, [profile, currentUser]);
 
-  // Memoize profile data for performance
   const profileData = useMemo(() => ({
     displayName: profile?.display_name || profile?.username || 'Unknown User',
     username: profile?.username || '',
     bio: profile?.bio || "Exploring the boundaries of AI conversation. Let's create something amazing!",
     avatarInitial: (profile?.display_name?.[0] || profile?.username?.[0] || 'U').toUpperCase()
   }), [profile]);
+
+  // Check if this is the user's own profile
+  const isOwnProfile = currentUser?.id === profile?.id;
 
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -580,8 +582,6 @@ const ProfilePage: React.FC = () => {
     );
   }
 
-  const isOwnProfile = currentUser?.id === profile.id;
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-2">
       <motion.div
@@ -676,32 +676,15 @@ const ProfilePage: React.FC = () => {
                 </Button>
                 
                 {/* Right Side - Follow Button (2 columns) - Always show for non-owner profiles */}
-                {!isOwnProfile && (
+                <div className="col-span-2">
                   <FollowButton
-                    targetUserId={profile.id}
-                    targetUsername={profile.username}
+                    targetUserId={profile?.id || ''}
+                    targetUsername={profile?.username}
                     currentUserId={currentUser?.id}
-                    className="col-span-2"
+                    variant="default"
+                    className="w-full"
                   />
-                )}
-                
-                {/* Show visitor login button if not authenticated and not own profile */}
-                {!currentUser && !isOwnProfile && (
-                  <Button
-                    className="col-span-2 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:via-indigo-700 hover:to-blue-700 text-white py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-                    onClick={() => {
-                      // Show visitor auth modal
-                      const VisitorAuthModal = React.lazy(() => import('./VisitorAuth'));
-                      import('./VisitorAuth').then((module) => {
-                        // This would need to be handled via state management in a real app
-                        console.log('Show visitor auth modal');
-                      });
-                    }}
-                  >
-                    <User className="h-4 w-4" />
-                    Login as Visitor
-                  </Button>
-                )}
+                </div>
               </div>
             </div>
 
@@ -1116,65 +1099,71 @@ const ProfilePage: React.FC = () => {
 
             {/* Social Links Section with Enhanced Menu and Share */}
             <div className="px-6 pt-4 pb-6 border-t border-slate-700/30">
-              {/* All Social Links, Three Dots Menu and Share Button in Same Row */}
-              <div className="flex items-center justify-center gap-4 overflow-x-auto scrollbar-hide pt-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => socialLinks?.twitter && window.open(`https://twitter.com/${socialLinks.twitter}`, '_blank')}
-                  className="p-3 text-slate-400 hover:text-white hover:bg-gradient-to-r hover:from-sky-500 hover:to-blue-600 rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-sky-500/30 flex-shrink-0"
-                >
-                  <Twitter className="h-5 w-5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => socialLinks?.linkedin && window.open(`https://linkedin.com/in/${socialLinks.linkedin}`, '_blank')}
-                  className="p-3 text-slate-400 hover:text-white hover:bg-gradient-to-r hover:from-blue-700 hover:to-blue-900 rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-blue-500/30 flex-shrink-0"
-                >
-                  <Linkedin className="h-5 w-5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => socialLinks?.youtube && window.open(`https://youtube.com/@${socialLinks.youtube}`, '_blank')}
-                  className="p-3 text-slate-400 hover:text-white hover:bg-gradient-to-r hover:from-red-600 hover:to-red-800 rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-red-500/30 flex-shrink-0"
-                >
-                  <Youtube className="h-5 w-5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => socialLinks?.facebook && window.open(`https://facebook.com/${socialLinks.facebook}`, '_blank')}
-                  className="p-3 text-slate-400 hover:text-white hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-800 rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-blue-500/30 flex-shrink-0"
-                >
-                  <Facebook className="h-5 w-5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => socialLinks?.instagram && window.open(`https://instagram.com/${socialLinks.instagram}`, '_blank')}
-                  className="p-3 text-slate-400 hover:text-white hover:bg-gradient-to-r hover:from-pink-500 hover:to-purple-600 rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-pink-500/30 flex-shrink-0"
-                >
-                  <Instagram className="h-5 w-5" />
-                </Button>
+              {/* Four Social Links, Three Dots Menu and Share Button in Same Row */}
+              <div className="flex items-center justify-between gap-2 overflow-x-auto scrollbar-hide pt-2">
                 
-                {/* Three Dots Menu */}
-                <SocialLinksMenu
-                  socialLinks={socialLinks}
-                  onShare={() => setIsShareModalOpen(true)}
-                />
+                {/* Left Side - Four Main Social Links */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => socialLinks?.twitter && window.open(`https://twitter.com/${socialLinks.twitter}`, '_blank')}
+                    disabled={!socialLinks?.twitter}
+                    className="p-3 text-slate-400 hover:text-white hover:bg-gradient-to-br hover:from-sky-400 hover:to-blue-600 rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-sky-500/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Twitter className="h-5 w-5" />
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => socialLinks?.linkedin && window.open(`https://linkedin.com/in/${socialLinks.linkedin}`, '_blank')}
+                    disabled={!socialLinks?.linkedin}
+                    className="p-3 text-slate-400 hover:text-white hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-800 rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-blue-500/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Linkedin className="h-5 w-5" />
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => socialLinks?.youtube && window.open(`https://youtube.com/@${socialLinks.youtube}`, '_blank')}
+                    disabled={!socialLinks?.youtube}
+                    className="p-3 text-slate-400 hover:text-white hover:bg-gradient-to-br hover:from-red-500 hover:to-red-700 rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-red-500/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Youtube className="h-5 w-5" />
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => socialLinks?.instagram && window.open(`https://instagram.com/${socialLinks.instagram}`, '_blank')}
+                    disabled={!socialLinks?.instagram}
+                    className="p-3 text-slate-400 hover:text-white hover:bg-gradient-to-br hover:from-pink-500 hover:to-purple-600 rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-pink-500/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Instagram className="h-5 w-5" />
+                  </Button>
+                </div>
                 
-                {/* Enhanced Share Button with Text */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsShareModalOpen(true)}
-                  className="p-3 px-6 text-slate-400 hover:text-white hover:bg-gradient-to-r hover:from-emerald-500 hover:to-teal-600 rounded-full transition-all duration-300 min-h-[48px] shadow-lg hover:shadow-emerald-500/30 flex items-center gap-2 flex-shrink-0"
-                >
-                  <Share2 className="h-5 w-5" />
-                  <span className="text-sm font-medium">Share</span>
-                </Button>
+                {/* Right Side - Three Dots Menu and Share Button */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {/* Three Dots Menu */}
+                  <SocialLinksMenu
+                    socialLinks={socialLinks}
+                    onShare={() => setIsShareModalOpen(true)}
+                  />
+                  
+                  {/* Enhanced Share Button with Text and Gradient */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsShareModalOpen(true)}
+                    className="p-3 px-6 text-slate-400 hover:text-white bg-gradient-to-br from-emerald-500/20 to-teal-600/20 hover:from-emerald-500 hover:to-teal-600 rounded-full transition-all duration-300 min-h-[48px] shadow-lg hover:shadow-emerald-500/30 flex items-center gap-2 flex-shrink-0 border border-emerald-500/30 hover:border-emerald-400"
+                  >
+                    <Share2 className="h-4 w-4" />
+                    <span className="text-sm font-medium">Share</span>
+                  </Button>
+                </div>
               </div>
             </div>
           </CardContent>

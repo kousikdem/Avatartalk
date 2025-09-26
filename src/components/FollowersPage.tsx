@@ -38,29 +38,24 @@ const FollowersPage = () => {
           .select(`
             visitor_id,
             visited_at,
-            profiles!profile_visitors_visitor_id_fkey(
-              id,
-              full_name,
-              display_name,
-              avatar_url,
-              profile_pic_url,
-              bio
-            )
+            ip_address,
+            user_agent
           `)
           .eq('visited_profile_id', currentUser.user.id)
           .order('visited_at', { ascending: false })
-          .limit(50);
+          .limit(100);
 
         if (error) throw error;
 
+        // Transform visitors data, including anonymous visitors
         const formattedVisitors: User[] = visitorsData?.map(visitor => ({
-          id: visitor.profiles?.id || '',
-          full_name: visitor.profiles?.display_name || visitor.profiles?.full_name || 'Anonymous',
+          id: visitor.visitor_id || `anonymous_${visitor.visited_at}`,
+          full_name: visitor.visitor_id ? 'Registered Visitor' : 'Anonymous Visitor',
           email: '', // Don't show email for privacy
-          avatar_url: visitor.profiles?.avatar_url || visitor.profiles?.profile_pic_url,
-          bio: visitor.profiles?.bio,
+          avatar_url: undefined,
+          bio: visitor.visitor_id ? 'Registered user profile' : 'Anonymous profile visitor',
           last_seen: visitor.visited_at
-        })).filter(visitor => visitor.id) || [];
+        })) || [];
 
         setVisitors(formattedVisitors);
       } catch (error) {

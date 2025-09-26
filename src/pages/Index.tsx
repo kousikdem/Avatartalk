@@ -6,6 +6,7 @@ import LandingPage from '@/components/LandingPage';
 import Dashboard from '@/components/Dashboard';
 import PricingPage from '@/components/PricingPage';
 import EnhancedAvatarStudio from '@/components/EnhancedAvatarStudio';
+import VisitorAuth from '@/components/VisitorAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect, useState } from 'react';
 
@@ -14,12 +15,21 @@ const Index = () => {
   const view = searchParams.get('view');
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showVisitorAuth, setShowVisitorAuth] = useState(false);
 
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Show visitor auth popup for first-time visitors (non-authenticated users)
+      if (!session?.user && !localStorage.getItem('visitorUser') && !localStorage.getItem('hasSeenVisitorAuth')) {
+        setTimeout(() => {
+          setShowVisitorAuth(true);
+          localStorage.setItem('hasSeenVisitorAuth', 'true');
+        }, 2000); // Show after 2 seconds
+      }
     });
 
     // Listen for auth changes
@@ -60,6 +70,12 @@ const Index = () => {
     <>
       <Navbar />
       <LandingPage />
+      
+      {/* Auto Pop-up Visitor Auth Modal */}
+      <VisitorAuth 
+        isOpen={showVisitorAuth} 
+        onClose={() => setShowVisitorAuth(false)} 
+      />
     </>
   );
 };
