@@ -15,7 +15,10 @@ import { useDefaultAvatar } from '@/hooks/useDefaultAvatar';
 import FuturisticAvatar3D from './FuturisticAvatar3D';
 import EnhancedAvatarPreview from './EnhancedAvatarPreview';
 import SocialFeed from './SocialFeed';
-import LikeButton from './LikeButton';
+import FollowButton from './FollowButton';
+import EnhancedShareModal from './EnhancedShareModal';
+import SocialLinksMenu from './SocialLinksMenu';
+import EnhancedPostCard from './EnhancedPostCard';
 import EmojiPicker from './EmojiPicker';
 import {
   MessageCircle,
@@ -118,7 +121,8 @@ const ProfilePage: React.FC = () => {
   const [topChatMessage, setTopChatMessage] = useState('');
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [voiceTranscript, setVoiceTranscript] = useState('');
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [socialLinks, setSocialLinks] = useState<any>(null);
   const { toast } = useToast();
 
   const {
@@ -237,15 +241,17 @@ const ProfilePage: React.FC = () => {
       setProfile(profileData);
 
       // Now fetch related data using the profile ID
-      const [statsResponse, productsResponse, avatarResponse] = await Promise.all([
+      const [statsResponse, productsResponse, avatarResponse, socialLinksResponse] = await Promise.all([
         supabase.from('user_stats').select('*').eq('user_id', profileData.id).maybeSingle(),
         supabase.from('products').select('*').eq('user_id', profileData.id).eq('status', 'published').order('created_at', { ascending: false }).limit(6),
-        supabase.from('avatar_configurations').select('*').eq('user_id', profileData.id).eq('is_active', true).maybeSingle()
+        supabase.from('avatar_configurations').select('*').eq('user_id', profileData.id).eq('is_active', true).maybeSingle(),
+        supabase.from('social_links').select('*').eq('user_id', profileData.id).maybeSingle()
       ]);
 
       setUserStats(statsResponse.data);
       setProducts(productsResponse.data || []);
       setAvatarConfig(avatarResponse.data);
+      setSocialLinks(socialLinksResponse.data);
 
       // Track profile visit (fire and forget)
       if (profileData.id !== currentUser?.id) {
@@ -351,7 +357,6 @@ const ProfilePage: React.FC = () => {
     setChatMessages(prev => [...prev, userMessage]);
     setChatMessage('');
     resetTranscript();
-    setVoiceTranscript('');
     setIsTyping(true);
     
     try {
@@ -436,7 +441,6 @@ const ProfilePage: React.FC = () => {
   useEffect(() => {
     if (transcript && transcript.trim()) {
       setChatMessage(transcript);
-      setVoiceTranscript(transcript);
     }
   }, [transcript]);
 
@@ -669,34 +673,12 @@ const ProfilePage: React.FC = () => {
                 </Button>
                 
                 {/* Right Side - Follow Button (2 columns) with enhanced gradient */}
-                {!isOwnProfile && currentUser ? (
-                  <Button
-                    variant={isFollowing(profile.id) ? "default" : "outline"}
-                    className={`col-span-2 py-4 rounded-2xl text-base font-semibold transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${
-                      isFollowing(profile.id) 
-                        ? 'bg-gradient-to-r from-emerald-500 via-teal-600 to-cyan-600 hover:from-emerald-600 hover:via-teal-700 hover:to-cyan-700 text-white border-0 shadow-lg hover:shadow-xl' 
-                        : 'bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:via-indigo-700 hover:to-blue-700 border-0 text-white shadow-lg hover:shadow-xl'
-                    }`}
-                    onClick={handleFollow}
-                    disabled={followsLoading}
-                  >
-                    {followsLoading ? (
-                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Users className="h-4 w-4" />
-                    )}
-                    {isFollowing(profile.id) ? 'Following' : 'Follow'}
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    className="col-span-2 border-slate-500/30 bg-slate-800/40 text-slate-400 py-4 rounded-2xl text-base font-semibold cursor-not-allowed flex items-center justify-center gap-2"
-                    disabled
-                  >
-                    <Users className="h-4 w-4" />
-                    Follow
-                  </Button>
-                )}
+                <FollowButton
+                  targetUserId={profile.id}
+                  targetUsername={profile.username}
+                  currentUserId={currentUser?.id}
+                  className="col-span-2"
+                />
               </div>
             </div>
 
@@ -759,52 +741,19 @@ const ProfilePage: React.FC = () => {
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.1 }}
                         >
-                          <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm">
-                            <CardContent className="p-4">
-                              <p className="text-slate-300 mb-3 text-sm">{post.content}</p>
-                              {post.media_url && (
-                                <div className="mb-3 rounded-lg overflow-hidden">
-                                  {post.media_type?.startsWith('image/') ? (
-                                    <img src={post.media_url} alt="Post media" className="w-full h-auto" />
-                                  ) : (
-                                    <div className="bg-slate-700/50 p-3 rounded-lg">
-                                      <p className="text-xs text-slate-400">Media: {post.media_type}</p>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                              <div className="flex items-center justify-between pt-2 border-t border-slate-600/20">
-                                <div className="flex items-center gap-4">
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="flex items-center gap-1 text-slate-400 hover:text-red-400 p-1 hover:bg-red-500/10 rounded-lg transition-all duration-200"
-                                  >
-                                    <Heart className="w-3 h-3" />
-                                    <span className="text-xs">{post.likes_count || 0}</span>
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="flex items-center gap-1 text-slate-400 hover:text-blue-400 p-1 hover:bg-blue-500/10 rounded-lg transition-all duration-200"
-                                  >
-                                    <MessageCircle className="w-3 h-3" />
-                                    <span className="text-xs">{post.comments_count || 0}</span>
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="flex items-center gap-1 text-slate-400 hover:text-green-400 p-1 hover:bg-green-500/10 rounded-lg transition-all duration-200"
-                                  >
-                                    <Share2 className="w-3 h-3" />
-                                  </Button>
-                                </div>
-                                <div className="text-xs text-slate-500">
-                                  {new Date(post.created_at).toLocaleDateString()}
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
+                          <EnhancedPostCard
+                            post={{
+                              ...post,
+                              profile: {
+                                username: profile.username,
+                                display_name: profile.display_name,
+                                avatar_url: profile.avatar_url,
+                                profile_pic_url: profile.profile_pic_url
+                              }
+                            }}
+                            currentUserId={currentUser?.id}
+                            showComments={true}
+                          />
                         </motion.div>
                       ))
                     ) : (
@@ -1101,64 +1050,65 @@ const ProfilePage: React.FC = () => {
             </div>
 
 
-            {/* Social Links Section */}
+            {/* Social Links Section with Enhanced Menu and Share */}
             <div className="px-6 pt-4 pb-6 border-t border-slate-700/30">
-              {/* Social Links Row */}
-              <div className="flex items-center justify-center gap-2 overflow-x-auto scrollbar-hide pt-2">
+              {/* First 4 Social Links */}
+              <div className="flex items-center justify-center gap-2 overflow-x-auto scrollbar-hide pt-2 mb-4">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
+                  onClick={() => socialLinks?.twitter && window.open(`https://twitter.com/${socialLinks.twitter}`, '_blank')}
+                  className="p-2.5 text-slate-400 hover:text-white hover:bg-gradient-to-r hover:from-sky-500 hover:to-blue-600 rounded-full transition-all duration-300 min-w-[44px] shadow-lg hover:shadow-sky-500/30"
                 >
                   <Twitter className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
+                  onClick={() => socialLinks?.linkedin && window.open(`https://linkedin.com/in/${socialLinks.linkedin}`, '_blank')}
+                  className="p-2.5 text-slate-400 hover:text-white hover:bg-gradient-to-r hover:from-blue-700 hover:to-blue-900 rounded-full transition-all duration-300 min-w-[44px] shadow-lg hover:shadow-blue-500/30"
                 >
                   <Linkedin className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
+                  onClick={() => socialLinks?.youtube && window.open(`https://youtube.com/@${socialLinks.youtube}`, '_blank')}
+                  className="p-2.5 text-slate-400 hover:text-white hover:bg-gradient-to-r hover:from-red-600 hover:to-red-800 rounded-full transition-all duration-300 min-w-[44px] shadow-lg hover:shadow-red-500/30"
                 >
                   <Youtube className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
+                  onClick={() => socialLinks?.facebook && window.open(`https://facebook.com/${socialLinks.facebook}`, '_blank')}
+                  className="p-2.5 text-slate-400 hover:text-white hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-800 rounded-full transition-all duration-300 min-w-[44px] shadow-lg hover:shadow-blue-500/30"
                 >
                   <Facebook className="h-4 w-4" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
-                >
-                  <Instagram className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px]"
-                >
-                  <Globe className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={shareProfile}
-                  className="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-full transition-all duration-200 min-w-[44px] ml-2"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+              </div>
+              
+              {/* Three Dots Menu and Share Button */}
+              <div className="flex items-center justify-center gap-2">
+                <SocialLinksMenu
+                  socialLinks={socialLinks}
+                  onShare={() => setIsShareModalOpen(true)}
+                />
               </div>
             </div>
           </CardContent>
         </Card>
       </motion.div>
+      
+      {/* Enhanced Share Modal */}
+      <EnhancedShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        shareUrl={window.location.href}
+        title={`Check out ${profileData.displayName}'s profile`}
+        description={profileData.bio}
+        type="profile"
+      />
     </div>
   );
 };
