@@ -28,18 +28,18 @@ const FollowButton: React.FC<FollowButtonProps> = ({
     return null;
   }
 
-  // Always show follow button - handle authentication in ProfilePage
+  // Show visitor login prompt if not authenticated
   if (!currentUserId) {
     return (
       <Button
         variant="outline"
-        className={`${variant === 'compact' ? 'py-2 text-sm' : 'py-4 text-base'} rounded-2xl font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white border-0 shadow-lg hover:shadow-purple-500/30 ${className}`}
+        className={`${variant === 'compact' ? 'py-2 text-sm' : 'py-4 text-base'} rounded-2xl font-semibold bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:via-indigo-700 hover:to-blue-700 text-white border-0 shadow-lg hover:shadow-purple-500/30 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${className}`}
         onClick={() => {
           // Trigger visitor auth via custom event that ProfilePage will listen to
           window.dispatchEvent(new CustomEvent('show-visitor-auth'));
         }}
       >
-        <Users className="h-4 w-4 mr-2" />
+        <UserPlus className="h-4 w-4 mr-2" />
         {variant === 'compact' ? 'Follow' : 'Login to Follow'}
       </Button>
     );
@@ -73,30 +73,30 @@ const FollowButton: React.FC<FollowButtonProps> = ({
   const isUserFollowing = isFollowing(targetUserId);
 
   if (variant === 'compact') {
-    return (
-      <Button
-        variant={isUserFollowing ? "default" : "outline"}
-        size="sm"
-        onClick={handleFollowClick}
-        disabled={loading}
-        className={`${
-          isUserFollowing 
-            ? 'bg-gradient-to-r from-emerald-500 via-teal-600 to-cyan-600 hover:from-emerald-600 hover:via-teal-700 hover:to-cyan-700 text-white border-0' 
-            : 'bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:via-indigo-700 hover:to-blue-700 text-white border-0'
-        } ${className}`}
-      >
-        {loading ? (
-          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-        ) : isUserFollowing ? (
-          <UserMinus className="h-4 w-4" />
-        ) : (
-          <UserPlus className="h-4 w-4" />
-        )}
-        <span className="ml-2">
-          {isUserFollowing ? 'Following' : 'Follow'}
-        </span>
-      </Button>
-    );
+      return (
+        <Button
+          variant={isUserFollowing ? "default" : "outline"}
+          size="sm"
+          onClick={handleFollowClick}
+          disabled={loading}
+          className={`${
+            isUserFollowing 
+              ? 'bg-gradient-to-r from-emerald-500 via-teal-600 to-cyan-600 hover:from-emerald-600 hover:via-teal-700 hover:to-cyan-700 text-white border-0 shadow-lg hover:shadow-emerald-500/30' 
+              : 'bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:via-indigo-700 hover:to-blue-700 text-white border-0 shadow-lg hover:shadow-purple-500/30'
+          } transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${className}`}
+        >
+          {loading ? (
+            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          ) : isUserFollowing ? (
+            <UserMinus className="h-4 w-4" />
+          ) : (
+            <UserPlus className="h-4 w-4" />
+          )}
+          <span className="ml-2">
+            {isUserFollowing ? 'Following' : 'Follow'}
+          </span>
+        </Button>
+      );
   }
 
   return (
@@ -104,16 +104,18 @@ const FollowButton: React.FC<FollowButtonProps> = ({
       variant={isUserFollowing ? "default" : "outline"}
       className={`py-4 rounded-2xl text-base font-semibold transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${
         isUserFollowing 
-          ? 'bg-gradient-to-r from-emerald-500 via-teal-600 to-cyan-600 hover:from-emerald-600 hover:via-teal-700 hover:to-cyan-700 text-white border-0 shadow-lg hover:shadow-xl' 
-          : 'bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:via-indigo-700 hover:to-blue-700 border-0 text-white shadow-lg hover:shadow-xl'
+          ? 'bg-gradient-to-r from-emerald-500 via-teal-600 to-cyan-600 hover:from-emerald-600 hover:via-teal-700 hover:to-cyan-700 text-white border-0 shadow-lg hover:shadow-emerald-500/30' 
+          : 'bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:via-indigo-700 hover:to-blue-700 border-0 text-white shadow-lg hover:shadow-purple-500/30'
       } ${className}`}
       onClick={handleFollowClick}
       disabled={loading}
     >
       {loading ? (
         <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+      ) : isUserFollowing ? (
+        <UserMinus className="h-4 w-4" />
       ) : (
-        <Users className="h-4 w-4" />
+        <UserPlus className="h-4 w-4" />
       )}
       {isUserFollowing ? 'Following' : 'Follow'}
     </Button>

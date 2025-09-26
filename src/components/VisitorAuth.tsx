@@ -29,24 +29,26 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({ isOpen, onClose }) => {
     }
 
     try {
-      // Create visitor session in database
+      // Create visitor session with enhanced data
       const visitorId = `visitor_${Date.now()}`;
       const visitorData = {
         name: guestName,
         isVisitor: true,
         loginTime: new Date().toISOString(),
-        id: visitorId
+        id: visitorId,
+        sessionId: visitorId
       };
 
       // Store in localStorage
       localStorage.setItem('visitorUser', JSON.stringify(visitorData));
 
-      // Record visitor entry in database (optional - for analytics)
+      // Enhanced database integration - record visitor entry
       const currentUrl = window.location.href;
-      const profileId = currentUrl.split('/').pop(); // Extract profile ID from URL if available
+      const profileId = currentUrl.split('/').pop(); // Extract profile ID from URL
       
       if (profileId && profileId !== '') {
         try {
+          // Record visitor entry in database
           await supabase.from('profile_visitors').insert({
             visitor_id: null, // Visitor not authenticated
             visited_profile_id: profileId,
@@ -54,15 +56,18 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({ isOpen, onClose }) => {
             user_agent: navigator.userAgent
           });
         } catch (error) {
-          // Don't block visitor login if this fails
-          console.log('Could not record visitor entry:', error);
+          // Don't block visitor login if this fails, but log for debugging
+          console.log('Could not record visitor analytics:', error);
         }
       }
       
       toast({
         title: "Welcome Visitor!",
-        description: `Welcome ${guestName}! You can now explore profiles.`,
+        description: `Welcome ${guestName}! You can now explore and follow profiles.`,
       });
+      
+      // Reload the page to refresh authentication state
+      window.location.reload();
       
       onClose();
     } catch (error) {

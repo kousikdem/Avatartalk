@@ -699,12 +699,24 @@ const ProfilePage: React.FC = () => {
                 </Button>
                 
                 {/* Right Side - Follow Button (2 columns) - Always show for non-owner profiles */}
-                {!isOwnProfile && (
+                {profile?.id && currentUser?.id !== profile?.id && (
                   <div className="col-span-2">
                     <FollowButton
-                      targetUserId={profile?.id || ''}
+                      targetUserId={profile?.id}
                       targetUsername={profile?.username}
                       currentUserId={currentUser?.id}
+                      variant="default"
+                      className="w-full"
+                    />
+                  </div>
+                )}
+                {/* Show follow button for visitors too */}
+                {profile?.id && !currentUser?.id && (
+                  <div className="col-span-2">
+                    <FollowButton
+                      targetUserId={profile?.id}
+                      targetUsername={profile?.username}
+                      currentUserId={null}
                       variant="default"
                       className="w-full"
                     />
@@ -1124,17 +1136,17 @@ const ProfilePage: React.FC = () => {
 
             {/* Social Links Section with Enhanced Menu and Share */}
             <div className="px-6 pt-4 pb-6 border-t border-slate-700/30">
-              {/* Four Social Links, Three Dots Menu and Share Button in Same Row */}
-              <div className="flex items-center justify-between gap-2 overflow-x-auto scrollbar-hide pt-2">
+              {/* Four Social Links, Three Dots Menu and Share Button in Same Row with Minimal Spacing */}
+              <div className="flex items-center justify-between gap-1 overflow-x-auto scrollbar-hide pt-2">
                 
-                {/* Left Side - Four Main Social Links */}
-                <div className="flex items-center gap-2 flex-shrink-0">
+                {/* Left Side - Four Main Social Links with Gradient Colors */}
+                <div className="flex items-center gap-1 flex-shrink-0">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => socialLinks?.twitter && window.open(`https://twitter.com/${socialLinks.twitter}`, '_blank')}
                     disabled={!socialLinks?.twitter}
-                    className="p-3 text-slate-400 hover:text-white hover:bg-gradient-to-br hover:from-sky-400 hover:to-blue-600 rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-sky-500/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-3 bg-gradient-to-r from-sky-400 to-blue-600 hover:from-sky-500 hover:to-blue-700 text-white rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-sky-500/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0"
                   >
                     <Twitter className="h-5 w-5" />
                   </Button>
@@ -1144,7 +1156,7 @@ const ProfilePage: React.FC = () => {
                     size="sm"
                     onClick={() => socialLinks?.linkedin && window.open(`https://linkedin.com/in/${socialLinks.linkedin}`, '_blank')}
                     disabled={!socialLinks?.linkedin}
-                    className="p-3 text-slate-400 hover:text-white hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-800 rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-blue-500/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-3 bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-blue-600/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0"
                   >
                     <Linkedin className="h-5 w-5" />
                   </Button>
@@ -1154,7 +1166,7 @@ const ProfilePage: React.FC = () => {
                     size="sm"
                     onClick={() => socialLinks?.youtube && window.open(`https://youtube.com/@${socialLinks.youtube}`, '_blank')}
                     disabled={!socialLinks?.youtube}
-                    className="p-3 text-slate-400 hover:text-white hover:bg-gradient-to-br hover:from-red-500 hover:to-red-700 rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-red-500/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-3 bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-red-500/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0"
                   >
                     <Youtube className="h-5 w-5" />
                   </Button>
@@ -1164,14 +1176,14 @@ const ProfilePage: React.FC = () => {
                     size="sm"
                     onClick={() => socialLinks?.instagram && window.open(`https://instagram.com/${socialLinks.instagram}`, '_blank')}
                     disabled={!socialLinks?.instagram}
-                    className="p-3 text-slate-400 hover:text-white hover:bg-gradient-to-br hover:from-pink-500 hover:to-purple-600 rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-pink-500/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-3 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-pink-500/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0"
                   >
                     <Instagram className="h-5 w-5" />
                   </Button>
                 </div>
                 
-                {/* Right Side - Three Dots Menu and Share Button */}
-                <div className="flex items-center gap-2 flex-shrink-0">
+                {/* Right Side - Three Dots Menu and Share Button with Minimal Gap */}
+                <div className="flex items-center gap-1 flex-shrink-0">
                   {/* Three Dots Menu */}
                   <SocialLinksMenu
                     socialLinks={socialLinks}
@@ -1183,10 +1195,10 @@ const ProfilePage: React.FC = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsShareModalOpen(true)}
-                    className="p-3 px-6 text-slate-400 hover:text-white bg-gradient-to-br from-emerald-500/20 to-teal-600/20 hover:from-emerald-500 hover:to-teal-600 rounded-full transition-all duration-300 min-h-[48px] shadow-lg hover:shadow-emerald-500/30 flex items-center gap-2 flex-shrink-0 border border-emerald-500/30 hover:border-emerald-400"
+                    className="px-4 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-full transition-all duration-300 shadow-lg hover:shadow-emerald-500/30 flex items-center gap-2 flex-shrink-0 font-medium border-0"
                   >
                     <Share2 className="h-4 w-4" />
-                    <span className="text-sm font-medium">Share</span>
+                    Share
                   </Button>
                 </div>
               </div>
