@@ -23,9 +23,23 @@ const FollowButton: React.FC<FollowButtonProps> = ({
   const { toast } = useToast();
   const { isFollowing, followUser, unfollowUser, loading } = useFollows();
 
-  // Don't show follow button for own profile or if not authenticated
-  if (!currentUserId || currentUserId === targetUserId) {
+  // Don't show follow button for own profile
+  if (currentUserId === targetUserId) {
     return null;
+  }
+
+  // Show disabled follow button if not authenticated
+  if (!currentUserId) {
+    return (
+      <Button
+        variant="outline"
+        className="py-4 rounded-2xl text-base font-semibold opacity-50 cursor-not-allowed bg-gradient-to-r from-gray-600 to-gray-700 text-white border-0"
+        disabled
+      >
+        <Users className="h-4 w-4 mr-2" />
+        Login to Follow
+      </Button>
+    );
   }
 
   const handleFollowClick = async () => {

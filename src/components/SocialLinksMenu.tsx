@@ -162,7 +162,7 @@ const SocialLinksMenu: React.FC<SocialLinksMenuProps> = ({
         <MoreVertical className="h-4 w-4" />
       </Button>
 
-      {/* Share Button */}
+      {/* Share Button with Text */}
       <Button
         variant="ghost" 
         size="sm"
@@ -170,9 +170,10 @@ const SocialLinksMenu: React.FC<SocialLinksMenuProps> = ({
           onShare?.();
           setIsMenuOpen(false);
         }}
-        className="p-2.5 text-slate-400 hover:text-white hover:bg-gradient-to-r hover:from-green-500 hover:to-emerald-600 rounded-full transition-all duration-300 min-w-[44px] ml-2 shadow-lg hover:shadow-green-500/30"
+        className="px-3 py-2.5 text-slate-400 hover:text-white hover:bg-gradient-to-r hover:from-green-500 hover:to-emerald-600 rounded-full transition-all duration-300 ml-2 shadow-lg hover:shadow-green-500/30 flex items-center gap-2"
       >
         <ExternalLink className="h-4 w-4" />
+        <span className="text-xs font-medium">Share</span>
       </Button>
 
       {/* Dropdown Menu */}
