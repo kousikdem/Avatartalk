@@ -28,13 +28,16 @@ const FollowButton: React.FC<FollowButtonProps> = ({
     return null;
   }
 
-  // Show disabled follow button if not authenticated
+  // Show visitor login prompt if not authenticated
   if (!currentUserId) {
     return (
       <Button
         variant="outline"
-        className="py-4 rounded-2xl text-base font-semibold opacity-50 cursor-not-allowed bg-gradient-to-r from-gray-600 to-gray-700 text-white border-0"
-        disabled
+        className="py-4 rounded-2xl text-base font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white border-0 shadow-lg hover:shadow-purple-500/30"
+        onClick={() => {
+          // This would trigger visitor auth modal in a real implementation
+          window.location.href = '/?auth=visitor';
+        }}
       >
         <Users className="h-4 w-4 mr-2" />
         Login to Follow

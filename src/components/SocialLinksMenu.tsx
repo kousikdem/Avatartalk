@@ -152,28 +152,14 @@ const SocialLinksMenu: React.FC<SocialLinksMenuProps> = ({
 
   return (
     <div className="relative">
-      {/* Three Dots Button */}
+      {/* Three Dots Button with Enhanced Styling */}
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => setIsMenuOpen(!isMenuOpen)}
-        className="p-2.5 text-slate-400 hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-indigo-600 rounded-full transition-all duration-300 min-w-[44px] shadow-lg hover:shadow-purple-500/30"
+        onClick={() => setIsMenuOpen(true)}
+        className="p-3 text-slate-400 hover:text-white hover:bg-gradient-to-r hover:from-slate-600 hover:to-slate-700 rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg flex-shrink-0"
       >
-        <MoreVertical className="h-4 w-4" />
-      </Button>
-
-      {/* Share Button with Text */}
-      <Button
-        variant="ghost" 
-        size="sm"
-        onClick={() => {
-          onShare?.();
-          setIsMenuOpen(false);
-        }}
-        className="px-3 py-2.5 text-slate-400 hover:text-white hover:bg-gradient-to-r hover:from-green-500 hover:to-emerald-600 rounded-full transition-all duration-300 ml-2 shadow-lg hover:shadow-green-500/30 flex items-center gap-2"
-      >
-        <ExternalLink className="h-4 w-4" />
-        <span className="text-xs font-medium">Share</span>
+        <MoreVertical className="h-5 w-5" />
       </Button>
 
       {/* Dropdown Menu */}

@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Mail, Play, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface VisitorAuthProps {
   isOpen: boolean;
@@ -17,7 +18,7 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({ isOpen, onClose }) => {
   const [guestName, setGuestName] = useState('');
   const { toast } = useToast();
 
-  const handleGuestLogin = () => {
+  const handleGuestLogin = async () => {
     if (!guestName.trim()) {
       toast({
         title: "Name Required",
@@ -27,37 +28,79 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({ isOpen, onClose }) => {
       return;
     }
 
-    // Store visitor data
-    localStorage.setItem('visitorUser', JSON.stringify({
-      name: guestName,
-      isVisitor: true,
-      loginTime: new Date().toISOString()
-    }));
-    
-    toast({
-      title: "Welcome Visitor!",
-      description: `Welcome ${guestName}! Redirecting to profile...`,
-    });
-    
-    onClose();
-    window.location.href = '/?view=profile';
+    try {
+      // Create visitor session in database
+      const visitorId = `visitor_${Date.now()}`;
+      const visitorData = {
+        name: guestName,
+        isVisitor: true,
+        loginTime: new Date().toISOString(),
+        id: visitorId
+      };
+
+      // Store in localStorage
+      localStorage.setItem('visitorUser', JSON.stringify(visitorData));
+
+      // Record visitor entry in database (optional - for analytics)
+      const currentUrl = window.location.href;
+      const profileId = currentUrl.split('/').pop(); // Extract profile ID from URL if available
+      
+      if (profileId && profileId !== '') {
+        try {
+          await supabase.from('profile_visitors').insert({
+            visitor_id: null, // Visitor not authenticated
+            visited_profile_id: profileId,
+            ip_address: null, // Could be populated server-side
+            user_agent: navigator.userAgent
+          });
+        } catch (error) {
+          // Don't block visitor login if this fails
+          console.log('Could not record visitor entry:', error);
+        }
+      }
+      
+      toast({
+        title: "Welcome Visitor!",
+        description: `Welcome ${guestName}! You can now explore profiles.`,
+      });
+      
+      onClose();
+    } catch (error) {
+      console.error('Error during visitor login:', error);
+      toast({
+        title: "Error",
+        description: "Failed to complete visitor login. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDemoLogin = () => {
-    localStorage.setItem('visitorUser', JSON.stringify({
-      name: 'Demo Visitor',
-      isVisitor: true,
-      isDemo: true,
-      loginTime: new Date().toISOString()
-    }));
-    
-    toast({
-      title: "Demo Mode Activated",
-      description: "Welcome Demo Visitor! Redirecting to profile...",
-    });
-    
-    onClose();
-    window.location.href = '/?view=profile';
+  const handleDemoLogin = async () => {
+    try {
+      const demoVisitorData = {
+        name: 'Demo Visitor',
+        isVisitor: true,
+        isDemo: true,
+        loginTime: new Date().toISOString(),
+        id: `demo_visitor_${Date.now()}`
+      };
+
+      localStorage.setItem('visitorUser', JSON.stringify(demoVisitorData));
+      
+      toast({
+        title: "Demo Mode Activated",
+        description: "Welcome Demo Visitor! You can now explore profiles.",
+      });
+      
+      onClose();
+    } catch (error) {
+      console.error('Error during demo login:', error);
+      toast({
+        title: "Error", 
+        description: "Failed to activate demo mode. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
