@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
+import VisitorAuth from './VisitorAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -124,6 +125,7 @@ const ProfilePage: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [socialLinks, setSocialLinks] = useState<any>(null);
+  const [isVisitorAuthOpen, setIsVisitorAuthOpen] = useState(false);
   const { toast } = useToast();
 
   const {
@@ -212,11 +214,32 @@ const ProfilePage: React.FC = () => {
       }
     };
     getCurrentUser();
+
+    // Listen for visitor auth requests
+    const handleVisitorAuth = () => {
+      setIsVisitorAuthOpen(true);
+    };
+
+    window.addEventListener('show-visitor-auth', handleVisitorAuth);
+    return () => window.removeEventListener('show-visitor-auth', handleVisitorAuth);
   }, []);
 
   useEffect(() => {
     if (username) {
       fetchProfile();
+      
+      // Show visitor auth popup for first-time visitors if not authenticated
+      const checkAndShowVisitorAuth = async () => {
+        const { data } = await supabase.auth.getUser();
+        if (!data.user && !localStorage.getItem('visitorUser')) {
+          // Delay to allow profile to load first
+          setTimeout(() => {
+            setIsVisitorAuthOpen(true);
+          }, 1000);
+        }
+      };
+      
+      checkAndShowVisitorAuth();
     }
   }, [username]);
 
@@ -676,15 +699,17 @@ const ProfilePage: React.FC = () => {
                 </Button>
                 
                 {/* Right Side - Follow Button (2 columns) - Always show for non-owner profiles */}
-                <div className="col-span-2">
-                  <FollowButton
-                    targetUserId={profile?.id || ''}
-                    targetUsername={profile?.username}
-                    currentUserId={currentUser?.id}
-                    variant="default"
-                    className="w-full"
-                  />
-                </div>
+                {!isOwnProfile && (
+                  <div className="col-span-2">
+                    <FollowButton
+                      targetUserId={profile?.id || ''}
+                      targetUsername={profile?.username}
+                      currentUserId={currentUser?.id}
+                      variant="default"
+                      className="w-full"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1178,6 +1203,12 @@ const ProfilePage: React.FC = () => {
         title={`Check out ${profileData.displayName}'s profile`}
         description={profileData.bio}
         type="profile"
+      />
+      
+      {/* Visitor Authentication Modal */}
+      <VisitorAuth
+        isOpen={isVisitorAuthOpen}
+        onClose={() => setIsVisitorAuthOpen(false)}
       />
     </div>
   );
