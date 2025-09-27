@@ -255,17 +255,28 @@ const ProfilePage: React.FC = () => {
 
   const fetchProfile = async () => {
     try {
-      // First fetch profile by username
-      const { data: profileData, error: profileError } = await supabase
+      // First get the profile ID by username
+      const { data: profileIdData, error: idError } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id')
         .eq('username', username)
         .maybeSingle();
-
-      if (profileError) throw profileError;
-      if (!profileData) {
+        
+      if (idError) throw idError;
+      if (!profileIdData) {
         throw new Error('Profile not found');
       }
+      
+      // Then use the secure function to get public profile data
+      const { data: profileDataArray, error: profileError } = await supabase
+        .rpc('get_public_profile', { profile_id: profileIdData.id });
+        
+      if (profileError) throw profileError;
+      if (!profileDataArray || profileDataArray.length === 0) {
+        throw new Error('Profile not found');
+      }
+      
+      const profileData = profileDataArray[0];
 
       setProfile(profileData);
 
