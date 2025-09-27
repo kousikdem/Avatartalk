@@ -231,11 +231,13 @@ const ProfilePage: React.FC = () => {
       // Show visitor auth popup for first-time visitors if not authenticated
       const checkAndShowVisitorAuth = async () => {
         const { data } = await supabase.auth.getUser();
-        if (!data.user && !localStorage.getItem('visitorUser')) {
-          // Delay to allow profile to load first
+        const visitorUser = localStorage.getItem('visitorUser');
+        
+        // Show for both unauthenticated users and those without visitor data
+        if (!data.user && !visitorUser) {
           setTimeout(() => {
             setIsVisitorAuthOpen(true);
-          }, 1000);
+          }, 2000);
         }
       };
       
@@ -698,25 +700,13 @@ const ProfilePage: React.FC = () => {
                   Subscribe - $9.99/mo
                 </Button>
                 
-                {/* Right Side - Follow Button (2 columns) - Always show for non-owner profiles */}
-                {profile?.id && currentUser?.id !== profile?.id && (
+                {/* Right Side - Follow Button (2 columns) - Always show for all users except profile owner */}
+                {profile?.id && (
                   <div className="col-span-2">
                     <FollowButton
                       targetUserId={profile?.id}
                       targetUsername={profile?.username}
-                      currentUserId={currentUser?.id}
-                      variant="default"
-                      className="w-full"
-                    />
-                  </div>
-                )}
-                {/* Show follow button for visitors too */}
-                {profile?.id && !currentUser?.id && (
-                  <div className="col-span-2">
-                    <FollowButton
-                      targetUserId={profile?.id}
-                      targetUsername={profile?.username}
-                      currentUserId={null}
+                      currentUserId={currentUser?.id || null}
                       variant="default"
                       className="w-full"
                     />
@@ -1140,13 +1130,13 @@ const ProfilePage: React.FC = () => {
               <div className="flex items-center justify-between gap-1 overflow-x-auto scrollbar-hide pt-2">
                 
                 {/* Left Side - Four Main Social Links with Gradient Colors */}
-                <div className="flex items-center gap-1 flex-shrink-0">
+                 <div className="flex items-center gap-1 flex-shrink-0">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => socialLinks?.twitter && window.open(`https://twitter.com/${socialLinks.twitter}`, '_blank')}
                     disabled={!socialLinks?.twitter}
-                    className="p-3 bg-gradient-to-r from-sky-400 to-blue-600 hover:from-sky-500 hover:to-blue-700 text-white rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-sky-500/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0"
+                    className="p-3 bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 hover:from-sky-500 hover:via-blue-600 hover:to-indigo-700 text-white rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-sky-400/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0 hover:scale-110"
                   >
                     <Twitter className="h-5 w-5" />
                   </Button>
@@ -1156,7 +1146,7 @@ const ProfilePage: React.FC = () => {
                     size="sm"
                     onClick={() => socialLinks?.linkedin && window.open(`https://linkedin.com/in/${socialLinks.linkedin}`, '_blank')}
                     disabled={!socialLinks?.linkedin}
-                    className="p-3 bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-blue-600/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0"
+                    className="p-3 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-800 text-white rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-blue-600/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0 hover:scale-110"
                   >
                     <Linkedin className="h-5 w-5" />
                   </Button>
@@ -1166,7 +1156,7 @@ const ProfilePage: React.FC = () => {
                     size="sm"
                     onClick={() => socialLinks?.youtube && window.open(`https://youtube.com/@${socialLinks.youtube}`, '_blank')}
                     disabled={!socialLinks?.youtube}
-                    className="p-3 bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-red-500/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0"
+                    className="p-3 bg-gradient-to-br from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-red-500/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0 hover:scale-110"
                   >
                     <Youtube className="h-5 w-5" />
                   </Button>
@@ -1176,7 +1166,7 @@ const ProfilePage: React.FC = () => {
                     size="sm"
                     onClick={() => socialLinks?.instagram && window.open(`https://instagram.com/${socialLinks.instagram}`, '_blank')}
                     disabled={!socialLinks?.instagram}
-                    className="p-3 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-pink-500/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0"
+                    className="p-3 bg-gradient-to-br from-pink-500 via-red-500 to-orange-500 hover:from-pink-600 hover:via-red-600 hover:to-orange-600 text-white rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-pink-500/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0 hover:scale-110"
                   >
                     <Instagram className="h-5 w-5" />
                   </Button>

@@ -28,12 +28,16 @@ const FollowButton: React.FC<FollowButtonProps> = ({
     return null;
   }
 
-  // Show visitor login prompt if not authenticated
-  if (!currentUserId) {
+  // Check for visitor user in localStorage
+  const visitorUser = typeof window !== 'undefined' ? localStorage.getItem('visitorUser') : null;
+  const hasAnyAuth = currentUserId || visitorUser;
+
+  // Show visitor login prompt if not authenticated at all
+  if (!hasAnyAuth) {
     return (
       <Button
         variant="outline"
-        className={`${variant === 'compact' ? 'py-2 text-sm' : 'py-4 text-base'} rounded-2xl font-semibold bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:via-indigo-700 hover:to-blue-700 text-white border-0 shadow-lg hover:shadow-purple-500/30 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${className}`}
+        className={`${variant === 'compact' ? 'py-2 text-sm' : 'py-4 text-base'} rounded-2xl font-semibold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 text-white border-0 shadow-lg hover:shadow-indigo-500/30 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${className}`}
         onClick={() => {
           // Trigger visitor auth via custom event that ProfilePage will listen to
           window.dispatchEvent(new CustomEvent('show-visitor-auth'));
@@ -82,7 +86,7 @@ const FollowButton: React.FC<FollowButtonProps> = ({
           className={`${
             isUserFollowing 
               ? 'bg-gradient-to-r from-emerald-500 via-teal-600 to-cyan-600 hover:from-emerald-600 hover:via-teal-700 hover:to-cyan-700 text-white border-0 shadow-lg hover:shadow-emerald-500/30' 
-              : 'bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:via-indigo-700 hover:to-blue-700 text-white border-0 shadow-lg hover:shadow-purple-500/30'
+              : 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 text-white border-0 shadow-lg hover:shadow-indigo-500/30'
           } transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${className}`}
         >
           {loading ? (
@@ -105,7 +109,7 @@ const FollowButton: React.FC<FollowButtonProps> = ({
       className={`py-4 rounded-2xl text-base font-semibold transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${
         isUserFollowing 
           ? 'bg-gradient-to-r from-emerald-500 via-teal-600 to-cyan-600 hover:from-emerald-600 hover:via-teal-700 hover:to-cyan-700 text-white border-0 shadow-lg hover:shadow-emerald-500/30' 
-          : 'bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:via-indigo-700 hover:to-blue-700 border-0 text-white shadow-lg hover:shadow-purple-500/30'
+          : 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 border-0 text-white shadow-lg hover:shadow-indigo-500/30'
       } ${className}`}
       onClick={handleFollowClick}
       disabled={loading}
