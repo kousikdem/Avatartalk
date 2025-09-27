@@ -247,7 +247,7 @@ serve(async (req) => {
         });
 
       case 'multi_speaker_synthesis':
-        const { speakers, texts, voiceSettings } = voiceData;
+        const { speakers, texts, voiceSettings: multiSpeakerSettings } = voiceData;
         
         console.log('Multi-speaker TTS synthesis started...');
         
@@ -284,8 +284,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in voice-cloning function:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: errorMessage,
       success: false 
     }), {
       status: 500,

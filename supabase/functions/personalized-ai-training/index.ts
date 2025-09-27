@@ -458,10 +458,12 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('❌ Error in personalized-ai-training function:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
     return new Response(JSON.stringify({ 
-      error: error.message || 'Internal server error',
+      error: errorMessage,
       success: false,
-      details: error.stack
+      details: errorStack
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -474,10 +476,10 @@ async function processTrainingDataWithLlamaIndex(trainingData: any) {
   console.log('📚 Processing training data with LlamaIndex integration...');
   
   const processedData = {
-    documents: [],
-    qaPairs: [],
-    embeddings: [],
-    llamaIndexNodes: [],
+    documents: [] as any[],
+    qaPairs: [] as any[],
+    embeddings: [] as any[],
+    llamaIndexNodes: [] as any[],
     totalTokens: 0
   };
 
@@ -574,7 +576,7 @@ function calculateProcessingTime(processedData: any, stage: string): number {
   const complexity = (processedData.documents?.length || 0) * 100 + 
                     (processedData.qaPairs?.length || 0) * 50;
   
-  const stageMultipliers = {
+  const stageMultipliers: { [key: string]: number } = {
     'llamaindex_document_processing': 2.0,
     'embedding_generation': 1.5,
     'qlora_initialization': 1.0,

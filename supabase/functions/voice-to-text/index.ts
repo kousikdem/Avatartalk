@@ -107,8 +107,6 @@ async function transcribeWithCoquiSTT(audioData: Uint8Array): Promise<string> {
     
     // For now, return a placeholder indicating successful processing
     // You would replace this with actual Coqui STT inference
-    const audioBlob = new Blob([wavData], { type: 'audio/wav' });
-    const audioUrl = URL.createObjectURL(audioBlob);
     
     // Simulated transcription result
     // In production, this would be the actual Coqui STT output
@@ -116,7 +114,8 @@ async function transcribeWithCoquiSTT(audioData: Uint8Array): Promise<string> {
     
   } catch (error) {
     console.error('Coqui STT error:', error);
-    throw new Error(`Coqui STT processing failed: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    throw new Error(`Coqui STT processing failed: ${errorMessage}`);
   }
 }
 
@@ -153,9 +152,10 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Voice-to-text error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: errorMessage,
         engine: 'coqui-stt'
       }),
       {
