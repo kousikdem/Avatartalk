@@ -686,29 +686,30 @@ const ProfilePage: React.FC = () => {
                 />
                 <div className="absolute inset-0 rounded-3xl border border-blue-400/10 pointer-events-none" />
                 
-                {/* Floating Talk to Me Button */}
-                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+                {/* Floating Talk to Me Button - Small size */}
+                <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2">
                   <Button
                     size="sm"
-                    className="bg-gradient-to-r from-blue-600/90 to-cyan-600/90 hover:from-blue-700/90 hover:to-cyan-700/90 text-white rounded-full w-14 h-14 p-0 backdrop-blur-sm border border-blue-400/30 shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-110"
+                    className="bg-gradient-to-r from-blue-600/90 to-cyan-600/90 hover:from-blue-700/90 hover:to-cyan-700/90 text-white rounded-full w-10 h-10 p-0 backdrop-blur-sm border border-blue-400/30 shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-110"
                     onClick={() => {}} // Just enable conversation mode, no auto-response
                   >
-                    <MessageCircle className="h-6 w-6" />
+                    <MessageCircle className="h-4 w-4" />
                   </Button>
                 </div>
                 
               </div>
             </div>
 
-            {/* Action Buttons - Subscribe (left wider) and Follow (right) */}
-            <div className="px-6 pb-6">
-              <div className="grid grid-cols-5 gap-2">
+            {/* Action Buttons - Subscribe (left wider) and Follow (right) - Small size with minimal spacing */}
+            <div className="px-6 pb-4">
+              <div className="grid grid-cols-5 gap-1">
                 {/* Left Side - Subscribe Button (wider - 3 columns, moved left) */}
                 <Button
-                  className="col-span-3 bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-                    onClick={() => {}} // Just a visual button, no auto-response
+                  size="sm"
+                  className="col-span-3 bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-2 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-1 hover:scale-[1.02] active:scale-[0.98]"
+                  onClick={() => {}} // Just a visual button, no auto-response
                 >
-                  <Sparkles className="h-5 w-5" />
+                  <Sparkles className="h-4 w-4" />
                   Subscribe - $9.99/mo
                 </Button>
                 
@@ -719,31 +720,31 @@ const ProfilePage: React.FC = () => {
                       targetUserId={profile.id}
                       targetUsername={profile.username}
                       currentUserId={currentUser?.id || null}
-                      variant="default"
-                      className="w-full h-full"
+                      variant="compact"
+                      className="w-full h-full py-2 text-sm"
                     />
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Stats - Three Column Layout */}
-            <div className="px-6 pb-6">
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center bg-slate-800/30 rounded-2xl py-4 backdrop-blur-sm border border-slate-700/20">
-                  <div className="text-2xl font-bold text-white mb-1">
+            {/* Stats - Three Column Layout - Smaller size with minimal spacing */}
+            <div className="px-6 pb-4">
+              <div className="grid grid-cols-3 gap-2">
+                <div className="text-center bg-slate-800/30 rounded-xl py-2 backdrop-blur-sm border border-slate-700/20">
+                  <div className="text-lg font-bold text-white mb-0.5">
                     {userStats?.total_conversations || 0}
                   </div>
                   <div className="text-xs text-slate-400 font-medium">Conversations</div>
                 </div>
-                <div className="text-center bg-slate-800/30 rounded-2xl py-4 backdrop-blur-sm border border-slate-700/20">
-                  <div className="text-2xl font-bold text-white mb-1">
+                <div className="text-center bg-slate-800/30 rounded-xl py-2 backdrop-blur-sm border border-slate-700/20">
+                  <div className="text-lg font-bold text-white mb-0.5">
                     {followersCount >= 1000 ? `${(followersCount/1000).toFixed(1)}K` : followersCount}
                   </div>
                   <div className="text-xs text-slate-400 font-medium">Followers</div>
                 </div>
-                <div className="text-center bg-slate-800/30 rounded-2xl py-4 backdrop-blur-sm border border-slate-700/20">
-                  <div className="text-2xl font-bold text-white mb-1">
+                <div className="text-center bg-slate-800/30 rounded-xl py-2 backdrop-blur-sm border border-slate-700/20">
+                  <div className="text-lg font-bold text-white mb-0.5">
                     {Math.round(userStats?.engagement_score || 0)}%
                   </div>
                   <div className="text-xs text-slate-400 font-medium">Engagement</div>
@@ -1141,16 +1142,16 @@ const ProfilePage: React.FC = () => {
               {/* Four Social Links, Three Dots Menu and Share Button in Same Row with Minimal Spacing */}
               <div className="flex items-center justify-between gap-1 overflow-x-auto scrollbar-hide pt-2">
                 
-                {/* Left Side - Four Main Social Links with Enhanced Gradient Colors and Minimal Spacing */}
+                {/* Left Side - Four Main Social Links with Enhanced Gradient Colors and Minimal Spacing - Small buttons */}
                  <div className="flex items-center gap-0.5 flex-shrink-0">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => socialLinks?.twitter && window.open(`https://twitter.com/${socialLinks.twitter}`, '_blank')}
                     disabled={!socialLinks?.twitter}
-                    className="p-3 bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 hover:from-sky-500 hover:via-blue-600 hover:to-indigo-700 text-white rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-sky-400/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0 hover:scale-110"
+                    className="p-2 bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 hover:from-sky-500 hover:via-blue-600 hover:to-indigo-700 text-white rounded-full transition-all duration-300 min-w-[36px] min-h-[36px] shadow-lg hover:shadow-sky-400/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0 hover:scale-110"
                   >
-                    <Twitter className="h-5 w-5" />
+                    <Twitter className="h-4 w-4" />
                   </Button>
                   
                   <Button
@@ -1158,9 +1159,9 @@ const ProfilePage: React.FC = () => {
                     size="sm"
                     onClick={() => socialLinks?.linkedin && window.open(`https://linkedin.com/in/${socialLinks.linkedin}`, '_blank')}
                     disabled={!socialLinks?.linkedin}
-                    className="p-3 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-800 text-white rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-blue-600/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0 hover:scale-110"
+                    className="p-2 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-800 text-white rounded-full transition-all duration-300 min-w-[36px] min-h-[36px] shadow-lg hover:shadow-blue-600/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0 hover:scale-110"
                   >
-                    <Linkedin className="h-5 w-5" />
+                    <Linkedin className="h-4 w-4" />
                   </Button>
                   
                   <Button
@@ -1168,9 +1169,9 @@ const ProfilePage: React.FC = () => {
                     size="sm"
                     onClick={() => socialLinks?.youtube && window.open(`https://youtube.com/@${socialLinks.youtube}`, '_blank')}
                     disabled={!socialLinks?.youtube}
-                    className="p-3 bg-gradient-to-br from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-red-500/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0 hover:scale-110"
+                    className="p-2 bg-gradient-to-br from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white rounded-full transition-all duration-300 min-w-[36px] min-h-[36px] shadow-lg hover:shadow-red-500/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0 hover:scale-110"
                   >
-                    <Youtube className="h-5 w-5" />
+                    <Youtube className="h-4 w-4" />
                   </Button>
                   
                   <Button
@@ -1178,13 +1179,13 @@ const ProfilePage: React.FC = () => {
                     size="sm"
                     onClick={() => socialLinks?.instagram && window.open(`https://instagram.com/${socialLinks.instagram}`, '_blank')}
                     disabled={!socialLinks?.instagram}
-                    className="p-3 bg-gradient-to-br from-pink-500 via-red-500 to-orange-500 hover:from-pink-600 hover:via-red-600 hover:to-orange-600 text-white rounded-full transition-all duration-300 min-w-[48px] min-h-[48px] shadow-lg hover:shadow-pink-500/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0 hover:scale-110"
+                    className="p-2 bg-gradient-to-br from-pink-500 via-red-500 to-orange-500 hover:from-pink-600 hover:via-red-600 hover:to-orange-600 text-white rounded-full transition-all duration-300 min-w-[36px] min-h-[36px] shadow-lg hover:shadow-pink-500/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0 hover:scale-110"
                   >
-                    <Instagram className="h-5 w-5" />
+                    <Instagram className="h-4 w-4" />
                   </Button>
                 </div>
                 
-                {/* Right Side - Three Dots Menu and Share Button with Minimal Gap */}
+                {/* Right Side - Three Dots Menu and Share Button with Minimal Gap - Small buttons */}
                 <div className="flex items-center gap-0.5 flex-shrink-0">
                   {/* Three Dots Menu */}
                   <SocialLinksMenu
@@ -1192,14 +1193,14 @@ const ProfilePage: React.FC = () => {
                     onShare={() => setIsShareModalOpen(true)}
                   />
                   
-                  {/* Enhanced Share Button with Text and Gradient */}
+                  {/* Enhanced Share Button with Text and Gradient - Small size */}
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsShareModalOpen(true)}
-                    className="px-4 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-full transition-all duration-300 shadow-lg hover:shadow-emerald-500/30 flex items-center gap-2 flex-shrink-0 font-medium border-0"
+                    className="px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-full transition-all duration-300 shadow-lg hover:shadow-emerald-500/30 flex items-center gap-1 flex-shrink-0 font-medium border-0 text-sm"
                   >
-                    <Share2 className="h-4 w-4" />
+                    <Share2 className="h-3 w-3" />
                     Share
                   </Button>
                 </div>
