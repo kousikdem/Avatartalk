@@ -28,23 +28,42 @@ const FollowButton: React.FC<FollowButtonProps> = ({
     return null;
   }
 
-  // Check for visitor user in localStorage
+  // Enhanced authentication detection
   const visitorUser = typeof window !== 'undefined' ? localStorage.getItem('visitorUser') : null;
-  const hasAnyAuth = currentUserId || visitorUser;
+  const hasRealAuth = !!currentUserId;
+  const hasVisitorAuth = !!visitorUser;
+  const hasAnyAuth = hasRealAuth || hasVisitorAuth;
 
-  // Show visitor login prompt if not authenticated at all
+  // Show visitor login prompt if no authentication at all
   if (!hasAnyAuth) {
     return (
       <Button
         variant="outline"
         className={`${variant === 'compact' ? 'py-2 text-sm' : 'py-4 text-base'} rounded-2xl font-semibold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 text-white border-0 shadow-lg hover:shadow-indigo-500/30 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${className}`}
         onClick={() => {
-          // Trigger visitor auth via custom event that ProfilePage will listen to
+          // Trigger visitor auth popup
           window.dispatchEvent(new CustomEvent('show-visitor-auth'));
         }}
       >
         <UserPlus className="h-4 w-4 mr-2" />
         {variant === 'compact' ? 'Follow' : 'Login to Follow'}
+      </Button>
+    );
+  }
+
+  // Show visitor upgrade prompt if only visitor auth
+  if (hasVisitorAuth && !hasRealAuth) {
+    return (
+      <Button
+        variant="outline"
+        className={`${variant === 'compact' ? 'py-2 text-sm' : 'py-4 text-base'} rounded-2xl font-semibold bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 hover:from-amber-700 hover:via-orange-700 hover:to-red-700 text-white border-0 shadow-lg hover:shadow-amber-500/30 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${className}`}
+        onClick={() => {
+          // Trigger main auth modal (could be enhanced with a separate auth modal)
+          window.dispatchEvent(new CustomEvent('show-visitor-auth'));
+        }}
+      >
+        <UserPlus className="h-4 w-4 mr-2" />
+        {variant === 'compact' ? 'Signup to Follow' : 'Sign Up to Follow'}
       </Button>
     );
   }

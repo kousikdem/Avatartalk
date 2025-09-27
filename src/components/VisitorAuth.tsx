@@ -42,19 +42,28 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({ isOpen, onClose }) => {
       // Store in localStorage
       localStorage.setItem('visitorUser', JSON.stringify(visitorData));
 
-      // Enhanced database integration - record visitor entry
+      // Enhanced database integration - record visitor entry  
       const currentUrl = window.location.href;
-      const profileId = currentUrl.split('/').pop(); // Extract profile ID from URL
+      const username = currentUrl.split('/').pop(); // Extract username from URL
       
-      if (profileId && profileId !== '') {
+      if (username && username !== '') {
         try {
-          // Record visitor entry in database
-          await supabase.from('profile_visitors').insert({
-            visitor_id: null, // Visitor not authenticated
-            visited_profile_id: profileId,
-            ip_address: null, // Could be populated server-side
-            user_agent: navigator.userAgent
-          });
+          // First, get the profile ID from username
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('username', username)
+            .maybeSingle();
+          
+          if (profileData?.id) {
+            // Record visitor entry in database with proper profile ID
+            await supabase.from('profile_visitors').insert({
+              visitor_id: null, // Visitor not authenticated
+              visited_profile_id: profileData.id,
+              ip_address: null, // Could be populated server-side  
+              user_agent: navigator.userAgent
+            });
+          }
         } catch (error) {
           // Don't block visitor login if this fails, but log for debugging
           console.log('Could not record visitor analytics:', error);
@@ -113,10 +122,10 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({ isOpen, onClose }) => {
       <DialogContent className="sm:max-w-md bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 border border-blue-500/30 backdrop-blur-xl text-white">
         <DialogHeader>
           <DialogTitle className="text-center text-white text-2xl mb-2">
-            Visit Profile
+            🚀 Join the Experience!  
           </DialogTitle>
           <p className="text-center text-blue-200 text-sm">
-            Enter as a visitor to explore AI avatars and chat
+            Enter as a visitor to follow profiles, chat with AI avatars, and explore content
           </p>
         </DialogHeader>
 
@@ -139,7 +148,7 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({ isOpen, onClose }) => {
 
             <Button 
               onClick={handleGuestLogin}
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
+              className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white py-3 rounded-xl font-semibold shadow-lg hover:shadow-blue-500/30 transition-all duration-300"
             >
               <UserPlus className="w-4 h-4 mr-2" />
               Continue as Visitor
@@ -157,7 +166,7 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({ isOpen, onClose }) => {
 
           <Button 
             variant="outline" 
-            className="w-full border-purple-500/50 text-purple-300 hover:bg-purple-500/10 hover:border-purple-400"
+            className="w-full border-purple-500/50 text-purple-300 hover:bg-purple-500/10 hover:border-purple-400 py-3 rounded-xl font-semibold"
             onClick={handleDemoLogin}
           >
             <Play className="mr-2 h-4 w-4" />

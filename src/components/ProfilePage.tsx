@@ -228,16 +228,17 @@ const ProfilePage: React.FC = () => {
     if (username) {
       fetchProfile();
       
-      // Show visitor auth popup for first-time visitors if not authenticated
+      // Enhanced visitor auth popup - show for ALL unauthenticated users
       const checkAndShowVisitorAuth = async () => {
         const { data } = await supabase.auth.getUser();
         const visitorUser = localStorage.getItem('visitorUser');
         
-        // Show for both unauthenticated users and those without visitor data
+        // Show popup for any user who isn't authenticated (no user account OR visitor session)
         if (!data.user && !visitorUser) {
+          // Show immediately for better UX, not delayed
           setTimeout(() => {
             setIsVisitorAuthOpen(true);
-          }, 2000);
+          }, 1000);
         }
       };
       
@@ -690,7 +691,7 @@ const ProfilePage: React.FC = () => {
 
             {/* Action Buttons - Subscribe (left wider) and Follow (right) */}
             <div className="px-6 pb-6">
-              <div className="grid grid-cols-5 gap-3">
+              <div className="grid grid-cols-5 gap-2">
                 {/* Left Side - Subscribe Button (wider - 3 columns, moved left) */}
                 <Button
                   className="col-span-3 bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-4 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
@@ -700,15 +701,15 @@ const ProfilePage: React.FC = () => {
                   Subscribe - $9.99/mo
                 </Button>
                 
-                {/* Right Side - Follow Button (2 columns) - Always show for all users except profile owner */}
-                {profile?.id && (
+                {/* Right Side - Follow Button (2 columns) - ALWAYS show for other users */}
+                {profile?.id && profile?.id !== currentUser?.id && (
                   <div className="col-span-2">
                     <FollowButton
-                      targetUserId={profile?.id}
-                      targetUsername={profile?.username}
+                      targetUserId={profile.id}
+                      targetUsername={profile.username}
                       currentUserId={currentUser?.id || null}
                       variant="default"
-                      className="w-full"
+                      className="w-full h-full"
                     />
                   </div>
                 )}
@@ -1129,8 +1130,8 @@ const ProfilePage: React.FC = () => {
               {/* Four Social Links, Three Dots Menu and Share Button in Same Row with Minimal Spacing */}
               <div className="flex items-center justify-between gap-1 overflow-x-auto scrollbar-hide pt-2">
                 
-                {/* Left Side - Four Main Social Links with Gradient Colors */}
-                 <div className="flex items-center gap-1 flex-shrink-0">
+                {/* Left Side - Four Main Social Links with Enhanced Gradient Colors and Minimal Spacing */}
+                 <div className="flex items-center gap-0.5 flex-shrink-0">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -1173,7 +1174,7 @@ const ProfilePage: React.FC = () => {
                 </div>
                 
                 {/* Right Side - Three Dots Menu and Share Button with Minimal Gap */}
-                <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="flex items-center gap-0.5 flex-shrink-0">
                   {/* Three Dots Menu */}
                   <SocialLinksMenu
                     socialLinks={socialLinks}
