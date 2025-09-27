@@ -31,6 +31,7 @@ import { useAvatarSettings } from '@/hooks/useAvatarSettings';
 
 const SettingsPage = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [socialLinks, setSocialLinks] = useState<any>({});
   const [loading, setLoading] = useState(true);
@@ -38,6 +39,32 @@ const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const { toast } = useToast();
   const { settings: avatarSettings, updateSetting, loading: avatarLoading } = useAvatarSettings();
+
+  // Authentication check
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setCurrentUser(session?.user ?? null);
+      setAuthLoading(false);
+      
+      // Redirect to login if not authenticated
+      if (!session?.user) {
+        window.location.href = '/';
+      }
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCurrentUser(session?.user ?? null);
+      if (!session?.user) {
+        window.location.href = '/';
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Profile settings
   const [profileData, setProfileData] = useState({
@@ -224,6 +251,19 @@ const SettingsPage = () => {
       setSaving(false);
     }
   };
+
+  // Authentication and loading check
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return null; // Will redirect in useEffect
+  }
 
   if (loading) {
     return (

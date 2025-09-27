@@ -56,19 +56,25 @@ const Index = () => {
     if (view === 'avatar') {
       return <EnhancedAvatarStudio />;
     }
+    // Show dashboard for authenticated users by default
     return <Dashboard />;
   }
 
   // For non-authenticated users
   // Show pricing page
   if (view === 'pricing') {
-    return <PricingPage />;
+    return (
+      <>
+        <Navbar showAuth={true} />
+        <PricingPage />
+      </>
+    );
   }
 
   // Default landing page (only for non-authenticated users)
   return (
     <>
-      <Navbar />
+      <Navbar showAuth={true} />
       <LandingPage />
       
       {/* Auto Pop-up Visitor Auth Modal */}

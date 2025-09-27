@@ -51,6 +51,7 @@ interface User {
 
 const FeedPage = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [feedPosts, setFeedPosts] = useState<FeedPost[]>([]);
   const [suggestedUsers, setSuggestedUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,12 +62,30 @@ const FeedPage = () => {
   const { posts: userPosts, isLoading: userPostsLoading } = usePosts(currentUser?.id);
   const { following, followUser, unfollowUser, isFollowing } = useFollows(currentUser?.id);
 
+  // Authentication check
   useEffect(() => {
-    const getCurrentUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      setCurrentUser(data.user);
-    };
-    getCurrentUser();
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setCurrentUser(session?.user ?? null);
+      setAuthLoading(false);
+      
+      // Redirect to login if not authenticated
+      if (!session?.user) {
+        window.location.href = '/';
+      }
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCurrentUser(session?.user ?? null);
+      if (!session?.user) {
+        window.location.href = '/';
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -279,6 +298,19 @@ const FeedPage = () => {
       </CardContent>
     </Card>
   );
+
+  // Authentication and loading check
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return null; // Will redirect in useEffect
+  }
 
   if (loading && !currentUser) {
     return (
