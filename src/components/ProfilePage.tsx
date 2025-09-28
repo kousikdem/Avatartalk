@@ -700,29 +700,35 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Action Buttons - Subscribe (left wider) and Follow (right) - Small size with minimal spacing */}
+            {/* Action Buttons - Subscribe (left wider) and Follow (right) - Enhanced design */}
             <div className="px-6 pb-4">
-              <div className="grid grid-cols-5 gap-1">
-                {/* Left Side - Subscribe Button (wider - 3 columns, moved left) */}
+              <div className="grid grid-cols-5 gap-2">
+                {/* Left Side - Subscribe Button (wider - 3 columns) */}
                 <Button
                   size="sm"
-                  className="col-span-3 bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-2 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-1 hover:scale-[1.02] active:scale-[0.98]"
-                  onClick={() => {}} // Just a visual button, no auto-response
+                  className="col-span-3 bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-3 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                  onClick={() => {}} // Just a visual button
                 >
                   <Sparkles className="h-4 w-4" />
                   Subscribe - $9.99/mo
                 </Button>
                 
-                {/* Right Side - Follow Button (2 columns) - ALWAYS show for other users */}
+                {/* Right Side - Enhanced Follow Button (2 columns) */}
                 {profile?.id && profile?.id !== currentUser?.id && (
                   <div className="col-span-2">
-                    <FollowButton
-                      targetUserId={profile.id}
-                      targetUsername={profile.username}
-                      currentUserId={currentUser?.id || null}
-                      variant="compact"
-                      className="w-full h-full py-2 text-sm"
-                    />
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="w-full h-full"
+                    >
+                      <FollowButton
+                        targetUserId={profile.id}
+                        targetUsername={profile.username}
+                        currentUserId={currentUser?.id || null}
+                        variant="compact"
+                        className="w-full h-full py-3 text-sm font-semibold bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0 shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl"
+                      />
+                    </motion.div>
                   </div>
                 )}
               </div>
