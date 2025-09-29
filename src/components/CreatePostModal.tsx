@@ -61,6 +61,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
   };
 
   const handleCreatePost = async () => {
+    // Enhanced validation
     if (!content.trim() && !selectedFile && !linkUrl.trim()) {
       toast({
         title: "Error",
@@ -79,6 +80,16 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
       return;
     }
 
+    // Validate paid post price
+    if (isPaid && (!price || parseFloat(price) <= 0)) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid price for paid posts",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
@@ -91,12 +102,12 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
         const fileName = `${Date.now()}.${fileExt}`;
         const filePath = `${currentUser.id}/${fileName}`;
 
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('thumbnails')
           .upload(filePath, selectedFile);
 
         if (uploadError) {
-          throw uploadError;
+          throw new Error(`Upload failed: ${uploadError.message}`);
         }
 
         const { data: { publicUrl } } = supabase.storage
@@ -109,25 +120,31 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
 
       // For link posts, use the link URL as media
       if (postType === 'link' && linkUrl.trim()) {
-        mediaUrl = linkUrl;
-        mediaType = 'link';
+        // Validate URL format
+        try {
+          new URL(linkUrl.startsWith('http') ? linkUrl : `https://${linkUrl}`);
+          mediaUrl = linkUrl.startsWith('http') ? linkUrl : `https://${linkUrl}`;
+          mediaType = 'link';
+        } catch {
+          throw new Error('Invalid URL format');
+        }
       }
 
-      // Create post data
+      // Create post data with proper type casting
       const postData = {
         user_id: currentUser.id,
-        content: content.trim(),
+        content: content.trim() || '', // Ensure content is never null
         post_type: postType,
-        media_url: mediaUrl || null,
-        media_type: mediaType || null,
+        media_url: mediaUrl || undefined,
+        media_type: mediaType || undefined,
         is_paid: isPaid,
-        price: isPaid ? parseFloat(price) || 0 : null,
+        price: isPaid && price ? parseFloat(price) : undefined,
         likes_count: 0,
         comments_count: 0,
         views_count: 0,
         metadata: {
-          title: title.trim() || null,
-          integration_app: integrationApp || null,
+          title: title.trim() || undefined,
+          integration_app: integrationApp || undefined,
         }
       };
 
@@ -142,12 +159,18 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose }) =>
       setIsPaid(false);
       setPrice('');
       setPostType('text');
+      
+      toast({
+        title: "Success",
+        description: "Post created successfully!",
+      });
+      
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating post:', error);
       toast({
         title: "Error",
-        description: "Failed to create post. Please try again.",
+        description: error.message || "Failed to create post. Please try again.",
         variant: "destructive",
       });
     } finally {

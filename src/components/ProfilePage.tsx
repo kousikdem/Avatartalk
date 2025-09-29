@@ -700,38 +700,34 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Action Buttons - Subscribe (left wider) and Follow (right) - Enhanced design */}
-            <div className="px-6 pb-4">
-              <div className="grid grid-cols-5 gap-2">
-                {/* Left Side - Subscribe Button (wider - 3 columns) */}
-                <Button
-                  size="sm"
-                  className="col-span-3 bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-3 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-                  onClick={() => {}} // Just a visual button
+            {/* Action Buttons - Subscribe and Follow stacked vertically */}
+            <div className="px-6 pb-4 space-y-2">
+              {/* Subscribe Button - Full Width */}
+              <Button
+                size="lg"
+                className="w-full bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-4 rounded-xl text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                onClick={() => {}} // Just a visual button
+              >
+                <Sparkles className="h-5 w-5" />
+                Subscribe - $9.99/mo
+              </Button>
+              
+              {/* Follow Button - Full Width below Subscribe */}
+              {profile?.id && profile?.id !== currentUser?.id && (
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full"
                 >
-                  <Sparkles className="h-4 w-4" />
-                  Subscribe - $9.99/mo
-                </Button>
-                
-                {/* Right Side - Enhanced Follow Button (2 columns) */}
-                {profile?.id && profile?.id !== currentUser?.id && (
-                  <div className="col-span-2">
-                    <motion.div
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="w-full h-full"
-                    >
-                      <FollowButton
-                        targetUserId={profile.id}
-                        targetUsername={profile.username}
-                        currentUserId={currentUser?.id || null}
-                        variant="compact"
-                        className="w-full h-full py-3 text-sm font-semibold bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0 shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl"
-                      />
-                    </motion.div>
-                  </div>
-                )}
-              </div>
+                  <FollowButton
+                    targetUserId={profile.id}
+                    targetUsername={profile.username}
+                    currentUserId={currentUser?.id || null}
+                    variant="default"
+                    className="w-full py-4 text-base font-semibold bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600 hover:from-blue-600 hover:via-indigo-700 hover:to-purple-700 border-0 shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl"
+                  />
+                </motion.div>
+              )}
             </div>
 
             {/* Stats - Three Column Layout - Smaller size with minimal spacing */}
