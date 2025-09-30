@@ -31,16 +31,7 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({ isOpen, onClose }) => {
     try {
       // Create visitor session with enhanced data
       const visitorId = `visitor_${Date.now()}`;
-      const visitorData = {
-        name: guestName,
-        isVisitor: true,
-        loginTime: new Date().toISOString(),
-        id: visitorId,
-        sessionId: visitorId
-      };
-
-      // Store in localStorage
-      localStorage.setItem('visitorUser', JSON.stringify(visitorData));
+      // Track visitor analytics only - no localStorage auth bypass
 
       // Enhanced database integration - record visitor entry  
       const currentUrl = window.location.href;
@@ -70,12 +61,9 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({ isOpen, onClose }) => {
       }
       
       toast({
-        title: "Welcome Visitor!",
-        description: `Welcome ${guestName}! You can now explore and follow profiles.`,
+        title: "Visit Recorded",
+        description: `Welcome, ${guestName}! Sign up to unlock all features.`,
       });
-      
-      // Reload the page to refresh authentication state
-      window.location.reload();
       
       onClose();
     } catch (error) {
@@ -90,19 +78,9 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({ isOpen, onClose }) => {
 
   const handleDemoLogin = async () => {
     try {
-      const demoVisitorData = {
-        name: 'Demo Visitor',
-        isVisitor: true,
-        isDemo: true,
-        loginTime: new Date().toISOString(),
-        id: `demo_visitor_${Date.now()}`
-      };
-
-      localStorage.setItem('visitorUser', JSON.stringify(demoVisitorData));
-      
       toast({
-        title: "Demo Mode Activated",
-        description: "Welcome Demo Visitor! You can now explore profiles.",
+        title: "Demo Mode",
+        description: "Sign up to unlock all features and interactions.",
       });
       
       onClose();

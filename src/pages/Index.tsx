@@ -23,12 +23,12 @@ const Index = () => {
       setUser(session?.user ?? null);
       setLoading(false);
       
-      // Show visitor auth popup for first-time visitors (non-authenticated users)
-      if (!session?.user && !localStorage.getItem('visitorUser') && !localStorage.getItem('hasSeenVisitorAuth')) {
+      // Show visitor auth popup for first-time visitors
+      if (!session?.user && !localStorage.getItem('hasSeenVisitorAuth')) {
         setTimeout(() => {
           setShowVisitorAuth(true);
           localStorage.setItem('hasSeenVisitorAuth', 'true');
-        }, 2000); // Show after 2 seconds
+        }, 2000);
       }
     });
 

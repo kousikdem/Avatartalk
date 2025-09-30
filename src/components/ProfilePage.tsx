@@ -228,14 +228,12 @@ const ProfilePage: React.FC = () => {
     if (username) {
       fetchProfile();
       
-      // Enhanced visitor auth popup - show for ALL unauthenticated users
+      // Show auth popup for unauthenticated users
       const checkAndShowVisitorAuth = async () => {
         const { data } = await supabase.auth.getUser();
-        const visitorUser = localStorage.getItem('visitorUser');
         
-        // Show popup for any user who isn't authenticated (no user account OR visitor session)
-        if (!data.user && !visitorUser) {
-          // Show immediately for better UX, not delayed
+        // Show popup for users who aren't authenticated
+        if (!data.user) {
           setTimeout(() => {
             setIsVisitorAuthOpen(true);
           }, 1000);
