@@ -8,6 +8,22 @@ import { Separator } from '@/components/ui/separator';
 import { Mail, Lock, User, Chrome, UserPlus, Play } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { z } from 'zod';
+
+const signInSchema = z.object({
+  email: z.string().email('Invalid email address').max(255),
+  password: z.string().min(6, 'Password must be at least 6 characters')
+});
+
+const signUpSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required').max(100),
+  email: z.string().email('Invalid email address').max(255),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  confirmPassword: z.string()
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -38,9 +54,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
     setLoading(true);
     
     try {
+      // Validate input
+      const validatedData = signInSchema.parse({
+        email: formData.email.trim(),
+        password: formData.password
+      });
+
       const { error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
+        email: validatedData.email,
+        password: validatedData.password,
       });
 
       if (error) {
@@ -67,12 +89,20 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
         window.location.href = '/?view=dashboard';
       }
     } catch (error) {
-      console.error('Sign in error:', error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Validation Error",
+          description: error.errors[0].message,
+          variant: "destructive",
+        });
+      } else {
+        console.error('Sign in error:', error);
+        toast({
+          title: "Error",
+          description: "An unexpected error occurred",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -81,25 +111,24 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      });
-      setLoading(false);
-      return;
-    }
     
     try {
-      const { error } = await supabase.auth.signUp({
-        email: formData.email,
+      // Validate input
+      const validatedData = signUpSchema.parse({
+        name: formData.name,
+        email: formData.email.trim(),
         password: formData.password,
+        confirmPassword: formData.confirmPassword
+      });
+
+      const { error } = await supabase.auth.signUp({
+        email: validatedData.email,
+        password: validatedData.password,
         options: {
           data: {
-            full_name: formData.name,
-          }
+            full_name: validatedData.name,
+          },
+          emailRedirectTo: `${window.location.origin}/?view=dashboard`
         }
       });
 
@@ -127,12 +156,20 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
         window.location.href = '/?view=dashboard';
       }
     } catch (error) {
-      console.error('Sign up error:', error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Validation Error",
+          description: error.errors[0].message,
+          variant: "destructive",
+        });
+      } else {
+        console.error('Sign up error:', error);
+        toast({
+          title: "Error",
+          description: "An unexpected error occurred",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -176,20 +213,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
   };
 
   const handleDemoLogin = () => {
-    // Store demo user data and redirect to dashboard
-    localStorage.setItem('demoUser', JSON.stringify({
-      name: 'Demo User',
-      isDemo: true,
-      loginTime: new Date().toISOString()
-    }));
-    
     toast({
-      title: "Demo Mode Activated",
-      description: "Welcome Demo User! Redirecting to dashboard...",
+      title: "Demo Not Available",
+      description: "Please sign up for a free account to explore all features.",
+      variant: "destructive",
     });
-    
-    onClose();
-    window.location.href = '/?view=dashboard';
   };
 
   return (
@@ -373,15 +401,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
             {loading ? "Connecting..." : "Continue with Google"}
           </Button>
 
-          <Button 
-            variant="outline" 
-            className="w-full border-purple-200 text-purple-600 hover:bg-purple-50 hover:border-purple-300"
-            onClick={handleDemoLogin}
-            disabled={loading}
-          >
-            <Play className="mr-2 h-4 w-4" />
-            Try Demo Login
-          </Button>
         </div>
 
         <p className="text-center text-sm text-gray-600">

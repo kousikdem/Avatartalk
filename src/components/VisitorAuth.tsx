@@ -59,9 +59,8 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({ isOpen, onClose }) => {
             // Record visitor entry in database with proper profile ID
             await supabase.from('profile_visitors').insert({
               visitor_id: null, // Visitor not authenticated
-              visited_profile_id: profileData.id,
-              ip_address: null, // Could be populated server-side  
-              user_agent: navigator.userAgent
+          visited_profile_id: profileData.id,
+          is_anonymous: true
             });
           }
         } catch (error) {

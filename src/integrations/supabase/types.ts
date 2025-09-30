@@ -753,24 +753,21 @@ export type Database = {
       profile_visitors: {
         Row: {
           id: string
-          ip_address: unknown | null
-          user_agent: string | null
+          is_anonymous: boolean | null
           visited_at: string
           visited_profile_id: string
           visitor_id: string | null
         }
         Insert: {
           id?: string
-          ip_address?: unknown | null
-          user_agent?: string | null
+          is_anonymous?: boolean | null
           visited_at?: string
           visited_profile_id: string
           visitor_id?: string | null
         }
         Update: {
           id?: string
-          ip_address?: unknown | null
-          user_agent?: string | null
+          is_anonymous?: boolean | null
           visited_at?: string
           visited_profile_id?: string
           visitor_id?: string | null

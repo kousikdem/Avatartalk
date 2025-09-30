@@ -44,8 +44,7 @@ const FollowersPage = () => {
           .select(`
             visitor_id,
             visited_at,
-            ip_address,
-            user_agent,
+            is_anonymous,
             profiles!profile_visitors_visitor_id_fkey (
               id,
               username,
