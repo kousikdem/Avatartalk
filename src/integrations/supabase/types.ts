@@ -1285,6 +1285,19 @@ export type Database = {
           username: string
         }[]
       }
+      get_safe_profile_fields: {
+        Args: { profile_id: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          created_at: string
+          display_name: string
+          id: string
+          profession: string
+          profile_pic_url: string
+          username: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
