@@ -13,7 +13,12 @@ import {
   Headphones,
   Brush,
   PenTool,
-  ExternalLink
+  ExternalLink,
+  Twitter,
+  Linkedin,
+  Facebook,
+  Instagram,
+  Youtube
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
@@ -63,7 +68,51 @@ const SocialLinksMenu: React.FC<SocialLinksMenuProps> = ({
     setIsMenuOpen(false);
   };
 
-  const additionalSocialLinks = [
+  const allSocialLinks = [
+    // Main social media platforms
+    { 
+      name: 'Twitter', 
+      icon: Twitter, 
+      color: 'from-sky-400 to-blue-600 hover:from-sky-500 hover:to-blue-700',
+      url: socialLinks.twitter,
+      key: 'twitter'
+    },
+    { 
+      name: 'LinkedIn', 
+      icon: Linkedin, 
+      color: 'from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800',
+      url: socialLinks.linkedin,
+      key: 'linkedin'
+    },
+    { 
+      name: 'Facebook', 
+      icon: Facebook, 
+      color: 'from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800',
+      url: socialLinks.facebook,
+      key: 'facebook'
+    },
+    { 
+      name: 'Instagram', 
+      icon: Instagram, 
+      color: 'from-pink-500 via-red-500 to-orange-500 hover:from-pink-600 hover:via-red-600 hover:to-orange-600',
+      url: socialLinks.instagram,
+      key: 'instagram'
+    },
+    { 
+      name: 'YouTube', 
+      icon: Youtube, 
+      color: 'from-red-500 to-red-700 hover:from-red-600 hover:to-red-800',
+      url: socialLinks.youtube,
+      key: 'youtube'
+    },
+    { 
+      name: 'Pinterest', 
+      icon: Link, 
+      color: 'from-red-500 to-pink-600 hover:from-red-400 hover:to-pink-500',
+      url: socialLinks.pinterest,
+      key: 'pinterest'
+    },
+    // Additional platforms
     { 
       name: 'Website', 
       icon: Globe, 
@@ -141,13 +190,6 @@ const SocialLinksMenu: React.FC<SocialLinksMenuProps> = ({
       url: socialLinks.medium,
       key: 'medium'
     },
-    { 
-      name: 'Pinterest', 
-      icon: Link, 
-      color: 'from-red-500 to-pink-600 hover:from-red-400 hover:to-pink-500',
-      url: socialLinks.pinterest,
-      key: 'pinterest'
-    },
   ];
 
   return (
@@ -180,9 +222,9 @@ const SocialLinksMenu: React.FC<SocialLinksMenuProps> = ({
               className="absolute bottom-full mb-2 right-0 w-80 bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-2xl border border-slate-700/50 p-4 z-50 backdrop-blur-lg"
             >
               <div className="mb-3">
-                <h4 className="text-white font-semibold text-sm mb-3">More Social Links</h4>
+                <h4 className="text-white font-semibold text-sm mb-3">All Social Links</h4>
                 <div className="grid grid-cols-4 gap-2">
-                  {additionalSocialLinks.map((platform) => (
+                  {allSocialLinks.map((platform) => (
                     <motion.button
                       key={platform.key}
                       whileHover={{ scale: 1.05 }}
