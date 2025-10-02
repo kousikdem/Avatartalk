@@ -2,17 +2,40 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Share2, Users, MessageSquare, BarChart3, Calendar } from 'lucide-react';
+import { Share2, Users, MessageSquare, BarChart3, Calendar, LogOut, Settings, Home, ShoppingBag } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import ShareModal from './ShareModal';
 import EnhancedAvatarPreview from './EnhancedAvatarPreview';
 import RealtimeFollowWidget from './RealtimeFollowWidget';
 import { useFollows } from '@/hooks/useFollows';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const { profileData, loading } = useUserProfile();
   const { following, followersCount, followingCount } = useFollows();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast({
+        title: "Logged out successfully",
+        description: "See you soon!",
+      });
+      
+      window.location.href = '/';
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -27,21 +50,32 @@ const Dashboard = () => {
 
   return (
     <div className="w-full max-w-7xl mx-auto bg-white p-6">
-      {/* Header Section with Share Button */}
+      {/* Header Section with Share and Logout Buttons */}
       <div className="flex items-center justify-between mb-6 sm:mb-8">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Welcome Back!</h1>
           <p className="text-gray-600">Manage your AI avatar and track your interactions</p>
         </div>
         
-        <Button 
-          onClick={() => setIsShareOpen(true)}
-          className="bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 hover:from-blue-600 hover:via-purple-600 hover:to-indigo-700 text-white"
-        >
-          <Share2 className="w-4 h-4 mr-2" />
-          <span className="hidden sm:inline">Share Profile</span>
-          <span className="sm:hidden">Share</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={() => setIsShareOpen(true)}
+            className="bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 hover:from-blue-600 hover:via-purple-600 hover:to-indigo-700 text-white"
+          >
+            <Share2 className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">Share Profile</span>
+            <span className="sm:hidden">Share</span>
+          </Button>
+          
+          <Button 
+            onClick={handleLogout}
+            variant="outline"
+            className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-400"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">Logout</span>
+          </Button>
+        </div>
       </div>
 
       {/* Stats Grid */}
@@ -99,7 +133,7 @@ const Dashboard = () => {
               <CardTitle className="text-gray-900">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 <Button 
                   variant="outline" 
                   className="h-16 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 hover:from-blue-600 hover:via-purple-600 hover:to-indigo-700 text-white border-0"
@@ -117,8 +151,8 @@ const Dashboard = () => {
                   onClick={() => window.location.href = '/products'}
                 >
                   <div className="text-center">
-                    <MessageSquare className="h-6 w-6 mx-auto mb-1" />
-                    <div className="text-sm">View Products</div>
+                    <ShoppingBag className="h-6 w-6 mx-auto mb-1" />
+                    <div className="text-sm">Products</div>
                   </div>
                 </Button>
                 
@@ -136,11 +170,55 @@ const Dashboard = () => {
                 <Button 
                   variant="outline" 
                   className="h-16 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 hover:from-orange-600 hover:via-red-600 hover:to-pink-600 text-white border-0"
+                  onClick={() => window.location.href = '/feed'}
+                >
+                  <div className="text-center">
+                    <Home className="h-6 w-6 mx-auto mb-1" />
+                    <div className="text-sm">Feed</div>
+                  </div>
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  className="h-16 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 hover:from-cyan-600 hover:via-blue-600 hover:to-indigo-600 text-white border-0"
+                  onClick={() => window.location.href = '/settings'}
+                >
+                  <div className="text-center">
+                    <Settings className="h-6 w-6 mx-auto mb-1" />
+                    <div className="text-sm">Settings</div>
+                  </div>
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  className="h-16 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 hover:from-violet-600 hover:via-purple-600 hover:to-fuchsia-600 text-white border-0"
+                  onClick={() => window.location.href = '/'}
+                >
+                  <div className="text-center">
+                    <MessageSquare className="h-6 w-6 mx-auto mb-1" />
+                    <div className="text-sm">Messages</div>
+                  </div>
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  className="h-16 bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500 hover:from-amber-600 hover:via-yellow-600 hover:to-orange-600 text-white border-0"
                   onClick={() => window.location.href = '/analytics'}
                 >
                   <div className="text-center">
                     <BarChart3 className="h-6 w-6 mx-auto mb-1" />
                     <div className="text-sm">Analytics</div>
+                  </div>
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  className="h-16 bg-gradient-to-r from-pink-500 via-rose-500 to-red-500 hover:from-pink-600 hover:via-rose-600 hover:to-red-600 text-white border-0"
+                  onClick={() => setIsShareOpen(true)}
+                >
+                  <div className="text-center">
+                    <Share2 className="h-6 w-6 mx-auto mb-1" />
+                    <div className="text-sm">Share</div>
                   </div>
                 </Button>
               </div>
