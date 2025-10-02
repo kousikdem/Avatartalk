@@ -52,20 +52,56 @@ const LandingPage = () => {
     {
       icon: Bot,
       title: "Custom AI Avatars",
-      description: "Choose from a variety of 3D avatars or create your own unique look with ReadyPlayerMe integration.",
+      description: "Create personalized 3D avatars with advanced customization options",
       color: "from-blue-500 to-cyan-500"
     },
     {
       icon: MessageSquare,
       title: "AI Chat Training",
-      description: "Train your AI to answer questions about you, your business, or your content with OpenAI integration.",
+      description: "Train your AI with documents, Q&A pairs, and personality settings",
       color: "from-purple-500 to-pink-500"
     },
     {
       icon: Globe,
       title: "Link Management",
-      description: "Organize and track all your important links in one place with detailed analytics on visitor engagement.",
+      description: "Organize all your important links with detailed analytics",
       color: "from-green-500 to-emerald-500"
+    },
+    {
+      icon: Volume2,
+      title: "Voice Cloning",
+      description: "Clone your voice for authentic AI-powered responses",
+      color: "from-orange-500 to-red-500"
+    },
+    {
+      icon: Users,
+      title: "Social Features",
+      description: "Build your audience with followers, posts, and engagement",
+      color: "from-pink-500 to-rose-500"
+    },
+    {
+      icon: Sliders,
+      title: "Personality Settings",
+      description: "Adjust formality, verbosity, and friendliness levels",
+      color: "from-indigo-500 to-purple-500"
+    },
+    {
+      icon: Eye,
+      title: "Analytics Dashboard",
+      description: "Track profile views, engagement, and visitor insights",
+      color: "from-teal-500 to-cyan-500"
+    },
+    {
+      icon: Rocket,
+      title: "Products & Services",
+      description: "Sell digital products and services directly from your profile",
+      color: "from-yellow-500 to-orange-500"
+    },
+    {
+      icon: FileText,
+      title: "Document Training",
+      description: "Upload PDFs, docs, and files to train your AI assistant",
+      color: "from-blue-400 to-indigo-500"
     }
   ];
 
@@ -230,23 +266,85 @@ const LandingPage = () => {
             </Button>
           </div>
 
-          {/* Demo Preview */}
-          <div className="max-w-md mx-auto bg-gray-100 rounded-2xl p-6 relative">
-            <div className="bg-white rounded-xl p-4 shadow-sm">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                  <Bot className="w-6 h-6 text-white" />
+          {/* Demo Avatar Preview with Tabs */}
+          <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-200">
+            {/* Header with Avatar */}
+            <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-32"></div>
+            <div className="relative px-6 pb-6">
+              <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 -mt-16 mb-4">
+                <div className="w-32 h-32 rounded-full border-4 border-white bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center shadow-xl">
+                  <Bot className="w-16 h-16 text-white" />
                 </div>
-                <div className="text-left">
-                  <div className="font-semibold text-gray-900">AI Avatar Active</div>
-                  <div className="text-sm text-green-600 flex items-center">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                    Online
+                <div className="text-center sm:text-left flex-1">
+                  <h3 className="text-2xl font-bold text-gray-900">Demo Avatar</h3>
+                  <p className="text-gray-600">@demouser</p>
+                  <div className="flex items-center gap-4 justify-center sm:justify-start mt-2 text-sm text-gray-600">
+                    <span className="flex items-center gap-1">
+                      <Users className="w-4 h-4" /> 1.2K followers
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Eye className="w-4 h-4" /> 5.4K views
+                    </span>
                   </div>
                 </div>
+                <div className="flex gap-2">
+                  <Button className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                    Subscribe $9.99/mo
+                  </Button>
+                  <Button variant="outline" className="border-blue-500 text-blue-600 hover:bg-blue-50">
+                    Follow
+                  </Button>
+                </div>
               </div>
-              <div className="text-sm text-gray-600 text-left">
-                "Hi! I'm your AI assistant. I can help answer questions about my creator and their work. What would you like to know?"
+
+              {/* Bio */}
+              <p className="text-gray-700 mb-6 text-center sm:text-left">
+                Exploring AI and technology. Creating innovative solutions with personalized AI avatars.
+              </p>
+
+              {/* Tabs Demo */}
+              <div className="border-b border-gray-200 mb-6">
+                <div className="flex gap-8 overflow-x-auto">
+                  <button className="px-4 py-3 text-blue-600 border-b-2 border-blue-600 font-semibold flex items-center gap-2 whitespace-nowrap">
+                    <FileText className="w-4 h-4" /> Posts
+                  </button>
+                  <button className="px-4 py-3 text-gray-600 hover:text-gray-900 flex items-center gap-2 whitespace-nowrap">
+                    <MessageSquare className="w-4 h-4" /> Chat
+                  </button>
+                  <button className="px-4 py-3 text-gray-600 hover:text-gray-900 flex items-center gap-2 whitespace-nowrap">
+                    <Rocket className="w-4 h-4" /> Products
+                  </button>
+                </div>
+              </div>
+
+              {/* Demo Content */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Card className="p-4 hover:shadow-lg transition-shadow">
+                  <p className="text-gray-700 mb-3">
+                    Just launched my new AI-powered project! Check it out 🚀
+                  </p>
+                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <span className="flex items-center gap-1">
+                      <Heart className="w-4 h-4" /> 234
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <MessageSquare className="w-4 h-4" /> 45
+                    </span>
+                  </div>
+                </Card>
+                <Card className="p-4 hover:shadow-lg transition-shadow">
+                  <p className="text-gray-700 mb-3">
+                    New tutorial on AI avatar customization is now live!
+                  </p>
+                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <span className="flex items-center gap-1">
+                      <Heart className="w-4 h-4" /> 189
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <MessageSquare className="w-4 h-4" /> 32
+                    </span>
+                  </div>
+                </Card>
               </div>
             </div>
           </div>
@@ -265,13 +363,13 @@ const LandingPage = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, index) => (
-              <Card key={index} className="gradient-card text-center p-6">
+              <Card key={index} className="gradient-card text-center p-6 hover:shadow-xl transition-all duration-300">
                 <div className={`w-16 h-16 rounded-xl bg-gradient-to-r ${feature.color} flex items-center justify-center mb-6 mx-auto shadow-lg`}>
                   <feature.icon className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">
+                <h3 className="text-xl font-bold text-gray-900 mb-3">
                   {feature.title}
                 </h3>
                 <p className="text-gray-600 leading-relaxed">
