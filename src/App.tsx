@@ -95,7 +95,6 @@ const App = () => {
                       <Route path="/products" element={<ProductsPage />} />
                       <Route path="/settings" element={<SettingsPage />} />
                       <Route path="/feed" element={<FeedPage />} />
-                      <Route path="/profile/:username" element={<ProfilePage />} />
                       <Route path="/:username" element={<UsernameRedirect />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
@@ -125,7 +124,6 @@ const App = () => {
             <div className="min-h-screen w-full bg-white">
               <Routes>
                 <Route path="/" element={<Index />} />
-                <Route path="/profile/:username" element={<ProfilePage />} />
                 <Route path="/:username" element={<UsernameRedirect />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
