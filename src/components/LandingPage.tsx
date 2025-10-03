@@ -39,7 +39,8 @@ import {
   Twitter,
   Instagram,
   Linkedin,
-  Youtube
+  Youtube,
+  Share2
 } from 'lucide-react';
 import MainAuth from './MainAuth';
 import VisitorAuth from './VisitorAuth';
@@ -80,6 +81,12 @@ const LandingPage = () => {
       color: "from-pink-500 to-rose-500"
     },
     {
+      icon: UsersIcon,
+      title: "Followers System",
+      description: "Connect with your audience and grow your community organically",
+      color: "from-violet-500 to-fuchsia-500"
+    },
+    {
       icon: Sliders,
       title: "Personality Settings",
       description: "Adjust formality, verbosity, and friendliness levels",
@@ -102,6 +109,18 @@ const LandingPage = () => {
       title: "Document Training",
       description: "Upload PDFs, docs, and files to train your AI assistant",
       color: "from-blue-400 to-indigo-500"
+    },
+    {
+      icon: Mic,
+      title: "Voice Input & Output",
+      description: "Interact naturally with voice commands and spoken responses",
+      color: "from-red-500 to-pink-500"
+    },
+    {
+      icon: Edit3,
+      title: "Content Publishing",
+      description: "Share posts, updates, and engage with your followers",
+      color: "from-cyan-500 to-blue-500"
     }
   ];
 
@@ -266,85 +285,178 @@ const LandingPage = () => {
             </Button>
           </div>
 
-          {/* Demo Avatar Preview with Tabs */}
-          <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-200">
-            {/* Header with Avatar */}
-            <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-32"></div>
-            <div className="relative px-6 pb-6">
-              <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 -mt-16 mb-4">
-                <div className="w-32 h-32 rounded-full border-4 border-white bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center shadow-xl">
-                  <Bot className="w-16 h-16 text-white" />
-                </div>
-                <div className="text-center sm:text-left flex-1">
-                  <h3 className="text-2xl font-bold text-gray-900">Demo Avatar</h3>
-                  <p className="text-gray-600">@demouser</p>
-                  <div className="flex items-center gap-4 justify-center sm:justify-start mt-2 text-sm text-gray-600">
-                    <span className="flex items-center gap-1">
-                      <Users className="w-4 h-4" /> 1.2K followers
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Eye className="w-4 h-4" /> 5.4K views
-                    </span>
+          {/* Demo User Profile - Matching actual Profile Page Design */}
+          <div className="max-w-md mx-auto bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl shadow-2xl overflow-hidden border border-slate-700/50">
+            {/* Profile Header */}
+            <div className="flex items-center justify-between px-6 pt-6 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
+                    <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center">
+                      <span className="text-lg font-bold text-white">DA</span>
+                    </div>
                   </div>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 shadow-sm" />
                 </div>
-                <div className="flex gap-2">
-                  <Button className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-                    Subscribe $9.99/mo
-                  </Button>
-                  <Button variant="outline" className="border-blue-500 text-blue-600 hover:bg-blue-50">
-                    Follow
-                  </Button>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-xl font-bold text-white leading-tight mb-0.5 truncate">Demo Avatar</h3>
+                  <p className="text-slate-400 text-sm">@demouser</p>
                 </div>
               </div>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-slate-400 hover:text-white p-2 rounded-full bg-slate-800/30"
+              >
+                <Share2 className="h-4 w-4" />
+              </Button>
+            </div>
 
-              {/* Bio */}
-              <p className="text-gray-700 mb-6 text-center sm:text-left">
+            <div className="px-6 pb-4">
+              <p className="text-slate-300 text-sm leading-relaxed">
                 Exploring AI and technology. Creating innovative solutions with personalized AI avatars.
               </p>
+            </div>
 
-              {/* Tabs Demo */}
-              <div className="border-b border-gray-200 mb-6">
-                <div className="flex gap-8 overflow-x-auto">
-                  <button className="px-4 py-3 text-blue-600 border-b-2 border-blue-600 font-semibold flex items-center gap-2 whitespace-nowrap">
+            {/* 3D Avatar Preview */}
+            <div className="px-6 pb-6">
+              <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-800/40 via-blue-900/20 to-slate-800/40 border border-slate-600/30 shadow-inner">
+                <div className="w-full h-80 bg-gradient-to-br from-blue-950/50 via-purple-950/30 to-slate-950/50 flex items-center justify-center relative">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent_50%)]"></div>
+                  <Bot className="w-32 h-32 text-blue-400/80" />
+                  <div className="absolute inset-0 rounded-3xl border border-blue-400/10 pointer-events-none" />
+                </div>
+                
+                {/* Floating Talk Button */}
+                <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2">
+                  <Button
+                    size="sm"
+                    className="bg-gradient-to-r from-blue-600/90 to-cyan-600/90 text-white rounded-full w-10 h-10 p-0 backdrop-blur-sm border border-blue-400/30 shadow-lg"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="px-6 pb-4">
+              <div className="grid grid-cols-5 gap-2">
+                <Button
+                  size="sm"
+                  className="col-span-3 bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 text-white py-3 rounded-xl text-sm font-semibold"
+                >
+                  <Sparkles className="h-4 w-4 mr-1" />
+                  Subscribe - $9.99/mo
+                </Button>
+                
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="col-span-2 border-blue-500 text-blue-400 hover:bg-blue-600 hover:text-white py-3 rounded-xl text-sm font-semibold"
+                >
+                  Follow
+                </Button>
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="px-6 pb-4">
+              <div className="grid grid-cols-3 gap-2">
+                <div className="text-center bg-slate-800/30 rounded-xl py-2 backdrop-blur-sm border border-slate-700/20">
+                  <div className="text-lg font-bold text-white mb-0.5">847</div>
+                  <div className="text-xs text-slate-400 font-medium">Conversations</div>
+                </div>
+                <div className="text-center bg-slate-800/30 rounded-xl py-2 backdrop-blur-sm border border-slate-700/20">
+                  <div className="text-lg font-bold text-white mb-0.5">1.2K</div>
+                  <div className="text-xs text-slate-400 font-medium">Followers</div>
+                </div>
+                <div className="text-center bg-slate-800/30 rounded-xl py-2 backdrop-blur-sm border border-slate-700/20">
+                  <div className="text-lg font-bold text-white mb-0.5">94%</div>
+                  <div className="text-xs text-slate-400 font-medium">Engagement</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Content Tabs */}
+            <div className="px-6 pb-4">
+              <div className="border-b border-slate-700/30 mb-4">
+                <div className="flex">
+                  <button className="flex-1 px-4 py-3 text-white border-b-2 border-blue-500 font-medium text-sm flex items-center justify-center gap-2">
                     <FileText className="w-4 h-4" /> Posts
                   </button>
-                  <button className="px-4 py-3 text-gray-600 hover:text-gray-900 flex items-center gap-2 whitespace-nowrap">
+                  <button className="flex-1 px-4 py-3 text-slate-400 hover:text-white font-medium text-sm flex items-center justify-center gap-2">
                     <MessageSquare className="w-4 h-4" /> Chat
                   </button>
-                  <button className="px-4 py-3 text-gray-600 hover:text-gray-900 flex items-center gap-2 whitespace-nowrap">
-                    <Rocket className="w-4 h-4" /> Products
+                  <button className="flex-1 px-4 py-3 text-slate-400 hover:text-white font-medium text-sm flex items-center justify-center gap-2">
+                    <Rocket className="w-4 h-4" /> Product
                   </button>
                 </div>
               </div>
 
-              {/* Demo Content */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Card className="p-4 hover:shadow-lg transition-shadow">
-                  <p className="text-gray-700 mb-3">
+              {/* Demo Posts */}
+              <div className="space-y-3">
+                <Card className="bg-slate-800/40 border-slate-700/50 p-4">
+                  <p className="text-slate-300 text-sm mb-3">
                     Just launched my new AI-powered project! Check it out 🚀
                   </p>
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-4 text-xs text-slate-400">
                     <span className="flex items-center gap-1">
-                      <Heart className="w-4 h-4" /> 234
+                      <Heart className="w-3 h-3" /> 234
                     </span>
                     <span className="flex items-center gap-1">
-                      <MessageSquare className="w-4 h-4" /> 45
+                      <MessageSquare className="w-3 h-3" /> 45
                     </span>
                   </div>
                 </Card>
-                <Card className="p-4 hover:shadow-lg transition-shadow">
-                  <p className="text-gray-700 mb-3">
+                <Card className="bg-slate-800/40 border-slate-700/50 p-4">
+                  <p className="text-slate-300 text-sm mb-3">
                     New tutorial on AI avatar customization is now live!
                   </p>
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-4 text-xs text-slate-400">
                     <span className="flex items-center gap-1">
-                      <Heart className="w-4 h-4" /> 189
+                      <Heart className="w-3 h-3" /> 189
                     </span>
                     <span className="flex items-center gap-1">
-                      <MessageSquare className="w-4 h-4" /> 32
+                      <MessageSquare className="w-3 h-3" /> 32
                     </span>
                   </div>
                 </Card>
+              </div>
+            </div>
+
+            {/* Social Links & Share Button */}
+            <div className="px-6 pb-6">
+              <div className="bg-slate-800/30 rounded-xl p-4 border border-slate-700/20">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-semibold text-white">Connect with me</h4>
+                </div>
+                <div className="grid grid-cols-5 gap-2">
+                  <Button variant="ghost" size="sm" className="bg-slate-700/30 hover:bg-blue-600 text-slate-300 hover:text-white p-2 rounded-lg">
+                    <Twitter className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="bg-slate-700/30 hover:bg-blue-700 text-slate-300 hover:text-white p-2 rounded-lg">
+                    <Linkedin className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="bg-slate-700/30 hover:bg-blue-600 text-slate-300 hover:text-white p-2 rounded-lg">
+                    <Facebook className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="bg-slate-700/30 hover:bg-pink-600 text-slate-300 hover:text-white p-2 rounded-lg">
+                    <Instagram className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="bg-slate-700/30 hover:bg-red-600 text-slate-300 hover:text-white p-2 rounded-lg">
+                    <Youtube className="h-4 w-4" />
+                  </Button>
+                </div>
+                <Button 
+                  variant="outline" 
+                  className="w-full mt-3 border-blue-500/50 text-blue-400 hover:bg-blue-600 hover:text-white"
+                  size="sm"
+                >
+                  <Share2 className="h-3 w-3 mr-2" />
+                  Share Profile
+                </Button>
               </div>
             </div>
           </div>
