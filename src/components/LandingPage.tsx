@@ -319,20 +319,44 @@ const LandingPage = () => {
               </p>
             </div>
 
-            {/* 3D Avatar Preview */}
+            {/* 3D Avatar Preview - Realistic Avatar */}
             <div className="px-6 pb-6">
               <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-800/40 via-blue-900/20 to-slate-800/40 border border-slate-600/30 shadow-inner">
                 <div className="w-full h-80 bg-gradient-to-br from-blue-950/50 via-purple-950/30 to-slate-950/50 flex items-center justify-center relative">
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent_50%)]"></div>
-                  <Bot className="w-32 h-32 text-blue-400/80" />
-                  <div className="absolute inset-0 rounded-3xl border border-blue-400/10 pointer-events-none" />
+                  
+                  {/* Realistic 3D Avatar Representation */}
+                  <div className="relative">
+                    {/* Head */}
+                    <div className="w-24 h-28 bg-gradient-to-b from-amber-200 to-amber-300 rounded-full relative">
+                      {/* Eyes */}
+                      <div className="absolute top-10 left-6 w-3 h-3 bg-slate-800 rounded-full"></div>
+                      <div className="absolute top-10 right-6 w-3 h-3 bg-slate-800 rounded-full"></div>
+                      {/* Nose */}
+                      <div className="absolute top-14 left-1/2 transform -translate-x-1/2 w-2 h-3 bg-amber-400/50 rounded-full"></div>
+                      {/* Smile */}
+                      <div className="absolute top-18 left-1/2 transform -translate-x-1/2 w-8 h-2 border-b-2 border-slate-800 rounded-b-full"></div>
+                      {/* Hair */}
+                      <div className="absolute -top-2 left-2 right-2 h-8 bg-gradient-to-br from-slate-700 to-slate-900 rounded-t-full"></div>
+                    </div>
+                    
+                    {/* Body */}
+                    <div className="w-32 h-24 bg-gradient-to-b from-blue-500 to-blue-600 rounded-t-3xl mx-auto -mt-2">
+                      {/* Arms */}
+                      <div className="absolute -left-4 top-2 w-6 h-20 bg-gradient-to-b from-amber-200 to-amber-300 rounded-full transform -rotate-12"></div>
+                      <div className="absolute -right-4 top-2 w-6 h-20 bg-gradient-to-b from-amber-200 to-amber-300 rounded-full transform rotate-12"></div>
+                    </div>
+                  </div>
+                  
+                  {/* Animated Glow Effect */}
+                  <div className="absolute inset-0 rounded-3xl border border-blue-400/20 pointer-events-none animate-pulse"></div>
                 </div>
                 
                 {/* Floating Talk Button */}
                 <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2">
                   <Button
                     size="sm"
-                    className="bg-gradient-to-r from-blue-600/90 to-cyan-600/90 text-white rounded-full w-10 h-10 p-0 backdrop-blur-sm border border-blue-400/30 shadow-lg"
+                    className="bg-gradient-to-r from-blue-600/90 to-cyan-600/90 text-white rounded-full w-10 h-10 p-0 backdrop-blur-sm border border-blue-400/30 shadow-lg hover:scale-110 transition-transform"
                   >
                     <MessageSquare className="h-4 w-4" />
                   </Button>
@@ -526,62 +550,319 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* AI Training Requirements */}
+      {/* AI Training Section - Redesigned */}
       <section className="py-20 px-4 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Train Your AI Assistant
+              Train your AI assistant in minutes
             </h2>
             <p className="text-lg text-gray-600">
               Teaching your AI is as simple as having a conversation
             </p>
           </div>
 
-          {/* Training Methods */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            {trainingMethods.map((method, index) => (
-              <Card key={index} className="gradient-card p-6 text-center hover:shadow-lg transition-all duration-300">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
-                    <method.icon className="w-5 h-5 text-white" />
-                  </div>
-                  <method.animal className="w-8 h-8 text-gray-400" />
-                </div>
-                <h3 className="font-bold text-gray-900 mb-2">
-                  {method.title}
-                </h3>
-                <p className="text-sm text-gray-600">
-                  {method.description}
-                </p>
-              </Card>
-            ))}
-          </div>
-
-          {/* AI Personality */}
           <Card className="gradient-card p-8">
-            <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-              AI Personality Settings
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {personalityTraits.map((trait, index) => (
-                <div key={index} className="text-center">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                    <trait.icon className="w-6 h-6 text-white" />
+            {/* Training Methods */}
+            <div className="mb-8">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">Training Methods</h3>
+              <div className="space-y-3">
+                {trainingMethods.map((method, index) => (
+                  <button
+                    key={index}
+                    className="w-full flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-all duration-300 group"
+                  >
+                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-500 transition-colors">
+                      <method.icon className="w-5 h-5 text-purple-600 group-hover:text-white transition-colors" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <h4 className="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">
+                        {method.title}
+                      </h4>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* AI Personality Sliders */}
+            <div className="pt-6 border-t border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">AI Personality</h3>
+              <div className="space-y-6">
+                {personalityTraits.map((trait, index) => (
+                  <div key={index}>
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="text-sm font-medium text-gray-700">
+                        {trait.name}
+                      </label>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={70 + index * 10}
+                        readOnly
+                        className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer slider-thumb"
+                        style={{
+                          background: `linear-gradient(to right, rgb(124, 58, 237) 0%, rgb(124, 58, 237) ${70 + index * 10}%, rgb(229, 231, 235) ${70 + index * 10}%, rgb(229, 231, 235) 100%)`
+                        }}
+                      />
+                    </div>
                   </div>
-                  <h4 className="font-bold text-gray-900 mb-2">
-                    {trait.name}
-                  </h4>
-                  <p className="text-sm text-gray-600 mb-4">
-                    {trait.description}
-                  </p>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full" style={{width: `${70 + index * 10}%`}}></div>
+                ))}
+              </div>
+            </div>
+
+            {/* Q&A Pairs Section */}
+            <div className="pt-6 mt-6 border-t border-gray-200">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-gray-900">Teach Your AI with Q&A Pairs</h3>
+                <Button variant="outline" size="sm" className="text-purple-600 border-purple-300 hover:bg-purple-50">
+                  Import Q&A
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Q&A Pair Example 1 */}
+                <Card className="p-4 bg-gray-50 border-gray-200">
+                  <div className="flex items-start justify-between mb-3">
+                    <span className="text-sm font-semibold text-gray-700">Q&A Pair #1</span>
+                    <Button variant="ghost" size="sm" className="text-gray-400 hover:text-red-500 h-auto p-0">
+                      Remove
+                    </Button>
                   </div>
-                </div>
-              ))}
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">Question</label>
+                      <p className="text-sm text-gray-900 bg-white p-3 rounded-lg border border-gray-200">
+                        What services do you offer?
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">Answer</label>
+                      <p className="text-sm text-gray-900 bg-white p-3 rounded-lg border border-gray-200">
+                        I specialize in digital marketing, content creation, and brand strategy for small businesses. My packages start at $1,200 for a complete marketing audit.
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Q&A Pair Example 2 */}
+                <Card className="p-4 bg-gray-50 border-gray-200">
+                  <div className="flex items-start justify-between mb-3">
+                    <span className="text-sm font-semibold text-gray-700">Q&A Pair #2</span>
+                    <Button variant="ghost" size="sm" className="text-gray-400 hover:text-red-500 h-auto p-0">
+                      Remove
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">Question</label>
+                      <p className="text-sm text-gray-900 bg-white p-3 rounded-lg border border-gray-200">
+                        How can I book a consultation with you?
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">Answer</label>
+                      <p className="text-sm text-gray-900 bg-white p-3 rounded-lg border border-gray-200">
+                        You can book a 30-minute consultation through my calendar link. Just click on "Book a Consultation" in my profile links and select a time that works for you.
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Add Another Pair Button */}
+                <Button variant="outline" className="w-full border-dashed border-gray-300 text-gray-600 hover:bg-gray-50">
+                  <span className="text-xl mr-2">+</span> Add Another Q&A Pair
+                </Button>
+              </div>
+
+              {/* Save Button */}
+              <div className="mt-6">
+                <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 py-6 text-lg font-semibold">
+                  Save & Train AI
+                </Button>
+              </div>
             </div>
           </Card>
+        </div>
+      </section>
+
+      {/* Realistic 3D Avatar Design Process */}
+      <section className="py-20 px-4 bg-gradient-to-br from-gray-50 to-white">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Realistic 3D Avatar Design Process
+            </h2>
+            <p className="text-lg text-gray-600">
+              Create stunning, lifelike avatars with our advanced 3D customization tools
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Left: Process Steps */}
+            <div className="space-y-6">
+              <Card className="gradient-card p-6 hover:shadow-lg transition-all duration-300">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <UserCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">Face Customization</h3>
+                    <p className="text-gray-600">
+                      Adjust facial features, skin tone, eye color, and expressions to match your unique style
+                    </p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="gradient-card p-6 hover:shadow-lg transition-all duration-300">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">Body & Clothing</h3>
+                    <p className="text-gray-600">
+                      Choose from hundreds of outfits, accessories, and body customization options
+                    </p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="gradient-card p-6 hover:shadow-lg transition-all duration-300">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Zap className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">Animations & Poses</h3>
+                    <p className="text-gray-600">
+                      Add dynamic poses and animations to bring your avatar to life
+                    </p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="gradient-card p-6 hover:shadow-lg transition-all duration-300">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Rocket className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">Export & Share</h3>
+                    <p className="text-gray-600">
+                      Export your avatar in multiple formats and share it across platforms
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Right: 3D Avatar Preview */}
+            <div className="relative">
+              <Card className="gradient-card p-8 bg-gradient-to-br from-blue-50 to-purple-50">
+                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700/50 shadow-2xl">
+                  <div className="w-full h-[500px] bg-gradient-to-br from-blue-950/50 via-purple-950/30 to-slate-950/50 flex items-center justify-center relative">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent_50%)]"></div>
+                    
+                    {/* Enhanced Realistic 3D Avatar */}
+                    <div className="relative transform scale-150">
+                      {/* Head with more detail */}
+                      <div className="w-28 h-32 bg-gradient-to-b from-amber-200 via-amber-300 to-amber-400 rounded-full relative shadow-2xl">
+                        {/* Hair - More detailed */}
+                        <div className="absolute -top-3 left-1 right-1 h-12 bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 rounded-t-full shadow-lg">
+                          <div className="absolute top-2 left-2 w-3 h-3 bg-slate-600 rounded-full opacity-50"></div>
+                          <div className="absolute top-1 right-3 w-2 h-4 bg-slate-600 rounded-full opacity-40"></div>
+                        </div>
+                        
+                        {/* Eyes with highlights */}
+                        <div className="absolute top-12 left-7 w-4 h-4 bg-slate-800 rounded-full shadow-inner">
+                          <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-white rounded-full"></div>
+                        </div>
+                        <div className="absolute top-12 right-7 w-4 h-4 bg-slate-800 rounded-full shadow-inner">
+                          <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-white rounded-full"></div>
+                        </div>
+                        
+                        {/* Eyebrows */}
+                        <div className="absolute top-10 left-6 w-5 h-1 bg-slate-700 rounded-full transform -rotate-6"></div>
+                        <div className="absolute top-10 right-6 w-5 h-1 bg-slate-700 rounded-full transform rotate-6"></div>
+                        
+                        {/* Nose with shadow */}
+                        <div className="absolute top-16 left-1/2 transform -translate-x-1/2 w-3 h-4 bg-amber-400/60 rounded-full shadow-sm"></div>
+                        
+                        {/* Smile */}
+                        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 w-10 h-3 border-b-2 border-slate-800 rounded-b-full"></div>
+                        
+                        {/* Ears */}
+                        <div className="absolute top-14 -left-2 w-4 h-6 bg-amber-300 rounded-full shadow-md"></div>
+                        <div className="absolute top-14 -right-2 w-4 h-6 bg-amber-300 rounded-full shadow-md"></div>
+                      </div>
+                      
+                      {/* Neck */}
+                      <div className="w-12 h-6 bg-gradient-to-b from-amber-300 to-amber-400 mx-auto -mt-1 rounded-b-lg shadow-md"></div>
+                      
+                      {/* Body - Professional attire */}
+                      <div className="w-36 h-28 bg-gradient-to-b from-blue-600 via-blue-700 to-blue-800 rounded-t-3xl mx-auto -mt-2 shadow-2xl relative overflow-hidden">
+                        {/* Shirt collar */}
+                        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-16 h-8 bg-white rounded-b-full"></div>
+                        
+                        {/* Buttons */}
+                        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 space-y-2">
+                          <div className="w-2 h-2 bg-gray-300 rounded-full mx-auto shadow-sm"></div>
+                          <div className="w-2 h-2 bg-gray-300 rounded-full mx-auto shadow-sm"></div>
+                          <div className="w-2 h-2 bg-gray-300 rounded-full mx-auto shadow-sm"></div>
+                        </div>
+                        
+                        {/* Arms */}
+                        <div className="absolute -left-6 top-4 w-8 h-24 bg-gradient-to-b from-amber-200 via-amber-300 to-amber-400 rounded-full transform -rotate-12 shadow-lg">
+                          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-10 h-10 bg-amber-200 rounded-full shadow-md"></div>
+                        </div>
+                        <div className="absolute -right-6 top-4 w-8 h-24 bg-gradient-to-b from-amber-200 via-amber-300 to-amber-400 rounded-full transform rotate-12 shadow-lg">
+                          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-10 h-10 bg-amber-200 rounded-full shadow-md"></div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Animated Rings */}
+                    <div className="absolute inset-0 rounded-2xl border-2 border-blue-400/30 pointer-events-none animate-pulse"></div>
+                    <div className="absolute inset-4 rounded-2xl border border-purple-400/20 pointer-events-none animate-pulse" style={{animationDelay: '0.5s'}}></div>
+                  </div>
+
+                  {/* Control Panel Overlay */}
+                  <div className="absolute bottom-4 left-4 right-4 bg-slate-900/80 backdrop-blur-sm rounded-xl p-3 border border-slate-700/50">
+                    <div className="grid grid-cols-4 gap-2">
+                      <Button size="sm" variant="outline" className="border-blue-500/50 text-blue-400 hover:bg-blue-600 hover:text-white text-xs">
+                        <UserCircle className="h-3 w-3" />
+                      </Button>
+                      <Button size="sm" variant="outline" className="border-purple-500/50 text-purple-400 hover:bg-purple-600 hover:text-white text-xs">
+                        <Sparkles className="h-3 w-3" />
+                      </Button>
+                      <Button size="sm" variant="outline" className="border-green-500/50 text-green-400 hover:bg-green-600 hover:text-white text-xs">
+                        <Zap className="h-3 w-3" />
+                      </Button>
+                      <Button size="sm" variant="outline" className="border-orange-500/50 text-orange-400 hover:bg-orange-600 hover:text-white text-xs">
+                        <Eye className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="mt-6 flex gap-3">
+                  <Button className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 py-6">
+                    <Rocket className="w-4 h-4 mr-2" />
+                    Start Creating
+                  </Button>
+                  <Button variant="outline" className="px-6 py-6 border-gray-300">
+                    <Play className="w-4 h-4" />
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          </div>
         </div>
       </section>
 
