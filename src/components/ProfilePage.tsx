@@ -19,7 +19,6 @@ import SocialFeed from './SocialFeed';
 import FollowButton from './FollowButton';
 import EnhancedShareModal from './EnhancedShareModal';
 import SocialLinksMenu from './SocialLinksMenu';
-import SocialLinksPopup from './SocialLinksPopup';
 import EnhancedPostCard from './EnhancedPostCard';
 import EmojiPicker from './EmojiPicker';
 import {
@@ -127,7 +126,6 @@ const ProfilePage: React.FC = () => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [socialLinks, setSocialLinks] = useState<any>(null);
   const [isVisitorAuthOpen, setIsVisitorAuthOpen] = useState(false);
-  const [isSocialLinksPopupOpen, setIsSocialLinksPopupOpen] = useState(false);
   const { toast } = useToast();
 
   const {
@@ -758,21 +756,21 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Content Tabs - Chat as Default */}
+            {/* Content Tabs */}
             <div className="px-6 pb-4">
-              <Tabs defaultValue="chat" className="space-y-4">
+              <Tabs defaultValue="posts" className="space-y-4">
                 <TabsList className="grid w-full grid-cols-3 bg-transparent border-b border-slate-700/30 rounded-none p-0 h-auto">
-                  <TabsTrigger 
-                    value="chat"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent bg-transparent text-slate-400 data-[state=active]:text-white py-3 font-medium text-base transition-all duration-200 hover:text-slate-200"
-                  >
-                    Chat
-                  </TabsTrigger>
                   <TabsTrigger 
                     value="posts" 
                     className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent bg-transparent text-slate-400 data-[state=active]:text-white py-3 font-medium text-base transition-all duration-200 hover:text-slate-200"
                   >
                     Posts
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="chat"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent bg-transparent text-slate-400 data-[state=active]:text-white py-3 font-medium text-base transition-all duration-200 hover:text-slate-200"
+                  >
+                    Chat
                   </TabsTrigger>
                   <TabsTrigger 
                     value="products"
@@ -782,8 +780,8 @@ const ProfilePage: React.FC = () => {
                   </TabsTrigger>
                 </TabsList>
 
-                {/* Chat Tab - Now First */}
-                <TabsContent value="chat" className="mt-6 space-y-4">
+                {/* Posts Tab */}
+                <TabsContent value="posts" className="space-y-4 mt-6">
                   <AnimatePresence>
                     {userPosts.length > 0 ? (
                       userPosts.map((post, index) => (
@@ -824,8 +822,8 @@ const ProfilePage: React.FC = () => {
                   </AnimatePresence>
                 </TabsContent>
 
-                {/* Posts Tab */}
-                <TabsContent value="posts" className="space-y-4 mt-6">
+                {/* Chat Tab */}
+                <TabsContent value="chat" className="mt-6 space-y-4">
                   <div className="flex flex-col space-y-4 max-h-80 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
                      {chatMessages.filter(message => 
                        // Show only messages from the current user or messages sent to/from the profile owner
@@ -1193,15 +1191,11 @@ const ProfilePage: React.FC = () => {
                 
                 {/* Right Side - Three Dots Menu and Share Button with Minimal Gap - Small buttons */}
                 <div className="flex items-center gap-0.5 flex-shrink-0">
-                  {/* Three Dots Menu Button */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsSocialLinksPopupOpen(true)}
-                    className="p-2 bg-slate-800/50 hover:bg-slate-700/50 text-white rounded-full transition-all duration-300 min-w-[36px] min-h-[36px] shadow-lg hover:shadow-slate-500/30 flex-shrink-0 border-0 hover:scale-110"
-                  >
-                    <ChevronRight className="h-4 w-4 rotate-90" />
-                  </Button>
+                  {/* Three Dots Menu */}
+                  <SocialLinksMenu
+                    socialLinks={socialLinks}
+                    onShare={() => setIsShareModalOpen(true)}
+                  />
                   
                   {/* Enhanced Share Button with Text and Gradient - Small size */}
                   <Button
@@ -1219,13 +1213,6 @@ const ProfilePage: React.FC = () => {
           </CardContent>
         </Card>
       </motion.div>
-      
-      {/* Social Links Popup */}
-      <SocialLinksPopup
-        isOpen={isSocialLinksPopupOpen}
-        onClose={() => setIsSocialLinksPopupOpen(false)}
-        socialLinks={socialLinks}
-      />
       
       {/* Enhanced Share Modal */}
       <EnhancedShareModal
