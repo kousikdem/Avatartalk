@@ -12,6 +12,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AvatarPage from "./pages/AvatarPage";
 import FeedPage from "./pages/FeedPage";
+import FollowersPage from './components/FollowersPage';
 import CalendarPage from "./components/CalendarPage";
 import ProductsPage from "./pages/ProductsPage";
 import SettingsPage from "./pages/SettingsPage";
@@ -95,6 +96,7 @@ const App = () => {
                       <Route path="/products" element={<ProductsPage />} />
                       <Route path="/settings" element={<SettingsPage />} />
                       <Route path="/feed" element={<FeedPage />} />
+                      <Route path="/followers" element={<FollowersPage />} />
                       <Route path="/:username" element={<UsernameRedirect />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
