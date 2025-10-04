@@ -19,6 +19,7 @@ import SocialFeed from './SocialFeed';
 import FollowButton from './FollowButton';
 import EnhancedShareModal from './EnhancedShareModal';
 import SocialLinksMenu from './SocialLinksMenu';
+import SocialLinksPopup from './SocialLinksPopup';
 import EnhancedPostCard from './EnhancedPostCard';
 import EmojiPicker from './EmojiPicker';
 import {
@@ -724,7 +725,7 @@ const ProfilePage: React.FC = () => {
                         targetUsername={profile.username}
                         currentUserId={currentUser?.id || null}
                         variant="compact"
-                        className="w-full h-full py-3 text-sm font-semibold bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0 shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl"
+                        className="w-full h-full py-3 text-sm font-semibold bg-gradient-to-r from-gray-500 via-gray-600 to-gray-700 hover:from-gray-600 hover:via-gray-700 hover:to-gray-800 border-0 shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl"
                       />
                     </motion.div>
                   </div>
@@ -758,7 +759,7 @@ const ProfilePage: React.FC = () => {
 
             {/* Content Tabs */}
             <div className="px-6 pb-4">
-              <Tabs defaultValue="posts" className="space-y-4">
+              <Tabs defaultValue="chat" className="space-y-4">
                 <TabsList className="grid w-full grid-cols-3 bg-transparent border-b border-slate-700/30 rounded-none p-0 h-auto">
                   <TabsTrigger 
                     value="posts" 
@@ -1189,10 +1190,10 @@ const ProfilePage: React.FC = () => {
                   </Button>
                 </div>
                 
-                {/* Right Side - Three Dots Menu and Share Button with Minimal Gap - Small buttons */}
+                {/* Right Side - Three Dots Popup and Share Button with Minimal Gap - Small buttons */}
                 <div className="flex items-center gap-0.5 flex-shrink-0">
-                  {/* Three Dots Menu */}
-                  <SocialLinksMenu
+                  {/* Three Dots Popup Menu */}
+                  <SocialLinksPopup
                     socialLinks={socialLinks}
                     onShare={() => setIsShareModalOpen(true)}
                   />

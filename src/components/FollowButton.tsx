@@ -33,7 +33,7 @@ const FollowButton: React.FC<FollowButtonProps> = ({
     return (
       <Button
         variant="outline"
-        className={`${variant === 'compact' ? 'py-2 text-sm' : 'py-4 text-base'} rounded-2xl font-semibold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 text-white border-0 shadow-lg hover:shadow-indigo-500/30 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${className}`}
+        className={`${variant === 'compact' ? 'py-2 text-sm' : 'py-4 text-base'} rounded-2xl font-semibold bg-gradient-to-r from-gray-500 via-gray-600 to-gray-700 hover:from-gray-600 hover:via-gray-700 hover:to-gray-800 text-white border-0 shadow-lg hover:shadow-gray-500/30 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${className}`}
         onClick={() => {
           // Trigger visitor auth popup
           window.dispatchEvent(new CustomEvent('show-visitor-auth'));
@@ -81,8 +81,8 @@ const FollowButton: React.FC<FollowButtonProps> = ({
           disabled={loading}
           className={`${
             isUserFollowing 
-              ? 'bg-gradient-to-r from-emerald-500 via-teal-600 to-cyan-600 hover:from-emerald-600 hover:via-teal-700 hover:to-cyan-700 text-white border-0 shadow-lg hover:shadow-emerald-500/30' 
-              : 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 text-white border-0 shadow-lg hover:shadow-indigo-500/30'
+              ? 'bg-gradient-to-r from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white border-0 shadow-lg hover:shadow-red-500/30' 
+              : 'bg-gradient-to-r from-gray-500 via-gray-600 to-gray-700 hover:from-gray-600 hover:via-gray-700 hover:to-gray-800 text-white border-0 shadow-lg hover:shadow-gray-500/30'
           } transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${className}`}
         >
           {loading ? (
@@ -104,8 +104,8 @@ const FollowButton: React.FC<FollowButtonProps> = ({
       variant={isUserFollowing ? "default" : "outline"}
       className={`py-4 rounded-2xl text-base font-semibold transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${
         isUserFollowing 
-          ? 'bg-gradient-to-r from-emerald-500 via-teal-600 to-cyan-600 hover:from-emerald-600 hover:via-teal-700 hover:to-cyan-700 text-white border-0 shadow-lg hover:shadow-emerald-500/30' 
-          : 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 border-0 text-white shadow-lg hover:shadow-indigo-500/30'
+          ? 'bg-gradient-to-r from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white border-0 shadow-lg hover:shadow-red-500/30' 
+          : 'bg-gradient-to-r from-gray-500 via-gray-600 to-gray-700 hover:from-gray-600 hover:via-gray-700 hover:to-gray-800 border-0 text-white shadow-lg hover:shadow-gray-500/30'
       } ${className}`}
       onClick={handleFollowClick}
       disabled={loading}
