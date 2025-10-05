@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { 
   MessageSquare, 
   Zap, 
@@ -41,7 +42,11 @@ import {
   Linkedin,
   Youtube,
   Share2,
-  MoreVertical
+  MoreVertical,
+  Send,
+  Smile,
+  MicOff,
+  VolumeX
 } from 'lucide-react';
 import MainAuth from './MainAuth';
 import VisitorAuth from './VisitorAuth';
@@ -49,6 +54,9 @@ import VisitorAuth from './VisitorAuth';
 const LandingPage = () => {
   const [isMainAuthOpen, setIsMainAuthOpen] = useState(false);
   const [isVisitorAuthOpen, setIsVisitorAuthOpen] = useState(false);
+  const [demoActiveTab, setDemoActiveTab] = useState<'posts' | 'chat' | 'product'>('chat');
+  const [demoMessage, setDemoMessage] = useState('');
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
 
   const features = [
     {
@@ -326,31 +334,37 @@ const LandingPage = () => {
                 <div className="w-full h-80 bg-gradient-to-br from-blue-950/50 via-purple-950/30 to-slate-950/50 flex items-center justify-center relative">
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent_50%)]"></div>
                   
-                  {/* Realistic 3D Avatar Representation */}
-                  <div className="relative">
+                  {/* Realistic 3D Avatar Representation with Floating Animation */}
+                  <div className="relative animate-[float_6s_ease-in-out_infinite]">
                     {/* Head */}
-                    <div className="w-24 h-28 bg-gradient-to-b from-amber-200 to-amber-300 rounded-full relative">
+                    <div className="w-24 h-28 bg-gradient-to-b from-amber-200 to-amber-300 rounded-full relative shadow-2xl">
                       {/* Eyes */}
-                      <div className="absolute top-10 left-6 w-3 h-3 bg-slate-800 rounded-full"></div>
-                      <div className="absolute top-10 right-6 w-3 h-3 bg-slate-800 rounded-full"></div>
+                      <div className="absolute top-10 left-6 w-3 h-3 bg-slate-800 rounded-full">
+                        <div className="absolute top-0.5 right-0.5 w-1 h-1 bg-white rounded-full"></div>
+                      </div>
+                      <div className="absolute top-10 right-6 w-3 h-3 bg-slate-800 rounded-full">
+                        <div className="absolute top-0.5 right-0.5 w-1 h-1 bg-white rounded-full"></div>
+                      </div>
                       {/* Nose */}
                       <div className="absolute top-14 left-1/2 transform -translate-x-1/2 w-2 h-3 bg-amber-400/50 rounded-full"></div>
                       {/* Smile */}
                       <div className="absolute top-18 left-1/2 transform -translate-x-1/2 w-8 h-2 border-b-2 border-slate-800 rounded-b-full"></div>
                       {/* Hair */}
-                      <div className="absolute -top-2 left-2 right-2 h-8 bg-gradient-to-br from-slate-700 to-slate-900 rounded-t-full"></div>
+                      <div className="absolute -top-2 left-2 right-2 h-8 bg-gradient-to-br from-slate-700 to-slate-900 rounded-t-full shadow-lg"></div>
                     </div>
                     
                     {/* Body */}
-                    <div className="w-32 h-24 bg-gradient-to-b from-blue-500 to-blue-600 rounded-t-3xl mx-auto -mt-2">
+                    <div className="w-32 h-24 bg-gradient-to-b from-blue-500 to-blue-600 rounded-t-3xl mx-auto -mt-2 shadow-xl">
                       {/* Arms */}
-                      <div className="absolute -left-4 top-2 w-6 h-20 bg-gradient-to-b from-amber-200 to-amber-300 rounded-full transform -rotate-12"></div>
-                      <div className="absolute -right-4 top-2 w-6 h-20 bg-gradient-to-b from-amber-200 to-amber-300 rounded-full transform rotate-12"></div>
+                      <div className="absolute -left-4 top-2 w-6 h-20 bg-gradient-to-b from-amber-200 to-amber-300 rounded-full transform -rotate-12 shadow-lg"></div>
+                      <div className="absolute -right-4 top-2 w-6 h-20 bg-gradient-to-b from-amber-200 to-amber-300 rounded-full transform rotate-12 shadow-lg"></div>
                     </div>
                   </div>
                   
-                  {/* Animated Glow Effect */}
-                  <div className="absolute inset-0 rounded-3xl border border-blue-400/20 pointer-events-none animate-pulse"></div>
+                  {/* 3D Animated Rings */}
+                  <div className="absolute inset-0 rounded-3xl border-2 border-blue-400/30 pointer-events-none animate-pulse"></div>
+                  <div className="absolute inset-2 rounded-3xl border border-purple-400/20 pointer-events-none animate-pulse" style={{animationDelay: '0.5s'}}></div>
+                  <div className="absolute -inset-1 rounded-3xl border border-cyan-400/20 pointer-events-none animate-pulse" style={{animationDelay: '1s'}}></div>
                 </div>
                 
                 {/* Floating Talk Button */}
@@ -408,98 +422,212 @@ const LandingPage = () => {
             <div className="px-6 pb-4">
               <div className="border-b border-slate-700/30 mb-4">
                 <div className="flex">
-                  <button className="flex-1 px-4 py-3 text-slate-400 hover:text-white font-medium text-sm flex items-center justify-center gap-2">
+                  <button 
+                    onClick={() => setDemoActiveTab('posts')}
+                    className={`flex-1 px-4 py-3 font-medium text-sm flex items-center justify-center gap-2 transition-colors ${
+                      demoActiveTab === 'posts' ? 'text-white border-b-2 border-blue-500' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
                     <FileText className="w-4 h-4" /> Posts
                   </button>
-                  <button className="flex-1 px-4 py-3 text-white border-b-2 border-blue-500 font-medium text-sm flex items-center justify-center gap-2">
+                  <button 
+                    onClick={() => setDemoActiveTab('chat')}
+                    className={`flex-1 px-4 py-3 font-medium text-sm flex items-center justify-center gap-2 transition-colors ${
+                      demoActiveTab === 'chat' ? 'text-white border-b-2 border-blue-500' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
                     <MessageSquare className="w-4 h-4" /> Chat
                   </button>
-                  <button className="flex-1 px-4 py-3 text-slate-400 hover:text-white font-medium text-sm flex items-center justify-center gap-2">
+                  <button 
+                    onClick={() => setDemoActiveTab('product')}
+                    className={`flex-1 px-4 py-3 font-medium text-sm flex items-center justify-center gap-2 transition-colors ${
+                      demoActiveTab === 'product' ? 'text-white border-b-2 border-blue-500' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
                     <Rocket className="w-4 h-4" /> Product
                   </button>
                 </div>
               </div>
 
-              {/* Demo Chat - Conversation Box */}
-              <div className="flex flex-col space-y-3 max-h-64 overflow-y-auto pr-2">
-                {/* Avatar Message */}
-                <div className="flex items-start gap-2 flex-row-reverse">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
-                    <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center">
-                      <span className="text-xs font-bold text-white">DA</span>
+              {/* Posts Tab Content */}
+              {demoActiveTab === 'posts' && (
+                <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                  <Card className="bg-slate-800/30 border-slate-700/30 p-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0"></div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-slate-200 mb-2">Check out my latest AI project! 🚀</p>
+                        <div className="flex gap-4 text-xs text-slate-400">
+                          <span>❤️ 124</span>
+                          <span>💬 23</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex-1 flex justify-end">
-                    <div className="bg-slate-700/50 border border-slate-600/30 rounded-2xl rounded-tr-md px-3 py-2 max-w-xs">
-                      <p className="text-sm text-slate-200">
-                        Hi! I'm your AI assistant. How can I help you today?
-                      </p>
+                  </Card>
+                  <Card className="bg-slate-800/30 border-slate-700/30 p-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0"></div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-slate-200 mb-2">New tutorial on AI training coming soon! 🎯</p>
+                        <div className="flex gap-4 text-xs text-slate-400">
+                          <span>❤️ 89</span>
+                          <span>💬 15</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  </Card>
                 </div>
+              )}
 
-                {/* User Message */}
-                <div className="flex items-start gap-2">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
-                    <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center">
-                      <span className="text-xs font-bold text-white">U</span>
+              {/* Chat Tab Content */}
+              {demoActiveTab === 'chat' && (
+                <div className="space-y-4">
+                  {/* Chat Messages */}
+                  <div className="flex flex-col space-y-3 max-h-48 overflow-y-auto pr-2">
+                    {/* Avatar Message */}
+                    <div className="flex items-start gap-2 flex-row-reverse">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                        <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center">
+                          <span className="text-xs font-bold text-white">DA</span>
+                        </div>
+                      </div>
+                      <div className="flex-1 flex justify-end">
+                        <div className="bg-slate-700/50 border border-slate-600/30 rounded-2xl rounded-tr-md px-3 py-2 max-w-xs">
+                          <p className="text-sm text-slate-200">
+                            Hi! I'm your AI assistant. How can I help you today?
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="bg-blue-600/20 border border-blue-500/30 rounded-2xl rounded-tl-md px-3 py-2 max-w-xs">
-                      <p className="text-sm text-blue-100">
-                        Tell me about your services
-                      </p>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Avatar Response */}
-                <div className="flex items-start gap-2 flex-row-reverse">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
-                    <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center">
-                      <span className="text-xs font-bold text-white">DA</span>
+                    {/* User Message */}
+                    <div className="flex items-start gap-2">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                        <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center">
+                          <span className="text-xs font-bold text-white">U</span>
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="bg-blue-600/20 border border-blue-500/30 rounded-2xl rounded-tl-md px-3 py-2 max-w-xs">
+                          <p className="text-sm text-blue-100">
+                            Tell me about your services
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Avatar Response */}
+                    <div className="flex items-start gap-2 flex-row-reverse">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                        <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center">
+                          <span className="text-xs font-bold text-white">DA</span>
+                        </div>
+                      </div>
+                      <div className="flex-1 flex justify-end">
+                        <div className="bg-slate-700/50 border border-slate-600/30 rounded-2xl rounded-tr-md px-3 py-2 max-w-xs">
+                          <p className="text-sm text-slate-200">
+                            I offer personalized AI solutions, avatar creation, and automated customer engagement. Let's discuss your needs!
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex-1 flex justify-end">
-                    <div className="bg-slate-700/50 border border-slate-600/30 rounded-2xl rounded-tr-md px-3 py-2 max-w-xs">
-                      <p className="text-sm text-slate-200">
-                        I offer personalized AI solutions, avatar creation, and automated customer engagement. Let's discuss your needs!
-                      </p>
-                    </div>
+
+                  {/* Chat Input Box */}
+                  <div className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 rounded-2xl border border-slate-600/50 px-3 py-2.5 flex items-center gap-2">
+                    <Input
+                      value={demoMessage}
+                      onChange={(e) => setDemoMessage(e.target.value)}
+                      placeholder="Type your message..."
+                      className="border-0 bg-transparent text-white placeholder:text-slate-400 flex-1 focus-visible:ring-0 p-0 text-sm h-auto"
+                    />
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="h-7 w-7 p-0 hover:bg-slate-700 rounded-full"
+                    >
+                      <Smile className="w-3.5 h-3.5 text-slate-400" />
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="h-7 w-7 p-0 hover:bg-slate-700 rounded-full"
+                    >
+                      <Mic className="w-3.5 h-3.5 text-slate-400" />
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="h-7 w-7 p-0 hover:bg-slate-700 rounded-full"
+                    >
+                      <Volume2 className="w-3.5 h-3.5 text-slate-400" />
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="h-7 w-7 p-0 hover:bg-slate-700 rounded-full bg-gradient-to-r from-blue-600 to-cyan-600"
+                    >
+                      <Send className="w-3.5 h-3.5 text-white" />
+                    </Button>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {/* Product Tab Content */}
+              {demoActiveTab === 'product' && (
+                <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                  <Card className="bg-gradient-to-br from-slate-800/50 to-slate-700/30 border-slate-600/30 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0"></div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-bold text-white mb-1">AI Consultation Package</h4>
+                        <p className="text-xs text-slate-400 mb-2">60-min personalized AI strategy session</p>
+                        <p className="text-lg font-bold text-blue-400">$199</p>
+                      </div>
+                    </div>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-slate-800/50 to-slate-700/30 border-slate-600/30 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex-shrink-0"></div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-bold text-white mb-1">Avatar Design Course</h4>
+                        <p className="text-xs text-slate-400 mb-2">Complete guide to 3D avatar creation</p>
+                        <p className="text-lg font-bold text-purple-400">$299</p>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+              )}
             </div>
 
             {/* Social Links & Share Button - One Line Layout */}
             <div className="px-6 pb-6">
-              <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/20">
-                <div className="flex items-center justify-between gap-1">
+              <div className="bg-slate-800/30 rounded-xl p-2.5 border border-slate-700/20">
+                <div className="flex items-center justify-between gap-2">
                   {/* Left Side - Four Main Social Links */}
-                  <div className="flex items-center gap-0.5 flex-shrink-0">
-                    <Button variant="ghost" size="sm" className="p-2 bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 hover:from-sky-500 hover:via-blue-600 hover:to-indigo-700 text-white rounded-full transition-all duration-300 min-w-[32px] min-h-[32px] shadow-lg border-0 hover:scale-110">
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <Button variant="ghost" size="sm" className="p-2 bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 hover:from-sky-500 hover:via-blue-600 hover:to-indigo-700 text-white rounded-full transition-all duration-300 w-8 h-8 shadow-lg border-0 hover:scale-110">
                       <Twitter className="h-3.5 w-3.5" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="p-2 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-800 text-white rounded-full transition-all duration-300 min-w-[32px] min-h-[32px] shadow-lg border-0 hover:scale-110">
+                    <Button variant="ghost" size="sm" className="p-2 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-800 text-white rounded-full transition-all duration-300 w-8 h-8 shadow-lg border-0 hover:scale-110">
                       <Linkedin className="h-3.5 w-3.5" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="p-2 bg-gradient-to-br from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white rounded-full transition-all duration-300 min-w-[32px] min-h-[32px] shadow-lg border-0 hover:scale-110">
+                    <Button variant="ghost" size="sm" className="p-2 bg-gradient-to-br from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white rounded-full transition-all duration-300 w-8 h-8 shadow-lg border-0 hover:scale-110">
                       <Youtube className="h-3.5 w-3.5" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="p-2 bg-gradient-to-br from-pink-500 via-red-500 to-orange-500 hover:from-pink-600 hover:via-red-600 hover:to-orange-600 text-white rounded-full transition-all duration-300 min-w-[32px] min-h-[32px] shadow-lg border-0 hover:scale-110">
+                    <Button variant="ghost" size="sm" className="p-2 bg-gradient-to-br from-pink-500 via-red-500 to-orange-500 hover:from-pink-600 hover:via-red-600 hover:to-orange-600 text-white rounded-full transition-all duration-300 w-8 h-8 shadow-lg border-0 hover:scale-110">
                       <Instagram className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                   
                   {/* Right Side - Three Dots and Share Button */}
-                  <div className="flex items-center gap-0.5 flex-shrink-0">
-                    <Button variant="ghost" size="sm" className="p-2 rounded-full hover:bg-slate-700/50 text-slate-300 hover:text-white transition-all min-w-[32px] min-h-[32px]">
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <Button variant="ghost" size="sm" className="p-2 rounded-full hover:bg-slate-700/50 text-slate-300 hover:text-white transition-all w-8 h-8">
                       <MoreVertical className="h-3.5 w-3.5" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="px-2.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-full transition-all duration-300 shadow-lg border-0 flex items-center gap-1 text-xs font-medium">
+                    <Button variant="ghost" size="sm" className="px-3 py-2 h-8 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-full transition-all duration-300 shadow-lg border-0 flex items-center gap-1.5 text-xs font-medium hover:scale-105">
                       <Share2 className="h-3 w-3" />
-                      Share
+                      <span>Share</span>
                     </Button>
                   </div>
                 </div>
@@ -521,16 +649,16 @@ const LandingPage = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {features.map((feature, index) => (
-              <Card key={index} className="gradient-card text-center p-6 hover:shadow-xl transition-all duration-300">
-                <div className={`w-16 h-16 rounded-xl bg-gradient-to-r ${feature.color} flex items-center justify-center mb-6 mx-auto shadow-lg`}>
-                  <feature.icon className="w-8 h-8 text-white" />
+              <Card key={index} className="gradient-card p-5 hover:shadow-xl transition-all duration-300 group">
+                <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${feature.color} flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform`}>
+                  <feature.icon className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">
                   {feature.title}
                 </h3>
-                <p className="text-gray-600 leading-relaxed">
+                <p className="text-sm text-gray-600 leading-relaxed">
                   {feature.description}
                 </p>
               </Card>
