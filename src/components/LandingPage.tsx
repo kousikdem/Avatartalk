@@ -40,7 +40,8 @@ import {
   Instagram,
   Linkedin,
   Youtube,
-  Share2
+  Share2,
+  MoreVertical
 } from 'lucide-react';
 import MainAuth from './MainAuth';
 import VisitorAuth from './VisitorAuth';
@@ -407,10 +408,10 @@ const LandingPage = () => {
             <div className="px-6 pb-4">
               <div className="border-b border-slate-700/30 mb-4">
                 <div className="flex">
-                  <button className="flex-1 px-4 py-3 text-white border-b-2 border-blue-500 font-medium text-sm flex items-center justify-center gap-2">
+                  <button className="flex-1 px-4 py-3 text-slate-400 hover:text-white font-medium text-sm flex items-center justify-center gap-2">
                     <FileText className="w-4 h-4" /> Posts
                   </button>
-                  <button className="flex-1 px-4 py-3 text-slate-400 hover:text-white font-medium text-sm flex items-center justify-center gap-2">
+                  <button className="flex-1 px-4 py-3 text-white border-b-2 border-blue-500 font-medium text-sm flex items-center justify-center gap-2">
                     <MessageSquare className="w-4 h-4" /> Chat
                   </button>
                   <button className="flex-1 px-4 py-3 text-slate-400 hover:text-white font-medium text-sm flex items-center justify-center gap-2">
@@ -419,68 +420,89 @@ const LandingPage = () => {
                 </div>
               </div>
 
-              {/* Demo Posts */}
-              <div className="space-y-3">
-                <Card className="bg-slate-800/40 border-slate-700/50 p-4">
-                  <p className="text-slate-300 text-sm mb-3">
-                    Just launched my new AI-powered project! Check it out 🚀
-                  </p>
-                  <div className="flex items-center gap-4 text-xs text-slate-400">
-                    <span className="flex items-center gap-1">
-                      <Heart className="w-3 h-3" /> 234
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MessageSquare className="w-3 h-3" /> 45
-                    </span>
+              {/* Demo Chat - Conversation Box */}
+              <div className="flex flex-col space-y-3 max-h-64 overflow-y-auto pr-2">
+                {/* Avatar Message */}
+                <div className="flex items-start gap-2 flex-row-reverse">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                    <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center">
+                      <span className="text-xs font-bold text-white">DA</span>
+                    </div>
                   </div>
-                </Card>
-                <Card className="bg-slate-800/40 border-slate-700/50 p-4">
-                  <p className="text-slate-300 text-sm mb-3">
-                    New tutorial on AI avatar customization is now live!
-                  </p>
-                  <div className="flex items-center gap-4 text-xs text-slate-400">
-                    <span className="flex items-center gap-1">
-                      <Heart className="w-3 h-3" /> 189
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MessageSquare className="w-3 h-3" /> 32
-                    </span>
+                  <div className="flex-1 flex justify-end">
+                    <div className="bg-slate-700/50 border border-slate-600/30 rounded-2xl rounded-tr-md px-3 py-2 max-w-xs">
+                      <p className="text-sm text-slate-200">
+                        Hi! I'm your AI assistant. How can I help you today?
+                      </p>
+                    </div>
                   </div>
-                </Card>
+                </div>
+
+                {/* User Message */}
+                <div className="flex items-start gap-2">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                    <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center">
+                      <span className="text-xs font-bold text-white">U</span>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="bg-blue-600/20 border border-blue-500/30 rounded-2xl rounded-tl-md px-3 py-2 max-w-xs">
+                      <p className="text-sm text-blue-100">
+                        Tell me about your services
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Avatar Response */}
+                <div className="flex items-start gap-2 flex-row-reverse">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                    <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center">
+                      <span className="text-xs font-bold text-white">DA</span>
+                    </div>
+                  </div>
+                  <div className="flex-1 flex justify-end">
+                    <div className="bg-slate-700/50 border border-slate-600/30 rounded-2xl rounded-tr-md px-3 py-2 max-w-xs">
+                      <p className="text-sm text-slate-200">
+                        I offer personalized AI solutions, avatar creation, and automated customer engagement. Let's discuss your needs!
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Social Links & Share Button */}
+            {/* Social Links & Share Button - One Line Layout */}
             <div className="px-6 pb-6">
-              <div className="bg-slate-800/30 rounded-xl p-4 border border-slate-700/20">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-semibold text-white">Connect with me</h4>
+              <div className="bg-slate-800/30 rounded-xl p-3 border border-slate-700/20">
+                <div className="flex items-center justify-between gap-1">
+                  {/* Left Side - Four Main Social Links */}
+                  <div className="flex items-center gap-0.5 flex-shrink-0">
+                    <Button variant="ghost" size="sm" className="p-2 bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 hover:from-sky-500 hover:via-blue-600 hover:to-indigo-700 text-white rounded-full transition-all duration-300 min-w-[32px] min-h-[32px] shadow-lg border-0 hover:scale-110">
+                      <Twitter className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="p-2 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-800 text-white rounded-full transition-all duration-300 min-w-[32px] min-h-[32px] shadow-lg border-0 hover:scale-110">
+                      <Linkedin className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="p-2 bg-gradient-to-br from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white rounded-full transition-all duration-300 min-w-[32px] min-h-[32px] shadow-lg border-0 hover:scale-110">
+                      <Youtube className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="p-2 bg-gradient-to-br from-pink-500 via-red-500 to-orange-500 hover:from-pink-600 hover:via-red-600 hover:to-orange-600 text-white rounded-full transition-all duration-300 min-w-[32px] min-h-[32px] shadow-lg border-0 hover:scale-110">
+                      <Instagram className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                  
+                  {/* Right Side - Three Dots and Share Button */}
+                  <div className="flex items-center gap-0.5 flex-shrink-0">
+                    <Button variant="ghost" size="sm" className="p-2 rounded-full hover:bg-slate-700/50 text-slate-300 hover:text-white transition-all min-w-[32px] min-h-[32px]">
+                      <MoreVertical className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="px-2.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-full transition-all duration-300 shadow-lg border-0 flex items-center gap-1 text-xs font-medium">
+                      <Share2 className="h-3 w-3" />
+                      Share
+                    </Button>
+                  </div>
                 </div>
-                <div className="grid grid-cols-5 gap-2">
-                  <Button variant="ghost" size="sm" className="bg-slate-700/30 hover:bg-blue-600 text-slate-300 hover:text-white p-2 rounded-lg">
-                    <Twitter className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="bg-slate-700/30 hover:bg-blue-700 text-slate-300 hover:text-white p-2 rounded-lg">
-                    <Linkedin className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="bg-slate-700/30 hover:bg-blue-600 text-slate-300 hover:text-white p-2 rounded-lg">
-                    <Facebook className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="bg-slate-700/30 hover:bg-pink-600 text-slate-300 hover:text-white p-2 rounded-lg">
-                    <Instagram className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="bg-slate-700/30 hover:bg-red-600 text-slate-300 hover:text-white p-2 rounded-lg">
-                    <Youtube className="h-4 w-4" />
-                  </Button>
-                </div>
-                <Button 
-                  variant="outline" 
-                  className="w-full mt-3 border-blue-500/50 text-blue-400 hover:bg-blue-600 hover:text-white"
-                  size="sm"
-                >
-                  <Share2 className="h-3 w-3 mr-2" />
-                  Share Profile
-                </Button>
               </div>
             </div>
           </div>
@@ -765,11 +787,19 @@ const LandingPage = () => {
             <div className="relative">
               <Card className="gradient-card p-8 bg-gradient-to-br from-blue-50 to-purple-50">
                 <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700/50 shadow-2xl">
-                  <div className="w-full h-[500px] bg-gradient-to-br from-blue-950/50 via-purple-950/30 to-slate-950/50 flex items-center justify-center relative">
+                  <div className="w-full h-[500px] bg-gradient-to-br from-blue-950/50 via-purple-950/30 to-slate-950/50 flex items-center justify-center relative overflow-hidden">
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent_50%)]"></div>
                     
-                    {/* Enhanced Realistic 3D Avatar */}
-                    <div className="relative transform scale-150">
+                    {/* 3D Floating Effect Background */}
+                    <div className="absolute inset-0 pointer-events-none">
+                      <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
+                      <div className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
+                    </div>
+                    
+                    {/* Enhanced Realistic 3D Avatar with Floating Animation */}
+                    <div className="relative transform scale-150 animate-[float_6s_ease-in-out_infinite]" style={{
+                      animation: 'float 6s ease-in-out infinite'
+                    }}>
                       {/* Head with more detail */}
                       <div className="w-28 h-32 bg-gradient-to-b from-amber-200 via-amber-300 to-amber-400 rounded-full relative shadow-2xl">
                         {/* Hair - More detailed */}
@@ -826,10 +856,18 @@ const LandingPage = () => {
                       </div>
                     </div>
                     
-                    {/* Animated Rings */}
+                    {/* 3D Animated Rings */}
                     <div className="absolute inset-0 rounded-2xl border-2 border-blue-400/30 pointer-events-none animate-pulse"></div>
                     <div className="absolute inset-4 rounded-2xl border border-purple-400/20 pointer-events-none animate-pulse" style={{animationDelay: '0.5s'}}></div>
+                    <div className="absolute -inset-2 rounded-2xl border border-cyan-400/20 pointer-events-none animate-pulse" style={{animationDelay: '1s'}}></div>
                   </div>
+                  
+                  <style>{`
+                    @keyframes float {
+                      0%, 100% { transform: translateY(0px) scale(1.5); }
+                      50% { transform: translateY(-20px) scale(1.5); }
+                    }
+                  `}</style>
 
                   {/* Control Panel Overlay */}
                   <div className="absolute bottom-4 left-4 right-4 bg-slate-900/80 backdrop-blur-sm rounded-xl p-3 border border-slate-700/50">
@@ -862,6 +900,124 @@ const LandingPage = () => {
                 </div>
               </Card>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20 px-4 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Features that make you stand out
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Create your own AI avatar that speaks for you when you can't.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {features.map((feature, index) => (
+              <Card key={index} className="gradient-card text-center p-6 hover:shadow-xl transition-all duration-300">
+                <div className={`w-16 h-16 rounded-xl bg-gradient-to-r ${feature.color} flex items-center justify-center mb-6 mx-auto shadow-lg`}>
+                  <feature.icon className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-600 leading-relaxed">
+                  {feature.description}
+                </p>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-20 px-4 bg-gradient-to-br from-gray-50 to-white">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              How It Works
+            </h2>
+            <p className="text-lg text-gray-600">
+              Get started in just three simple steps
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {howItWorks.map((item, index) => (
+              <div key={index} className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full flex items-center justify-center text-2xl font-bold mb-6 mx-auto">
+                  {item.step}
+                </div>
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg flex items-center justify-center mb-4 mx-auto">
+                  <item.icon className="w-6 h-6 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">
+                  {item.title}
+                </h3>
+                <p className="text-gray-600">
+                  {item.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section className="py-20 px-4 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Choose Your Plan
+            </h2>
+            <p className="text-lg text-gray-600">
+              Start free, upgrade when you're ready
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {pricingPlans.map((plan, index) => (
+              <Card key={index} className={`gradient-card p-8 relative ${plan.popular ? 'ring-2 ring-blue-500 scale-105' : ''}`}>
+                {plan.popular && (
+                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-500 to-purple-500 text-white">
+                    Most Popular
+                  </Badge>
+                )}
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mb-4 mx-auto">
+                    <plan.icon className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                    {plan.name}
+                  </h3>
+                  <div className="text-3xl font-bold text-gray-900 mb-1">
+                    {plan.price}
+                    {plan.period && <span className="text-lg text-gray-600">{plan.period}</span>}
+                  </div>
+                  <p className="text-gray-600 mb-6">
+                    {plan.description}
+                  </p>
+                  <Button 
+                    className={`w-full mb-6 ${plan.popular ? 'gradient-button' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'}`}
+                    onClick={() => setIsMainAuthOpen(true)}
+                  >
+                    Get Started
+                  </Button>
+                  <ul className="text-left space-y-3">
+                    {plan.features.map((feature, featureIndex) => (
+                      <li key={featureIndex} className="flex items-center text-gray-700">
+                        <CheckCircle className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </Card>
+            ))}
           </div>
         </div>
       </section>

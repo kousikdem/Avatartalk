@@ -673,17 +673,29 @@ const ProfilePage: React.FC = () => {
               </p>
             </div>
 
-            {/* 3D Avatar Preview - Larger and More Prominent with Default Avatar Saving */}
+            {/* 3D Avatar Preview with Enhanced 3D Effects */}
             <div className="px-6 pb-6">
               <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-800/40 via-blue-900/20 to-slate-800/40 border border-slate-600/30 shadow-inner">
-                <FuturisticAvatar3D
-                  isLarge={true}
-                  isTalking={isTalking}
-                  avatarStyle="holographic"
-                  className="w-full h-80"
-                  onInteraction={() => setIsTalking(!isTalking)}
-                />
+                {/* 3D Floating Background Effects */}
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="absolute top-1/4 left-1/4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl animate-pulse"></div>
+                  <div className="absolute bottom-1/4 right-1/4 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl animate-pulse" style={{animationDelay: '1s'}}></div>
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-cyan-500/5 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
+                </div>
+                
+                <div className="relative animate-[float_6s_ease-in-out_infinite]">
+                  <FuturisticAvatar3D
+                    isLarge={true}
+                    isTalking={isTalking}
+                    avatarStyle="holographic"
+                    className="w-full h-80"
+                    onInteraction={() => setIsTalking(!isTalking)}
+                  />
+                </div>
+                
                 <div className="absolute inset-0 rounded-3xl border border-blue-400/10 pointer-events-none" />
+                <div className="absolute inset-0 rounded-3xl border-2 border-blue-400/20 pointer-events-none animate-pulse" />
+                <div className="absolute inset-4 rounded-3xl border border-purple-400/10 pointer-events-none animate-pulse" style={{animationDelay: '0.5s'}} />
                 
                 {/* Floating Talk to Me Button - Small size */}
                 <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2">
