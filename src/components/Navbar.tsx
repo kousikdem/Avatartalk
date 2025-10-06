@@ -42,15 +42,6 @@ const Navbar: React.FC<NavbarProps> = ({ showAuth = false }) => {
                     <Home className="w-4 h-4 mr-2" />
                     Home
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-blue-200 hover:text-white hover:bg-blue-800/50"
-                    onClick={() => handleNavigation('/?view=dashboard')}
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Dashboard
-                  </Button>
                 </>
               ) : (
                 <>
