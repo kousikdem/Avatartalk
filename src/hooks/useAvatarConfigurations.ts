@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface AvatarConfiguration {
@@ -64,11 +65,75 @@ export const useAvatarConfigurations = () => {
   const loadConfigurations = async () => {
     try {
       setLoading(true);
-      // For now, return empty configurations since table doesn't exist yet
-      setConfigurations([]);
-      setCurrentConfig(null);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data, error } = await supabase
+          .from('avatar_configurations')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        const configs = data?.map(d => ({
+          id: d.id,
+          user_id: d.user_id,
+          avatarName: d.avatar_name,
+          gender: d.gender,
+          age: d.age_category === 'child' ? 12 : d.age_category === 'teen' ? 16 : 25,
+          height: Number(d.height),
+          weight: Number(d.weight),
+          muscle: Number(d.muscle_definition),
+          fat: Number(d.body_fat),
+          headSize: Number(d.head_size),
+          headShape: d.head_shape,
+          faceWidth: Number(d.face_width || 50),
+          jawline: Number(d.jawline),
+          cheekbones: Number(d.cheekbones),
+          eyeSize: Number(d.eye_size),
+          eyeDistance: Number(d.eye_distance),
+          eyeShape: d.eye_shape,
+          eyeColor: d.eye_color,
+          noseSize: Number(d.nose_size),
+          noseWidth: Number(d.nose_width),
+          noseShape: d.nose_shape,
+          mouthWidth: Number(d.mouth_width),
+          lipThickness: Number(d.lip_thickness),
+          lipShape: d.lip_shape,
+          earSize: Number(d.ear_size),
+          earPosition: Number(d.ear_position),
+          earShape: d.ear_shape,
+          skinTone: d.skin_tone,
+          skinTexture: d.skin_texture,
+          hairStyle: d.hair_style,
+          hairColor: d.hair_color,
+          hairLength: Number(d.hair_length),
+          clothingTop: d.clothing_top || 'tshirt',
+          clothingBottom: d.clothing_bottom || 'jeans',
+          shoes: d.shoes || 'sneakers',
+          accessories: Array.isArray(d.accessories) ? d.accessories : [],
+          torsoLength: Number(d.torso_length || 50),
+          legLength: Number(d.leg_length || 50),
+          shoulderWidth: Number(d.shoulder_width || 50),
+          handSize: Number(d.hand_size || 50),
+          currentPose: d.current_pose,
+          currentExpression: d.current_expression,
+          isActive: d.is_active,
+          thumbnailUrl: d.thumbnail_url,
+          modelUrl: d.model_url,
+          createdAt: d.created_at,
+          updatedAt: d.updated_at
+        })) || [];
+        
+        setConfigurations(configs);
+        if (configs.length > 0) {
+          setCurrentConfig(configs.find(c => c.isActive) || configs[0]);
+        }
+      }
     } catch (error) {
       console.error('Error in loadConfigurations:', error);
+      toast.error('Failed to load avatar configurations');
     } finally {
       setLoading(false);
     }
@@ -78,62 +143,73 @@ export const useAvatarConfigurations = () => {
   const saveConfiguration = async (config: Partial<AvatarConfiguration>) => {
     try {
       setSaving(true);
+      const { data: { user } } = await supabase.auth.getUser();
       
-      // For now, save to localStorage until database is ready
-      const savedConfig: AvatarConfiguration = {
-        id: config.id || generateId(),
-        avatarName: config.avatarName || 'My Avatar',
+      if (!user) {
+        toast.error('Please log in to save avatars');
+        return;
+      }
+
+      const dbConfig = {
+        user_id: user.id,
+        avatar_name: config.avatarName || 'My Avatar',
         gender: config.gender || 'male',
-        age: config.age || 25,
+        age_category: config.age && config.age < 13 ? 'child' : config.age && config.age < 18 ? 'teen' : 'adult',
         height: config.height || 170,
         weight: config.weight || 70,
-        muscle: config.muscle || 50,
-        fat: config.fat || 20,
-        headSize: config.headSize || 50,
-        headShape: config.headShape || 'oval',
-        faceWidth: config.faceWidth || 50,
+        muscle_definition: config.muscle || 50,
+        body_fat: config.fat || 20,
+        head_size: config.headSize || 50,
+        head_shape: config.headShape || 'oval',
+        face_width: config.faceWidth || 50,
         jawline: config.jawline || 50,
         cheekbones: config.cheekbones || 50,
-        eyeSize: config.eyeSize || 50,
-        eyeDistance: config.eyeDistance || 50,
-        eyeShape: config.eyeShape || 'almond',
-        eyeColor: config.eyeColor || '#8B4513',
-        noseSize: config.noseSize || 50,
-        noseWidth: config.noseWidth || 50,
-        noseShape: config.noseShape || 'straight',
-        mouthWidth: config.mouthWidth || 50,
-        lipThickness: config.lipThickness || 50,
-        lipShape: config.lipShape || 'normal',
-        earSize: config.earSize || 50,
-        earPosition: config.earPosition || 50,
-        earShape: config.earShape || 'normal',
-        skinTone: config.skinTone || '#F1C27D',
-        skinTexture: config.skinTexture || 'smooth',
-        hairStyle: config.hairStyle || 'medium',
-        hairColor: config.hairColor || '#8B4513',
-        hairLength: config.hairLength || 50,
-        clothingTop: config.clothingTop || 'tshirt',
-        clothingBottom: config.clothingBottom || 'jeans',
+        eye_size: config.eyeSize || 50,
+        eye_distance: config.eyeDistance || 50,
+        eye_shape: config.eyeShape || 'almond',
+        eye_color: config.eyeColor || '#8B4513',
+        nose_size: config.noseSize || 50,
+        nose_width: config.noseWidth || 50,
+        nose_shape: config.noseShape || 'straight',
+        mouth_width: config.mouthWidth || 50,
+        lip_thickness: config.lipThickness || 50,
+        lip_shape: config.lipShape || 'normal',
+        ear_size: config.earSize || 50,
+        ear_position: config.earPosition || 50,
+        ear_shape: config.earShape || 'normal',
+        skin_tone: config.skinTone || '#F1C27D',
+        skin_texture: config.skinTexture || 'smooth',
+        hair_style: config.hairStyle || 'medium',
+        hair_color: config.hairColor || '#8B4513',
+        hair_length: config.hairLength || 50,
+        clothing_top: config.clothingTop || 'tshirt',
+        clothing_bottom: config.clothingBottom || 'jeans',
         shoes: config.shoes || 'sneakers',
         accessories: config.accessories || [],
-        currentPose: config.currentPose || 'standing',
-        currentExpression: config.currentExpression || 'neutral',
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        current_pose: config.currentPose || 'standing',
+        current_expression: config.currentExpression || 'neutral',
+        is_active: true
       };
 
-      // Save to localStorage
-      const existingConfigs = JSON.parse(localStorage.getItem('avatarConfigurations') || '[]');
-      const updatedConfigs = config.id 
-        ? existingConfigs.map((c: AvatarConfiguration) => c.id === config.id ? savedConfig : c)
-        : [...existingConfigs, savedConfig];
-      
-      localStorage.setItem('avatarConfigurations', JSON.stringify(updatedConfigs));
-      
-      setCurrentConfig(savedConfig);
-      setConfigurations(updatedConfigs);
-      
+      let result;
+      if (config.id) {
+        result = await supabase
+          .from('avatar_configurations')
+          .update(dbConfig)
+          .eq('id', config.id)
+          .select()
+          .single();
+      } else {
+        result = await supabase
+          .from('avatar_configurations')
+          .insert(dbConfig)
+          .select()
+          .single();
+      }
+
+      if (result.error) throw result.error;
+
+      await loadConfigurations();
       toast.success('Avatar configuration saved successfully!');
 
     } catch (error) {
@@ -147,17 +223,14 @@ export const useAvatarConfigurations = () => {
   // Delete an avatar configuration
   const deleteConfiguration = async (configId: string) => {
     try {
-      const existingConfigs = JSON.parse(localStorage.getItem('avatarConfigurations') || '[]');
-      const updatedConfigs = existingConfigs.filter((c: AvatarConfiguration) => c.id !== configId);
+      const { error } = await supabase
+        .from('avatar_configurations')
+        .delete()
+        .eq('id', configId);
       
-      localStorage.setItem('avatarConfigurations', JSON.stringify(updatedConfigs));
-      setConfigurations(updatedConfigs);
+      if (error) throw error;
       
-      // If we deleted the current config, set the first one as current
-      if (currentConfig?.id === configId) {
-        setCurrentConfig(updatedConfigs[0] || null);
-      }
-      
+      await loadConfigurations();
       toast.success('Avatar configuration deleted successfully');
       
     } catch (error) {
@@ -169,13 +242,25 @@ export const useAvatarConfigurations = () => {
   // Set a configuration as active
   const setActiveConfiguration = async (configId: string) => {
     try {
-      const existingConfigs = JSON.parse(localStorage.getItem('avatarConfigurations') || '[]');
-      const config = existingConfigs.find((c: AvatarConfiguration) => c.id === configId);
-      
-      if (config) {
-        setCurrentConfig(config);
-        toast.success('Avatar configuration activated');
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Deactivate all other configs
+      await supabase
+        .from('avatar_configurations')
+        .update({ is_active: false })
+        .eq('user_id', user.id);
+
+      // Activate the selected config
+      const { error } = await supabase
+        .from('avatar_configurations')
+        .update({ is_active: true })
+        .eq('id', configId);
+
+      if (error) throw error;
+
+      await loadConfigurations();
+      toast.success('Avatar configuration activated');
       
     } catch (error) {
       console.error('Error in setActiveConfiguration:', error);
@@ -188,21 +273,9 @@ export const useAvatarConfigurations = () => {
     return Date.now().toString() + Math.random().toString(36).substr(2, 9);
   };
 
-  // Load configurations from localStorage on mount
+  // Load configurations on mount
   useEffect(() => {
-    try {
-      const savedConfigs = JSON.parse(localStorage.getItem('avatarConfigurations') || '[]');
-      setConfigurations(savedConfigs);
-      
-      // Set the first config as current if available
-      if (savedConfigs.length > 0) {
-        setCurrentConfig(savedConfigs[0]);
-      }
-    } catch (error) {
-      console.error('Error loading configurations from localStorage:', error);
-    } finally {
-      setLoading(false);
-    }
+    loadConfigurations();
   }, []);
 
   return {

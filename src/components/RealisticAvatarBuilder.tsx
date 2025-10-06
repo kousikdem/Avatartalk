@@ -19,12 +19,18 @@ import {
   Zap,
   Smile,
   Eye,
-  Circle
+  Circle,
+  Sparkles,
+  Users
 } from 'lucide-react';
 import AdvancedAvatarPreview from './AdvancedAvatarPreview';
 import ImageToAvatarConverter from './ImageToAvatarConverter';
 import AvatarAssetLibrary from './AvatarAssetLibrary';
+import PresetAvatarSelector from './PresetAvatarSelector';
+import DetailedBodyControls from './DetailedBodyControls';
+import DetailedFaceControls from './DetailedFaceControls';
 import { useAvatarConfigurations } from '@/hooks/useAvatarConfigurations';
+import { posePresets, expressionPresets } from '@/data/avatarPresets';
 import { toast } from 'sonner';
 
 interface RealisticAvatarBuilderProps {
@@ -52,11 +58,13 @@ const RealisticAvatarBuilder: React.FC<RealisticAvatarBuilderProps> = ({
     muscle: 50,
     fat: 20,
     
-    // Body Proportions
+    // Body Proportions  
     torsoLength: 50,
     legLength: 50,
     shoulderWidth: 50,
     handSize: 50,
+    chinSize: 50,
+    smileCurvature: 50,
     
     // Head & Face Structure
     headSize: 50,
@@ -266,8 +274,11 @@ const RealisticAvatarBuilder: React.FC<RealisticAvatarBuilderProps> = ({
         {/* Controls */}
         <div className="space-y-4">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="basic" className="text-xs">
+            <TabsList className="grid w-full grid-cols-6">
+              <TabsTrigger value="presets" className="text-xs">
+                <Users className="w-3 h-3" />
+              </TabsTrigger>
+              <TabsTrigger value="body" className="text-xs">
                 <User className="w-3 h-3" />
               </TabsTrigger>
               <TabsTrigger value="face" className="text-xs">
@@ -284,12 +295,22 @@ const RealisticAvatarBuilder: React.FC<RealisticAvatarBuilderProps> = ({
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="basic" className="space-y-4 max-h-[500px] overflow-y-auto">
-              <BasicControls config={avatarConfig} onChange={handleConfigChange} />
+            <TabsContent value="presets" className="space-y-4 max-h-[500px] overflow-y-auto">
+              <PresetAvatarSelector 
+                onSelectPreset={(presetConfig) => {
+                  setAvatarConfig({ ...avatarConfig, ...presetConfig });
+                  toast.success('Preset loaded! Customize it further.');
+                }}
+                currentGender={avatarConfig.gender}
+              />
+            </TabsContent>
+
+            <TabsContent value="body" className="space-y-4 max-h-[500px] overflow-y-auto">
+              <DetailedBodyControls config={avatarConfig} onChange={handleConfigChange} />
             </TabsContent>
 
             <TabsContent value="face" className="space-y-4 max-h-[500px] overflow-y-auto">
-              <FaceControls config={avatarConfig} onChange={handleConfigChange} />
+              <DetailedFaceControls config={avatarConfig} onChange={handleConfigChange} />
             </TabsContent>
 
             <TabsContent value="style" className="space-y-4 max-h-[500px] overflow-y-auto">
@@ -317,159 +338,6 @@ const RealisticAvatarBuilder: React.FC<RealisticAvatarBuilderProps> = ({
   );
 };
 
-// Basic Controls Component
-const BasicControls: React.FC<{ config: any; onChange: (cat: string, key: string, val: any) => void }> = ({ config, onChange }) => (
-  <div className="space-y-4">
-    <Card className="avatar-control-panel">
-      <CardHeader className="avatar-section-header">
-        <CardTitle className="text-sm">Basic Information</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <Label className="text-sm font-medium">Gender</Label>
-          <Select value={config.gender} onValueChange={(value) => onChange('basic', 'gender', value)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="male">Male</SelectItem>
-              <SelectItem value="female">Female</SelectItem>
-              <SelectItem value="non-binary">Non-binary</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label className="text-sm font-medium">
-            Age: <Badge variant="secondary">{config.age}</Badge>
-          </Label>
-          <Slider
-            value={[config.age]}
-            onValueChange={([value]) => onChange('basic', 'age', value)}
-            min={16}
-            max={80}
-            step={1}
-            className="mt-2"
-          />
-        </div>
-
-        <div>
-          <Label className="text-sm font-medium">
-            Height: <Badge variant="secondary">{config.height}cm</Badge>
-          </Label>
-          <Slider
-            value={[config.height]}
-            onValueChange={([value]) => onChange('basic', 'height', value)}
-            min={150}
-            max={200}
-            step={1}
-            className="mt-2"
-          />
-        </div>
-
-        <div>
-          <Label className="text-sm font-medium">
-            Weight: <Badge variant="secondary">{config.weight}kg</Badge>
-          </Label>
-          <Slider
-            value={[config.weight]}
-            onValueChange={([value]) => onChange('basic', 'weight', value)}
-            min={40}
-            max={120}
-            step={1}
-            className="mt-2"
-          />
-        </div>
-
-        <div>
-          <Label className="text-sm font-medium">
-            Muscle: <Badge variant="secondary">{config.muscle}%</Badge>
-          </Label>
-          <Slider
-            value={[config.muscle]}
-            onValueChange={([value]) => onChange('basic', 'muscle', value)}
-            min={0}
-            max={100}
-            step={1}
-            className="mt-2"
-          />
-        </div>
-      </CardContent>
-    </Card>
-  </div>
-);
-
-// Face Controls Component
-const FaceControls: React.FC<{ config: any; onChange: (cat: string, key: string, val: any) => void }> = ({ config, onChange }) => (
-  <div className="space-y-4">
-    <Card className="avatar-control-panel">
-      <CardHeader className="avatar-section-header">
-        <CardTitle className="text-sm">Face Structure</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <Label className="text-sm font-medium">
-            Head Size: <Badge variant="secondary">{config.headSize}%</Badge>
-          </Label>
-          <Slider
-            value={[config.headSize]}
-            onValueChange={([value]) => onChange('face', 'headSize', value)}
-            min={80}
-            max={120}
-            step={1}
-            className="mt-2"
-          />
-        </div>
-
-        <div>
-          <Label className="text-sm font-medium">Head Shape</Label>
-          <Select value={config.headShape} onValueChange={(value) => onChange('face', 'headShape', value)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="oval">Oval</SelectItem>
-              <SelectItem value="round">Round</SelectItem>
-              <SelectItem value="square">Square</SelectItem>
-              <SelectItem value="heart">Heart</SelectItem>
-              <SelectItem value="diamond">Diamond</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label className="text-sm font-medium">
-            Eye Size: <Badge variant="secondary">{config.eyeSize}%</Badge>
-          </Label>
-          <Slider
-            value={[config.eyeSize]}
-            onValueChange={([value]) => onChange('face', 'eyeSize', value)}
-            min={70}
-            max={130}
-            step={1}
-            className="mt-2"
-          />
-        </div>
-
-        <div>
-          <Label className="text-sm font-medium">Eye Color</Label>
-          <div className="flex gap-2 mt-2">
-            {['#8B4513', '#4A90E2', '#50C878', '#DAA520', '#708090', '#2F4F4F'].map((color) => (
-              <button
-                key={color}
-                className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${
-                  config.eyeColor === color ? 'border-primary ring-2 ring-primary/30' : 'border-border'
-                }`}
-                style={{ backgroundColor: color }}
-                onClick={() => onChange('face', 'eyeColor', color)}
-              />
-            ))}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  </div>
-);
 
 // Style Controls Component  
 const StyleControls: React.FC<{ config: any; onChange: (cat: string, key: string, val: any) => void }> = ({ config, onChange }) => (
@@ -519,16 +387,12 @@ const StyleControls: React.FC<{ config: any; onChange: (cat: string, key: string
         </div>
 
         <div>
-          <Label className="text-sm font-medium">Expression</Label>
+          <Label className="text-sm font-medium flex items-center gap-2">
+            <Smile className="w-3 h-3" />
+            Expression
+          </Label>
           <div className="grid grid-cols-2 gap-2 mt-2">
-            {[
-              { id: 'neutral', icon: '😐', label: 'Neutral' },
-              { id: 'smiling', icon: '😊', label: 'Smile' },
-              { id: 'laughing', icon: '😄', label: 'Laugh' },
-              { id: 'surprised', icon: '😲', label: 'Surprised' },
-              { id: 'angry', icon: '😠', label: 'Angry' },
-              { id: 'sad', icon: '😢', label: 'Sad' }
-            ].map((expr) => (
+            {expressionPresets.map((expr) => (
               <Button
                 key={expr.id}
                 variant={config.currentExpression === expr.id ? 'default' : 'outline'}
@@ -537,7 +401,7 @@ const StyleControls: React.FC<{ config: any; onChange: (cat: string, key: string
                 onClick={() => onChange('style', 'currentExpression', expr.id)}
               >
                 <span className="mr-2">{expr.icon}</span>
-                {expr.label}
+                {expr.name}
               </Button>
             ))}
           </div>
@@ -572,16 +436,12 @@ const ClothingControls: React.FC<{ config: any; onChange: (cat: string, key: str
         </div>
 
         <div>
-          <Label className="text-sm font-medium">Pose</Label>
+          <Label className="text-sm font-medium flex items-center gap-2">
+            <Sparkles className="w-3 h-3" />
+            Pose & Animation
+          </Label>
           <div className="grid grid-cols-2 gap-2 mt-2">
-            {[
-              { id: 'standing', label: 'Standing' },
-              { id: 'sitting', label: 'Sitting' },
-              { id: 'running', label: 'Running' },
-              { id: 'dancing', label: 'Dancing' },
-              { id: 'relaxed', label: 'Relaxed' },
-              { id: 'confident', label: 'Confident' }
-            ].map((pose) => (
+            {posePresets.map((pose) => (
               <Button
                 key={pose.id}
                 variant={config.currentPose === pose.id ? 'default' : 'outline'}
@@ -589,7 +449,8 @@ const ClothingControls: React.FC<{ config: any; onChange: (cat: string, key: str
                 className="avatar-pose-button"
                 onClick={() => onChange('clothing', 'currentPose', pose.id)}
               >
-                {pose.label}
+                <span className="mr-2">{pose.icon}</span>
+                {pose.name}
               </Button>
             ))}
           </div>
