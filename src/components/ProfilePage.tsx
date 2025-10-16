@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import VisitorAuth from './VisitorAuth';
+import MainAuth from './MainAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -127,6 +128,7 @@ const ProfilePage: React.FC = () => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [socialLinks, setSocialLinks] = useState<any>(null);
   const [isVisitorAuthOpen, setIsVisitorAuthOpen] = useState(false);
+  const [isMainAuthOpen, setIsMainAuthOpen] = useState(false);
   const { toast } = useToast();
 
   const {
@@ -1241,6 +1243,16 @@ const ProfilePage: React.FC = () => {
       <VisitorAuth
         isOpen={isVisitorAuthOpen}
         onClose={() => setIsVisitorAuthOpen(false)}
+        onSignInClick={() => {
+          setIsVisitorAuthOpen(false);
+          setIsMainAuthOpen(true);
+        }}
+      />
+      
+      {/* Main Authentication Modal */}
+      <MainAuth
+        isOpen={isMainAuthOpen}
+        onClose={() => setIsMainAuthOpen(false)}
       />
     </div>
   );

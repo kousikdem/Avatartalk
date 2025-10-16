@@ -353,11 +353,13 @@ const MainAuth: React.FC<MainAuthProps> = ({ isOpen, onClose, defaultTab = 'sign
 
         <Button 
           variant="outline" 
-          className="w-full border-blue-500/30 text-blue-200 hover:bg-blue-500/10 hover:border-blue-400 flex items-center justify-center"
+          className="w-full bg-gradient-to-r from-white/10 to-white/5 border-2 border-blue-400/50 text-white hover:bg-white/20 hover:border-blue-400 flex items-center justify-center gap-2 py-3 font-semibold shadow-lg hover:shadow-blue-500/30 transition-all duration-300"
           onClick={handleGoogleLogin}
           disabled={loading}
         >
-          <Chrome className="mr-2 h-5 w-5 text-blue-400" />
+          <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center">
+            <Chrome className="w-4 h-4 text-blue-600" />
+          </div>
           {loading ? "Connecting..." : "Continue with Google"}
         </Button>
       </DialogContent>

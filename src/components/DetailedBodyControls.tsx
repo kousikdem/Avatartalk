@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import { Ruler, Scale, Dumbbell, Hand, Legs } from 'lucide-react';
+import { Ruler, Scale, Dumbbell, Hand, User2 } from 'lucide-react';
 
 interface DetailedBodyControlsProps {
   config: any;
@@ -117,7 +117,7 @@ const DetailedBodyControls: React.FC<DetailedBodyControlsProps> = ({ config, onC
           <div>
             <Label className="text-sm font-medium flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <Legs className="w-3 h-3" />
+                <User2 className="w-3 h-3" />
                 Leg Length
               </span>
               <Badge variant="secondary">{config.legLength || 50}%</Badge>
