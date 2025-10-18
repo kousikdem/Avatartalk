@@ -294,8 +294,8 @@ const LandingPage = () => {
             </Button>
           </div>
 
-          {/* Demo User Profile - Matching actual Profile Page Design with 3D Floating Effect */}
-          <div className="max-w-md mx-auto bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl shadow-2xl overflow-hidden border border-slate-700/50 animate-[float_6s_ease-in-out_infinite] hover:scale-105 transition-transform duration-500" style={{ transform: 'perspective(1000px) rotateX(2deg)' }}>
+          {/* Demo User Profile - Compact 3D Floating Display */}
+          <div className="max-w-sm mx-auto bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl shadow-2xl overflow-hidden border border-slate-700/50 animate-[float_10s_ease-in-out_infinite] hover:scale-105 transition-transform duration-500" style={{ transform: 'perspective(1200px) rotateX(5deg) rotateY(-2deg)', transformStyle: 'preserve-3d' }}>
             {/* Profile Header */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4">
               <div className="flex items-center gap-3">
@@ -334,10 +334,10 @@ const LandingPage = () => {
                 <div className="w-full h-80 bg-gradient-to-br from-blue-950/50 via-purple-950/30 to-slate-950/50 flex items-center justify-center relative">
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent_50%)]"></div>
                   
-                  {/* Realistic 3D Avatar Representation with Floating Animation */}
-                  <div className="relative animate-[float_6s_ease-in-out_infinite]">
+                  {/* Realistic 3D Avatar Representation with Enhanced 3D Moving Animation */}
+                  <div className="relative animate-[float_4s_ease-in-out_infinite,wiggle_3s_ease-in-out_infinite]">
                     {/* Head */}
-                    <div className="w-24 h-28 bg-gradient-to-b from-amber-200 to-amber-300 rounded-full relative shadow-2xl">
+                    <div className="w-24 h-28 bg-gradient-to-b from-amber-200 to-amber-300 rounded-full relative shadow-2xl animate-[tilt_2s_ease-in-out_infinite]">
                       {/* Eyes */}
                       <div className="absolute top-10 left-6 w-3 h-3 bg-slate-800 rounded-full">
                         <div className="absolute top-0.5 right-0.5 w-1 h-1 bg-white rounded-full"></div>
@@ -600,12 +600,12 @@ const LandingPage = () => {
               )}
             </div>
 
-            {/* Social Links & Share Button - One Line Layout */}
+            {/* Social Links & Share Button - Compact Layout */}
             <div className="px-6 pb-6">
               <div className="bg-slate-800/30 rounded-xl p-2.5 border border-slate-700/20">
-                <div className="flex items-center justify-between gap-1">
+                <div className="flex items-center justify-between">
                   {/* Left Side - Four Main Social Links */}
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                  <div className="flex items-center gap-0.5 flex-shrink-0">
                     <Button variant="ghost" size="sm" className="p-2 bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 hover:from-sky-500 hover:via-blue-600 hover:to-indigo-700 text-white rounded-full transition-all duration-300 w-8 h-8 shadow-lg border-0 hover:scale-110">
                       <Twitter className="h-3.5 w-3.5" />
                     </Button>
@@ -621,7 +621,7 @@ const LandingPage = () => {
                   </div>
                   
                   {/* Right Side - Three Dots and Share Button */}
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                  <div className="flex items-center gap-0.5 flex-shrink-0">
                     <Button variant="ghost" size="sm" className="p-2 rounded-full hover:bg-slate-700/50 text-slate-300 hover:text-white transition-all w-8 h-8">
                       <MoreVertical className="h-3.5 w-3.5" />
                     </Button>
@@ -1155,7 +1155,7 @@ const LandingPage = () => {
             <div>
               <div className="flex items-center mb-4">
                 <div className="relative w-8 h-8 bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg mr-2">
-                  <MessageSquare className="w-5 h-5 text-white" strokeWidth={2.5} fill="currentColor" />
+                  <Bot className="w-5 h-5 text-white" strokeWidth={2.5} />
                   <Sparkles className="absolute -top-0.5 -right-0.5 w-2 h-2 text-yellow-300" fill="currentColor" />
                 </div>
                 <span className="text-xl font-bold">AvatarTalk.bio</span>
