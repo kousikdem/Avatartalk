@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { User } from 'lucide-react';
+import { MessageSquare, Sparkles } from 'lucide-react';
 
 interface LogoProps {
   className?: string;
@@ -15,10 +15,15 @@ const Logo: React.FC<LogoProps> = ({ className = '', size = 'md' }) => {
   };
 
   return (
-    <div className={`${sizeClasses[size]} ${className} bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg`}>
-      <User
-        className="w-3/4 h-3/4 text-white"
-        strokeWidth={2}
+    <div className={`${sizeClasses[size]} ${className} relative bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg`}>
+      <MessageSquare
+        className="w-3/5 h-3/5 text-white"
+        strokeWidth={2.5}
+        fill="currentColor"
+      />
+      <Sparkles
+        className="absolute -top-0.5 -right-0.5 w-2 h-2 text-yellow-300"
+        fill="currentColor"
       />
     </div>
   );
