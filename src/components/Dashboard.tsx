@@ -14,8 +14,34 @@ import { useToast } from '@/hooks/use-toast';
 const Dashboard = () => {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const { profileData, loading } = useUserProfile();
-  const { following, followersCount, followingCount } = useFollows();
+  const { following, followersCount, followingCount } = useFollows(profileData?.id);
   const { toast } = useToast();
+
+  // Realtime profile updates
+  React.useEffect(() => {
+    if (!profileData?.id) return;
+
+    const channel = supabase
+      .channel('profile-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${profileData.id}`
+        },
+        () => {
+          // Profile updated, refetch will happen automatically via useUserProfile
+          window.location.reload();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profileData?.id]);
 
   const handleLogout = async () => {
     try {

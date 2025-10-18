@@ -79,6 +79,37 @@ export const usePosts = (userId?: string) => {
 
   useEffect(() => {
     fetchPosts();
+
+    // Set up realtime subscription for posts
+    if (!userId) return;
+
+    const channel = supabase
+      .channel('posts-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'posts',
+          filter: `user_id=eq.${userId}`
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setPosts(prev => [payload.new as Post, ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            setPosts(prev => prev.map(post => 
+              post.id === payload.new.id ? payload.new as Post : post
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            setPosts(prev => prev.filter(post => post.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [userId]);
 
   return {

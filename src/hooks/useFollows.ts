@@ -164,6 +164,41 @@ export const useFollows = (userId?: string): UseFollowsReturn => {
 
   useEffect(() => {
     fetchFollows(userId);
+
+    // Set up realtime subscription for follows
+    const currentUserId = userId || supabase.auth.getUser().then(u => u.data.user?.id);
+    
+    Promise.resolve(currentUserId).then(uid => {
+      if (!uid) return;
+
+      const channel = supabase
+        .channel('follows-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'follows',
+            filter: `follower_id=eq.${uid}`
+          },
+          () => fetchFollows(userId)
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'follows',
+            filter: `following_id=eq.${uid}`
+          },
+          () => fetchFollows(userId)
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    });
   }, [userId]);
 
   return {

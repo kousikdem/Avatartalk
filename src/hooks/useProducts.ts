@@ -99,6 +99,34 @@ export const useProducts = () => {
 
   useEffect(() => {
     fetchProducts();
+
+    // Set up realtime subscription for products
+    const channel = supabase
+      .channel('products-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'products'
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setProducts(prev => [payload.new as Product, ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            setProducts(prev => prev.map(product => 
+              product.id === payload.new.id ? payload.new as Product : product
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            setProducts(prev => prev.filter(product => product.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return {

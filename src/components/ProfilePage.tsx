@@ -254,6 +254,92 @@ const ProfilePage: React.FC = () => {
     }
   }, [profile?.id, fetchPosts]);
 
+  // Realtime subscriptions for profile data
+  useEffect(() => {
+    if (!profile?.id) return;
+
+    const channel = supabase
+      .channel(`profile-${profile.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'posts',
+          filter: `user_id=eq.${profile.id}`
+        },
+        () => {
+          fetchPosts();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'products',
+          filter: `user_id=eq.${profile.id}`
+        },
+        async () => {
+          const { data } = await supabase
+            .from('products')
+            .select('*')
+            .eq('user_id', profile.id)
+            .eq('status', 'published')
+            .order('created_at', { ascending: false })
+            .limit(6);
+          if (data) setProducts(data);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${profile.id}`
+        },
+        async () => {
+          const { data } = await supabase
+            .rpc('get_public_profile', { profile_id: profile.id });
+          if (data && data.length > 0) setProfile(data[0]);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'follows'
+        },
+        () => {
+          refetchFollows();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_stats',
+          filter: `user_id=eq.${profile.id}`
+        },
+        async () => {
+          const { data } = await supabase
+            .from('user_stats')
+            .select('*')
+            .eq('user_id', profile.id)
+            .maybeSingle();
+          if (data) setUserStats(data);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.id, fetchPosts, refetchFollows]);
+
   const fetchProfile = async () => {
     try {
       // First get the profile ID by username
