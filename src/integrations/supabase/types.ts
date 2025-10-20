@@ -909,11 +909,15 @@ export type Database = {
       social_links: {
         Row: {
           created_at: string | null
+          discord: string | null
           facebook: string | null
+          github: string | null
           id: string
           instagram: string | null
           linkedin: string | null
           pinterest: string | null
+          tiktok: string | null
+          twitch: string | null
           twitter: string | null
           updated_at: string | null
           user_id: string
@@ -922,11 +926,15 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          discord?: string | null
           facebook?: string | null
+          github?: string | null
           id?: string
           instagram?: string | null
           linkedin?: string | null
           pinterest?: string | null
+          tiktok?: string | null
+          twitch?: string | null
           twitter?: string | null
           updated_at?: string | null
           user_id: string
@@ -935,11 +943,15 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          discord?: string | null
           facebook?: string | null
+          github?: string | null
           id?: string
           instagram?: string | null
           linkedin?: string | null
           pinterest?: string | null
+          tiktok?: string | null
+          twitch?: string | null
           twitter?: string | null
           updated_at?: string | null
           user_id?: string
