@@ -15,6 +15,7 @@ import FeedPage from "./pages/FeedPage";
 import CalendarPage from "./components/CalendarPage";
 import ProductsPage from "./pages/ProductsPage";
 import SettingsPage from "./pages/SettingsPage";
+import SocialLinksPage from "./pages/SocialLinksPage";
 import CreatePostModal from "./components/CreatePostModal";  
 import ProfilePage from "./components/ProfilePage";
 import UsernameRedirect from "./components/UsernameRedirect";
@@ -95,6 +96,7 @@ const App = () => {
                       <Route path="/calendar" element={<CalendarPage />} />
                       <Route path="/products" element={<ProductsPage />} />
                       <Route path="/settings" element={<SettingsPage />} />
+                      <Route path="/social-links" element={<SocialLinksPage />} />
                       <Route path="/feed" element={<FeedPage />} />
                       <Route path="/followers" element={<FollowersPage />} />
                       <Route path="/:username" element={<UsernameRedirect />} />

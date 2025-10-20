@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { MoreVertical, Twitter, Linkedin, Facebook, Instagram, Youtube, Globe, Share2 } from 'lucide-react';
+import { MoreVertical, Twitter, Linkedin, Facebook, Instagram, Youtube, Globe, Share2, Github, Twitch, Music, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SocialLinksPopupProps {
@@ -11,6 +11,10 @@ interface SocialLinksPopupProps {
     instagram?: string;
     youtube?: string;
     website?: string;
+    tiktok?: string;
+    github?: string;
+    twitch?: string;
+    discord?: string;
   };
   onShare?: () => void;
 }
@@ -38,6 +42,10 @@ const SocialLinksPopup: React.FC<SocialLinksPopupProps> = ({ socialLinks, onShar
     { name: 'Facebook', icon: Facebook, url: socialLinks?.facebook, color: 'bg-blue-500 hover:bg-blue-600' },
     { name: 'Instagram', icon: Instagram, url: socialLinks?.instagram, color: 'bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600' },
     { name: 'Youtube', icon: Youtube, url: socialLinks?.youtube, color: 'bg-red-600 hover:bg-red-700' },
+    { name: 'TikTok', icon: Music, url: socialLinks?.tiktok, color: 'bg-black hover:bg-gray-900' },
+    { name: 'GitHub', icon: Github, url: socialLinks?.github, color: 'bg-gray-800 hover:bg-gray-900' },
+    { name: 'Twitch', icon: Twitch, url: socialLinks?.twitch, color: 'bg-purple-600 hover:bg-purple-700' },
+    { name: 'Discord', icon: MessageCircle, url: socialLinks?.discord, color: 'bg-indigo-600 hover:bg-indigo-700' },
     { name: 'Website', icon: Globe, url: socialLinks?.website, color: 'bg-gray-600 hover:bg-gray-700' },
   ].filter(platform => platform.url);
 

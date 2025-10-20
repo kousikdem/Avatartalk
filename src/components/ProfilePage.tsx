@@ -44,7 +44,12 @@ import {
   HelpCircle,
   Sparkles,
   Globe,
-  User
+  User,
+  Moon,
+  Sun,
+  Github,
+  Twitch,
+  Music
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -129,6 +134,8 @@ const ProfilePage: React.FC = () => {
   const [socialLinks, setSocialLinks] = useState<any>(null);
   const [isVisitorAuthOpen, setIsVisitorAuthOpen] = useState(false);
   const [isMainAuthOpen, setIsMainAuthOpen] = useState(false);
+  const [isDarkTheme, setIsDarkTheme] = useState(true);
+  const [visitorProfile, setVisitorProfile] = useState<any>(null);
   const { toast } = useToast();
 
   const {
@@ -706,22 +713,33 @@ const ProfilePage: React.FC = () => {
     );
   }
 
+  const bgClass = isDarkTheme 
+    ? "bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950" 
+    : "bg-gradient-to-br from-white via-blue-50 to-purple-50";
+  
+  const cardClass = isDarkTheme
+    ? "bg-slate-900/95 border-slate-700/30"
+    : "bg-white/95 border-gray-200";
+  
+  const textPrimaryClass = isDarkTheme ? "text-white" : "text-gray-900";
+  const textSecondaryClass = isDarkTheme ? "text-slate-400" : "text-gray-600";
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-2">
+    <div className={`min-h-screen ${bgClass} flex items-center justify-center p-2`}>
       <motion.div
         className="w-full max-w-lg mx-auto"
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6 }}
       >
-        <Card className="bg-slate-900/95 border-slate-700/30 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl shadow-blue-950/50 min-h-[90vh]">
+        <Card className={`${cardClass} backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl shadow-blue-950/50 min-h-[90vh]`}>
           <CardContent className="p-0">
-            {/* Profile Header - Top Left Corner */}
+            {/* Profile Header - Top Left Corner with Visitor Profile and Theme Toggle on Right */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4">
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
-                    <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                    <div className={`w-full h-full rounded-full ${isDarkTheme ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center overflow-hidden`}>
                        {profile?.profile_pic_url || profile?.avatar_url ? (
                          <img 
                            src={profile.profile_pic_url || profile.avatar_url} 
@@ -729,7 +747,7 @@ const ProfilePage: React.FC = () => {
                            className="w-full h-full object-cover"
                          />
                        ) : (
-                         <span className="text-lg font-bold text-white">
+                         <span className={`text-lg font-bold ${textPrimaryClass}`}>
                            {profileData.avatarInitial}
                          </span>
                        )}
@@ -738,32 +756,60 @@ const ProfilePage: React.FC = () => {
                   <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 shadow-sm" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-xl font-bold text-white leading-tight mb-0.5 truncate">
+                  <h2 className={`text-xl font-bold ${textPrimaryClass} leading-tight mb-0.5 truncate`}>
                     {profileData.displayName}
                   </h2>
-                  <p className="text-slate-400 text-sm">@{profileData.username}</p>
+                  <p className={`${textSecondaryClass} text-sm`}>@{profileData.username}</p>
                 </div>
               </div>
               
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={shareProfile}
-                className="text-slate-400 hover:text-white p-2 rounded-full bg-slate-800/30 hover:bg-slate-700/50 transition-all duration-200"
-              >
-                <Share2 className="h-4 w-4" />
-              </Button>
+              {/* Right Side: Theme Toggle and Visitor Profile */}
+              <div className="flex items-center gap-2">
+                {/* Theme Toggle */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsDarkTheme(!isDarkTheme)}
+                  className={`${isDarkTheme ? 'text-slate-400 hover:text-white bg-slate-800/30 hover:bg-slate-700/50' : 'text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200'} p-2 rounded-full transition-all duration-200`}
+                >
+                  {isDarkTheme ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                </Button>
+                
+                {/* Visitor Profile Button */}
+                {visitorProfile && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => window.location.href = `/u/${visitorProfile.username}`}
+                    className={`p-0 rounded-full ${isDarkTheme ? 'bg-slate-800/30 hover:bg-slate-700/50' : 'bg-gray-100 hover:bg-gray-200'} transition-all duration-200`}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[1px]">
+                      <div className={`w-full h-full rounded-full ${isDarkTheme ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center overflow-hidden`}>
+                        {visitorProfile.profile_pic_url || visitorProfile.avatar_url ? (
+                          <img 
+                            src={visitorProfile.profile_pic_url || visitorProfile.avatar_url} 
+                            alt={visitorProfile.display_name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User className="h-4 w-4 text-blue-500" />
+                        )}
+                      </div>
+                    </div>
+                  </Button>
+                )}
+              </div>
             </div>
 
             <div className="px-6 pb-4">
-              <p className="text-slate-300 text-sm leading-relaxed">
+              <p className={`${textSecondaryClass} text-sm leading-relaxed`}>
                 {profileData.bio}
               </p>
             </div>
 
             {/* 3D Avatar Preview with Enhanced 3D Effects */}
             <div className="px-6 pb-6">
-              <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-800/40 via-blue-900/20 to-slate-800/40 border border-slate-600/30 shadow-inner">
+              <div className={`relative rounded-3xl overflow-hidden ${isDarkTheme ? 'bg-gradient-to-br from-slate-800/40 via-blue-900/20 to-slate-800/40 border-slate-600/30' : 'bg-gradient-to-br from-gray-100 via-blue-100/50 to-purple-100/50 border-gray-300'} border shadow-inner`}>
                 {/* 3D Floating Background Effects */}
                 <div className="absolute inset-0 pointer-events-none">
                   <div className="absolute top-1/4 left-1/4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl animate-pulse"></div>
@@ -789,7 +835,7 @@ const ProfilePage: React.FC = () => {
                 <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2">
                   <Button
                     size="sm"
-                    className="bg-gradient-to-r from-blue-600/90 to-cyan-600/90 hover:from-blue-700/90 hover:to-cyan-700/90 text-white rounded-full w-10 h-10 p-0 backdrop-blur-sm border border-blue-400/30 shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-110"
+                    className="gradient-button rounded-full w-10 h-10 p-0 backdrop-blur-sm border border-blue-400/30 hover:scale-110"
                     onClick={() => {}} // Just enable conversation mode, no auto-response
                   >
                     <MessageCircle className="h-4 w-4" />
@@ -1291,7 +1337,7 @@ const ProfilePage: React.FC = () => {
                 </div>
                 
                 {/* Right Side - Three Dots Popup and Share Button with Minimal Gap - Small buttons */}
-                <div className="flex items-center gap-0.5 flex-shrink-0">
+                <div className="flex items-center gap-0 flex-shrink-0">
                   {/* Three Dots Popup Menu */}
                   <SocialLinksPopup
                     socialLinks={socialLinks}

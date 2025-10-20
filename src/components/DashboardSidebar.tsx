@@ -14,7 +14,8 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
-  Package
+  Package,
+  Share2
 } from 'lucide-react';
 import {
   Sidebar,
@@ -41,6 +42,7 @@ const navigationItems = [
   { title: "Feed", icon: MessageSquare, url: "/feed" },
   { title: "Avatar", icon: User, url: "/avatar" },
   { title: "AI Training", icon: Brain, url: "/ai-training" },
+  { title: "Social Links", icon: Share2, url: "/social-links" },
   { title: "Analytics", icon: BarChart3, url: "/analytics" },
   { title: "Followers", icon: Users, url: "/followers" },
   { title: "Profiles", icon: Users, url: "/profiles" },
