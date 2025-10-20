@@ -140,6 +140,14 @@ export default {
 					'50%': {
 						transform: 'rotateY(10deg)'
 					}
+				},
+				'pulse-zoom': {
+					'0%, 100%': {
+						transform: 'scale(1)'
+					},
+					'50%': {
+						transform: 'scale(1.05)'
+					}
 				}
 			},
 			animation: {
@@ -150,7 +158,8 @@ export default {
 				'pulse-ring': 'pulse-ring 1.5s cubic-bezier(0.24, 0, 0.38, 1) infinite',
 				'float': 'float 10s ease-in-out infinite',
 				'wiggle': 'wiggle 3s ease-in-out infinite',
-				'tilt': 'tilt 2s ease-in-out infinite'
+				'tilt': 'tilt 2s ease-in-out infinite',
+				'pulse-zoom': 'pulse-zoom 2s ease-in-out infinite'
 			}
 		}
 	},

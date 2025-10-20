@@ -1290,66 +1290,112 @@ const ProfilePage: React.FC = () => {
 
             {/* Social Links Section with Enhanced Menu and Share */}
             <div className="px-6 pt-4 pb-6 border-t border-slate-700/30">
-              {/* Four Social Links, Three Dots Menu and Share Button in Same Row with Minimal Spacing */}
-              <div className="flex items-center justify-between gap-1 overflow-x-auto scrollbar-hide pt-2">
+              <div className="flex items-center justify-between gap-0.5 overflow-x-auto scrollbar-hide pt-2">
                 
-                {/* Left Side - Four Main Social Links with Enhanced Gradient Colors and Minimal Spacing - Small buttons */}
-                 <div className="flex items-center gap-0.5 flex-shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => socialLinks?.twitter && window.open(`https://twitter.com/${socialLinks.twitter}`, '_blank')}
-                    disabled={!socialLinks?.twitter}
-                    className="p-2 bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 hover:from-sky-500 hover:via-blue-600 hover:to-indigo-700 text-white rounded-full transition-all duration-300 min-w-[36px] min-h-[36px] shadow-lg hover:shadow-sky-400/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0 hover:scale-110"
-                  >
-                    <Twitter className="h-4 w-4" />
-                  </Button>
+                {/* Left Side - All available social links inline */}
+                <div className="flex items-center gap-0.5 flex-shrink-0">
+                  {socialLinks?.twitter && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => window.open(`https://twitter.com/${socialLinks.twitter}`, '_blank')}
+                      className="p-2 bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 hover:from-sky-500 hover:via-blue-600 hover:to-indigo-700 text-white rounded-full transition-all duration-300 min-w-[36px] min-h-[36px] shadow-lg hover:shadow-sky-400/30 flex-shrink-0 border-0 hover:scale-110"
+                    >
+                      <Twitter className="h-4 w-4" />
+                    </Button>
+                  )}
                   
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => socialLinks?.linkedin && window.open(`https://linkedin.com/in/${socialLinks.linkedin}`, '_blank')}
-                    disabled={!socialLinks?.linkedin}
-                    className="p-2 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-800 text-white rounded-full transition-all duration-300 min-w-[36px] min-h-[36px] shadow-lg hover:shadow-blue-600/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0 hover:scale-110"
-                  >
-                    <Linkedin className="h-4 w-4" />
-                  </Button>
+                  {socialLinks?.linkedin && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => window.open(`https://linkedin.com/in/${socialLinks.linkedin}`, '_blank')}
+                      className="p-2 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-800 text-white rounded-full transition-all duration-300 min-w-[36px] min-h-[36px] shadow-lg hover:shadow-blue-600/30 flex-shrink-0 border-0 hover:scale-110"
+                    >
+                      <Linkedin className="h-4 w-4" />
+                    </Button>
+                  )}
                   
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => socialLinks?.youtube && window.open(`https://youtube.com/@${socialLinks.youtube}`, '_blank')}
-                    disabled={!socialLinks?.youtube}
-                    className="p-2 bg-gradient-to-br from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white rounded-full transition-all duration-300 min-w-[36px] min-h-[36px] shadow-lg hover:shadow-red-500/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0 hover:scale-110"
-                  >
-                    <Youtube className="h-4 w-4" />
-                  </Button>
+                  {socialLinks?.youtube && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => window.open(`https://youtube.com/@${socialLinks.youtube}`, '_blank')}
+                      className="p-2 bg-gradient-to-br from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white rounded-full transition-all duration-300 min-w-[36px] min-h-[36px] shadow-lg hover:shadow-red-500/30 flex-shrink-0 border-0 hover:scale-110"
+                    >
+                      <Youtube className="h-4 w-4" />
+                    </Button>
+                  )}
                   
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => socialLinks?.instagram && window.open(`https://instagram.com/${socialLinks.instagram}`, '_blank')}
-                    disabled={!socialLinks?.instagram}
-                    className="p-2 bg-gradient-to-br from-pink-500 via-red-500 to-orange-500 hover:from-pink-600 hover:via-red-600 hover:to-orange-600 text-white rounded-full transition-all duration-300 min-w-[36px] min-h-[36px] shadow-lg hover:shadow-pink-500/30 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-0 hover:scale-110"
-                  >
-                    <Instagram className="h-4 w-4" />
-                  </Button>
+                  {socialLinks?.instagram && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => window.open(`https://instagram.com/${socialLinks.instagram}`, '_blank')}
+                      className="p-2 bg-gradient-to-br from-pink-500 via-red-500 to-orange-500 hover:from-pink-600 hover:via-red-600 hover:to-orange-600 text-white rounded-full transition-all duration-300 min-w-[36px] min-h-[36px] shadow-lg hover:shadow-pink-500/30 flex-shrink-0 border-0 hover:scale-110"
+                    >
+                      <Instagram className="h-4 w-4" />
+                    </Button>
+                  )}
+                  
+                  {socialLinks?.facebook && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => window.open(`https://facebook.com/${socialLinks.facebook}`, '_blank')}
+                      className="p-2 bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 hover:from-blue-600 hover:via-blue-700 hover:to-blue-800 text-white rounded-full transition-all duration-300 min-w-[36px] min-h-[36px] shadow-lg hover:shadow-blue-500/30 flex-shrink-0 border-0 hover:scale-110"
+                    >
+                      <Facebook className="h-4 w-4" />
+                    </Button>
+                  )}
+                  
+                  {socialLinks?.github && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => window.open(`https://github.com/${socialLinks.github}`, '_blank')}
+                      className="p-2 bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900 hover:from-gray-600 hover:via-gray-700 hover:to-gray-800 text-white rounded-full transition-all duration-300 min-w-[36px] min-h-[36px] shadow-lg hover:shadow-gray-500/30 flex-shrink-0 border-0 hover:scale-110"
+                    >
+                      <Github className="h-4 w-4" />
+                    </Button>
+                  )}
+                  
+                  {socialLinks?.twitch && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => window.open(`https://twitch.tv/${socialLinks.twitch}`, '_blank')}
+                      className="p-2 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 hover:from-purple-500 hover:via-purple-600 hover:to-purple-700 text-white rounded-full transition-all duration-300 min-w-[36px] min-h-[36px] shadow-lg hover:shadow-purple-500/30 flex-shrink-0 border-0 hover:scale-110"
+                    >
+                      <Twitch className="h-4 w-4" />
+                    </Button>
+                  )}
+                  
+                  {socialLinks?.tiktok && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => window.open(`https://tiktok.com/@${socialLinks.tiktok}`, '_blank')}
+                      className="p-2 bg-gradient-to-br from-gray-900 via-black to-black hover:from-gray-800 hover:via-gray-900 hover:to-black text-white rounded-full transition-all duration-300 min-w-[36px] min-h-[36px] shadow-lg hover:shadow-gray-900/30 flex-shrink-0 border-0 hover:scale-110"
+                    >
+                      <Music className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
                 
-                {/* Right Side - Three Dots Popup and Share Button with Minimal Gap - Small buttons */}
+                {/* Right Side - Three Dots Popup and Share Button */}
                 <div className="flex items-center gap-0 flex-shrink-0">
-                  {/* Three Dots Popup Menu */}
                   <SocialLinksPopup
                     socialLinks={socialLinks}
                     onShare={() => setIsShareModalOpen(true)}
                   />
                   
-                  {/* Enhanced Share Button with Text and Gradient - Small size */}
+                  {/* Enhanced Share Button with Zoom Animation */}
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsShareModalOpen(true)}
-                    className="px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-full transition-all duration-300 shadow-lg hover:shadow-emerald-500/30 flex items-center gap-1 flex-shrink-0 font-medium border-0 text-sm"
+                    className="px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-full transition-all duration-300 shadow-lg hover:shadow-emerald-500/30 flex items-center gap-1 flex-shrink-0 font-medium border-0 text-sm animate-pulse-zoom"
                   >
                     <Share2 className="h-3 w-3" />
                     Share
