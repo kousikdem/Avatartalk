@@ -23,6 +23,7 @@ import SocialLinksMenu from './SocialLinksMenu';
 import SocialLinksPopup from './SocialLinksPopup';
 import EnhancedPostCard from './EnhancedPostCard';
 import EmojiPicker from './EmojiPicker';
+import MessageInput from './MessageInput';
 import {
   MessageCircle,
   Share2,
@@ -136,6 +137,8 @@ const ProfilePage: React.FC = () => {
   const [isMainAuthOpen, setIsMainAuthOpen] = useState(false);
   const [isDarkTheme, setIsDarkTheme] = useState(true);
   const [visitorProfile, setVisitorProfile] = useState<any>(null);
+  const [postsTabMessage, setPostsTabMessage] = useState('');
+  const [productsTabMessage, setProductsTabMessage] = useState('');
   const { toast } = useToast();
 
   const {
@@ -775,13 +778,14 @@ const ProfilePage: React.FC = () => {
                   {isDarkTheme ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                 </Button>
                 
-                {/* Visitor Profile Button */}
+                {/* Visitor Profile Button - Navigate to Dashboard */}
                 {visitorProfile && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => window.location.href = `/u/${visitorProfile.username}`}
+                    onClick={() => window.location.href = '/dashboard'}
                     className={`p-0 rounded-full ${isDarkTheme ? 'bg-slate-800/30 hover:bg-slate-700/50' : 'bg-gray-100 hover:bg-gray-200'} transition-all duration-200`}
+                    title="Go to Dashboard"
                   >
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[1px]">
                       <div className={`w-full h-full rounded-full ${isDarkTheme ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center overflow-hidden`}>
@@ -930,7 +934,16 @@ const ProfilePage: React.FC = () => {
                 {/* Posts Tab */}
                 <TabsContent value="posts" className="space-y-4 mt-6">
                   <AnimatePresence>
-                    {userPosts.length > 0 ? (
+                    {postsLoading ? (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="text-center py-8"
+                      >
+                        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                        <p className="text-slate-400 text-sm">Loading posts...</p>
+                      </motion.div>
+                    ) : userPosts.length > 0 ? (
                       userPosts.map((post, index) => (
                         <motion.div
                           key={post.id}
@@ -967,6 +980,25 @@ const ProfilePage: React.FC = () => {
                       </motion.div>
                     )}
                   </AnimatePresence>
+                  
+                  {/* Message Input for Posts Tab */}
+                  <div className="border-t border-slate-700/30 pt-4 mt-4">
+                    <MessageInput
+                      message={postsTabMessage}
+                      setMessage={setPostsTabMessage}
+                      onSend={() => {
+                        if (postsTabMessage.trim()) {
+                          toast({
+                            title: "Message Sent",
+                            description: "Your message about this post has been sent!",
+                          });
+                          setPostsTabMessage('');
+                        }
+                      }}
+                      placeholder="Comment on posts..."
+                      disabled={!currentUser}
+                    />
+                  </div>
                 </TabsContent>
 
                 {/* Chat Tab */}
@@ -1195,7 +1227,7 @@ const ProfilePage: React.FC = () => {
                 </TabsContent>
 
                 {/* Products & Events Tab */}
-                <TabsContent value="products" className="mt-6">
+                <TabsContent value="products" className="mt-6 space-y-4">
                   <AnimatePresence>
                     {(products.length > 0 || events.length > 0) ? (
                       <div className="space-y-4">
@@ -1283,17 +1315,36 @@ const ProfilePage: React.FC = () => {
                       </motion.div>
                     )}
                   </AnimatePresence>
+                  
+                  {/* Message Input for Products Tab */}
+                  <div className="border-t border-slate-700/30 pt-4 mt-4">
+                    <MessageInput
+                      message={productsTabMessage}
+                      setMessage={setProductsTabMessage}
+                      onSend={() => {
+                        if (productsTabMessage.trim()) {
+                          toast({
+                            title: "Message Sent",
+                            description: "Your inquiry about products/events has been sent!",
+                          });
+                          setProductsTabMessage('');
+                        }
+                      }}
+                      placeholder="Ask about products or events..."
+                      disabled={!currentUser}
+                    />
+                  </div>
                 </TabsContent>
               </Tabs>
             </div>
 
 
-            {/* Social Links Section with Enhanced Menu and Share */}
+            {/* Social Links Section with Enhanced Menu and Share - Fixed Layout */}
             <div className="px-6 pt-4 pb-6 border-t border-slate-700/30">
-              <div className="flex items-center justify-between gap-0.5 overflow-x-auto scrollbar-hide pt-2">
+              <div className="flex items-center justify-between gap-2 pt-2 min-h-[44px]">
                 
                 {/* Left Side - All available social links inline */}
-                <div className="flex items-center gap-0.5 flex-shrink-0">
+                <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">{/* ... keep existing code */}
                   {socialLinks?.twitter && (
                     <Button
                       variant="ghost"
@@ -1383,8 +1434,8 @@ const ProfilePage: React.FC = () => {
                   )}
                 </div>
                 
-                {/* Right Side - Three Dots Popup and Share Button */}
-                <div className="flex items-center gap-0 flex-shrink-0">
+                {/* Right Side - Three Dots Popup and Share Button - Fixed */}
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <SocialLinksPopup
                     socialLinks={socialLinks}
                     onShare={() => setIsShareModalOpen(true)}
@@ -1395,7 +1446,7 @@ const ProfilePage: React.FC = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsShareModalOpen(true)}
-                    className="px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-full transition-all duration-300 shadow-lg hover:shadow-emerald-500/30 flex items-center gap-1 flex-shrink-0 font-medium border-0 text-sm animate-pulse-zoom"
+                    className="px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-full transition-all duration-300 shadow-lg hover:shadow-emerald-500/30 flex items-center gap-1.5 font-medium border-0 text-sm animate-pulse-zoom"
                   >
                     <Share2 className="h-3 w-3" />
                     Share
