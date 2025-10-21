@@ -77,8 +77,8 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     setIsEmojiPickerOpen(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (message.trim() && !disabled) {
       onSend();
     }

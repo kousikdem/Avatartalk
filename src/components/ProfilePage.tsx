@@ -173,38 +173,56 @@ const ProfilePage: React.FC = () => {
     stopSpeech 
   } = useCoquiTTS();
 
-  // Initialize chat messages
+  // Initialize and load chat messages from localStorage
   useEffect(() => {
     if (profile) {
-      const initialMessages: ChatMessage[] = [
-        {
-          id: '1',
-          content: `Hi there! I'm ${profile.display_name || profile.username}. How can I help you today?`,
-          timestamp: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
-          sender: 'avatar',
-          senderName: profile.display_name || profile.username,
-          senderAvatar: profile.avatar_url || profile.profile_pic_url
-        },
-        {
-          id: '2', 
-          content: "Hello! I'd love to learn more about your experience with AI development.",
-          timestamp: new Date(Date.now() - 240000).toISOString(), // 4 minutes ago
-          sender: 'user',
-          senderName: currentUser?.email?.split('@')[0] || 'User',
-          senderAvatar: undefined
-        },
-        {
-          id: '3',
-          content: "I've been working with AI for over 5 years! I specialize in conversational AI and machine learning. What specific area interests you most?",
-          timestamp: new Date(Date.now() - 180000).toISOString(), // 3 minutes ago
-          sender: 'avatar',
-          senderName: profile.display_name || profile.username,
-          senderAvatar: profile.avatar_url || profile.profile_pic_url
+      const storageKey = `chat_${profile.id}`;
+      const savedMessages = localStorage.getItem(storageKey);
+      
+      if (savedMessages) {
+        try {
+          setChatMessages(JSON.parse(savedMessages));
+        } catch (error) {
+          console.error('Error loading chat messages:', error);
+          // Fallback to initial messages
+          const initialMessages: ChatMessage[] = [
+            {
+              id: '1',
+              content: `Hi there! I'm ${profile.display_name || profile.username}. How can I help you today?`,
+              timestamp: new Date().toISOString(),
+              sender: 'avatar',
+              senderName: profile.display_name || profile.username,
+              senderAvatar: profile.avatar_url || profile.profile_pic_url
+            }
+          ];
+          setChatMessages(initialMessages);
+          localStorage.setItem(storageKey, JSON.stringify(initialMessages));
         }
-      ];
-      setChatMessages(initialMessages);
+      } else {
+        // Create initial messages
+        const initialMessages: ChatMessage[] = [
+          {
+            id: '1',
+            content: `Hi there! I'm ${profile.display_name || profile.username}. How can I help you today?`,
+            timestamp: new Date().toISOString(),
+            sender: 'avatar',
+            senderName: profile.display_name || profile.username,
+            senderAvatar: profile.avatar_url || profile.profile_pic_url
+          }
+        ];
+        setChatMessages(initialMessages);
+        localStorage.setItem(storageKey, JSON.stringify(initialMessages));
+      }
     }
-  }, [profile, currentUser]);
+  }, [profile]);
+  
+  // Save chat messages to localStorage whenever they change
+  useEffect(() => {
+    if (profile && chatMessages.length > 0) {
+      const storageKey = `chat_${profile.id}`;
+      localStorage.setItem(storageKey, JSON.stringify(chatMessages));
+    }
+  }, [chatMessages, profile]);
 
   const profileData = useMemo(() => ({
     displayName: profile?.display_name || profile?.username || 'Unknown User',
@@ -257,12 +275,24 @@ const ProfilePage: React.FC = () => {
     }
   }, [username]);
 
-  // Load posts when profile is loaded
+  // Load posts when profile is loaded - with error handling
   useEffect(() => {
     if (profile?.id) {
-      fetchPosts();
+      const loadPosts = async () => {
+        try {
+          await fetchPosts();
+        } catch (error) {
+          console.error('Error loading posts:', error);
+          toast({
+            title: "Posts Load Error",
+            description: "Failed to load posts. Please refresh the page.",
+            variant: "destructive",
+          });
+        }
+      };
+      loadPosts();
     }
-  }, [profile?.id, fetchPosts]);
+  }, [profile?.id]);
 
   // Realtime subscriptions for profile data
   useEffect(() => {
@@ -440,8 +470,8 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  const handleChatSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleChatSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     const messageContent = chatMessage.trim() || transcript.trim();
     
     if (!messageContent || !profile || !currentUser) return;
@@ -778,8 +808,8 @@ const ProfilePage: React.FC = () => {
                   {isDarkTheme ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                 </Button>
                 
-                {/* Visitor Profile Button - Navigate to Dashboard */}
-                {visitorProfile && (
+                {/* Visitor/User Profile Button - Navigate to Dashboard */}
+                {currentUser && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -789,10 +819,10 @@ const ProfilePage: React.FC = () => {
                   >
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[1px]">
                       <div className={`w-full h-full rounded-full ${isDarkTheme ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center overflow-hidden`}>
-                        {visitorProfile.profile_pic_url || visitorProfile.avatar_url ? (
+                        {currentUser?.user_metadata?.avatar_url ? (
                           <img 
-                            src={visitorProfile.profile_pic_url || visitorProfile.avatar_url} 
-                            alt={visitorProfile.display_name}
+                            src={currentUser.user_metadata.avatar_url} 
+                            alt="Your Profile"
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -1098,7 +1128,7 @@ const ProfilePage: React.FC = () => {
                                   <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                                 </div>
                                  <span className="text-xs text-slate-400">
-                                   {isTyping ? "Llama 3 AI is generating response..." : "Avatartalk AI is thinking..."}
+                                   {isTyping ? "AI is generating response..." : "AI is thinking..."}
                                  </span>
                               </div>
                             </div>
@@ -1108,121 +1138,16 @@ const ProfilePage: React.FC = () => {
                     )}
                   </div>
                   
+                  {/* Message Input for Chat Tab */}
                   <div className="border-t border-slate-700/30 pt-4">
-                    <form onSubmit={handleChatSubmit} className="space-y-4">
-                      <div className="relative">
-                        <Input
-                          type="text"
-                          placeholder={
-                            isRecording 
-                              ? "🎤 Recording with Coqui STT... Speak clearly" 
-                              : isLoading 
-                              ? "🔊 Processing with personalized voice..." 
-                               : isTyping
-                               ? "⏳ Llama 3 AI is generating response..."
-                               : "💬 Chat with Avatartalk personalized AI powered by Llama 3..."
-                          }
-                          value={chatMessage}
-                          onChange={(e) => setChatMessage(e.target.value)}
-                          className={`w-full bg-gradient-to-r from-slate-800/80 to-slate-700/80 border-2 border-slate-600/50 text-white placeholder-slate-400 pr-36 py-6 text-base rounded-3xl focus:border-blue-500/70 focus:ring-4 focus:ring-blue-500/20 shadow-2xl backdrop-blur-md transition-all duration-300 ${
-                            isRecording ? 'border-red-500/70 shadow-red-500/30 bg-gradient-to-r from-red-900/20 to-slate-800/80' : ''
-                          } ${
-                            isPlaying ? 'border-green-500/70 shadow-green-500/30 bg-gradient-to-r from-green-900/20 to-slate-800/80' : ''
-                          } ${
-                            isTyping ? 'border-yellow-500/70 shadow-yellow-500/30 bg-gradient-to-r from-yellow-900/20 to-slate-800/80' : ''
-                          }`}
-                          disabled={isLoading}
-                        />
-                        
-                        {/* Redesigned Voice Input Button with Gradient */}
-                        <button
-                          type="button"
-                          onClick={handleVoiceToggle}
-                          className={`absolute right-28 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full transition-all duration-300 flex items-center justify-center ${
-                            isRecording 
-                              ? 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/40 scale-110' 
-                              : 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 shadow-lg shadow-blue-500/30 hover:scale-110'
-                          }`}
-                          disabled={isLoading}
-                          title={isRecording ? "Stop Coqui STT recording" : "Start Coqui STT voice input"}
-                        >
-                          {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                        </button>
-
-                        {/* Redesigned Voice Output Button with Gradient */}
-                        <button
-                          type="button"
-                          onClick={handleVoiceOutput}
-                          className={`absolute right-20 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full transition-all duration-300 flex items-center justify-center ${
-                            isPlaying 
-                              ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/40 scale-110' 
-                              : 'bg-gradient-to-br from-purple-500 to-violet-600 text-white hover:from-purple-600 hover:to-violet-700 shadow-lg shadow-purple-500/30 hover:scale-110'
-                          }`}
-                          disabled={isLoading}
-                          title={isPlaying ? "Stop personalized voice output" : "Play last message with personalized voice"}
-                        >
-                          {isPlaying ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                        </button>
-
-                        {/* Redesigned Emoji Button with Gradient */}
-                        <button
-                          type="button"
-                          onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
-                          className={`absolute right-12 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full transition-all duration-300 flex items-center justify-center ${
-                            isEmojiPickerOpen
-                              ? 'bg-gradient-to-br from-yellow-500 to-orange-600 text-white shadow-lg shadow-yellow-500/40 scale-110'
-                              : 'bg-gradient-to-br from-amber-500 to-yellow-600 text-white hover:from-amber-600 hover:to-yellow-700 shadow-lg shadow-amber-500/30 hover:scale-110'
-                          }`}
-                          title="Add emoji to message"
-                        >
-                          <Smile className="w-4 h-4" />
-                        </button>
-                        
-                        {/* Redesigned Send Button with Enhanced Gradient */}
-                        <button
-                          type="submit"
-                          className={`absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full transition-all duration-300 flex items-center justify-center ${
-                            chatMessage.trim()
-                              ? 'bg-gradient-to-br from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white shadow-lg shadow-cyan-500/30 hover:scale-110 active:scale-95'
-                              : 'bg-gradient-to-br from-slate-600 to-slate-700 text-slate-400 cursor-not-allowed opacity-50'
-                          }`}
-                          disabled={isLoading || !chatMessage.trim()}
-                          title="Send message"
-                        >
-                          <Send className="w-4 h-4" />
-                        </button>
-
-                        {/* Enhanced Emoji Picker */}
-                        <EmojiPicker 
-                          isOpen={isEmojiPickerOpen}
-                          onClose={() => setIsEmojiPickerOpen(false)}
-                          onEmojiSelect={handleEmojiSelect}
-                        />
-                        
-                        {/* Professional Voice Status Indicator */}
-                        {isRecording && (
-                          <div className="absolute -top-16 left-0 right-0 flex items-center justify-center">
-                            <div className="bg-gradient-to-r from-red-600/95 to-red-700/95 text-white px-6 py-3 rounded-2xl text-sm font-semibold shadow-2xl backdrop-blur-md border border-red-400/30">
-                              <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
-                                🎤 Recording with Coqui STT - Speak clearly
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        
-                        {isLoading && (
-                          <div className="absolute -top-16 left-0 right-0 flex items-center justify-center">
-                            <div className="bg-gradient-to-r from-blue-600/95 to-indigo-700/95 text-white px-6 py-3 rounded-2xl text-sm font-semibold shadow-2xl backdrop-blur-md border border-blue-400/30">
-                              <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                                🔊 Generating personalized Llama 3 voice response...
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </form>
+                    <MessageInput
+                      message={chatMessage}
+                      setMessage={setChatMessage}
+                      onSend={handleChatSubmit}
+                      placeholder="Chat with AI avatar..."
+                      disabled={isLoading || !currentUser}
+                      lastAIMessage={chatMessages.filter(msg => msg.sender === 'avatar').pop()?.content}
+                    />
                   </div>
                 </TabsContent>
 
@@ -1340,11 +1265,11 @@ const ProfilePage: React.FC = () => {
 
 
             {/* Social Links Section with Enhanced Menu and Share - Fixed Layout */}
-            <div className="px-6 pt-4 pb-6 border-t border-slate-700/30">
+            <div className="px-6 pt-4 pb-4 border-t border-slate-700/30">
               <div className="flex items-center justify-between gap-2 pt-2 min-h-[44px]">
                 
                 {/* Left Side - All available social links inline */}
-                <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">{/* ... keep existing code */}
+                <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
                   {socialLinks?.twitter && (
                     <Button
                       variant="ghost"
@@ -1452,6 +1377,18 @@ const ProfilePage: React.FC = () => {
                     Share
                   </Button>
                 </div>
+              </div>
+              
+              {/* AvatarTalk.Bio Branding */}
+              <div className="text-center mt-3 pb-2">
+                <a 
+                  href="https://avatartalk.bio" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-xs text-slate-500 hover:text-slate-400 transition-colors duration-200 font-medium"
+                >
+                  Powered by <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent font-bold">AvatarTalk.Bio</span>
+                </a>
               </div>
             </div>
           </CardContent>
