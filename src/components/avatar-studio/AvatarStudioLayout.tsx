@@ -13,15 +13,15 @@ import {
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import AdvancedAvatarPreview from '../AdvancedAvatarPreview';
-import DetailedBodyControls from '../DetailedBodyControls';
-import DetailedFaceControls from '../DetailedFaceControls';
+import BodyAnatomyPanel from './BodyAnatomyPanel';
+import FacialFeaturesPanel from './FacialFeaturesPanel';
 import SkinEthnicityControls from './SkinEthnicityControls';
 import HairCustomizationPanel from './HairCustomizationPanel';
-import ComprehensiveClothingControls from '../ComprehensiveClothingControls';
-import PoseAndExpressionLibrary from '../PoseAndExpressionLibrary';
+import ClothingStylePanel from './ClothingStylePanel';
+import PoseExpressionPanel from './PoseExpressionPanel';
 import ImageToAvatarGenerator from '../ImageToAvatarGenerator';
 import TextToAvatarGenerator from '../TextToAvatarGenerator';
-import ReadyMadeAvatars from '../ReadyMadeAvatars';
+import ReadyMadeAvatarGallery from '../ReadyMadeAvatarGallery';
 import { useAvatarConfigurations } from '@/hooks/useAvatarConfigurations';
 
 interface AvatarStudioLayoutProps {
@@ -201,7 +201,7 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
             )}
             
             {creationMode === 'preset' && (
-              <ReadyMadeAvatars onAvatarSelected={handleAvatarGenerated} />
+              <ReadyMadeAvatarGallery onAvatarSelected={handleAvatarGenerated} />
             )}
           </Card>
         </div>
@@ -251,16 +251,8 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
         <div className="grid grid-cols-12 gap-6">
           {/* Left Panel - Body & Anatomy */}
           <div className="col-span-3 space-y-4 max-h-[calc(100vh-120px)] overflow-y-auto pr-2">
-            <Card className="card-gradient">
-              <div className="p-4 border-b">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  Body & Structure
-                </h3>
-              </div>
-              <div className="p-4">
-                <DetailedBodyControls config={avatarConfig} onChange={handleConfigChange} />
-              </div>
+            <Card className="card-gradient p-4">
+              <BodyAnatomyPanel config={avatarConfig} onChange={handleConfigChange} />
             </Card>
           </div>
 
@@ -322,7 +314,7 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
           {/* Right Panel - Face & Appearance */}
           <div className="col-span-3 space-y-4 max-h-[calc(100vh-120px)] overflow-y-auto pr-2">
             <Tabs defaultValue="face" className="w-full">
-              <TabsList className="grid w-full grid-cols-4 mb-4">
+              <TabsList className="grid w-full grid-cols-3 mb-4">
                 <TabsTrigger value="face" className="text-xs">
                   <Eye className="w-3 h-3" />
                 </TabsTrigger>
@@ -332,13 +324,12 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
                 <TabsTrigger value="hair" className="text-xs">
                   <Smile className="w-3 h-3" />
                 </TabsTrigger>
-                <TabsTrigger value="clothing" className="text-xs">
-                  <Shirt className="w-3 h-3" />
-                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="face" className="space-y-4">
-                <DetailedFaceControls config={avatarConfig} onChange={handleConfigChange} />
+                <Card className="card-gradient p-4">
+                  <FacialFeaturesPanel config={avatarConfig} onChange={handleConfigChange} />
+                </Card>
               </TabsContent>
 
               <TabsContent value="skin" className="space-y-4">
@@ -348,20 +339,18 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
               <TabsContent value="hair" className="space-y-4">
                 <HairCustomizationPanel config={avatarConfig} onChange={handleConfigChange} />
               </TabsContent>
-
-              <TabsContent value="clothing" className="space-y-4">
-                <ComprehensiveClothingControls config={avatarConfig} onChange={handleConfigChange} />
-              </TabsContent>
             </Tabs>
           </div>
         </div>
 
-        {/* Bottom Panel - Pose & Expression */}
-        <div className="mt-6">
-          <Card className="card-gradient">
-            <div className="p-4">
-              <PoseAndExpressionLibrary config={avatarConfig} onChange={handleConfigChange} />
-            </div>
+        {/* Bottom Panel - Clothing & Pose/Expression */}
+        <div className="mt-6 grid grid-cols-2 gap-6">
+          <Card className="card-gradient p-4">
+            <ClothingStylePanel config={avatarConfig} onChange={handleConfigChange} />
+          </Card>
+          
+          <Card className="card-gradient p-4">
+            <PoseExpressionPanel config={avatarConfig} onChange={handleConfigChange} />
           </Card>
         </div>
       </div>
