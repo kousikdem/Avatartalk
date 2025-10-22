@@ -19,9 +19,9 @@ import SkinEthnicityControls from './SkinEthnicityControls';
 import HairCustomizationPanel from './HairCustomizationPanel';
 import ClothingStylePanel from './ClothingStylePanel';
 import PoseExpressionPanel from './PoseExpressionPanel';
-import ImageToAvatarGenerator from '../ImageToAvatarGenerator';
-import TextToAvatarGenerator from '../TextToAvatarGenerator';
 import ReadyMadeAvatarGallery from '../ReadyMadeAvatarGallery';
+import M3CharacterStudioIntegration from './M3CharacterStudioIntegration';
+import AvatarBoothIntegration from './AvatarBoothIntegration';
 import { useAvatarConfigurations } from '@/hooks/useAvatarConfigurations';
 
 interface AvatarStudioLayoutProps {
@@ -193,11 +193,11 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
             </div>
 
             {creationMode === 'image' && (
-              <ImageToAvatarGenerator onAvatarGenerated={handleAvatarGenerated} />
+              <AvatarBoothIntegration onAvatarGenerated={handleAvatarGenerated} />
             )}
             
             {creationMode === 'text' && (
-              <TextToAvatarGenerator onAvatarGenerated={handleAvatarGenerated} />
+              <M3CharacterStudioIntegration onAvatarGenerated={handleAvatarGenerated} />
             )}
             
             {creationMode === 'preset' && (

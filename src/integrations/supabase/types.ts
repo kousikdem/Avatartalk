@@ -792,6 +792,7 @@ export type Database = {
       profiles: {
         Row: {
           age: number | null
+          avatar_id: string | null
           avatar_url: string | null
           bio: string | null
           created_at: string | null
@@ -807,6 +808,7 @@ export type Database = {
         }
         Insert: {
           age?: number | null
+          avatar_id?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
@@ -822,6 +824,7 @@ export type Database = {
         }
         Update: {
           age?: number | null
+          avatar_id?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
@@ -835,7 +838,15 @@ export type Database = {
           updated_at?: string | null
           username?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_avatar_id_fkey"
+            columns: ["avatar_id"]
+            isOneToOne: false
+            referencedRelation: "avatar_configurations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       qa_pairs: {
         Row: {
