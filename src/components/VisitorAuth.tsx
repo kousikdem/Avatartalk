@@ -137,56 +137,6 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="guest-name" className="text-blue-200">Name</Label>
-            <div className="relative">
-              <User className="absolute left-3 top-3 h-4 w-4 text-blue-400" />
-              <Input
-                id="guest-name"
-                type="text"
-                placeholder="Enter your name"
-                value={guestName}
-                onChange={(e) => setGuestName(e.target.value)}
-                className="pl-10 bg-slate-800/50 border-blue-500/30 text-white placeholder-blue-300 focus:border-blue-400"
-                disabled={loading}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="guest-email" className="text-blue-200">Email</Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-3 h-4 w-4 text-blue-400" />
-              <Input
-                id="guest-email"
-                type="email"
-                placeholder="Enter your email"
-                value={guestEmail}
-                onChange={(e) => setGuestEmail(e.target.value)}
-                className="pl-10 bg-slate-800/50 border-blue-500/30 text-white placeholder-blue-300 focus:border-blue-400"
-                disabled={loading}
-              />
-            </div>
-          </div>
-
-          <Button 
-            onClick={handleGuestLogin}
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
-            disabled={loading}
-          >
-            <UserPlus className="w-4 h-4 mr-2" />
-            {loading ? "Processing..." : "Continue as Guest"}
-          </Button>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <Separator className="w-full bg-blue-500/30" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 px-2 text-blue-300">Or</span>
-            </div>
-          </div>
-
           <Button 
             variant="outline" 
             className="w-full bg-gradient-to-r from-white/10 to-white/5 border-2 border-blue-400/50 text-white hover:bg-white/20 hover:border-blue-400 flex items-center justify-center gap-2 py-3 font-semibold shadow-lg hover:shadow-blue-500/30 transition-all duration-300"
@@ -205,12 +155,64 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
           {onSignInClick && (
             <Button 
               variant="link" 
-              className="w-full text-blue-300 hover:text-blue-100"
+              className="w-full text-blue-300 hover:text-blue-100 -mt-2"
               onClick={onSignInClick}
             >
               Already have an account? Sign In
             </Button>
           )}
+
+          <div className="relative py-2">
+            <div className="absolute inset-0 flex items-center">
+              <Separator className="w-full bg-blue-500/30" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 px-2 text-blue-300">Or continue as guest</span>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="guest-name" className="text-blue-200 text-xs">Name</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-2.5 h-4 w-4 text-blue-400" />
+                <Input
+                  id="guest-name"
+                  type="text"
+                  placeholder="Enter your name"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  className="pl-10 h-9 bg-slate-800/50 border-blue-500/30 text-white placeholder-blue-300 focus:border-blue-400 text-sm"
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="guest-email" className="text-blue-200 text-xs">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-2.5 h-4 w-4 text-blue-400" />
+                <Input
+                  id="guest-email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={guestEmail}
+                  onChange={(e) => setGuestEmail(e.target.value)}
+                  className="pl-10 h-9 bg-slate-800/50 border-blue-500/30 text-white placeholder-blue-300 focus:border-blue-400 text-sm"
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
+            <Button 
+              onClick={handleGuestLogin}
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white h-9"
+              disabled={loading}
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              {loading ? "Processing..." : "Continue as Guest"}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
