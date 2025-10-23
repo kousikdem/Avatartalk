@@ -765,8 +765,8 @@ const ProfilePage: React.FC = () => {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6 }}
       >
-        <Card className={`${cardClass} backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl shadow-blue-950/50 min-h-[90vh]`}>
-          <CardContent className="p-0">
+        <Card className={`${cardClass} backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl shadow-blue-950/50 min-h-[90vh] flex flex-col`}>
+          <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
             {/* Profile Header - Top Left Corner with Visitor Profile and Theme Toggle on Right */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4">
               <div className="flex items-center gap-3">
@@ -937,10 +937,10 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Content Tabs */}
-            <div className="px-6 pb-4">
-              <Tabs defaultValue="chat" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-3 bg-transparent border-b border-slate-700/30 rounded-none p-0 h-auto">
+            {/* Content Tabs - Flexible to take remaining space */}
+            <div className="px-6 pb-2 flex-1 flex flex-col overflow-hidden">
+              <Tabs defaultValue="chat" className="space-y-4 flex-1 flex flex-col overflow-hidden">
+                <TabsList className="grid w-full grid-cols-3 bg-transparent border-b border-slate-700/30 rounded-none p-0 h-auto flex-shrink-0">
                   <TabsTrigger 
                     value="posts" 
                     className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent bg-transparent text-slate-400 data-[state=active]:text-white py-3 font-medium text-base transition-all duration-200 hover:text-slate-200"
@@ -961,9 +961,10 @@ const ProfilePage: React.FC = () => {
                   </TabsTrigger>
                 </TabsList>
 
-                {/* Posts Tab */}
-                <TabsContent value="posts" className="space-y-4 mt-6">
-                  <AnimatePresence>
+                {/* Posts Tab - Scrollable content */}
+                <TabsContent value="posts" className="mt-6 flex-1 overflow-hidden flex flex-col">
+                  <div className="overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
+                    <AnimatePresence>
                     {postsLoading ? (
                       <motion.div
                         initial={{ opacity: 0 }}
@@ -1009,31 +1010,14 @@ const ProfilePage: React.FC = () => {
                         </Card>
                       </motion.div>
                     )}
-                  </AnimatePresence>
-                  
-                  {/* Message Input for Posts Tab */}
-                  <div className="border-t border-slate-700/30 pt-4 mt-4">
-                    <MessageInput
-                      message={postsTabMessage}
-                      setMessage={setPostsTabMessage}
-                      onSend={() => {
-                        if (postsTabMessage.trim()) {
-                          toast({
-                            title: "Message Sent",
-                            description: "Your message about this post has been sent!",
-                          });
-                          setPostsTabMessage('');
-                        }
-                      }}
-                      placeholder="Comment on posts..."
-                      disabled={!currentUser}
-                    />
+                    </AnimatePresence>
                   </div>
                 </TabsContent>
 
                 {/* Chat Tab */}
-                <TabsContent value="chat" className="mt-6 space-y-4">
-                  <div className="flex flex-col space-y-4 max-h-80 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
+                <TabsContent value="chat" className="mt-6 flex-1 flex flex-col overflow-hidden">
+                  <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
+                    <div className="space-y-4">
                      {chatMessages.filter(message => 
                        // Show only messages from the current user or messages sent to/from the profile owner
                        message.sender === 'user' && currentUser ? 
@@ -1136,24 +1120,15 @@ const ProfilePage: React.FC = () => {
                         </div>
                       </div>
                     )}
-                  </div>
-                  
-                  {/* Message Input for Chat Tab */}
-                  <div className="border-t border-slate-700/30 pt-4">
-                    <MessageInput
-                      message={chatMessage}
-                      setMessage={setChatMessage}
-                      onSend={handleChatSubmit}
-                      placeholder="Chat with AI avatar..."
-                      disabled={isLoading || !currentUser}
-                      lastAIMessage={chatMessages.filter(msg => msg.sender === 'avatar').pop()?.content}
-                    />
+                    </div>
                   </div>
                 </TabsContent>
 
                 {/* Products & Events Tab */}
-                <TabsContent value="products" className="mt-6 space-y-4">
-                  <AnimatePresence>
+                <TabsContent value="products" className="mt-6 flex-1 flex flex-col overflow-hidden">
+                  <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
+                    <div className="space-y-4">
+                      <AnimatePresence>
                     {(products.length > 0 || events.length > 0) ? (
                       <div className="space-y-4">
                         {/* Products Section */}
@@ -1239,34 +1214,32 @@ const ProfilePage: React.FC = () => {
                         </Card>
                       </motion.div>
                     )}
-                  </AnimatePresence>
-                  
-                  {/* Message Input for Products Tab */}
-                  <div className="border-t border-slate-700/30 pt-4 mt-4">
-                    <MessageInput
-                      message={productsTabMessage}
-                      setMessage={setProductsTabMessage}
-                      onSend={() => {
-                        if (productsTabMessage.trim()) {
-                          toast({
-                            title: "Message Sent",
-                            description: "Your inquiry about products/events has been sent!",
-                          });
-                          setProductsTabMessage('');
-                        }
-                      }}
-                      placeholder="Ask about products or events..."
-                      disabled={!currentUser}
-                    />
+                      </AnimatePresence>
+                    </div>
                   </div>
                 </TabsContent>
               </Tabs>
             </div>
 
+            {/* Message Input Section - Sticky to bottom */}
+            <div className="px-6 pt-2 pb-1 border-t border-slate-700/30 flex-shrink-0">
+              <MessageInput
+                message={
+                  // Determine which message to show based on active tab - we'll need to track this
+                  chatMessage
+                }
+                setMessage={setChatMessage}
+                onSend={handleChatSubmit}
+                placeholder="Type your message..."
+                disabled={isLoading || !currentUser}
+                lastAIMessage={chatMessages.filter(msg => msg.sender === 'avatar').pop()?.content}
+              />
+            </div>
 
-            {/* Social Links Section with Enhanced Menu and Share - Fixed Layout */}
-            <div className="px-6 pt-4 pb-4 border-t border-slate-700/30">
-              <div className="flex items-center justify-between gap-2 pt-2 min-h-[44px]">
+
+            {/* Social Links Section - Sticky to bottom with minimal spacing */}
+            <div className="px-6 py-1 border-t border-slate-700/30 flex-shrink-0">
+              <div className="flex items-center justify-between gap-2">
                 
                 {/* Left Side - All available social links inline */}
                 <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
@@ -1378,14 +1351,16 @@ const ProfilePage: React.FC = () => {
                   </Button>
                 </div>
               </div>
-              
-              {/* AvatarTalk.Bio Branding */}
-              <div className="text-center mt-3 pb-2">
+            </div>
+
+            {/* AvatarTalk.Bio Branding - Sticky to bottom */}
+            <div className="px-6 py-1 border-t border-slate-700/30 flex-shrink-0 bg-slate-900/50">
+              <div className="text-center">
                 <a 
                   href="https://avatartalk.bio" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-xs text-slate-500 hover:text-slate-400 transition-colors duration-200 font-medium"
+                  className="text-xs text-slate-500 hover:text-slate-400 transition-colors duration-200 font-medium inline-block"
                 >
                   Powered by <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent font-bold">AvatarTalk.Bio</span>
                 </a>
