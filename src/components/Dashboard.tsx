@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Share2, Users, MessageSquare, BarChart3, Calendar, LogOut, Settings, Home, ShoppingBag } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import ShareModal from './ShareModal';
-import EnhancedAvatarPreview from './EnhancedAvatarPreview';
+import ChangeableAvatarPreview from './ChangeableAvatarPreview';
 import RealtimeFollowWidget from './RealtimeFollowWidget';
 import { useFollows } from '@/hooks/useFollows';
 import { supabase } from '@/integrations/supabase/client';
@@ -252,10 +252,10 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Enhanced Avatar Preview and Social Activity */}
+        {/* Changeable Avatar Preview and Social Activity */}
         <div className="lg:col-span-1 space-y-6">
-          {/* Enhanced Avatar with Real-time Features */}
-          <EnhancedAvatarPreview
+          {/* Changeable Avatar with Real-time Features */}
+          <ChangeableAvatarPreview
             userId={profileData?.id}
             isLarge={true}
             showControls={true}

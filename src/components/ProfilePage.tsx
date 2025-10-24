@@ -15,7 +15,7 @@ import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { useCoquiTTS } from '@/hooks/useCoquiTTS';
 import { useDefaultAvatar } from '@/hooks/useDefaultAvatar';
 import FuturisticAvatar3D from './FuturisticAvatar3D';
-import EnhancedAvatarPreview from './EnhancedAvatarPreview';
+import ChangeableAvatarPreview from './ChangeableAvatarPreview';
 import SocialFeed from './SocialFeed';
 import FollowButton from './FollowButton';
 import EnhancedShareModal from './EnhancedShareModal';
@@ -841,42 +841,16 @@ const ProfilePage: React.FC = () => {
               </p>
             </div>
 
-            {/* 3D Avatar Preview with Enhanced 3D Effects */}
+            {/* Changeable 3D Avatar Preview */}
             <div className="px-6 pb-6">
-              <div className={`relative rounded-3xl overflow-hidden ${isDarkTheme ? 'bg-gradient-to-br from-slate-800/40 via-blue-900/20 to-slate-800/40 border-slate-600/30' : 'bg-gradient-to-br from-gray-100 via-blue-100/50 to-purple-100/50 border-gray-300'} border shadow-inner`}>
-                {/* 3D Floating Background Effects */}
-                <div className="absolute inset-0 pointer-events-none">
-                  <div className="absolute top-1/4 left-1/4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl animate-pulse"></div>
-                  <div className="absolute bottom-1/4 right-1/4 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl animate-pulse" style={{animationDelay: '1s'}}></div>
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-cyan-500/5 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
-                </div>
-                
-                <div className="relative animate-[float_6s_ease-in-out_infinite]">
-                  <FuturisticAvatar3D
-                    isLarge={true}
-                    isTalking={isTalking}
-                    avatarStyle="holographic"
-                    className="w-full h-80"
-                    onInteraction={() => setIsTalking(!isTalking)}
-                  />
-                </div>
-                
-                <div className="absolute inset-0 rounded-3xl border border-blue-400/10 pointer-events-none" />
-                <div className="absolute inset-0 rounded-3xl border-2 border-blue-400/20 pointer-events-none animate-pulse" />
-                <div className="absolute inset-4 rounded-3xl border border-purple-400/10 pointer-events-none animate-pulse" style={{animationDelay: '0.5s'}} />
-                
-                {/* Floating Talk to Me Button - Small size */}
-                <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2">
-                  <Button
-                    size="sm"
-                    className="gradient-button rounded-full w-10 h-10 p-0 backdrop-blur-sm border border-blue-400/30 hover:scale-110"
-                    onClick={() => {}} // Just enable conversation mode, no auto-response
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-              </div>
+              <ChangeableAvatarPreview
+                userId={profile?.id}
+                isLarge={true}
+                showControls={currentUser?.id === profile?.id}
+                isInteractive={true}
+                isTalking={isTalking}
+                onAvatarClick={currentUser?.id === profile?.id ? () => window.location.href = '/avatar' : undefined}
+              />
             </div>
 
             {/* Action Buttons - Subscribe (left wider) and Follow (right) - Enhanced design */}
