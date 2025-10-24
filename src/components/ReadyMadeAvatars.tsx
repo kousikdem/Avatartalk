@@ -3,8 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Users, Briefcase, Stethoscope, GraduationCap, Palette, Shield, Flame } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Users, Briefcase, Stethoscope, GraduationCap, Palette, Shield, Flame, Upload, Camera } from 'lucide-react';
 import { avatarPresets } from '@/data/avatarPresets';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useAvatarConfigurations } from '@/hooks/useAvatarConfigurations';
 
 interface ReadyMadeAvatarsProps {
   onAvatarSelected: (config: any) => void;
@@ -88,10 +93,107 @@ const professionPresets = [
 ];
 
 const ReadyMadeAvatars: React.FC<ReadyMadeAvatarsProps> = ({ onAvatarSelected }) => {
-  const [selectedCategory, setSelectedCategory] = useState<'male' | 'female' | 'profession'>('male');
+  const [selectedCategory, setSelectedCategory] = useState<'male' | 'female' | 'profession' | 'upload'>('male');
+  const [uploading, setUploading] = useState(false);
+  const { saveConfiguration } = useAvatarConfigurations();
 
   const handlePresetSelect = (preset: any) => {
     onAvatarSelected(preset.config || preset);
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error('Please log in to upload an avatar');
+        return;
+      }
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/avatar-${Date.now()}.${fileExt}`;
+
+      // Upload to profile-pictures bucket
+      const { error: uploadError } = await supabase.storage
+        .from('profile-pictures')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data } = supabase.storage
+        .from('profile-pictures')
+        .getPublicUrl(fileName);
+
+      const avatarUrl = data.publicUrl;
+
+      // Create avatar configuration with uploaded image
+      const avatarConfig = {
+        avatarName: 'Uploaded Avatar',
+        gender: 'male',
+        age: 25,
+        ethnicity: 'Custom',
+        height: 170,
+        weight: 70,
+        muscle: 50,
+        fat: 20,
+        headSize: 50,
+        headShape: 'oval',
+        faceWidth: 50,
+        jawline: 50,
+        cheekbones: 50,
+        eyeSize: 50,
+        eyeDistance: 50,
+        eyeShape: 'almond',
+        eyeColor: '#8B4513',
+        noseSize: 50,
+        noseWidth: 50,
+        noseShape: 'straight',
+        mouthWidth: 50,
+        lipThickness: 50,
+        lipShape: 'normal',
+        earSize: 50,
+        earPosition: 50,
+        earShape: 'normal',
+        skinTone: '#F1C27D',
+        skinTexture: 'smooth',
+        hairStyle: 'medium',
+        hairColor: '#8B4513',
+        hairLength: 50,
+        clothingTop: 'tshirt',
+        clothingBottom: 'jeans',
+        shoes: 'sneakers',
+        accessories: [],
+        currentPose: 'standing',
+        currentExpression: 'neutral',
+        thumbnailUrl: avatarUrl
+      };
+
+      // Save configuration to database
+      await saveConfiguration(avatarConfig);
+
+      // Update profile with new avatar
+      await supabase
+        .from('profiles')
+        .update({ 
+          profile_pic_url: avatarUrl,
+          avatar_url: avatarUrl
+        })
+        .eq('id', user.id);
+
+      onAvatarSelected(avatarConfig);
+      toast.success('Avatar uploaded and saved successfully!');
+
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast.error('Failed to upload avatar');
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -104,10 +206,11 @@ const ReadyMadeAvatars: React.FC<ReadyMadeAvatarsProps> = ({ onAvatarSelected })
       </CardHeader>
       <CardContent>
         <Tabs value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as any)}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="male">Male Avatars</TabsTrigger>
             <TabsTrigger value="female">Female Avatars</TabsTrigger>
             <TabsTrigger value="profession">Professions</TabsTrigger>
+            <TabsTrigger value="upload">Upload Avatar</TabsTrigger>
           </TabsList>
 
           <TabsContent value="male" className="space-y-4 mt-6">
@@ -211,6 +314,60 @@ const ReadyMadeAvatars: React.FC<ReadyMadeAvatarsProps> = ({ onAvatarSelected })
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          <TabsContent value="upload" className="space-y-4 mt-6">
+            <Card className="border-2 border-dashed border-primary/30 hover:border-primary transition-colors">
+              <CardContent className="p-12">
+                <div className="text-center space-y-6">
+                  <div className="w-24 h-24 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+                    <Upload className="w-12 h-12 text-primary" />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-semibold">Upload Your Avatar</h3>
+                    <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                      Upload a custom 3D avatar or profile picture. Supported formats: JPG, PNG, WebP, GLB, GLTF
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <Input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*,.glb,.gltf"
+                      onChange={handleAvatarUpload}
+                      className="hidden"
+                      disabled={uploading}
+                    />
+                    <Button
+                      asChild
+                      size="lg"
+                      disabled={uploading}
+                      className="cursor-pointer"
+                    >
+                      <label htmlFor="avatar-upload" className="cursor-pointer flex items-center gap-2">
+                        {uploading ? (
+                          <>
+                            <Upload className="w-5 h-5 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Camera className="w-5 h-5" />
+                            Choose File to Upload
+                          </>
+                        )}
+                      </label>
+                    </Button>
+                    
+                    <p className="text-xs text-muted-foreground">
+                      Max file size: 10MB
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </CardContent>

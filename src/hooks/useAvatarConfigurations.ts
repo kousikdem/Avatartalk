@@ -212,13 +212,15 @@ export const useAvatarConfigurations = () => {
 
       // Link avatar with profile
       const avatarId = result.data.id;
-      const thumbnailUrl = result.data.thumbnail_url || '/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png';
+      const thumbnailUrl = config.thumbnailUrl || result.data.thumbnail_url || '/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png';
       
+      // Update profile with avatar link
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ 
           avatar_id: avatarId,
           avatar_url: thumbnailUrl,
+          profile_pic_url: thumbnailUrl,
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);
