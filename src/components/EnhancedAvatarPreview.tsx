@@ -46,19 +46,62 @@ const EnhancedAvatarPreview: React.FC<EnhancedAvatarPreviewProps> = ({
 
   // Real-time avatar configuration updates
   useEffect(() => {
-    if (!userId) return;
-
     const fetchAvatarConfig = async () => {
       try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const targetUserId = userId || user?.id;
+        
+        if (!targetUserId) return;
+
+        // First, try to load from profile's linked avatar
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('avatar_id')
+          .eq('id', targetUserId)
+          .single();
+
+        if (profileData?.avatar_id) {
+          // Load the linked avatar configuration
+          const { data: linkedAvatar } = await supabase
+            .from('avatar_configurations')
+            .select('*')
+            .eq('id', profileData.avatar_id)
+            .single();
+
+          if (linkedAvatar) {
+            setAvatarConfig({
+              avatar_name: linkedAvatar.avatar_name,
+              gender: linkedAvatar.gender,
+              skin_tone: linkedAvatar.skin_tone,
+              hair_style: linkedAvatar.hair_style,
+              hair_color: linkedAvatar.hair_color,
+              eye_color: linkedAvatar.eye_color,
+              current_expression: linkedAvatar.current_expression,
+              current_pose: linkedAvatar.current_pose
+            });
+            return;
+          }
+        }
+
+        // Fallback: Load active avatar configuration
         const { data } = await supabase
           .from('avatar_configurations')
           .select('*')
-          .eq('user_id', userId)
+          .eq('user_id', targetUserId)
           .eq('is_active', true)
           .maybeSingle();
         
-        if (data && data.is_active) {
-          setAvatarConfig(data);
+        if (data) {
+          setAvatarConfig({
+            avatar_name: data.avatar_name,
+            gender: data.gender,
+            skin_tone: data.skin_tone,
+            hair_style: data.hair_style,
+            hair_color: data.hair_color,
+            eye_color: data.eye_color,
+            current_expression: data.current_expression,
+            current_pose: data.current_pose
+          });
         }
       } catch (error) {
         console.error('Error fetching avatar config:', error);
@@ -67,27 +110,50 @@ const EnhancedAvatarPreview: React.FC<EnhancedAvatarPreviewProps> = ({
 
     fetchAvatarConfig();
 
-    // Set up real-time subscription
-    const channel = supabase
-      .channel('avatar-config-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'avatar_configurations',
-          filter: `user_id=eq.${userId}`
-        },
-        (payload) => {
-          if (payload.new && (payload.new as any).is_active) {
-            setAvatarConfig(payload.new as AvatarConfig);
+    // Set up real-time subscription for avatar and profile changes
+    const setupRealtimeSubscription = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const targetUserId = userId || user?.id;
+      
+      if (!targetUserId) return;
+
+      const channel = supabase
+        .channel('avatar-profile-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'avatar_configurations',
+            filter: `user_id=eq.${targetUserId}`
+          },
+          () => {
+            fetchAvatarConfig();
           }
-        }
-      )
-      .subscribe();
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'profiles',
+            filter: `id=eq.${targetUserId}`
+          },
+          () => {
+            fetchAvatarConfig();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    };
+
+    const cleanup = setupRealtimeSubscription();
 
     return () => {
-      supabase.removeChannel(channel);
+      cleanup.then(fn => fn && fn());
     };
   }, [userId]);
 

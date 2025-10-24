@@ -23,16 +23,17 @@ const AvatarPreview: React.FC<AvatarPreviewProps> = ({
 
   // Use profile data first, then avatar configuration, then default
   const getAvatarDisplay = () => {
-    // First priority: profile_pic_url or avatar_url from profile data
+    // First priority: profile_pic_url from profile data
     if (profileData?.profile_pic_url) {
       return profileData.profile_pic_url;
     }
+    // Second priority: avatar_url from profile (linked avatar)
     if (profileData?.avatar_url) {
       return profileData.avatar_url;
     }
-    // Second priority: avatar configuration exists (use default avatar image)
-    if (avatarConfig || defaultConfig) {
-      return "/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png";
+    // Third priority: avatar configuration thumbnail
+    if (avatarConfig?.thumbnailUrl) {
+      return avatarConfig.thumbnailUrl;
     }
     // Fallback: default avatar image
     return "/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png";

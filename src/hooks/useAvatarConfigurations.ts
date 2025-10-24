@@ -210,8 +210,25 @@ export const useAvatarConfigurations = () => {
 
       if (result.error) throw result.error;
 
+      // Link avatar with profile
+      const avatarId = result.data.id;
+      const thumbnailUrl = result.data.thumbnail_url || '/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png';
+      
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ 
+          avatar_id: avatarId,
+          avatar_url: thumbnailUrl,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (profileError) {
+        console.error('Error updating profile with avatar:', profileError);
+      }
+
       await loadConfigurations();
-      toast.success('Avatar configuration saved successfully!');
+      toast.success('Avatar saved and linked to profile!');
 
     } catch (error) {
       console.error('Error in saveConfiguration:', error);
