@@ -6,22 +6,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Save, Download, RotateCcw, User, Eye, Palette, 
-  Shirt, Smile, Camera, Type, Users, Sliders,
-  Upload, Sparkles, Home
+  Save, Download, RotateCcw, User, Camera, Palette, 
+  Shirt, Activity, Sparkles, Play, Layers, Upload
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
 import AdvancedAvatarPreview from '../AdvancedAvatarPreview';
-import BodyAnatomyPanel from './BodyAnatomyPanel';
-import FacialFeaturesPanel from './FacialFeaturesPanel';
-import SkinEthnicityControls from './SkinEthnicityControls';
-import HairCustomizationPanel from './HairCustomizationPanel';
-import ClothingStylePanel from './ClothingStylePanel';
-import PoseExpressionPanel from './PoseExpressionPanel';
-import ReadyMadeAvatarGallery from '../ReadyMadeAvatarGallery';
-import M3CharacterStudioIntegration from './M3CharacterStudioIntegration';
-import AvatarBoothIntegration from './AvatarBoothIntegration';
+import PresetsPanel from './PresetsPanel';
+import BodyPanel from './BodyPanel';
+import FacePanel from './FacePanel';
+import StylePanel from './StylePanel';
+import PhotoPanel from './PhotoPanel';
 import { useAvatarConfigurations } from '@/hooks/useAvatarConfigurations';
 
 interface AvatarStudioLayoutProps {
@@ -29,15 +23,15 @@ interface AvatarStudioLayoutProps {
 }
 
 const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }) => {
-  const navigate = useNavigate();
   const { saveConfiguration } = useAvatarConfigurations();
   const [saving, setSaving] = useState(false);
-  const [creationMode, setCreationMode] = useState<'manual' | 'image' | 'text' | 'preset'>('manual');
+  const [isLive, setIsLive] = useState(true);
   
   const [avatarConfig, setAvatarConfig] = useState({
     gender: 'male',
     age: 25,
     ethnicity: 'caucasian',
+    ageCategory: 'adult',
     height: 170,
     weight: 70,
     muscle: 50,
@@ -79,6 +73,7 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
     accessories: [],
     currentExpression: 'neutral',
     currentPose: 'standing',
+    bodyType: 'average',
     avatarName: 'My Avatar',
     ...initialConfig
   });
@@ -88,12 +83,6 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
       ...prev,
       [key]: value
     }));
-  };
-
-  const handleAvatarGenerated = (config: any) => {
-    setAvatarConfig(prev => ({ ...prev, ...config }));
-    setCreationMode('manual');
-    toast.success('Avatar generated! Customize it further.');
   };
 
   const handleSave = async () => {
@@ -122,126 +111,44 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
   };
 
   const handleExport = () => {
-    toast.success('Avatar export started (GLB/FBX format)');
-    // Integration point for M3.org/CharacterStudio export
+    toast.success('Avatar export started (GLB format)');
   };
 
-  if (creationMode !== 'manual') {
-    return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                Create Your Avatar
-              </h1>
-              <p className="text-muted-foreground mt-2">
-                Choose your preferred creation method
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => navigate('/dashboard')}>
-                <Home className="w-4 h-4 mr-2" />
-                Dashboard
-              </Button>
-              <Button onClick={() => setCreationMode('manual')}>
-                <Sliders className="w-4 h-4 mr-2" />
-                Manual Editor
-              </Button>
-            </div>
-          </div>
-
-          {/* Creation Method Selector */}
-          <Card className="card-gradient p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <Button
-                variant={creationMode === 'image' ? 'default' : 'outline'}
-                className="h-auto flex-col gap-3 p-6"
-                onClick={() => setCreationMode('image')}
-              >
-                <Camera className="w-8 h-8" />
-                <div className="text-center">
-                  <div className="font-semibold">Image Upload</div>
-                  <div className="text-xs opacity-70">AI face extraction</div>
-                </div>
-              </Button>
-
-              <Button
-                variant={creationMode === 'text' ? 'default' : 'outline'}
-                className="h-auto flex-col gap-3 p-6"
-                onClick={() => setCreationMode('text')}
-              >
-                <Type className="w-8 h-8" />
-                <div className="text-center">
-                  <div className="font-semibold">Text Prompt</div>
-                  <div className="text-xs opacity-70">Describe your avatar</div>
-                </div>
-              </Button>
-
-              <Button
-                variant={creationMode === 'preset' ? 'default' : 'outline'}
-                className="h-auto flex-col gap-3 p-6"
-                onClick={() => setCreationMode('preset')}
-              >
-                <Users className="w-8 h-8" />
-                <div className="text-center">
-                  <div className="font-semibold">Ready-Made</div>
-                  <div className="text-xs opacity-70">Quick templates</div>
-                </div>
-              </Button>
-            </div>
-
-            {creationMode === 'image' && (
-              <AvatarBoothIntegration onAvatarGenerated={handleAvatarGenerated} />
-            )}
-            
-            {creationMode === 'text' && (
-              <M3CharacterStudioIntegration onAvatarGenerated={handleAvatarGenerated} />
-            )}
-            
-            {creationMode === 'preset' && (
-              <ReadyMadeAvatarGallery onAvatarSelected={handleAvatarGenerated} />
-            )}
-          </Card>
-        </div>
-      </div>
-    );
-  }
+  const handleAnimate = () => {
+    toast.info('Animation preview started');
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Top Bar */}
-      <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-3">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      {/* Header */}
+      <div className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-50">
+        <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                Avatar Studio
-              </h1>
-              <Badge variant="outline" className="gap-1">
-                <Sparkles className="w-3 h-3" />
-                Powered by M3.org & AvatarBooth
-              </Badge>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+                <User className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                  AI Avatar Creator
+                </h1>
+                <p className="text-xs text-muted-foreground">Create your realistic 3D avatar with advanced AI-powered customization</p>
+              </div>
             </div>
             
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>
-                <Home className="w-4 h-4 mr-2" />
-                Dashboard
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleReset}>
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Reset
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleExport}>
-                <Download className="w-4 h-4 mr-2" />
-                Export
-              </Button>
-              <Button size="sm" onClick={handleSave} disabled={saving}>
-                <Save className="w-4 h-4 mr-2" />
-                {saving ? 'Saving...' : 'Save'}
-              </Button>
+              <Badge variant={isLive ? "default" : "secondary"} className="gap-1 animate-pulse">
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+                {isLive ? 'Live' : 'Offline'}
+              </Badge>
+              <Badge variant="outline" className="gap-1">
+                <Sparkles className="w-3 h-3" />
+                AI Powered
+              </Badge>
+              <Badge variant="outline" className="gap-1">
+                <Layers className="w-3 h-3" />
+                Real-time 3D
+              </Badge>
             </div>
           </div>
         </div>
@@ -249,109 +156,136 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
 
       <div className="container mx-auto p-6">
         <div className="grid grid-cols-12 gap-6">
-          {/* Left Panel - Body & Anatomy */}
-          <div className="col-span-3 space-y-4 max-h-[calc(100vh-120px)] overflow-y-auto pr-2">
-            <Card className="card-gradient p-4">
-              <BodyAnatomyPanel config={avatarConfig} onChange={handleConfigChange} />
+          {/* Left - 3D Preview */}
+          <div className="col-span-7">
+            <Card className="overflow-hidden border-2">
+              <div className="bg-gradient-to-br from-card to-card/50 p-4 border-b flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Camera className="w-5 h-5 text-primary" />
+                  <h2 className="font-semibold text-lg">3D Avatar Preview</h2>
+                </div>
+                <Badge variant="outline" className="gap-1 bg-green-500/10 text-green-600 border-green-200">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  Live
+                </Badge>
+              </div>
+              
+              <div className="relative bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900" style={{ height: 'calc(100vh - 280px)' }}>
+                <Canvas shadows>
+                  <PerspectiveCamera makeDefault position={[0, 0.2, 3]} fov={50} />
+                  <ambientLight intensity={0.5} />
+                  <directionalLight position={[5, 5, 5]} intensity={1.2} castShadow />
+                  <directionalLight position={[-5, 3, -5]} intensity={0.6} />
+                  <pointLight position={[0, 3, 0]} intensity={0.5} color="#ffffff" />
+                  <spotLight position={[0, 5, 0]} angle={0.3} penumbra={1} intensity={0.8} castShadow />
+                  
+                  <AdvancedAvatarPreview config={avatarConfig} />
+                  
+                  <OrbitControls 
+                    enablePan={false} 
+                    minDistance={1.5} 
+                    maxDistance={5}
+                    maxPolarAngle={Math.PI / 1.8}
+                    target={[0, 0.5, 0]}
+                  />
+                  <Environment preset="sunset" />
+                  <ContactShadows position={[0, -1, 0]} scale={5} blur={2.5} far={4} opacity={0.5} />
+                </Canvas>
+                
+                {/* Overlay button */}
+                <div className="absolute top-4 right-4">
+                  <Button size="sm" variant="secondary" className="backdrop-blur-md bg-card/80">
+                    <Layers className="w-4 h-4 mr-2" />
+                    Layers
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="p-4 bg-gradient-to-r from-card to-card/50 border-t flex items-center justify-between">
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={handleReset}>
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Reset
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleAnimate}>
+                    <Play className="w-4 h-4 mr-2" />
+                    Animate
+                  </Button>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={handleExport}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export GLB
+                  </Button>
+                  <Button size="sm" onClick={handleSave} disabled={saving} className="bg-gradient-to-r from-primary to-primary/80">
+                    <Save className="w-4 h-4 mr-2" />
+                    {saving ? 'Saving...' : 'Save Avatar'}
+                  </Button>
+                </div>
+              </div>
             </Card>
           </div>
 
-          {/* Center - 3D Preview */}
-          <div className="col-span-6 space-y-4">
-            <Card className="h-[calc(100vh-200px)]">
-              <Canvas shadows>
-                <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={45} />
-                <ambientLight intensity={0.6} />
-                <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
-                <spotLight position={[-10, -10, -5]} intensity={0.3} />
-                <pointLight position={[0, 5, 0]} intensity={0.4} />
-                
-                <AdvancedAvatarPreview config={avatarConfig} />
-                
-                <OrbitControls 
-                  enablePan={false} 
-                  minDistance={2} 
-                  maxDistance={10}
-                  maxPolarAngle={Math.PI / 1.6}
-                />
-                <Environment preset="studio" />
-                <ContactShadows position={[0, -2.5, 0]} scale={8} blur={3} far={3} />
-              </Canvas>
+          {/* Right - Customization Panel */}
+          <div className="col-span-5">
+            <Card className="overflow-hidden border-2">
+              <div className="bg-gradient-to-br from-card to-card/50 p-4 border-b flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Palette className="w-5 h-5 text-primary" />
+                  <h2 className="font-semibold text-lg">Customization</h2>
+                </div>
+              </div>
+
+              <Tabs defaultValue="presets" className="w-full">
+                <TabsList className="grid w-full grid-cols-5 rounded-none border-b bg-muted/50">
+                  <TabsTrigger value="presets" className="flex flex-col gap-1 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <User className="w-4 h-4" />
+                    <span className="text-xs">Presets</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="body" className="flex flex-col gap-1 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <Activity className="w-4 h-4" />
+                    <span className="text-xs">Body</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="face" className="flex flex-col gap-1 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <Sparkles className="w-4 h-4" />
+                    <span className="text-xs">Face</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="style" className="flex flex-col gap-1 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <Shirt className="w-4 h-4" />
+                    <span className="text-xs">Style</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="photo" className="flex flex-col gap-1 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <Camera className="w-4 h-4" />
+                    <span className="text-xs">Photo</span>
+                  </TabsTrigger>
+                </TabsList>
+
+                <div className="overflow-y-auto" style={{ height: 'calc(100vh - 280px)' }}>
+                  <TabsContent value="presets" className="m-0 p-4">
+                    <PresetsPanel config={avatarConfig} onChange={handleConfigChange} />
+                  </TabsContent>
+
+                  <TabsContent value="body" className="m-0 p-4">
+                    <BodyPanel config={avatarConfig} onChange={handleConfigChange} />
+                  </TabsContent>
+
+                  <TabsContent value="face" className="m-0 p-4">
+                    <FacePanel config={avatarConfig} onChange={handleConfigChange} />
+                  </TabsContent>
+
+                  <TabsContent value="style" className="m-0 p-4">
+                    <StylePanel config={avatarConfig} onChange={handleConfigChange} />
+                  </TabsContent>
+
+                  <TabsContent value="photo" className="m-0 p-4">
+                    <PhotoPanel onAvatarGenerated={(config) => setAvatarConfig(prev => ({ ...prev, ...config }))} />
+                  </TabsContent>
+                </div>
+              </Tabs>
             </Card>
-
-            {/* Creation Methods */}
-            <div className="grid grid-cols-3 gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCreationMode('image')}
-                className="flex items-center gap-2"
-              >
-                <Upload className="w-4 h-4" />
-                From Image
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCreationMode('text')}
-                className="flex items-center gap-2"
-              >
-                <Type className="w-4 h-4" />
-                From Text
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCreationMode('preset')}
-                className="flex items-center gap-2"
-              >
-                <Users className="w-4 h-4" />
-                Presets
-              </Button>
-            </div>
           </div>
-
-          {/* Right Panel - Face & Appearance */}
-          <div className="col-span-3 space-y-4 max-h-[calc(100vh-120px)] overflow-y-auto pr-2">
-            <Tabs defaultValue="face" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-4">
-                <TabsTrigger value="face" className="text-xs">
-                  <Eye className="w-3 h-3" />
-                </TabsTrigger>
-                <TabsTrigger value="skin" className="text-xs">
-                  <Palette className="w-3 h-3" />
-                </TabsTrigger>
-                <TabsTrigger value="hair" className="text-xs">
-                  <Smile className="w-3 h-3" />
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="face" className="space-y-4">
-                <Card className="card-gradient p-4">
-                  <FacialFeaturesPanel config={avatarConfig} onChange={handleConfigChange} />
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="skin" className="space-y-4">
-                <SkinEthnicityControls config={avatarConfig} onChange={handleConfigChange} />
-              </TabsContent>
-
-              <TabsContent value="hair" className="space-y-4">
-                <HairCustomizationPanel config={avatarConfig} onChange={handleConfigChange} />
-              </TabsContent>
-            </Tabs>
-          </div>
-        </div>
-
-        {/* Bottom Panel - Clothing & Pose/Expression */}
-        <div className="mt-6 grid grid-cols-2 gap-6">
-          <Card className="card-gradient p-4">
-            <ClothingStylePanel config={avatarConfig} onChange={handleConfigChange} />
-          </Card>
-          
-          <Card className="card-gradient p-4">
-            <PoseExpressionPanel config={avatarConfig} onChange={handleConfigChange} />
-          </Card>
         </div>
       </div>
     </div>
