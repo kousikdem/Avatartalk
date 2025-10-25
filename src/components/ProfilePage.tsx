@@ -176,53 +176,24 @@ const ProfilePage: React.FC = () => {
   // Initialize and load chat messages from localStorage
   useEffect(() => {
     if (profile) {
-      const storageKey = `chat_${profile.id}`;
-      const savedMessages = localStorage.getItem(storageKey);
-      
-      if (savedMessages) {
-        try {
-          setChatMessages(JSON.parse(savedMessages));
-        } catch (error) {
-          console.error('Error loading chat messages:', error);
-          // Fallback to initial messages
-          const initialMessages: ChatMessage[] = [
-            {
-              id: '1',
-              content: `Hi there! I'm ${profile.display_name || profile.username}. How can I help you today?`,
-              timestamp: new Date().toISOString(),
-              sender: 'avatar',
-              senderName: profile.display_name || profile.username,
-              senderAvatar: profile.avatar_url || profile.profile_pic_url
-            }
-          ];
-          setChatMessages(initialMessages);
-          localStorage.setItem(storageKey, JSON.stringify(initialMessages));
+      // No longer using localStorage for chat history
+      // Initialize with welcome message
+      const initialMessages: ChatMessage[] = [
+        {
+          id: '1',
+          content: `Hi there! I'm ${profile.display_name || profile.username}. How can I help you today?`,
+          timestamp: new Date().toISOString(),
+          sender: 'avatar',
+          senderName: profile.display_name || profile.username,
+          senderAvatar: profile.profile_pic_url || profile.avatar_url
         }
-      } else {
-        // Create initial messages
-        const initialMessages: ChatMessage[] = [
-          {
-            id: '1',
-            content: `Hi there! I'm ${profile.display_name || profile.username}. How can I help you today?`,
-            timestamp: new Date().toISOString(),
-            sender: 'avatar',
-            senderName: profile.display_name || profile.username,
-            senderAvatar: profile.avatar_url || profile.profile_pic_url
-          }
-        ];
-        setChatMessages(initialMessages);
-        localStorage.setItem(storageKey, JSON.stringify(initialMessages));
-      }
+      ];
+      setChatMessages(initialMessages);
     }
   }, [profile]);
   
-  // Save chat messages to localStorage whenever they change
-  useEffect(() => {
-    if (profile && chatMessages.length > 0) {
-      const storageKey = `chat_${profile.id}`;
-      localStorage.setItem(storageKey, JSON.stringify(chatMessages));
-    }
-  }, [chatMessages, profile]);
+  // Remove the localStorage save effect - chat messages should not be persisted
+  // useEffect removed
 
   const profileData = useMemo(() => ({
     displayName: profile?.display_name || profile?.username || 'Unknown User',

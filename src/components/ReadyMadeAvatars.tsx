@@ -327,7 +327,7 @@ const ReadyMadeAvatars: React.FC<ReadyMadeAvatarsProps> = ({ onAvatarSelected })
                   <div className="space-y-2">
                     <h3 className="text-xl font-semibold">Upload Your Avatar</h3>
                     <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                      Upload a custom 3D avatar or profile picture. Supported formats: JPG, PNG, WebP, GLB, GLTF
+                      Upload a custom 3D avatar or profile picture. Supported formats: Images (JPG, PNG, WebP) and 3D models (GLB, GLTF, FBX, OBJ, Blender, DAE, STL, PLY, 3DS)
                     </p>
                   </div>
 
@@ -335,7 +335,7 @@ const ReadyMadeAvatars: React.FC<ReadyMadeAvatarsProps> = ({ onAvatarSelected })
                     <Input
                       id="avatar-upload"
                       type="file"
-                      accept="image/*,.glb,.gltf"
+                      accept="image/*,.glb,.gltf,.fbx,.obj,.blend,.dae,.stl,.ply,.3ds"
                       onChange={handleAvatarUpload}
                       className="hidden"
                       disabled={uploading}

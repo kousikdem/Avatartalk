@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Camera, Upload } from 'lucide-react';
+import { Camera, MessageSquare } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import FuturisticAvatar3D from './FuturisticAvatar3D';
@@ -33,7 +33,6 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
   const [profileData, setProfileData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isChangeModalOpen, setIsChangeModalOpen] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const { settings } = useAvatarSettings();
 
   // Fetch avatar configuration and profile data
@@ -132,70 +131,6 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
     setupSubscriptions();
   }, [userId]);
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      toast.error('Please upload a valid image file (JPEG, PNG, or WebP)');
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File size must be less than 5MB');
-      return;
-    }
-
-    try {
-      setUploading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`;
-
-      // Upload to profile-pictures bucket
-      const { error: uploadError } = await supabase.storage
-        .from('profile-pictures')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('profile-pictures')
-        .getPublicUrl(filePath);
-
-      // Update profile with new avatar URL
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          profile_pic_url: publicUrl,
-          avatar_url: publicUrl,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
-
-      if (updateError) throw updateError;
-
-      toast.success('Avatar updated successfully!');
-      setIsChangeModalOpen(false);
-      fetchAvatarData();
-    } catch (error) {
-      console.error('Error uploading avatar:', error);
-      toast.error('Failed to upload avatar');
-    } finally {
-      setUploading(false);
-    }
-  };
-
   const getAvatarDisplay = () => {
     if (profileData?.profile_pic_url) return profileData.profile_pic_url;
     if (profileData?.avatar_url) return profileData.avatar_url;
@@ -267,6 +202,24 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
         )}
       </div>
 
+      {/* Talk to Me Button */}
+      {!showControls && (
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10">
+          <Button
+            size="sm"
+            className="rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg px-6"
+            onClick={(e) => {
+              e.stopPropagation();
+              // This can be customized based on your needs
+              toast.success('Voice interaction coming soon!');
+            }}
+          >
+            <MessageSquare className="w-4 h-4 mr-2" />
+            Talk to Me
+          </Button>
+        </div>
+      )}
+
       {/* Change Avatar Modal */}
       <Dialog open={isChangeModalOpen} onOpenChange={setIsChangeModalOpen}>
         <DialogContent className="bg-slate-900 border-slate-700 text-white">
@@ -284,8 +237,8 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
                 />
               </div>
 
-              {/* Upload Options */}
-              <div className="w-full space-y-3">
+              {/* Create Avatar Option */}
+              <div className="w-full">
                 <Button
                   onClick={() => window.location.href = '/avatar'}
                   className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
@@ -293,23 +246,6 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
                   <Camera className="w-4 h-4 mr-2" />
                   Create 3D Avatar
                 </Button>
-
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    disabled={uploading}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-                  <Button
-                    disabled={uploading}
-                    className="w-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white"
-                  >
-                    <Upload className="w-4 h-4 mr-2" />
-                    {uploading ? 'Uploading...' : 'Upload Image'}
-                  </Button>
-                </div>
               </div>
             </div>
           </div>
