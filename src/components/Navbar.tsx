@@ -1,10 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { UserCircle, Settings, Home, LogIn, Users } from 'lucide-react';
 import MainAuth from './MainAuth';
 import VisitorAuth from './VisitorAuth';
 import Logo from './Logo';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 interface NavbarProps {
   showAuth?: boolean;
@@ -13,9 +15,37 @@ interface NavbarProps {
 const Navbar: React.FC<NavbarProps> = ({ showAuth = false }) => {
   const [isMainAuthOpen, setIsMainAuthOpen] = useState(false);
   const [isVisitorAuthOpen, setIsVisitorAuthOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setCurrentUser(data.user);
+    };
+    getCurrentUser();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCurrentUser(session?.user || null);
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
 
   const handleNavigation = (path: string) => {
     window.location.href = path;
+  };
+
+  const handleProfileClick = () => {
+    if (currentUser) {
+      // User is logged in, navigate to dashboard
+      navigate('/dashboard');
+    } else {
+      // User is not logged in, prompt to login
+      setIsMainAuthOpen(true);
+    }
   };
 
   return (
@@ -64,14 +94,27 @@ const Navbar: React.FC<NavbarProps> = ({ showAuth = false }) => {
                   </Button>
                 </>
               )}
+              
+              {/* Profile Button - Always visible, prompts login if not authenticated */}
               <Button 
                 size="sm" 
-                className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white" 
-                onClick={() => setIsMainAuthOpen(true)}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white" 
+                onClick={handleProfileClick}
               >
                 <UserCircle className="w-4 h-4 mr-2" />
-                Get Started
+                {currentUser ? 'Dashboard' : 'Profile'}
               </Button>
+              
+              {!currentUser && (
+                <Button 
+                  size="sm" 
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white" 
+                  onClick={() => setIsMainAuthOpen(true)}
+                >
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Get Started
+                </Button>
+              )}
             </div>
           </div>
         </div>

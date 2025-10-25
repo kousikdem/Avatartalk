@@ -305,8 +305,17 @@ const EnhancedPostCard: React.FC<EnhancedPostCardProps> = ({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={toggleLike}
-                disabled={likesLoading || !currentUserId}
+                onClick={() => {
+                  if (!currentUserId) {
+                    toast({
+                      title: "Login Required",
+                      description: "Please login to like posts",
+                    });
+                    return;
+                  }
+                  toggleLike();
+                }}
+                disabled={likesLoading}
                 className={`flex items-center space-x-2 transition-all duration-200 ${
                   isLiked 
                     ? 'text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100' 
@@ -321,7 +330,16 @@ const EnhancedPostCard: React.FC<EnhancedPostCardProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={toggleComments}
+                  onClick={() => {
+                    if (!currentUserId) {
+                      toast({
+                        title: "Login Required",
+                        description: "Please login to comment on posts",
+                      });
+                      return;
+                    }
+                    toggleComments();
+                  }}
                   className="flex items-center space-x-2 text-gray-500 hover:text-blue-500 hover:bg-blue-50 transition-all duration-200"
                 >
                   <MessageCircle className="w-5 h-5" />

@@ -141,9 +141,8 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
   const handleAvatarClick = () => {
     if (onAvatarClick) {
       onAvatarClick();
-    } else {
-      setIsChangeModalOpen(true);
     }
+    // Removed modal opening since change button is removed
   };
 
   if (loading) {
@@ -158,7 +157,7 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
 
   return (
     <>
-      <div className={`relative group cursor-pointer ${className}`} onClick={handleAvatarClick}>
+      <div className={`relative group ${className}`}>
         <div className={`relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-800/40 via-blue-900/20 to-slate-800/40 border border-slate-600/30 shadow-inner ${isLarge ? 'h-80' : 'h-64'}`}>
           {/* 3D Floating Background Effects */}
           <div className="absolute inset-0 pointer-events-none">
@@ -177,80 +176,25 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
             />
           </div>
 
-          {/* Overlay on hover */}
-          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-            <div className="text-center">
-              <Camera className="w-8 h-8 text-white mx-auto mb-2" />
-              <p className="text-white text-sm font-medium">Change Avatar</p>
-            </div>
-          </div>
         </div>
 
-        {showControls && (
-          <div className="absolute bottom-4 right-4 z-10">
-            <Button
-              size="sm"
-              className="rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsChangeModalOpen(true);
-              }}
-            >
-              <Camera className="w-4 h-4" />
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Talk to Me Button */}
-      {!showControls && (
+        {/* Talk to Me Button - Always visible, floating at bottom center */}
         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10">
           <Button
             size="sm"
-            className="rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg px-6"
+            className="rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg px-6 flex items-center gap-2"
             onClick={(e) => {
               e.stopPropagation();
               // This can be customized based on your needs
               toast.success('Voice interaction coming soon!');
             }}
           >
-            <MessageSquare className="w-4 h-4 mr-2" />
-            Talk to Me
+            <MessageSquare className="w-4 h-4" />
+            <span>Talk to Me</span>
           </Button>
         </div>
-      )}
+      </div>
 
-      {/* Change Avatar Modal */}
-      <Dialog open={isChangeModalOpen} onOpenChange={setIsChangeModalOpen}>
-        <DialogContent className="bg-slate-900 border-slate-700 text-white">
-          <DialogHeader>
-            <DialogTitle>Change Avatar</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-4">
-            <div className="flex flex-col items-center gap-4">
-              {/* Current Avatar Preview */}
-              <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-blue-500/30">
-                <img 
-                  src={getAvatarDisplay()}
-                  alt="Current Avatar"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              {/* Create Avatar Option */}
-              <div className="w-full">
-                <Button
-                  onClick={() => window.location.href = '/avatar'}
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-                >
-                  <Camera className="w-4 h-4 mr-2" />
-                  Create 3D Avatar
-                </Button>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 };

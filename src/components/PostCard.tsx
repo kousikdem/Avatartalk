@@ -291,8 +291,17 @@ const PostCard: React.FC<PostCardProps> = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={toggleLike}
-              disabled={likesLoading || !currentUserId}
+              onClick={() => {
+                if (!currentUserId) {
+                  toast({
+                    title: "Login Required",
+                    description: "Please login to like posts",
+                  });
+                  return;
+                }
+                toggleLike();
+              }}
+              disabled={likesLoading}
               className={`flex items-center space-x-2 ${isLiked ? 'text-red-500 hover:text-red-600' : 'text-gray-500 hover:text-red-500'}`}
             >
               <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
@@ -303,7 +312,16 @@ const PostCard: React.FC<PostCardProps> = ({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={toggleComments}
+                onClick={() => {
+                  if (!currentUserId) {
+                    toast({
+                      title: "Login Required",
+                      description: "Please login to comment on posts",
+                    });
+                    return;
+                  }
+                  toggleComments();
+                }}
                 className="flex items-center space-x-2 text-gray-500 hover:text-blue-500"
               >
                 <MessageCircle className="w-5 h-5" />
