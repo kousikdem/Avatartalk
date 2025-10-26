@@ -861,23 +861,23 @@ const ProfilePage: React.FC = () => {
             {/* Stats - Three Column Layout - Smaller size with minimal spacing */}
             <div className="px-6 pb-4">
               <div className="grid grid-cols-3 gap-2">
-                <div className="text-center bg-slate-800/30 rounded-xl py-2 backdrop-blur-sm border border-slate-700/20">
-                  <div className="text-lg font-bold text-white mb-0.5">
+                <div className={`text-center gradient-card backdrop-blur-sm py-2 ${isDarkTheme ? '' : 'shadow-sm'}`}>
+                  <div className={`text-lg font-bold ${textPrimaryClass} mb-0.5`}>
                     {userStats?.total_conversations || 0}
                   </div>
-                  <div className="text-xs text-slate-400 font-medium">Conversations</div>
+                  <div className={`text-xs ${textSecondaryClass} font-medium`}>Conversations</div>
                 </div>
-                <div className="text-center bg-slate-800/30 rounded-xl py-2 backdrop-blur-sm border border-slate-700/20">
-                  <div className="text-lg font-bold text-white mb-0.5">
+                <div className={`text-center gradient-card backdrop-blur-sm py-2 ${isDarkTheme ? '' : 'shadow-sm'}`}>
+                  <div className={`text-lg font-bold ${textPrimaryClass} mb-0.5`}>
                     {followersCount >= 1000 ? `${(followersCount/1000).toFixed(1)}K` : followersCount}
                   </div>
-                  <div className="text-xs text-slate-400 font-medium">Followers</div>
+                  <div className={`text-xs ${textSecondaryClass} font-medium`}>Followers</div>
                 </div>
-                <div className="text-center bg-slate-800/30 rounded-xl py-2 backdrop-blur-sm border border-slate-700/20">
-                  <div className="text-lg font-bold text-white mb-0.5">
+                <div className={`text-center gradient-card backdrop-blur-sm py-2 ${isDarkTheme ? '' : 'shadow-sm'}`}>
+                  <div className={`text-lg font-bold ${textPrimaryClass} mb-0.5`}>
                     {Math.round(userStats?.engagement_score || 0)}%
                   </div>
-                  <div className="text-xs text-slate-400 font-medium">Engagement</div>
+                  <div className={`text-xs ${textSecondaryClass} font-medium`}>Engagement</div>
                 </div>
               </div>
             </div>
@@ -885,22 +885,22 @@ const ProfilePage: React.FC = () => {
             {/* Content Tabs - Flexible to take remaining space */}
             <div className="px-6 pb-2 flex-1 flex flex-col overflow-hidden">
               <Tabs defaultValue="chat" className="space-y-4 flex-1 flex flex-col overflow-hidden">
-                <TabsList className="grid w-full grid-cols-3 bg-transparent border-b border-slate-700/30 rounded-none p-0 h-auto flex-shrink-0">
+                <TabsList className={`grid w-full grid-cols-3 ${isDarkTheme ? 'bg-slate-800/30' : 'bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50'} border-b ${isDarkTheme ? 'border-slate-700/30' : 'border-gray-200'} rounded-none p-0 h-auto flex-shrink-0`}>
                   <TabsTrigger 
                     value="posts" 
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent bg-transparent text-slate-400 data-[state=active]:text-white py-3 font-medium text-base transition-all duration-200 hover:text-slate-200"
+                    className={`rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent bg-transparent ${isDarkTheme ? 'text-slate-400 data-[state=active]:text-white hover:text-slate-200' : 'text-gray-600 data-[state=active]:text-gray-900 hover:text-gray-800'} py-3 font-medium text-base transition-all duration-200`}
                   >
                     Posts
                   </TabsTrigger>
                   <TabsTrigger 
                     value="chat"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent bg-transparent text-slate-400 data-[state=active]:text-white py-3 font-medium text-base transition-all duration-200 hover:text-slate-200"
+                    className={`rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent bg-transparent ${isDarkTheme ? 'text-slate-400 data-[state=active]:text-white hover:text-slate-200' : 'text-gray-600 data-[state=active]:text-gray-900 hover:text-gray-800'} py-3 font-medium text-base transition-all duration-200`}
                   >
                     Chat
                   </TabsTrigger>
                   <TabsTrigger 
                     value="products"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent bg-transparent text-slate-400 data-[state=active]:text-white py-3 font-medium text-base transition-all duration-200 hover:text-slate-200"
+                    className={`rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent bg-transparent ${isDarkTheme ? 'text-slate-400 data-[state=active]:text-white hover:text-slate-200' : 'text-gray-600 data-[state=active]:text-gray-900 hover:text-gray-800'} py-3 font-medium text-base transition-all duration-200`}
                   >
                     Product
                   </TabsTrigger>
@@ -967,73 +967,77 @@ const ProfilePage: React.FC = () => {
                        // Show only messages from the current user or messages sent to/from the profile owner
                        message.sender === 'user' && currentUser ? 
                          (message.senderName === (currentUser.email?.split('@')[0] || 'User')) : true
-                     ).map((message) => (
+                      ).map((message) => (
                        <div key={message.id} className={`flex items-start gap-3 ${message.sender === 'avatar' ? 'flex-row-reverse' : ''}`}>
-                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
-                           <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
-                             {message.sender === 'avatar' ? (
-                               message.senderAvatar ? (
-                                 <img 
-                                   src={message.senderAvatar} 
-                                   alt={message.senderName}
-                                   className="w-full h-full object-cover"
-                                 />
-                               ) : (
-                                 <span className="text-xs font-bold text-white">
-                                   {(message.senderName?.[0] || 'A').toUpperCase()}
-                                 </span>
-                               )
-                             ) : (
-                               currentUser?.user_metadata?.avatar_url ? (
-                                 <img 
-                                   src={currentUser.user_metadata.avatar_url} 
-                                   alt={message.senderName}
-                                   className="w-full h-full object-cover"
-                                 />
-                               ) : (
-                                 <span className="text-xs font-bold text-white">
-                                   {(message.senderName?.[0] || 'U').toUpperCase()}
-                                 </span>
-                               )
-                             )}
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                            <div className={`w-full h-full rounded-full ${isDarkTheme ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center overflow-hidden`}>
+                              {message.sender === 'avatar' ? (
+                                message.senderAvatar ? (
+                                  <img 
+                                    src={message.senderAvatar} 
+                                    alt={message.senderName}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <span className={`text-xs font-bold ${textPrimaryClass}`}>
+                                    {(message.senderName?.[0] || 'A').toUpperCase()}
+                                  </span>
+                                )
+                              ) : (
+                                currentUser?.user_metadata?.avatar_url ? (
+                                  <img 
+                                    src={currentUser.user_metadata.avatar_url} 
+                                    alt={message.senderName}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <span className={`text-xs font-bold ${textPrimaryClass}`}>
+                                    {(message.senderName?.[0] || 'U').toUpperCase()}
+                                  </span>
+                                )
+                              )}
+                            </div>
+                          </div>
+                         <div className={`flex-1 ${message.sender === 'avatar' ? 'flex justify-end' : ''}`}>
+                           <div className={message.sender === 'avatar' ? '' : 'max-w-xs'}>
+                              <div className={`px-4 py-3 rounded-2xl ${
+                               message.sender === 'avatar' 
+                                 ? isDarkTheme 
+                                   ? 'bg-slate-700/50 border border-slate-600/30 rounded-tr-md max-w-xs' 
+                                   : 'bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300 rounded-tr-md max-w-xs'
+                                 : 'bg-gradient-to-r from-blue-500 to-blue-600 border border-blue-400 rounded-tl-md text-white'
+                             }`}>
+                               {message.isVoiceMessage && (
+                                 <div className={`flex items-center gap-2 mb-2 pb-2 ${isDarkTheme ? 'border-b border-slate-600/20' : 'border-b border-gray-300/50'}`}>
+                                   <Volume2 className="w-3 h-3 text-purple-500" />
+                                   <span className="text-xs text-purple-500 font-medium">Voice Message</span>
+                                 </div>
+                               )}
+                               <p className={`text-sm ${
+                                 message.sender === 'avatar' 
+                                   ? textPrimaryClass
+                                   : 'text-white'
+                               }`}>
+                                 {message.content}
+                               </p>
+                             </div>
+                             <p className={`text-xs ${textSecondaryClass} mt-1 ${
+                               message.sender === 'avatar' ? 'text-right' : ''
+                             }`}>
+                               {new Date(message.timestamp).toLocaleTimeString([], { 
+                                 hour: '2-digit', 
+                                 minute: '2-digit' 
+                               })}
+                             </p>
                            </div>
                          </div>
-                        <div className={`flex-1 ${message.sender === 'avatar' ? 'flex justify-end' : ''}`}>
-                          <div className={message.sender === 'avatar' ? '' : 'max-w-xs'}>
-                             <div className={`px-4 py-3 rounded-2xl ${
-                              message.sender === 'avatar' 
-                                ? 'bg-slate-700/50 border border-slate-600/30 rounded-tr-md max-w-xs' 
-                                : 'bg-blue-600/20 border border-blue-500/30 rounded-tl-md'
-                            }`}>
-                              {message.isVoiceMessage && (
-                                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-600/20">
-                                  <Volume2 className="w-3 h-3 text-purple-400" />
-                                  <span className="text-xs text-purple-400 font-medium">Voice Message</span>
-                                </div>
-                              )}
-                              <p className={`text-sm ${
-                                message.sender === 'avatar' ? 'text-slate-200' : 'text-blue-100'
-                              }`}>
-                                {message.content}
-                              </p>
-                            </div>
-                            <p className={`text-xs text-slate-500 mt-1 ${
-                              message.sender === 'avatar' ? 'text-right' : ''
-                            }`}>
-                              {new Date(message.timestamp).toLocaleTimeString([], { 
-                                hour: '2-digit', 
-                                minute: '2-digit' 
-                              })}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                       </div>
+                     ))}
 
                     {(isTalking || isTyping) && (
                       <div className="flex items-start gap-3 flex-row-reverse">
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
-                          <div className="w-full h-8 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                          <div className={`w-full h-8 rounded-full ${isDarkTheme ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center overflow-hidden`}>
                              {profile?.profile_pic_url || profile?.avatar_url ? (
                                <img 
                                  src={profile.profile_pic_url || profile.avatar_url} 
@@ -1041,7 +1045,7 @@ const ProfilePage: React.FC = () => {
                                  className="w-full h-full object-cover"
                                />
                              ) : (
-                               <span className="text-xs font-bold text-white">
+                               <span className={`text-xs font-bold ${textPrimaryClass}`}>
                                  {profileData.avatarInitial}
                                </span>
                              )}
@@ -1049,14 +1053,14 @@ const ProfilePage: React.FC = () => {
                         </div>
                         <div className="flex-1 flex justify-end">
                           <div>
-                            <div className="bg-slate-700/50 border border-slate-600/30 rounded-2xl rounded-tr-md px-4 py-3 max-w-xs">
+                            <div className={`${isDarkTheme ? 'bg-slate-700/50 border-slate-600/30' : 'bg-gradient-to-br from-gray-100 to-gray-200 border-gray-300'} border rounded-2xl rounded-tr-md px-4 py-3 max-w-xs`}>
                               <div className="flex items-center gap-2">
                                 <div className="flex space-x-1">
-                                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
-                                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                                 </div>
-                                 <span className="text-xs text-slate-400">
+                                 <span className={`text-xs ${textSecondaryClass}`}>
                                    {isTyping ? "AI is generating response..." : "AI is thinking..."}
                                  </span>
                               </div>
