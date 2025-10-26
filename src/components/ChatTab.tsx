@@ -109,7 +109,7 @@ export const ChatTab: React.FC<ChatTabProps> = ({
   return (
     <div className="space-y-4">
       {/* Chat Messages */}
-      <div className="bg-slate-800/30 border border-slate-600/50 rounded-lg p-4 max-h-64 overflow-y-auto">
+      <div className="bg-slate-800/30 dark:bg-slate-800/30 bg-gradient-to-br from-blue-50/50 to-purple-50/50 border border-slate-600/50 dark:border-slate-600/50 border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto backdrop-blur-sm">
         {conversations.length > 0 ? (
           <div className="space-y-3">
             {conversations.map((conv, index) => (
@@ -127,8 +127,8 @@ export const ChatTab: React.FC<ChatTabProps> = ({
                 <div
                   className={`max-w-[80%] p-3 rounded-lg ${
                     conv.type === 'user'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-700 text-slate-200'
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-600 dark:to-blue-700 text-white'
+                      : 'bg-gradient-to-r from-slate-700 to-slate-800 dark:from-slate-700 dark:to-slate-800 from-gray-100 to-gray-200 text-slate-200 dark:text-slate-200 text-gray-800'
                   }`}
                 >
                   <p className="text-sm">{conv.message}</p>
@@ -142,7 +142,7 @@ export const ChatTab: React.FC<ChatTabProps> = ({
             {conversations.length > 2 && (
               <div className="flex justify-start">
                 <div className="max-w-[80%] space-y-2">
-                  <p className="text-xs text-slate-400 mb-2">Suggested links:</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-400 text-gray-600 mb-2">Suggested links:</p>
                   <LinkCard url="https://example.com/product" title="Example Product" />
                 </div>
               </div>
@@ -150,40 +150,40 @@ export const ChatTab: React.FC<ChatTabProps> = ({
           </div>
         ) : (
           <div className="text-center py-8">
-            <p className="text-slate-400">Start a conversation with the AI avatar</p>
+            <p className="text-slate-400 dark:text-slate-400 text-gray-600">Start a conversation with the AI avatar</p>
           </div>
         )}
       </div>
 
       {/* Chat Input */}
       <div className="relative">
-        <div className="bg-slate-800/50 rounded-2xl border border-slate-600/50 px-4 py-3 flex items-center gap-3">
+        <div className="bg-slate-800/50 dark:bg-slate-800/50 bg-gradient-to-r from-blue-50/80 to-purple-50/80 rounded-2xl border border-slate-600/50 dark:border-slate-600/50 border-gray-300 px-4 py-3 flex items-center gap-3 backdrop-blur-sm">
           <Input
             value={message + (isListening ? ` ${interimTranscript}` : '')}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Ask me anything..."
-            className="border-0 bg-transparent text-white placeholder:text-slate-400 flex-1 focus-visible:ring-0 p-0"
+            className="border-0 bg-transparent text-white dark:text-white text-gray-900 placeholder:text-slate-400 dark:placeholder:text-slate-400 placeholder:text-gray-500 flex-1 focus-visible:ring-0 p-0"
             onKeyPress={(e) => e.key === 'Enter' && onSendMessage()}
           />
           <Button 
             size="sm" 
             variant="ghost" 
             onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
-            className="h-8 w-8 p-0 hover:bg-slate-700 rounded-full"
+            className="h-8 w-8 p-0 hover:bg-slate-700 dark:hover:bg-slate-700 hover:bg-blue-100 rounded-full bg-gradient-to-r from-yellow-400/20 to-orange-400/20"
           >
-            <Smile className="w-4 h-4 text-slate-400" />
+            <Smile className="w-4 h-4 text-slate-400 dark:text-slate-400 text-gray-700" />
           </Button>
           {voiceInputSupported && (
             <Button 
               size="sm" 
               variant="ghost" 
               onClick={handleVoiceInput}
-              className={`h-8 w-8 p-0 hover:bg-slate-700 rounded-full ${
+              className={`h-8 w-8 p-0 hover:bg-slate-700 dark:hover:bg-slate-700 hover:bg-blue-100 rounded-full bg-gradient-to-r from-red-400/20 to-pink-400/20 ${
                 isListening ? 'bg-red-600/20 text-red-400' : ''
               }`}
               disabled={isTTSLoading}
             >
-              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4 text-slate-400" />}
+              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4 text-slate-400 dark:text-slate-400 text-gray-700" />}
             </Button>
           )}
           {voiceOutputSupported && (
@@ -191,8 +191,8 @@ export const ChatTab: React.FC<ChatTabProps> = ({
               size="sm" 
               variant="ghost" 
               onClick={handleVoiceOutput}
-              className={`h-8 w-8 p-0 hover:bg-slate-700 rounded-full ${
-                isTTSPlaying ? 'text-blue-400' : 'text-slate-400'
+              className={`h-8 w-8 p-0 hover:bg-slate-700 dark:hover:bg-slate-700 hover:bg-blue-100 rounded-full bg-gradient-to-r from-blue-400/20 to-purple-400/20 ${
+                isTTSPlaying ? 'text-blue-400' : 'text-slate-400 dark:text-slate-400 text-gray-700'
               }`}
               disabled={isTTSLoading}
             >
@@ -209,9 +209,9 @@ export const ChatTab: React.FC<ChatTabProps> = ({
             size="sm" 
             variant="ghost" 
             onClick={onSendMessage}
-            className="h-8 w-8 p-0 hover:bg-slate-700 rounded-full"
+            className="h-8 w-8 p-0 hover:bg-slate-700 dark:hover:bg-slate-700 hover:bg-blue-100 rounded-full"
           >
-            <Send className="w-4 h-4 text-slate-400" />
+            <Send className="w-4 h-4 text-slate-400 dark:text-slate-400 text-gray-700" />
           </Button>
         </div>
 

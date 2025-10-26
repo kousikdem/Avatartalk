@@ -86,12 +86,12 @@ export const MessageInput: React.FC<MessageInputProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="relative">
-      <div className="bg-slate-800/50 rounded-2xl border border-slate-600/50 px-4 py-3 flex items-center gap-3">
+      <div className="bg-slate-800/50 dark:bg-slate-800/50 bg-gradient-to-r from-blue-50/80 to-purple-50/80 rounded-2xl border border-slate-600/50 dark:border-slate-600/50 border-gray-300 px-4 py-3 flex items-center gap-3 backdrop-blur-sm">
         <Input
           value={message + (isListening ? ` ${interimTranscript}` : '')}
           onChange={(e) => setMessage(e.target.value)}
           placeholder={placeholder}
-          className="border-0 bg-transparent text-white placeholder:text-slate-400 flex-1 focus-visible:ring-0 p-0"
+          className="border-0 bg-transparent text-white dark:text-white text-gray-900 placeholder:text-slate-400 dark:placeholder:text-slate-400 placeholder:text-gray-500 flex-1 focus-visible:ring-0 p-0"
           disabled={disabled}
         />
         
@@ -100,9 +100,9 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           variant="ghost" 
           type="button"
           onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
-          className="h-8 w-8 p-0 hover:bg-slate-700 rounded-full flex-shrink-0"
+          className="h-8 w-8 p-0 hover:bg-slate-700 dark:hover:bg-slate-700 hover:bg-blue-100 rounded-full flex-shrink-0 bg-gradient-to-r from-yellow-400/20 to-orange-400/20"
         >
-          <Smile className="w-4 h-4 text-slate-400" />
+          <Smile className="w-4 h-4 text-slate-400 dark:text-slate-400 text-gray-700" />
         </Button>
         
         {voiceInputSupported && (
@@ -111,12 +111,12 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             variant="ghost" 
             type="button"
             onClick={handleVoiceInput}
-            className={`h-8 w-8 p-0 hover:bg-slate-700 rounded-full flex-shrink-0 ${
+            className={`h-8 w-8 p-0 hover:bg-slate-700 dark:hover:bg-slate-700 hover:bg-blue-100 rounded-full flex-shrink-0 bg-gradient-to-r from-red-400/20 to-pink-400/20 ${
               isListening ? 'bg-red-600/20 text-red-400' : ''
             }`}
             disabled={isTTSLoading || disabled}
           >
-            {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4 text-slate-400" />}
+            {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4 text-slate-400 dark:text-slate-400 text-gray-700" />}
           </Button>
         )}
         
@@ -126,8 +126,8 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             variant="ghost" 
             type="button"
             onClick={handleVoiceOutput}
-            className={`h-8 w-8 p-0 hover:bg-slate-700 rounded-full flex-shrink-0 ${
-              isTTSPlaying ? 'text-blue-400' : 'text-slate-400'
+            className={`h-8 w-8 p-0 hover:bg-slate-700 dark:hover:bg-slate-700 hover:bg-blue-100 rounded-full flex-shrink-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 ${
+              isTTSPlaying ? 'text-blue-400' : 'text-slate-400 dark:text-slate-400 text-gray-700'
             }`}
             disabled={isTTSLoading || disabled}
           >
@@ -145,10 +145,10 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           size="sm" 
           variant="ghost" 
           type="submit"
-          className="h-8 w-8 p-0 hover:bg-slate-700 rounded-full flex-shrink-0"
+          className="h-8 w-8 p-0 hover:bg-slate-700 dark:hover:bg-slate-700 hover:bg-blue-100 rounded-full flex-shrink-0"
           disabled={!message.trim() || disabled}
         >
-          <Send className="w-4 h-4 text-slate-400" />
+          <Send className="w-4 h-4 text-slate-400 dark:text-slate-400 text-gray-700" />
         </Button>
       </div>
 

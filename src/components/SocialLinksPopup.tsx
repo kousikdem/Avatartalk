@@ -55,9 +55,9 @@ const SocialLinksPopup: React.FC<SocialLinksPopupProps> = ({ socialLinks, onShar
         variant="ghost"
         size="icon"
         onClick={() => setIsOpen(!isOpen)}
-        className="rounded-full hover:bg-gray-100 transition-colors"
+        className="rounded-full hover:bg-gray-100 dark:hover:bg-gray-100 hover:bg-gray-200 transition-colors"
       >
-        <MoreVertical className="h-5 w-5" />
+        <MoreVertical className="h-5 w-5 text-gray-700 dark:text-white" />
       </Button>
 
       <AnimatePresence>

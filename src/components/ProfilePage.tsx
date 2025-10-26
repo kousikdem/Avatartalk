@@ -445,7 +445,7 @@ const ProfilePage: React.FC = () => {
     if (e) e.preventDefault();
     const messageContent = chatMessage.trim() || transcript.trim();
     
-    if (!messageContent || !profile || !currentUser) return;
+    if (!messageContent || !profile) return;
     
     // Block AI origin related questions
     const aiOriginKeywords = [
@@ -488,7 +488,7 @@ const ProfilePage: React.FC = () => {
       content: messageContent,
       timestamp: new Date().toISOString(),
       sender: 'user',
-      senderName: currentUser.email?.split('@')[0] || 'User',
+      senderName: currentUser?.email?.split('@')[0] || 'Guest',
       senderAvatar: currentUser?.user_metadata?.avatar_url,
       isVoiceMessage: isVoiceInput,
       voiceTranscript: isVoiceInput ? messageContent : undefined
@@ -505,7 +505,7 @@ const ProfilePage: React.FC = () => {
         body: {
           userMessage: messageContent,
           profileId: profile.id,
-          userId: currentUser.id
+          userId: currentUser?.id || null
         }
       });
 
@@ -861,23 +861,23 @@ const ProfilePage: React.FC = () => {
             {/* Stats - Three Column Layout - Smaller size with minimal spacing */}
             <div className="px-6 pb-4">
               <div className="grid grid-cols-3 gap-2">
-                <div className="text-center bg-slate-800/30 rounded-xl py-2 backdrop-blur-sm border border-slate-700/20">
-                  <div className="text-lg font-bold text-white mb-0.5">
+                <div className={`text-center rounded-xl py-2 backdrop-blur-sm border ${isDarkTheme ? 'bg-slate-800/30 border-slate-700/20' : 'bg-gradient-to-br from-blue-50 to-purple-50 border-gray-200'}`}>
+                  <div className={`text-lg font-bold mb-0.5 ${textPrimaryClass}`}>
                     {userStats?.total_conversations || 0}
                   </div>
-                  <div className="text-xs text-slate-400 font-medium">Conversations</div>
+                  <div className={`text-xs font-medium ${textSecondaryClass}`}>Conversations</div>
                 </div>
-                <div className="text-center bg-slate-800/30 rounded-xl py-2 backdrop-blur-sm border border-slate-700/20">
-                  <div className="text-lg font-bold text-white mb-0.5">
+                <div className={`text-center rounded-xl py-2 backdrop-blur-sm border ${isDarkTheme ? 'bg-slate-800/30 border-slate-700/20' : 'bg-gradient-to-br from-blue-50 to-purple-50 border-gray-200'}`}>
+                  <div className={`text-lg font-bold mb-0.5 ${textPrimaryClass}`}>
                     {followersCount >= 1000 ? `${(followersCount/1000).toFixed(1)}K` : followersCount}
                   </div>
-                  <div className="text-xs text-slate-400 font-medium">Followers</div>
+                  <div className={`text-xs font-medium ${textSecondaryClass}`}>Followers</div>
                 </div>
-                <div className="text-center bg-slate-800/30 rounded-xl py-2 backdrop-blur-sm border border-slate-700/20">
-                  <div className="text-lg font-bold text-white mb-0.5">
+                <div className={`text-center rounded-xl py-2 backdrop-blur-sm border ${isDarkTheme ? 'bg-slate-800/30 border-slate-700/20' : 'bg-gradient-to-br from-blue-50 to-purple-50 border-gray-200'}`}>
+                  <div className={`text-lg font-bold mb-0.5 ${textPrimaryClass}`}>
                     {Math.round(userStats?.engagement_score || 0)}%
                   </div>
-                  <div className="text-xs text-slate-400 font-medium">Engagement</div>
+                  <div className={`text-xs font-medium ${textSecondaryClass}`}>Engagement</div>
                 </div>
               </div>
             </div>
@@ -885,22 +885,22 @@ const ProfilePage: React.FC = () => {
             {/* Content Tabs - Flexible to take remaining space */}
             <div className="px-6 pb-2 flex-1 flex flex-col overflow-hidden">
               <Tabs defaultValue="chat" className="space-y-4 flex-1 flex flex-col overflow-hidden">
-                <TabsList className="grid w-full grid-cols-3 bg-transparent border-b border-slate-700/30 rounded-none p-0 h-auto flex-shrink-0">
+                <TabsList className={`grid w-full grid-cols-3 bg-transparent border-b rounded-none p-0 h-auto flex-shrink-0 ${isDarkTheme ? 'border-slate-700/30' : 'border-gray-300'}`}>
                   <TabsTrigger 
                     value="posts" 
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent bg-transparent text-slate-400 data-[state=active]:text-white py-3 font-medium text-base transition-all duration-200 hover:text-slate-200"
+                    className={`rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent bg-transparent py-3 font-medium text-base transition-all duration-200 ${isDarkTheme ? 'text-slate-400 data-[state=active]:text-white hover:text-slate-200' : 'text-gray-600 data-[state=active]:text-gray-900 hover:text-gray-800'}`}
                   >
                     Posts
                   </TabsTrigger>
                   <TabsTrigger 
                     value="chat"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent bg-transparent text-slate-400 data-[state=active]:text-white py-3 font-medium text-base transition-all duration-200 hover:text-slate-200"
+                    className={`rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent bg-transparent py-3 font-medium text-base transition-all duration-200 ${isDarkTheme ? 'text-slate-400 data-[state=active]:text-white hover:text-slate-200' : 'text-gray-600 data-[state=active]:text-gray-900 hover:text-gray-800'}`}
                   >
                     Chat
                   </TabsTrigger>
                   <TabsTrigger 
                     value="products"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent bg-transparent text-slate-400 data-[state=active]:text-white py-3 font-medium text-base transition-all duration-200 hover:text-slate-200"
+                    className={`rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:bg-transparent bg-transparent py-3 font-medium text-base transition-all duration-200 ${isDarkTheme ? 'text-slate-400 data-[state=active]:text-white hover:text-slate-200' : 'text-gray-600 data-[state=active]:text-gray-900 hover:text-gray-800'}`}
                   >
                     Product
                   </TabsTrigger>
