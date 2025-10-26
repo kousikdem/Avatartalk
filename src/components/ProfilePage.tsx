@@ -1329,10 +1329,6 @@ const ProfilePage: React.FC = () => {
       <VisitorAuth
         isOpen={isVisitorAuthOpen}
         onClose={() => setIsVisitorAuthOpen(false)}
-        onSignInClick={() => {
-          setIsVisitorAuthOpen(false);
-          setIsMainAuthOpen(true);
-        }}
       />
       
       {/* Main Authentication Modal */}
