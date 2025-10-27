@@ -27,6 +27,8 @@ interface AvatarConfig {
   eye_color: string;
   current_expression: string;
   current_pose: string;
+  thumbnail_url?: string;
+  model_url?: string;
 }
 
 const EnhancedAvatarPreview: React.FC<EnhancedAvatarPreviewProps> = ({
@@ -77,7 +79,9 @@ const EnhancedAvatarPreview: React.FC<EnhancedAvatarPreviewProps> = ({
               hair_color: linkedAvatar.hair_color,
               eye_color: linkedAvatar.eye_color,
               current_expression: linkedAvatar.current_expression,
-              current_pose: linkedAvatar.current_pose
+              current_pose: linkedAvatar.current_pose,
+              thumbnail_url: linkedAvatar.thumbnail_url,
+              model_url: linkedAvatar.model_url
             });
             return;
           }
@@ -100,7 +104,9 @@ const EnhancedAvatarPreview: React.FC<EnhancedAvatarPreviewProps> = ({
             hair_color: data.hair_color,
             eye_color: data.eye_color,
             current_expression: data.current_expression,
-            current_pose: data.current_pose
+            current_pose: data.current_pose,
+            thumbnail_url: data.thumbnail_url,
+            model_url: data.model_url
           });
         }
       } catch (error) {

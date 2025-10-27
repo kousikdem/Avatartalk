@@ -132,9 +132,13 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
   }, [userId]);
 
   const getAvatarDisplay = () => {
-    if (profileData?.profile_pic_url) return profileData.profile_pic_url;
-    if (profileData?.avatar_url) return profileData.avatar_url;
+    // First priority: Custom uploaded thumbnail from avatar config
     if (avatarData?.thumbnail_url) return avatarData.thumbnail_url;
+    // Second priority: profile_pic_url from profile data
+    if (profileData?.profile_pic_url) return profileData.profile_pic_url;
+    // Third priority: avatar_url from profile (linked avatar)
+    if (profileData?.avatar_url) return profileData.avatar_url;
+    // Fallback: default avatar image
     return '/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png';
   };
 
