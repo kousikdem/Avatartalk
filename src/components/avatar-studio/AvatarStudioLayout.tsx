@@ -114,10 +114,10 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
-    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'model/gltf-binary', 'application/octet-stream'];
-    if (!validTypes.includes(file.type) && !file.name.match(/\.(glb|gltf|png|jpg|jpeg)$/i)) {
-      toast.error('Please upload a valid avatar file (PNG, JPG, GLB, or GLTF)');
+    // Validate file type - support GLB, FBX, GLTF, GIF, PNG, JPG
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'model/gltf-binary', 'application/octet-stream'];
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(glb|fbx|gltf|gif|png|jpg|jpeg)$/i)) {
+      toast.error('Please upload a valid avatar file (GLB, FBX, GLTF, GIF, PNG, or JPG)');
       return;
     }
 
@@ -149,7 +149,7 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
         .getPublicUrl(fileName);
 
       // Update avatar config with uploaded file
-      const isModelFile = file.name.match(/\.(glb|gltf)$/i);
+      const isModelFile = file.name.match(/\.(glb|fbx|gltf)$/i);
       const updatedConfig = {
         ...avatarConfig,
         [isModelFile ? 'modelUrl' : 'thumbnailUrl']: publicUrl
@@ -157,10 +157,10 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
       
       setAvatarConfig(updatedConfig);
       
-      // Save to database
+      // Save to database - this will trigger real-time updates
       await saveConfiguration(updatedConfig);
       
-      toast.success('Custom avatar uploaded and saved successfully!');
+      toast.success('Custom avatar uploaded and linked with all previews!');
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('Failed to upload avatar file');
@@ -347,7 +347,7 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
                 Upload Custom Avatar
               </h3>
               <p className="text-xs text-muted-foreground mb-3">
-                Upload your own 3D avatar file (GLB/GLTF) or avatar image (PNG/JPG)
+                Upload 3D model (GLB/FBX/GLTF) or image (PNG/JPG/GIF)
               </p>
               <div className="flex gap-2">
                 <Button
@@ -363,7 +363,7 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
                 <input
                   id="avatar-file-upload"
                   type="file"
-                  accept=".png,.jpg,.jpeg,.glb,.gltf"
+                  accept=".png,.jpg,.jpeg,.gif,.glb,.fbx,.gltf"
                   className="hidden"
                   onChange={handleFileUpload}
                 />
