@@ -23,7 +23,6 @@ import ReadyMadeAvatarGallery from '../ReadyMadeAvatarGallery';
 import M3CharacterStudioIntegration from './M3CharacterStudioIntegration';
 import AvatarBoothIntegration from './AvatarBoothIntegration';
 import { useAvatarConfigurations } from '@/hooks/useAvatarConfigurations';
-import { supabase } from '@/integrations/supabase/client';
 
 interface AvatarStudioLayoutProps {
   initialConfig?: any;
@@ -33,7 +32,6 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
   const navigate = useNavigate();
   const { saveConfiguration } = useAvatarConfigurations();
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [creationMode, setCreationMode] = useState<'manual' | 'image' | 'text' | 'preset'>('manual');
   
   const [avatarConfig, setAvatarConfig] = useState({
@@ -102,70 +100,11 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
     setSaving(true);
     try {
       await saveConfiguration(avatarConfig);
-      toast.success('Avatar saved and linked with all previews!');
+      toast.success('Avatar saved successfully!');
     } catch (error) {
       toast.error('Failed to save avatar');
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'model/gltf-binary', 'application/octet-stream'];
-    if (!validTypes.includes(file.type) && !file.name.match(/\.(glb|gltf|png|jpg|jpeg)$/i)) {
-      toast.error('Please upload a valid avatar file (PNG, JPG, GLB, or GLTF)');
-      return;
-    }
-
-    setUploading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error('Please log in to upload avatars');
-        return;
-      }
-
-      // Create unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      
-      // Upload to profile-pictures bucket
-      const { error: uploadError, data } = await supabase.storage
-        .from('profile-pictures')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('profile-pictures')
-        .getPublicUrl(fileName);
-
-      // Update avatar config with uploaded file
-      const isModelFile = file.name.match(/\.(glb|gltf)$/i);
-      const updatedConfig = {
-        ...avatarConfig,
-        [isModelFile ? 'modelUrl' : 'thumbnailUrl']: publicUrl
-      };
-      
-      setAvatarConfig(updatedConfig);
-      
-      // Save to database
-      await saveConfiguration(updatedConfig);
-      
-      toast.success('Custom avatar uploaded and saved successfully!');
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast.error('Failed to upload avatar file');
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -338,41 +277,6 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
                 <Environment preset="studio" />
                 <ContactShadows position={[0, -2.5, 0]} scale={8} blur={3} far={3} />
               </Canvas>
-            </Card>
-
-            {/* Avatar File Upload Section */}
-            <Card className="card-gradient p-4">
-              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                <Upload className="w-4 h-4" />
-                Upload Custom Avatar
-              </h3>
-              <p className="text-xs text-muted-foreground mb-3">
-                Upload your own 3D avatar file (GLB/GLTF) or avatar image (PNG/JPG)
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  disabled={uploading}
-                  onClick={() => document.getElementById('avatar-file-upload')?.click()}
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  {uploading ? 'Uploading...' : 'Choose File'}
-                </Button>
-                <input
-                  id="avatar-file-upload"
-                  type="file"
-                  accept=".png,.jpg,.jpeg,.glb,.gltf"
-                  className="hidden"
-                  onChange={handleFileUpload}
-                />
-              </div>
-              {(avatarConfig.modelUrl || avatarConfig.thumbnailUrl) && (
-                <div className="mt-3 p-2 bg-green-500/10 border border-green-500/20 rounded text-xs text-green-600 dark:text-green-400">
-                  ✓ Custom avatar uploaded successfully
-                </div>
-              )}
             </Card>
 
             {/* Creation Methods */}

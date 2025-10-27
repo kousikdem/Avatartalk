@@ -189,8 +189,6 @@ export const useAvatarConfigurations = () => {
         accessories: config.accessories || [],
         current_pose: config.currentPose || 'standing',
         current_expression: config.currentExpression || 'neutral',
-        model_url: config.modelUrl || null,
-        thumbnail_url: config.thumbnailUrl || null,
         is_active: true
       };
 
@@ -212,12 +210,11 @@ export const useAvatarConfigurations = () => {
 
       if (result.error) throw result.error;
 
-      // Link avatar with profile and all previews
+      // Link avatar with profile
       const avatarId = result.data.id;
       const thumbnailUrl = config.thumbnailUrl || result.data.thumbnail_url || '/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png';
-      const modelUrl = config.modelUrl || result.data.model_url;
       
-      // Update profile with avatar link - this will trigger real-time updates
+      // Update profile with avatar link
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ 
@@ -232,10 +229,8 @@ export const useAvatarConfigurations = () => {
         console.error('Error updating profile with avatar:', profileError);
       }
 
-      // Reload configurations to reflect changes
       await loadConfigurations();
-      
-      toast.success('Avatar saved and linked with all previews!');
+      toast.success('Avatar saved and linked to profile!');
 
     } catch (error) {
       console.error('Error in saveConfiguration:', error);
