@@ -33,7 +33,7 @@ const Dashboard = () => {
         },
         () => {
           // Profile updated, refetch will happen automatically via useUserProfile
-          window.location.reload();
+          console.log('Profile updated - real-time sync active');
         }
       )
       .subscribe();

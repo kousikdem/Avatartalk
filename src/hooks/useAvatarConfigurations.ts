@@ -68,13 +68,25 @@ export const useAvatarConfigurations = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        const { data, error } = await supabase
+        // Add timeout to prevent infinite loading
+        const queryPromise = supabase
           .from('avatar_configurations')
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
         
-        if (error) throw error;
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Query timeout')), 10000)
+        );
+        
+        const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+        
+        if (error) {
+          console.error('Error loading configurations:', error);
+          setConfigurations([]);
+          setLoading(false);
+          return;
+        }
         
         const configs = data?.map(d => ({
           id: d.id,
@@ -142,6 +154,12 @@ export const useAvatarConfigurations = () => {
 
   // Save a new or update existing avatar configuration
   const saveConfiguration = async (config: Partial<AvatarConfiguration>) => {
+    // Prevent multiple saves at once
+    if (saving) {
+      console.log('Save already in progress, skipping...');
+      return;
+    }
+    
     try {
       setSaving(true);
       const { data: { user } } = await supabase.auth.getUser();

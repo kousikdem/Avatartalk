@@ -31,7 +31,7 @@ interface AvatarStudioLayoutProps {
 
 const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }) => {
   const navigate = useNavigate();
-  const { saveConfiguration } = useAvatarConfigurations();
+  const { saveConfiguration, loading: configLoading, saving: configSaving } = useAvatarConfigurations();
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [creationMode, setCreationMode] = useState<'manual' | 'image' | 'text' | 'preset'>('manual');
@@ -82,8 +82,22 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
     currentExpression: 'neutral',
     currentPose: 'standing',
     avatarName: 'My Avatar',
+    modelUrl: null,
+    thumbnailUrl: null,
     ...initialConfig
   });
+
+  // Show loading state while configurations are loading
+  if (configLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading avatar studio...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleConfigChange = (category: string, key: string, value: any) => {
     setAvatarConfig(prev => ({
