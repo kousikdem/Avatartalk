@@ -196,9 +196,33 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
     toast.success('Avatar reset to defaults');
   };
 
-  const handleExport = () => {
-    toast.success('Avatar export started (GLB/FBX format)');
-    // Integration point for M3.org/CharacterStudio export
+  const handleExport = async () => {
+    try {
+      toast.success('Preparing avatar export...');
+      
+      // Create a downloadable JSON file with avatar configuration
+      const exportData = {
+        ...avatarConfig,
+        exportDate: new Date().toISOString(),
+        version: '1.0',
+        format: 'avatartalk-glb-config'
+      };
+      
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${avatarConfig.avatarName.replace(/\s+/g, '_')}_avatar_config.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast.success('Avatar configuration exported successfully!');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export avatar');
+    }
   };
 
   if (creationMode !== 'manual') {
@@ -333,7 +357,7 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
 
           {/* Center - 3D Preview */}
           <div className="col-span-6 space-y-4">
-            <Card className="h-[calc(100vh-200px)]">
+            <Card className="h-[calc(100vh-200px)] relative">
               <Canvas shadows>
                 <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={45} />
                 <ambientLight intensity={0.6} />
@@ -352,39 +376,53 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
                 <Environment preset="studio" />
                 <ContactShadows position={[0, -2.5, 0]} scale={8} blur={3} far={3} />
               </Canvas>
-            </Card>
 
-            {/* Avatar File Upload Section */}
-            <Card className="card-gradient p-4">
-              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                <Upload className="w-4 h-4" />
-                Upload Custom Avatar
-              </h3>
-              <p className="text-xs text-muted-foreground mb-3">
-                Upload 3D model (GLB/FBX/GLTF) or image (PNG/JPG/GIF)
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  disabled={uploading}
-                  onClick={() => document.getElementById('avatar-file-upload')?.click()}
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  {uploading ? 'Uploading...' : 'Choose File'}
-                </Button>
-                <input
-                  id="avatar-file-upload"
-                  type="file"
-                  accept=".png,.jpg,.jpeg,.gif,.glb,.fbx,.gltf"
-                  className="hidden"
-                  onChange={handleFileUpload}
-                />
+              {/* Action Buttons - Bottom of Preview */}
+              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-2 bg-background/80 backdrop-blur-sm p-3 rounded-lg border">
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={handleReset}>
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Reset
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Camera className="w-4 h-4 mr-2" />
+                    Animate
+                  </Button>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    disabled={uploading}
+                    onClick={() => document.getElementById('avatar-file-upload')?.click()}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {uploading ? 'Uploading...' : 'Upload'}
+                  </Button>
+                  <input
+                    id="avatar-file-upload"
+                    type="file"
+                    accept=".png,.jpg,.jpeg,.gif,.glb,.fbx,.gltf"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                  <Button variant="outline" size="sm" onClick={handleExport}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export GLB
+                  </Button>
+                  <Button size="sm" onClick={handleSave} disabled={saving || configSaving}>
+                    <Save className="w-4 h-4 mr-2" />
+                    {saving || configSaving ? 'Saving...' : 'Save Avatar'}
+                  </Button>
+                </div>
               </div>
+
+              {/* Upload Status */}
               {(avatarConfig.model_url || avatarConfig.thumbnail_url) && (
-                <div className="mt-3 p-2 bg-green-500/10 border border-green-500/20 rounded text-xs text-green-600 dark:text-green-400">
-                  ✓ Custom avatar uploaded and linked with all previews
+                <div className="absolute top-4 right-4 p-2 bg-green-500/90 backdrop-blur-sm text-white rounded-lg text-xs font-medium flex items-center gap-2">
+                  <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                  Custom avatar active
                 </div>
               )}
             </Card>
