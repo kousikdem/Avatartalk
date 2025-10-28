@@ -49,8 +49,8 @@ interface AvatarConfiguration {
   shoulderWidth?: number;
   handSize?: number;
   isActive?: boolean;
-  thumbnailUrl?: string;
-  modelUrl?: string;
+  thumbnail_url?: string;
+  model_url?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -125,16 +125,11 @@ export const useAvatarConfigurations = () => {
           clothingBottom: d.clothing_bottom || 'jeans',
           shoes: d.shoes || 'sneakers',
           accessories: Array.isArray(d.accessories) ? d.accessories : [],
-          // Commented out until database migration is approved
-          // torsoLength: Number(d.torso_length || 50),
-          // legLength: Number(d.leg_length || 50),
-          // shoulderWidth: Number(d.shoulder_width || 50),
-          // handSize: Number(d.hand_size || 50),
           currentPose: d.current_pose,
           currentExpression: d.current_expression,
           isActive: d.is_active,
-          thumbnailUrl: d.thumbnail_url,
-          modelUrl: d.model_url,
+          thumbnail_url: d.thumbnail_url,
+          model_url: d.model_url,
           createdAt: d.created_at,
           updatedAt: d.updated_at
         })) || [];
@@ -207,8 +202,8 @@ export const useAvatarConfigurations = () => {
         accessories: config.accessories || [],
         current_pose: config.currentPose || 'standing',
         current_expression: config.currentExpression || 'neutral',
-        model_url: config.modelUrl || null,
-        thumbnail_url: config.thumbnailUrl || null,
+        model_url: config.model_url || null,
+        thumbnail_url: config.thumbnail_url || null,
         is_active: true
       };
 
@@ -232,10 +227,10 @@ export const useAvatarConfigurations = () => {
 
       // Link avatar with profile and all previews
       const avatarId = result.data.id;
-      const thumbnailUrl = config.thumbnailUrl || result.data.thumbnail_url || '/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png';
-      const modelUrl = config.modelUrl || result.data.model_url;
+      const thumbnailUrl = config.thumbnail_url || result.data.thumbnail_url || '/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png';
+      const modelUrl = config.model_url || result.data.model_url;
       
-      // Update profile with avatar link - this will trigger real-time updates
+      // Update profile with avatar link - this will trigger real-time updates across all components
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ 

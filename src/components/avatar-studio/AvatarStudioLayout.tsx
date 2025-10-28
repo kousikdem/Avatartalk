@@ -82,8 +82,10 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
     currentExpression: 'neutral',
     currentPose: 'standing',
     avatarName: 'My Avatar',
-    modelUrl: null,
-    thumbnailUrl: null,
+    modelUrl: null as string | null,
+    thumbnailUrl: null as string | null,
+    model_url: null as string | null,
+    thumbnail_url: null as string | null,
     ...initialConfig
   });
 
@@ -166,12 +168,12 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
       const isModelFile = file.name.match(/\.(glb|fbx|gltf)$/i);
       const updatedConfig = {
         ...avatarConfig,
-        [isModelFile ? 'modelUrl' : 'thumbnailUrl']: publicUrl
+        [isModelFile ? 'model_url' : 'thumbnail_url']: publicUrl
       };
       
       setAvatarConfig(updatedConfig);
       
-      // Save to database - this will trigger real-time updates
+      // Save to database - this will trigger real-time updates across all avatar previews
       await saveConfiguration(updatedConfig);
       
       toast.success('Custom avatar uploaded and linked with all previews!');
@@ -382,9 +384,9 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
                   onChange={handleFileUpload}
                 />
               </div>
-              {(avatarConfig.modelUrl || avatarConfig.thumbnailUrl) && (
+              {(avatarConfig.model_url || avatarConfig.thumbnail_url) && (
                 <div className="mt-3 p-2 bg-green-500/10 border border-green-500/20 rounded text-xs text-green-600 dark:text-green-400">
-                  ✓ Custom avatar uploaded successfully
+                  ✓ Custom avatar uploaded and linked with all previews
                 </div>
               )}
             </Card>
