@@ -198,27 +198,53 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
 
   const handleExport = async () => {
     try {
-      toast.success('Preparing avatar export...');
-      
-      // Create a downloadable JSON file with avatar configuration
-      const exportData = {
-        ...avatarConfig,
-        exportDate: new Date().toISOString(),
-        version: '1.0',
-        format: 'avatartalk-glb-config'
-      };
-      
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${avatarConfig.avatarName.replace(/\s+/g, '_')}_avatar_config.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      toast.success('Avatar configuration exported successfully!');
+      // Check if user uploaded a 3D model file
+      if (avatarConfig.model_url) {
+        toast.success('Downloading your 3D avatar...');
+        
+        // Extract filename and extension from URL
+        const urlParts = avatarConfig.model_url.split('/');
+        const filename = urlParts[urlParts.length - 1];
+        const fileExtension = filename.split('.').pop();
+        
+        // Download the actual 3D model file
+        const response = await fetch(avatarConfig.model_url);
+        if (!response.ok) throw new Error('Failed to download file');
+        
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${avatarConfig.avatarName.replace(/\s+/g, '_')}.${fileExtension}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        toast.success('3D avatar downloaded successfully!');
+      } else {
+        // Fallback: Export JSON configuration
+        toast.success('Preparing avatar configuration export...');
+        
+        const exportData = {
+          ...avatarConfig,
+          exportDate: new Date().toISOString(),
+          version: '1.0',
+          format: 'avatartalk-config'
+        };
+        
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${avatarConfig.avatarName.replace(/\s+/g, '_')}_config.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        toast.success('Avatar configuration exported!');
+      }
     } catch (error) {
       console.error('Export error:', error);
       toast.error('Failed to export avatar');
@@ -396,20 +422,14 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
                     size="sm"
                     disabled={uploading}
                     onClick={() => document.getElementById('avatar-file-upload')?.click()}
+                    title="Upload 3D avatar file (.glb, .fbx, .gltf) or image (.gif, .png, .jpg)"
                   >
                     <Upload className="w-4 h-4 mr-2" />
-                    {uploading ? 'Uploading...' : 'Upload'}
+                    {uploading ? 'Uploading...' : 'Upload 3D'}
                   </Button>
-                  <input
-                    id="avatar-file-upload"
-                    type="file"
-                    accept=".png,.jpg,.jpeg,.gif,.glb,.fbx,.gltf"
-                    className="hidden"
-                    onChange={handleFileUpload}
-                  />
                   <Button variant="outline" size="sm" onClick={handleExport}>
                     <Download className="w-4 h-4 mr-2" />
-                    Export GLB
+                    Export
                   </Button>
                   <Button size="sm" onClick={handleSave} disabled={saving || configSaving}>
                     <Save className="w-4 h-4 mr-2" />
@@ -417,6 +437,15 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
                   </Button>
                 </div>
               </div>
+
+              {/* Hidden file input */}
+              <input
+                id="avatar-file-upload"
+                type="file"
+                accept=".png,.jpg,.jpeg,.gif,.glb,.fbx,.gltf"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
 
               {/* Upload Status */}
               {(avatarConfig.model_url || avatarConfig.thumbnail_url) && (
