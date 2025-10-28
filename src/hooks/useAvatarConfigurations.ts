@@ -127,9 +127,9 @@ export const useAvatarConfigurations = () => {
           accessories: Array.isArray(d.accessories) ? d.accessories : [],
           currentPose: d.current_pose,
           currentExpression: d.current_expression,
-          isActive: d.is_active,
-          thumbnail_url: d.thumbnail_url,
           model_url: d.model_url,
+          thumbnail_url: d.thumbnail_url,
+          isActive: d.is_active,
           createdAt: d.created_at,
           updatedAt: d.updated_at
         })) || [];

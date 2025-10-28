@@ -82,8 +82,6 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
     currentExpression: 'neutral',
     currentPose: 'standing',
     avatarName: 'My Avatar',
-    modelUrl: null as string | null,
-    thumbnailUrl: null as string | null,
     model_url: null as string | null,
     thumbnail_url: null as string | null,
     ...initialConfig

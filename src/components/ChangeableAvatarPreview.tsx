@@ -159,6 +159,9 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
     );
   }
 
+  const avatarImageUrl = getAvatarDisplay();
+  const hasUploadedAvatar = avatarData?.thumbnail_url || avatarData?.model_url;
+
   return (
     <>
       <div className={`relative group ${className}`}>
@@ -169,16 +172,34 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
             <div className="absolute bottom-1/4 right-1/4 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl animate-pulse" style={{animationDelay: '1s'}}></div>
           </div>
           
-          <div className="relative animate-[float_6s_ease-in-out_infinite]">
-            <FuturisticAvatar3D
-              isLarge={isLarge}
-              isTalking={isTalking}
-              avatarStyle={(settings?.avatar_type as any) || 'realistic'}
-              mood={(settings?.avatar_mood as any) || 'friendly'}
-              className="w-full h-full"
-              onInteraction={() => {}}
-            />
-          </div>
+          {/* Show uploaded avatar image if available, otherwise show 3D avatar */}
+          {hasUploadedAvatar ? (
+            <div className="relative h-full flex items-center justify-center p-6">
+              <img 
+                src={avatarImageUrl} 
+                alt="Avatar" 
+                className="w-full h-full object-contain rounded-2xl shadow-2xl"
+                style={{
+                  filter: isTalking ? 'drop-shadow(0 0 20px rgba(59, 130, 246, 0.5))' : 'none',
+                  transition: 'filter 0.3s ease'
+                }}
+              />
+              {isTalking && (
+                <div className="absolute inset-0 border-4 border-blue-400/60 rounded-2xl animate-pulse"></div>
+              )}
+            </div>
+          ) : (
+            <div className="relative animate-[float_6s_ease-in-out_infinite]">
+              <FuturisticAvatar3D
+                isLarge={isLarge}
+                isTalking={isTalking}
+                avatarStyle={(settings?.avatar_type as any) || 'realistic'}
+                mood={(settings?.avatar_mood as any) || 'friendly'}
+                className="w-full h-full"
+                onInteraction={() => {}}
+              />
+            </div>
+          )}
 
         </div>
 
