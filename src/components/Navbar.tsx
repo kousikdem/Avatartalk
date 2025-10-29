@@ -95,16 +95,6 @@ const Navbar: React.FC<NavbarProps> = ({ showAuth = false }) => {
                 </>
               )}
               
-              {/* Profile Button - Always visible, prompts login if not authenticated */}
-              <Button 
-                size="sm" 
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white" 
-                onClick={handleProfileClick}
-              >
-                <UserCircle className="w-4 h-4 mr-2" />
-                {currentUser ? 'Dashboard' : 'Profile'}
-              </Button>
-              
               {!currentUser && (
                 <Button 
                   size="sm" 
