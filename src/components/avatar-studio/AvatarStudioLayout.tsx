@@ -417,6 +417,10 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
                 </div>
                 
                 <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={handleExport}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                  </Button>
                   <Button 
                     variant="outline" 
                     size="sm"
@@ -426,10 +430,6 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
                   >
                     <Upload className="w-4 h-4 mr-2" />
                     {uploading ? 'Uploading...' : 'Upload 3D'}
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleExport}>
-                    <Download className="w-4 h-4 mr-2" />
-                    Export
                   </Button>
                   <Button size="sm" onClick={handleSave} disabled={saving || configSaving}>
                     <Save className="w-4 h-4 mr-2" />
