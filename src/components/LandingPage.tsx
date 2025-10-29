@@ -295,7 +295,7 @@ const LandingPage = () => {
           </div>
 
           {/* Demo User Profile - Half Size 3D Floating Display */}
-          <div className="max-w-xs mx-auto bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl shadow-2xl overflow-hidden border border-slate-700/50 animate-[float_10s_ease-in-out_infinite] hover:scale-105 transition-transform duration-500" style={{ transform: 'perspective(1200px) rotateX(5deg) rotateY(-2deg)', transformStyle: 'preserve-3d' }}>
+          <div className="max-w-xs mx-auto mt-16 mb-16 bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl shadow-2xl overflow-hidden border border-slate-700/50 animate-[float_10s_ease-in-out_infinite] hover:scale-105 transition-transform duration-500" style={{ transform: 'perspective(1200px) rotateX(5deg) rotateY(-2deg)', transformStyle: 'preserve-3d' }}>
             {/* Profile Header */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4">
               <div className="flex items-center gap-3">
