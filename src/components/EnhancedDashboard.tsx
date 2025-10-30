@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import Avatar3D from './Avatar3D';
+import ChangeableAvatarPreview from './ChangeableAvatarPreview';
 import ProfilePictureUpload from './ProfilePictureUpload';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
@@ -258,12 +258,14 @@ const EnhancedDashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center">
-                <Avatar3D 
-                  isLarge={true} 
+                <ChangeableAvatarPreview
+                  userId={profileData?.id}
+                  isLarge={true}
+                  showControls={false}
+                  enableVoice={false}
+                  isInteractive={true}
                   isTalking={isTalking}
-                  avatarStyle={profileData?.avatar_data.style as any || 'realistic'}
-                  mood={profileData?.avatar_data.mood as any || 'friendly'}
-                  onInteraction={() => setIsTalking(!isTalking)}
+                  onAvatarClick={() => window.location.href = '/avatar'}
                 />
                 
                 <div className="mt-6 w-full space-y-3">

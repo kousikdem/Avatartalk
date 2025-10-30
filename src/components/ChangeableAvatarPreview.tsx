@@ -57,7 +57,8 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
       if (profileError) throw profileError;
       setProfileData(profile);
 
-      // Fetch avatar configuration if avatar_id is linked
+      // Fetch active avatar configuration
+      // First try to get by avatar_id if it exists in profile
       if (profile?.avatar_id) {
         const { data: avatarConfig, error: avatarError } = await supabase
           .from('avatar_configurations')
@@ -67,6 +68,18 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
 
         if (!avatarError && avatarConfig) {
           setAvatarData(avatarConfig);
+        }
+      } else {
+        // Otherwise, get the active avatar configuration for this user
+        const { data: activeAvatar, error: activeAvatarError } = await supabase
+          .from('avatar_configurations')
+          .select('*')
+          .eq('user_id', targetUserId)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (!activeAvatarError && activeAvatar) {
+          setAvatarData(activeAvatar);
         }
       }
     } catch (error) {
@@ -132,13 +145,14 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
   }, [userId]);
 
   const getAvatarDisplay = () => {
-    // First priority: Custom uploaded thumbnail from avatar config
+    // Priority order for avatar display:
+    // 1. Custom uploaded thumbnail from active avatar configuration
     if (avatarData?.thumbnail_url) return avatarData.thumbnail_url;
-    // Second priority: profile_pic_url from profile data
-    if (profileData?.profile_pic_url) return profileData.profile_pic_url;
-    // Third priority: avatar_url from profile (linked avatar)
+    // 2. Linked avatar_url from profile (pointing to avatar_configurations)
     if (profileData?.avatar_url) return profileData.avatar_url;
-    // Fallback: default avatar image
+    // 3. Profile picture URL
+    if (profileData?.profile_pic_url) return profileData.profile_pic_url;
+    // 4. Fallback to default avatar image
     return '/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png';
   };
 
