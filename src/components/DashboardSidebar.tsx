@@ -92,13 +92,13 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
               onClick={toggleSidebar}
               variant="ghost"
               size="icon"
-              className="h-8 w-8 p-1.5 hover:bg-gray-100 transition-colors flex-shrink-0 text-gray-600"
+              className="h-10 w-10 p-2 hover:bg-gray-100 transition-colors flex-shrink-0 text-gray-700 bg-gray-50 border border-gray-200 shadow-sm hover:shadow-md"
               title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               {isCollapsed ? (
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-6 w-6" />
               ) : (
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-6 w-6" />
               )}
             </Button>
           )}
