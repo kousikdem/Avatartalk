@@ -148,6 +148,30 @@ export default {
 					'50%': {
 						transform: 'scale(1.05)'
 					}
+				},
+				'wave-hand': {
+					'0%, 100%': {
+						transform: 'rotate(-12deg)'
+					},
+					'50%': {
+						transform: 'rotate(-25deg) translateY(-5px)'
+					}
+				},
+				'wave-hand-right': {
+					'0%, 100%': {
+						transform: 'rotate(12deg)'
+					},
+					'50%': {
+						transform: 'rotate(25deg) translateY(-5px)'
+					}
+				},
+				'talk-mouth': {
+					'0%, 100%': {
+						transform: 'scaleY(1)'
+					},
+					'50%': {
+						transform: 'scaleY(0.6)'
+					}
 				}
 			},
 			animation: {
@@ -159,7 +183,10 @@ export default {
 				'float': 'float 10s ease-in-out infinite',
 				'wiggle': 'wiggle 3s ease-in-out infinite',
 				'tilt': 'tilt 2s ease-in-out infinite',
-				'pulse-zoom': 'pulse-zoom 2s ease-in-out infinite'
+				'pulse-zoom': 'pulse-zoom 2s ease-in-out infinite',
+				'wave-hand': 'wave-hand 1.5s ease-in-out infinite',
+				'wave-hand-right': 'wave-hand-right 1.5s ease-in-out infinite',
+				'talk-mouth': 'talk-mouth 0.6s ease-in-out infinite'
 			}
 		}
 	},

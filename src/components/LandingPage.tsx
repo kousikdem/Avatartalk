@@ -347,17 +347,17 @@ const LandingPage = () => {
                       </div>
                       {/* Nose */}
                       <div className="absolute top-14 left-1/2 transform -translate-x-1/2 w-2 h-3 bg-amber-400/50 rounded-full"></div>
-                      {/* Smile */}
-                      <div className="absolute top-18 left-1/2 transform -translate-x-1/2 w-8 h-2 border-b-2 border-slate-800 rounded-b-full"></div>
+                      {/* Talking Mouth */}
+                      <div className="absolute top-18 left-1/2 transform -translate-x-1/2 w-8 h-2 border-b-2 border-slate-800 rounded-b-full animate-talk-mouth origin-top"></div>
                       {/* Hair */}
                       <div className="absolute -top-2 left-2 right-2 h-8 bg-gradient-to-br from-slate-700 to-slate-900 rounded-t-full shadow-lg"></div>
                     </div>
                     
                     {/* Body */}
                     <div className="w-32 h-24 bg-gradient-to-b from-blue-500 to-blue-600 rounded-t-3xl mx-auto -mt-2 shadow-xl">
-                      {/* Arms */}
-                      <div className="absolute -left-4 top-2 w-6 h-20 bg-gradient-to-b from-amber-200 to-amber-300 rounded-full transform -rotate-12 shadow-lg"></div>
-                      <div className="absolute -right-4 top-2 w-6 h-20 bg-gradient-to-b from-amber-200 to-amber-300 rounded-full transform rotate-12 shadow-lg"></div>
+                      {/* Arms with waving animation */}
+                      <div className="absolute -left-4 top-2 w-6 h-20 bg-gradient-to-b from-amber-200 to-amber-300 rounded-full shadow-lg animate-wave-hand origin-top-right"></div>
+                      <div className="absolute -right-4 top-2 w-6 h-20 bg-gradient-to-b from-amber-200 to-amber-300 rounded-full shadow-lg animate-wave-hand-right origin-top-left"></div>
                     </div>
                   </div>
                   
@@ -888,8 +888,8 @@ const LandingPage = () => {
                         {/* Nose with shadow */}
                         <div className="absolute top-16 left-1/2 transform -translate-x-1/2 w-3 h-4 bg-amber-400/60 rounded-full shadow-sm"></div>
                         
-                        {/* Smile */}
-                        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 w-10 h-3 border-b-2 border-slate-800 rounded-b-full"></div>
+                        {/* Talking Mouth */}
+                        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 w-10 h-3 border-b-2 border-slate-800 rounded-b-full animate-talk-mouth origin-top"></div>
                         
                         {/* Ears */}
                         <div className="absolute top-14 -left-2 w-4 h-6 bg-amber-300 rounded-full shadow-md"></div>
@@ -911,11 +911,11 @@ const LandingPage = () => {
                           <div className="w-2 h-2 bg-gray-300 rounded-full mx-auto shadow-sm"></div>
                         </div>
                         
-                        {/* Arms */}
-                        <div className="absolute -left-6 top-4 w-8 h-24 bg-gradient-to-b from-amber-200 via-amber-300 to-amber-400 rounded-full transform -rotate-12 shadow-lg">
+                        {/* Arms with waving animation */}
+                        <div className="absolute -left-6 top-4 w-8 h-24 bg-gradient-to-b from-amber-200 via-amber-300 to-amber-400 rounded-full shadow-lg animate-wave-hand origin-top-right">
                           <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-10 h-10 bg-amber-200 rounded-full shadow-md"></div>
                         </div>
-                        <div className="absolute -right-6 top-4 w-8 h-24 bg-gradient-to-b from-amber-200 via-amber-300 to-amber-400 rounded-full transform rotate-12 shadow-lg">
+                        <div className="absolute -right-6 top-4 w-8 h-24 bg-gradient-to-b from-amber-200 via-amber-300 to-amber-400 rounded-full shadow-lg animate-wave-hand-right origin-top-left">
                           <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-10 h-10 bg-amber-200 rounded-full shadow-md"></div>
                         </div>
                       </div>
