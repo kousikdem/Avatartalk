@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import Avatar3DPreview from '@/components/Avatar3DPreview';
 import PresetAvatars from '@/components/PresetAvatars';
 import AvatarBodyCustomizer from '@/components/AvatarBodyCustomizer';
@@ -17,7 +19,11 @@ import ExpressionPanel from '@/components/ExpressionPanel';
 import ImageToAvatar from '@/components/ImageToAvatar';
 
 const AvatarPage = () => {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('presets');
+  const [uploadedModelUrl, setUploadedModelUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarConfig, setAvatarConfig] = useState({
     body: {
       gender: 'female',
@@ -56,7 +62,45 @@ const AvatarPage = () => {
     }));
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('thumbnails')
+        .upload(filePath, file);
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('thumbnails')
+        .getPublicUrl(filePath);
+
+      setUploadedModelUrl(publicUrl);
+      toast({
+        title: "Success",
+        description: "Avatar model uploaded successfully!",
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload avatar model",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const resetAvatar = () => {
+    setUploadedModelUrl(null);
     setAvatarConfig({
       body: {
         gender: 'female',
@@ -129,6 +173,31 @@ const AvatarPage = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {/* Upload Button */}
+              <div className="mb-4">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".glb,.fbx,.gltf,.gif"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  {isUploading ? 'Uploading...' : 'Upload 3D Model (.glb, .fbx, .gltf, .gif)'}
+                </Button>
+                {uploadedModelUrl && (
+                  <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                    <Eye className="w-3 h-3" />
+                    Model uploaded successfully
+                  </p>
+                )}
+              </div>
+              
               <div className="aspect-video bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-xl overflow-hidden relative">
                 <Canvas shadows>
                   <PerspectiveCamera makeDefault position={[0, 0, 5]} />
