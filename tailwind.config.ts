@@ -149,20 +149,38 @@ export default {
 						transform: 'scale(1.05)'
 					}
 				},
-				'wave-hand': {
-					'0%, 100%': {
-						transform: 'rotate(-12deg)'
+				'speak-hand-left': {
+					'0%': {
+						transform: 'rotate(-12deg) translateY(0px)'
+					},
+					'25%': {
+						transform: 'rotate(-35deg) translateY(-10px)'
 					},
 					'50%': {
-						transform: 'rotate(-25deg) translateY(-5px)'
+						transform: 'rotate(-15deg) translateY(-5px)'
+					},
+					'75%': {
+						transform: 'rotate(-30deg) translateY(-8px)'
+					},
+					'100%': {
+						transform: 'rotate(-12deg) translateY(0px)'
 					}
 				},
-				'wave-hand-right': {
-					'0%, 100%': {
-						transform: 'rotate(12deg)'
+				'speak-hand-right': {
+					'0%': {
+						transform: 'rotate(12deg) translateY(0px)'
+					},
+					'25%': {
+						transform: 'rotate(35deg) translateY(-10px)'
 					},
 					'50%': {
-						transform: 'rotate(25deg) translateY(-5px)'
+						transform: 'rotate(15deg) translateY(-5px)'
+					},
+					'75%': {
+						transform: 'rotate(30deg) translateY(-8px)'
+					},
+					'100%': {
+						transform: 'rotate(12deg) translateY(0px)'
 					}
 				},
 				'talk-mouth': {
@@ -184,8 +202,8 @@ export default {
 				'wiggle': 'wiggle 3s ease-in-out infinite',
 				'tilt': 'tilt 2s ease-in-out infinite',
 				'pulse-zoom': 'pulse-zoom 2s ease-in-out infinite',
-				'wave-hand': 'wave-hand 1.5s ease-in-out infinite',
-				'wave-hand-right': 'wave-hand-right 1.5s ease-in-out infinite',
+				'speak-hand-left': 'speak-hand-left 2.5s ease-in-out infinite',
+				'speak-hand-right': 'speak-hand-right 2.5s ease-in-out infinite 0.3s',
 				'talk-mouth': 'talk-mouth 0.6s ease-in-out infinite'
 			}
 		}

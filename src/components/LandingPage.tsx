@@ -355,9 +355,9 @@ const LandingPage = () => {
                     
                     {/* Body */}
                     <div className="w-32 h-24 bg-gradient-to-b from-blue-500 to-blue-600 rounded-t-3xl mx-auto -mt-2 shadow-xl">
-                      {/* Arms with waving animation */}
-                      <div className="absolute -left-4 top-2 w-6 h-20 bg-gradient-to-b from-amber-200 to-amber-300 rounded-full shadow-lg animate-wave-hand origin-top-right"></div>
-                      <div className="absolute -right-4 top-2 w-6 h-20 bg-gradient-to-b from-amber-200 to-amber-300 rounded-full shadow-lg animate-wave-hand-right origin-top-left"></div>
+                      {/* Arms with public speaking gestures */}
+                      <div className="absolute -left-4 top-2 w-6 h-20 bg-gradient-to-b from-amber-200 to-amber-300 rounded-full shadow-lg animate-speak-hand-left origin-top-right"></div>
+                      <div className="absolute -right-4 top-2 w-6 h-20 bg-gradient-to-b from-amber-200 to-amber-300 rounded-full shadow-lg animate-speak-hand-right origin-top-left"></div>
                     </div>
                   </div>
                   
@@ -911,11 +911,11 @@ const LandingPage = () => {
                           <div className="w-2 h-2 bg-gray-300 rounded-full mx-auto shadow-sm"></div>
                         </div>
                         
-                        {/* Arms with waving animation */}
-                        <div className="absolute -left-6 top-4 w-8 h-24 bg-gradient-to-b from-amber-200 via-amber-300 to-amber-400 rounded-full shadow-lg animate-wave-hand origin-top-right">
+                        {/* Arms with public speaking gestures */}
+                        <div className="absolute -left-6 top-4 w-8 h-24 bg-gradient-to-b from-amber-200 via-amber-300 to-amber-400 rounded-full shadow-lg animate-speak-hand-left origin-top-right">
                           <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-10 h-10 bg-amber-200 rounded-full shadow-md"></div>
                         </div>
-                        <div className="absolute -right-6 top-4 w-8 h-24 bg-gradient-to-b from-amber-200 via-amber-300 to-amber-400 rounded-full shadow-lg animate-wave-hand-right origin-top-left">
+                        <div className="absolute -right-6 top-4 w-8 h-24 bg-gradient-to-b from-amber-200 via-amber-300 to-amber-400 rounded-full shadow-lg animate-speak-hand-right origin-top-left">
                           <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-10 h-10 bg-amber-200 rounded-full shadow-md"></div>
                         </div>
                       </div>
