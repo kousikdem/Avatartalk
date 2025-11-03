@@ -68,6 +68,9 @@ const AvatarPage = () => {
 
     setIsUploading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
@@ -82,10 +85,33 @@ const AvatarPage = () => {
         .from('thumbnails')
         .getPublicUrl(filePath);
 
+      // Update user profile with the uploaded model URL
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id);
+
+      if (profileError) throw profileError;
+
+      // Also update avatar_configurations if there's an active one
+      const { data: activeConfig } = await supabase
+        .from('avatar_configurations')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .single();
+
+      if (activeConfig) {
+        await supabase
+          .from('avatar_configurations')
+          .update({ model_url: publicUrl, thumbnail_url: publicUrl })
+          .eq('id', activeConfig.id);
+      }
+
       setUploadedModelUrl(publicUrl);
       toast({
         title: "Success",
-        description: "Avatar model uploaded successfully!",
+        description: "Avatar model uploaded and set as your avatar!",
       });
     } catch (error) {
       console.error('Upload error:', error);
