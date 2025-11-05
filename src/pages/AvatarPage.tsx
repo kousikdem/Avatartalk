@@ -1,424 +1,634 @@
-
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Environment, PerspectiveCamera, Lightformer } from '@react-three/drei';
-import { User, Upload, Save, Download, RotateCcw, Palette, Shirt, Camera, Play, Image, Users, Zap, Smile, Eye, Layers } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { OrbitControls, Environment, ContactShadows, PerspectiveCamera } from '@react-three/drei';
+import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '@/components/ui/textarea';
+import { 
+  Save, Download, RotateCcw, User, Eye, Palette, 
+  Shirt, Smile, Camera, Type, Users, Sliders,
+  Upload, Sparkles, Home, Zap, Activity, Brain
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
+import AdvancedAvatarPreview from '@/components/AdvancedAvatarPreview';
+import BodyAnatomyPanel from '@/components/avatar-studio/BodyAnatomyPanel';
+import FacialFeaturesPanel from '@/components/avatar-studio/FacialFeaturesPanel';
+import SkinEthnicityControls from '@/components/avatar-studio/SkinEthnicityControls';
+import HairCustomizationPanel from '@/components/avatar-studio/HairCustomizationPanel';
+import ClothingStylePanel from '@/components/avatar-studio/ClothingStylePanel';
+import PoseExpressionPanel from '@/components/avatar-studio/PoseExpressionPanel';
+import ReadyMadeAvatarGallery from '@/components/ReadyMadeAvatarGallery';
+import ImageToAvatarConverter from '@/components/ImageToAvatarConverter';
+import { useAvatarConfigurations } from '@/hooks/useAvatarConfigurations';
 import { supabase } from '@/integrations/supabase/client';
-import Avatar3DPreview from '@/components/Avatar3DPreview';
-import PresetAvatars from '@/components/PresetAvatars';
-import AvatarBodyCustomizer from '@/components/AvatarBodyCustomizer';
-import AvatarFaceCustomizer from '@/components/AvatarFaceCustomizer';
-import AvatarClothingCustomizer from '@/components/AvatarClothingCustomizer';
-import PoseSelector from '@/components/PoseSelector';
-import ExpressionPanel from '@/components/ExpressionPanel';
-import ImageToAvatar from '@/components/ImageToAvatar';
 
-const AvatarPage = () => {
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('presets');
-  const [uploadedModelUrl, setUploadedModelUrl] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+const AvatarPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { saveConfiguration } = useAvatarConfigurations();
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [creationMode, setCreationMode] = useState<'manual' | 'image' | 'text' | 'preset'>('manual');
+  const [textPrompt, setTextPrompt] = useState('');
+  const [generatingFromText, setGeneratingFromText] = useState(false);
+  
   const [avatarConfig, setAvatarConfig] = useState({
-    body: {
-      gender: 'female',
-      age: 25,
-      ethnicity: 'caucasian',
-      height: 170,
-      weight: 65,
-      muscle: 50,
-      fat: 30
-    },
-    face: {
-      eyeColor: 'brown',
-      skinTone: '#DEB887',
-      hairStyle: 'long',
-      hairColor: '#8B4513',
-      faceShape: 'oval',
-      eyeShape: 'almond',
-      noseShape: 'straight',
-      lipShape: 'medium'
-    },
-    clothing: {
-      outfit: 'business',
-      accessories: []
-    },
-    pose: 'standing',
-    expression: 'neutral'
+    gender: 'male',
+    age: 25,
+    ethnicity: 'caucasian',
+    height: 170,
+    weight: 70,
+    muscle: 50,
+    fat: 20,
+    torsoLength: 50,
+    legLength: 50,
+    shoulderWidth: 50,
+    handSize: 50,
+    headSize: 50,
+    headShape: 'oval',
+    faceWidth: 50,
+    jawline: 50,
+    cheekbones: 50,
+    chinSize: 50,
+    eyeSize: 50,
+    eyeDistance: 50,
+    eyeShape: 'almond',
+    eyeColor: '#8B4513',
+    noseSize: 50,
+    noseWidth: 50,
+    noseShape: 'straight',
+    mouthWidth: 50,
+    lipThickness: 50,
+    lipShape: 'normal',
+    smileCurvature: 50,
+    earSize: 50,
+    earPosition: 50,
+    earShape: 'normal',
+    skinTone: '#F1C27D',
+    skinTexture: 'smooth',
+    hairStyle: 'medium',
+    hairColor: '#8B4513',
+    hairLength: 50,
+    facialHair: 'none',
+    facialHairColor: '#8B4513',
+    clothingTop: 'tshirt',
+    clothingBottom: 'jeans',
+    shoes: 'sneakers',
+    accessories: [] as string[],
+    currentExpression: 'neutral',
+    currentPose: 'standing',
+    avatarName: 'My Avatar',
+    model_url: null as string | null,
+    thumbnail_url: null as string | null
   });
 
-  const handleConfigChange = (category, key, value) => {
-    setAvatarConfig(prev => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
-        [key]: value
-      }
-    }));
+  const handleConfigChange = (category: string, key: string, value: any) => {
+    setAvatarConfig(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      await saveConfiguration(avatarConfig);
+      
+      await supabase
+        .from('profiles')
+        .update({ avatar_url: avatarConfig.model_url || avatarConfig.thumbnail_url })
+        .eq('id', user.id);
+
+      toast.success('Avatar saved and linked across all previews!');
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('Failed to save avatar');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setIsUploading(true);
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'model/gltf-binary', 'application/octet-stream'];
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(glb|fbx|gltf|gif|png|jpg|jpeg)$/i)) {
+      toast.error('Please upload GLB, FBX, GLTF, GIF, PNG, or JPG');
+      return;
+    }
+
+    setUploading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user) throw new Error('Please log in to upload avatars');
 
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('profile-pictures')
+        .upload(fileName, file, { cacheControl: '3600', upsert: false });
 
-      const { data, error } = await supabase.storage
-        .from('thumbnails')
-        .upload(filePath, file);
-
-      if (error) throw error;
+      if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('thumbnails')
-        .getPublicUrl(filePath);
+        .from('profile-pictures')
+        .getPublicUrl(fileName);
 
-      // Update user profile with the uploaded model URL
-      const { error: profileError } = await supabase
+      const isModel = file.name.match(/\.(glb|fbx|gltf)$/i);
+      const updatedConfig = {
+        ...avatarConfig,
+        [isModel ? 'model_url' : 'thumbnail_url']: publicUrl
+      };
+      
+      setAvatarConfig(updatedConfig);
+      await saveConfiguration(updatedConfig);
+      
+      await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
         .eq('id', user.id);
-
-      if (profileError) throw profileError;
-
-      // Also update avatar_configurations if there's an active one
-      const { data: activeConfig } = await supabase
-        .from('avatar_configurations')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .single();
-
-      if (activeConfig) {
-        await supabase
-          .from('avatar_configurations')
-          .update({ model_url: publicUrl, thumbnail_url: publicUrl })
-          .eq('id', activeConfig.id);
-      }
-
-      setUploadedModelUrl(publicUrl);
-      toast({
-        title: "Success",
-        description: "Avatar model uploaded and set as your avatar!",
-      });
+      
+      toast.success('Avatar uploaded and set successfully!');
     } catch (error) {
       console.error('Upload error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to upload avatar model",
-        variant: "destructive",
-      });
+      toast.error('Failed to upload avatar');
     } finally {
-      setIsUploading(false);
+      setUploading(false);
     }
   };
 
-  const resetAvatar = () => {
-    setUploadedModelUrl(null);
-    setAvatarConfig({
-      body: {
-        gender: 'female',
-        age: 25,
-        ethnicity: 'caucasian',
-        height: 170,
-        weight: 65,
-        muscle: 50,
-        fat: 30
-      },
-      face: {
-        eyeColor: 'brown',
-        skinTone: '#DEB887',
-        hairStyle: 'long',
-        hairColor: '#8B4513',
-        faceShape: 'oval',
-        eyeShape: 'almond',
-        noseShape: 'straight',
-        lipShape: 'medium'
-      },
-      clothing: {
-        outfit: 'casual',
-        accessories: []
-      },
-      pose: 'standing',
-      expression: 'neutral'
-    });
+  const handleTextGeneration = async () => {
+    if (!textPrompt.trim()) {
+      toast.error('Please enter a description');
+      return;
+    }
+
+    setGeneratingFromText(true);
+    try {
+      const lower = textPrompt.toLowerCase();
+      const newConfig = { ...avatarConfig };
+      
+      // Gender
+      if (lower.includes('male') && !lower.includes('female')) newConfig.gender = 'male';
+      if (lower.includes('female')) newConfig.gender = 'female';
+      
+      // Build
+      if (lower.includes('athletic') || lower.includes('fit')) {
+        newConfig.muscle = 75;
+        newConfig.fat = 12;
+      }
+      if (lower.includes('slim') || lower.includes('thin')) {
+        newConfig.muscle = 40;
+        newConfig.fat = 15;
+      }
+      if (lower.includes('muscular') || lower.includes('strong')) {
+        newConfig.muscle = 85;
+        newConfig.fat = 10;
+      }
+      
+      // Ethnicity
+      if (lower.includes('asian')) newConfig.ethnicity = 'asian';
+      if (lower.includes('african') || lower.includes('black')) newConfig.ethnicity = 'african';
+      if (lower.includes('caucasian') || lower.includes('white')) newConfig.ethnicity = 'caucasian';
+      if (lower.includes('hispanic') || lower.includes('latino')) newConfig.ethnicity = 'hispanic';
+      
+      // Hair
+      if (lower.includes('short hair')) newConfig.hairStyle = 'short';
+      if (lower.includes('long hair')) newConfig.hairStyle = 'long';
+      if (lower.includes('curly')) newConfig.hairStyle = 'curly';
+      if (lower.includes('bald')) newConfig.hairStyle = 'bald';
+      
+      // Clothing
+      if (lower.includes('suit') || lower.includes('formal')) {
+        newConfig.clothingTop = 'suit';
+        newConfig.clothingBottom = 'dress pants';
+      }
+      if (lower.includes('casual')) {
+        newConfig.clothingTop = 'tshirt';
+        newConfig.clothingBottom = 'jeans';
+      }
+      if (lower.includes('athletic') || lower.includes('sporty')) {
+        newConfig.clothingTop = 'sportwear';
+        newConfig.clothingBottom = 'athletic';
+      }
+      
+      setAvatarConfig(newConfig);
+      setCreationMode('manual');
+      toast.success('Avatar generated from description! Customize further.');
+    } catch (error) {
+      console.error('Generation error:', error);
+      toast.error('Failed to generate avatar');
+    } finally {
+      setGeneratingFromText(false);
+    }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
+  const handleReset = () => {
+    setAvatarConfig({
+      ...avatarConfig,
+      muscle: 50,
+      fat: 20,
+      height: 170,
+      weight: 70,
+      currentExpression: 'neutral',
+      currentPose: 'standing'
+    });
+    toast.success('Avatar reset');
+  };
+
+  const handleExport = async () => {
+    try {
+      if (avatarConfig.model_url) {
+        const response = await fetch(avatarConfig.model_url);
+        if (!response.ok) throw new Error('Failed to download');
+        
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const filename = avatarConfig.model_url.split('/').pop() || 'avatar.glb';
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        toast.success('Avatar downloaded!');
+      } else {
+        const exportData = {
+          ...avatarConfig,
+          exportDate: new Date().toISOString(),
+          version: '1.0'
+        };
+        
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${avatarConfig.avatarName.replace(/\s+/g, '_')}_config.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        toast.success('Configuration exported!');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export');
+    }
+  };
+
+  // Creation Mode View
+  if (creationMode !== 'manual') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                AI Avatar Creator
+              <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+                🎨 Create Your Avatar
               </h1>
-              <p className="text-gray-600 text-lg">Create your realistic 3D avatar with advanced AI-powered customization</p>
+              <p className="text-muted-foreground text-lg mt-2">
+                Choose your preferred creation method
+              </p>
             </div>
             <div className="flex gap-2">
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
-                <Zap className="w-3 h-3 mr-1" />
-                AI Powered
+              <Button variant="outline" onClick={() => navigate('/dashboard')}>
+                <Home className="w-4 h-4 mr-2" />
+                Dashboard
+              </Button>
+              <Button onClick={() => setCreationMode('manual')}>
+                <Sliders className="w-4 h-4 mr-2" />
+                Manual Editor
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Button
+              variant={creationMode === 'image' ? 'default' : 'outline'}
+              className="h-32 flex-col gap-3 p-6 hover:scale-105 transition-transform"
+              onClick={() => setCreationMode('image')}
+            >
+              <Camera className="w-12 h-12" />
+              <div className="text-center">
+                <div className="font-bold text-lg">📸 From Image</div>
+                <div className="text-xs opacity-70">AI face extraction</div>
+              </div>
+            </Button>
+
+            <Button
+              variant={creationMode === 'text' ? 'default' : 'outline'}
+              className="h-32 flex-col gap-3 p-6 hover:scale-105 transition-transform"
+              onClick={() => setCreationMode('text')}
+            >
+              <Brain className="w-12 h-12" />
+              <div className="text-center">
+                <div className="font-bold text-lg">🤖 From Text</div>
+                <div className="text-xs opacity-70">AI description</div>
+              </div>
+            </Button>
+
+            <Button
+              variant={creationMode === 'preset' ? 'default' : 'outline'}
+              className="h-32 flex-col gap-3 p-6 hover:scale-105 transition-transform"
+              onClick={() => setCreationMode('preset')}
+            >
+              <Users className="w-12 h-12" />
+              <div className="text-center">
+                <div className="font-bold text-lg">👥 Ready-Made</div>
+                <div className="text-xs opacity-70">Quick templates</div>
+              </div>
+            </Button>
+          </div>
+
+          <Card className="p-6 card-gradient">
+            {creationMode === 'image' && (
+              <div className="space-y-4">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold mb-2">Upload Your Photo</h2>
+                  <p className="text-muted-foreground">AI will extract your facial features and create a 3D avatar</p>
+                </div>
+                <ImageToAvatarConverter onConfigGenerated={(config) => {
+                  setAvatarConfig({ ...avatarConfig, ...config });
+                  setCreationMode('manual');
+                  toast.success('Avatar generated! Customize further.');
+                }} />
+              </div>
+            )}
+            
+            {creationMode === 'text' && (
+              <div className="space-y-4">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold mb-2 flex items-center justify-center gap-2">
+                    <Sparkles className="w-6 h-6 text-primary" />
+                    Describe Your Avatar
+                  </h2>
+                  <p className="text-muted-foreground">AI will generate your avatar based on your description</p>
+                </div>
+                
+                <div className="space-y-4 max-w-2xl mx-auto">
+                  <Textarea 
+                    placeholder="Example: Athletic Indian male with short curly hair wearing a formal suit, confident expression..."
+                    value={textPrompt}
+                    onChange={(e) => setTextPrompt(e.target.value)}
+                    className="min-h-32 text-lg"
+                  />
+                  
+                  <Button 
+                    onClick={handleTextGeneration}
+                    disabled={generatingFromText}
+                    size="lg"
+                    className="w-full"
+                  >
+                    {generatingFromText ? (
+                      <>
+                        <Zap className="w-5 h-5 mr-2 animate-pulse" />
+                        Generating Avatar...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-5 h-5 mr-2" />
+                        Generate Avatar
+                      </>
+                    )}
+                  </Button>
+                  
+                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    <div className="p-3 bg-muted/50 rounded-lg">
+                      💡 <strong>Tip:</strong> Mention gender, ethnicity, build, hair, clothing
+                    </div>
+                    <div className="p-3 bg-muted/50 rounded-lg">
+                      🎯 <strong>Example:</strong> "Female doctor with glasses and lab coat"
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {creationMode === 'preset' && (
+              <div>
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold mb-2">Choose a Template</h2>
+                  <p className="text-muted-foreground">Start with a ready-made avatar and customize it</p>
+                </div>
+                <ReadyMadeAvatarGallery onAvatarSelected={(config) => {
+                  setAvatarConfig({ ...avatarConfig, ...config });
+                  setCreationMode('manual');
+                  toast.success('Preset loaded! Customize further.');
+                }} />
+              </div>
+            )}
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Manual Editor View
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto px-6 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                🎨 Avatar Studio
+              </h1>
+              <Badge variant="outline" className="gap-1">
+                <Sparkles className="w-3 h-3" />
+                Realistic 3D Creation
               </Badge>
-              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                <Eye className="w-3 h-3 mr-1" />
-                Real-time 3D
-              </Badge>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>
+                <Home className="w-4 h-4 mr-2" />
+                Dashboard
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleReset}>
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Reset
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExport}>
+                <Download className="w-4 h-4 mr-2" />
+                Export
+              </Button>
+              <Button size="sm" onClick={handleSave} disabled={saving}>
+                <Save className="w-4 h-4 mr-2" />
+                {saving ? 'Saving...' : 'Save'}
+              </Button>
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          {/* 3D Preview Section */}
-          <Card className="xl:col-span-2 shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Camera className="w-5 h-5 text-blue-600" />
-                  <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    3D Avatar Preview
-                  </span>
-                </div>
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span className="text-xs text-gray-500">Live</span>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Upload Button */}
-              <div className="mb-4">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".glb,.fbx,.gltf,.gif"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-                <Button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  {isUploading ? 'Uploading...' : 'Upload 3D Model (.glb, .fbx, .gltf, .gif)'}
-                </Button>
-                {uploadedModelUrl && (
-                  <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
-                    <Eye className="w-3 h-3" />
-                    Model uploaded successfully
-                  </p>
-                )}
+      <div className="container mx-auto p-6">
+        <div className="grid grid-cols-12 gap-6">
+          <div className="col-span-3 space-y-4 max-h-[calc(100vh-120px)] overflow-y-auto pr-2">
+            <Card className="card-gradient p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <User className="w-5 h-5 text-primary" />
+                <h3 className="font-bold">Body & Anatomy</h3>
               </div>
-              
-              <div className="aspect-video bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-xl overflow-hidden relative">
-                <Canvas shadows>
-                  <PerspectiveCamera makeDefault position={[0, 0, 5]} />
-                  <OrbitControls 
-                    enablePan={true} 
-                    enableZoom={true} 
-                    enableRotate={true}
-                    minDistance={2}
-                    maxDistance={10}
-                    target={[0, 0.5, 0]}
-                  />
-                  
-                  {/* Enhanced Lighting Setup */}
-                  <Environment preset="studio" />
-                  <ambientLight intensity={0.3} />
-                  <directionalLight 
-                    position={[5, 5, 5]} 
-                    intensity={1.5} 
-                    castShadow
-                    shadow-mapSize-width={2048}
-                    shadow-mapSize-height={2048}
-                  />
-                  <pointLight position={[-5, 3, 2]} intensity={0.8} color="#ff9999" />
-                  <pointLight position={[5, -3, -2]} intensity={0.6} color="#9999ff" />
-                  
-                  {/* Ground plane for shadows */}
-                  <mesh receiveShadow position={[0, -2.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                    <planeGeometry args={[10, 10]} />
-                    <meshStandardMaterial color="#f0f0f0" transparent opacity={0.3} />
-                  </mesh>
-                  
-                  <Avatar3DPreview config={avatarConfig} />
-                </Canvas>
+              <BodyAnatomyPanel config={avatarConfig} onChange={handleConfigChange} />
+            </Card>
+          </div>
+
+          <div className="col-span-6 space-y-4">
+            <Card className="h-[calc(100vh-200px)] relative">
+              <Canvas shadows>
+                <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={45} />
+                <ambientLight intensity={0.6} />
+                <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
+                <spotLight position={[-10, -10, -5]} intensity={0.3} />
+                <pointLight position={[0, 5, 0]} intensity={0.4} />
                 
-                {/* Overlay Controls */}
-                <div className="absolute top-4 right-4 flex flex-col gap-2">
-                  <Button variant="outline" size="sm" className="bg-white/90 backdrop-blur-sm">
-                    <Layers className="w-3 h-3" />
-                  </Button>
-                </div>
-              </div>
-              
-              {/* Preview Controls */}
-              <div className="flex justify-between items-center mt-4">
+                <AdvancedAvatarPreview config={avatarConfig} />
+                
+                <OrbitControls 
+                  enablePan={false} 
+                  minDistance={2} 
+                  maxDistance={10}
+                  maxPolarAngle={Math.PI / 1.6}
+                />
+                <Environment preset="studio" />
+                <ContactShadows position={[0, -2.5, 0]} scale={8} blur={3} far={3} />
+              </Canvas>
+
+              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-2 bg-background/90 backdrop-blur-sm p-3 rounded-lg border">
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={resetAvatar}>
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Reset
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => document.getElementById('avatar-file-upload')?.click()}
+                    disabled={uploading}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {uploading ? 'Uploading...' : 'Upload'}
                   </Button>
-                  <Button variant="outline" size="sm">
-                    <Play className="w-4 h-4 mr-2" />
-                    Animate
-                  </Button>
+                  <input
+                    id="avatar-file-upload"
+                    type="file"
+                    accept=".png,.jpg,.jpeg,.gif,.glb,.fbx,.gltf"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
                 </div>
+                
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <Download className="w-4 h-4 mr-2" />
-                    Export GLB
+                  <Button variant="outline" size="sm" onClick={handleExport}>
+                    <Download className="w-4 h-4" />
                   </Button>
-                  <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700" size="sm">
+                  <Button size="sm" onClick={handleSave} disabled={saving}>
                     <Save className="w-4 h-4 mr-2" />
-                    Save Avatar
+                    {saving ? 'Saving...' : 'Save'}
                   </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Customization Panel */}
-          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2">
-                <Palette className="w-5 h-5 text-purple-600" />
-                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Customization
-                </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-5 mb-4">
-                  <TabsTrigger value="presets" className="flex items-center gap-1 text-xs">
-                    <Users className="w-3 h-3" />
-                    Presets
-                  </TabsTrigger>
-                  <TabsTrigger value="body" className="flex items-center gap-1 text-xs">
-                    <User className="w-3 h-3" />
-                    Body
-                  </TabsTrigger>
-                  <TabsTrigger value="face" className="flex items-center gap-1 text-xs">
-                    <Smile className="w-3 h-3" />
-                    Face
-                  </TabsTrigger>
-                  <TabsTrigger value="style" className="flex items-center gap-1 text-xs">
-                    <Shirt className="w-3 h-3" />
-                    Style
-                  </TabsTrigger>
-                  <TabsTrigger value="image" className="flex items-center gap-1 text-xs">
-                    <Image className="w-3 h-3" />
-                    Photo
-                  </TabsTrigger>
-                </TabsList>
+              {(avatarConfig.model_url || avatarConfig.thumbnail_url) && (
+                <div className="absolute top-4 right-4 p-2 bg-green-500/90 backdrop-blur-sm text-white rounded-lg text-xs font-medium flex items-center gap-2">
+                  <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                  Custom avatar active
+                </div>
+              )}
+            </Card>
 
-                <TabsContent value="presets" className="space-y-4">
-                  <PresetAvatars 
-                    onPresetSelect={(preset) => setAvatarConfig(preset)}
-                  />
-                </TabsContent>
+            <div className="grid grid-cols-3 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCreationMode('image')}
+                className="flex items-center gap-2"
+              >
+                <Camera className="w-4 h-4" />
+                From Image
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCreationMode('text')}
+                className="flex items-center gap-2"
+              >
+                <Brain className="w-4 h-4" />
+                From Text
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCreationMode('preset')}
+                className="flex items-center gap-2"
+              >
+                <Users className="w-4 h-4" />
+                Presets
+              </Button>
+            </div>
+          </div>
 
-                <TabsContent value="body" className="space-y-4">
-                  <AvatarBodyCustomizer 
-                    config={avatarConfig} 
-                    onConfigChange={handleConfigChange}
-                  />
-                </TabsContent>
-
-                <TabsContent value="face" className="space-y-4">
-                  <AvatarFaceCustomizer 
-                    config={avatarConfig}
-                    onConfigChange={handleConfigChange}
-                  />
-                </TabsContent>
-
-                <TabsContent value="style" className="space-y-4">
-                  <div className="space-y-4">
-                    <AvatarClothingCustomizer 
-                      config={avatarConfig}
-                      onConfigChange={handleConfigChange}
-                    />
-                    <PoseSelector 
-                      currentPose={avatarConfig.pose}
-                      onPoseSelect={(pose) => handleConfigChange('', 'pose', pose)}
-                    />
-                    <ExpressionPanel 
-                      currentExpression={avatarConfig.expression}
-                      onExpressionSelect={(expression) => handleConfigChange('', 'expression', expression)}
-                    />
+          <div className="col-span-3 space-y-4 max-h-[calc(100vh-120px)] overflow-y-auto pl-2">
+            <Tabs defaultValue="face" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="face"><Eye className="w-4 h-4" /></TabsTrigger>
+                <TabsTrigger value="hair"><Palette className="w-4 h-4" /></TabsTrigger>
+                <TabsTrigger value="skin"><User className="w-4 h-4" /></TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="face" className="space-y-4">
+                <Card className="card-gradient p-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Eye className="w-5 h-5 text-primary" />
+                    <h3 className="font-bold">Facial Features</h3>
                   </div>
-                </TabsContent>
-
-                <TabsContent value="image" className="space-y-4">
-                  <ImageToAvatar 
-                    onImageProcessed={(faceData) => {
-                      handleConfigChange('face', 'skinTone', faceData.skinTone);
-                      handleConfigChange('face', 'eyeColor', faceData.eyeColor);
-                      if (faceData.hairColor) {
-                        handleConfigChange('face', 'hairColor', faceData.hairColor);
-                      }
-                    }}
-                  />
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
+                  <FacialFeaturesPanel config={avatarConfig} onChange={handleConfigChange} />
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="hair" className="space-y-4">
+                <Card className="card-gradient p-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Palette className="w-5 h-5 text-primary" />
+                    <h3 className="font-bold">Hair Customization</h3>
+                  </div>
+                  <HairCustomizationPanel config={avatarConfig} onChange={handleConfigChange} />
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="skin" className="space-y-4">
+                <Card className="card-gradient p-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <User className="w-5 h-5 text-primary" />
+                    <h3 className="font-bold">Skin & Ethnicity</h3>
+                  </div>
+                  <SkinEthnicityControls config={avatarConfig} onChange={handleConfigChange} />
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
 
-        {/* Export & Integration Options */}
-        <Card className="mt-6 shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Download className="w-5 h-5 text-green-600" />
-              <span className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-                Export & Integration
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Button variant="outline" className="h-16 flex flex-col items-center gap-2">
-                <Download className="w-5 h-5" />
-                <span className="text-xs">Export GLTF</span>
-              </Button>
-              <Button variant="outline" className="h-16 flex flex-col items-center gap-2">
-                <Download className="w-5 h-5" />
-                <span className="text-xs">Export FBX</span>
-              </Button>
-              <Button variant="outline" className="h-16 flex flex-col items-center gap-2">
-                <Download className="w-5 h-5" />
-                <span className="text-xs">Export OBJ</span>
-              </Button>
-              <Button className="h-16 flex flex-col items-center gap-2 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700">
-                <Save className="w-5 h-5" />
-                <span className="text-xs">Save Profile</span>
-              </Button>
+        <div className="grid grid-cols-2 gap-6 mt-6">
+          <Card className="card-gradient p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Shirt className="w-5 h-5 text-primary" />
+              <h3 className="font-bold">Clothing & Accessories</h3>
             </div>
-            
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-              <h4 className="font-medium text-blue-900 mb-2">Integration Ready</h4>
-              <p className="text-blue-700 text-sm">
-                Your avatar is optimized for VR/AR, games, metaverse platforms, and web applications. 
-                Export in your preferred format and integrate seamlessly.
-              </p>
+            <ClothingStylePanel config={avatarConfig} onChange={handleConfigChange} />
+          </Card>
+
+          <Card className="card-gradient p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Activity className="w-5 h-5 text-primary" />
+              <h3 className="font-bold">Poses & Expressions</h3>
             </div>
-          </CardContent>
-        </Card>
+            <PoseExpressionPanel config={avatarConfig} onChange={handleConfigChange} />
+          </Card>
+        </div>
       </div>
     </div>
   );
