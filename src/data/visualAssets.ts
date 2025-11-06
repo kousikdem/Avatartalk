@@ -1,9 +1,9 @@
 // Visual asset library data for avatar customization
 
 export const bodyTypeAssets = [
-  { id: 'slim', name: 'Slim', thumbnail: '/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png', category: 'Body Type' },
-  { id: 'athletic', name: 'Athletic', thumbnail: '/lovable-uploads/d6afa97d-dc19-4ce0-9426-ba291ed29f50.png', category: 'Body Type' },
-  { id: 'muscular', name: 'Muscular', thumbnail: '/lovable-uploads/fd5c2456-b137-4f5e-92b6-91e67819b497.png', category: 'Body Type' },
+  { id: 'slim', name: 'Slim', thumbnail: '', category: 'Body Type' },
+  { id: 'athletic', name: 'Athletic', thumbnail: '', category: 'Body Type' },
+  { id: 'muscular', name: 'Muscular', thumbnail: '', category: 'Body Type' },
   { id: 'average', name: 'Average', thumbnail: '', category: 'Body Type' },
   { id: 'heavy', name: 'Heavy', thumbnail: '', category: 'Body Type' },
   { id: 'curvy', name: 'Curvy', thumbnail: '', category: 'Body Type' },

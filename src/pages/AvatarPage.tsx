@@ -33,6 +33,7 @@ const AvatarPage: React.FC = () => {
   const [creationMode, setCreationMode] = useState<'manual' | 'image' | 'text' | 'preset'>('manual');
   const [textPrompt, setTextPrompt] = useState('');
   const [generatingFromText, setGeneratingFromText] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'glb' | 'fbx' | 'gltf' | 'gif' | 'json'>('json');
   
   const [avatarConfig, setAvatarConfig] = useState({
     gender: 'male',
@@ -114,9 +115,11 @@ const AvatarPage: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'model/gltf-binary', 'application/octet-stream'];
-    if (!validTypes.includes(file.type) && !file.name.match(/\.(glb|fbx|gltf|gif|png|jpg|jpeg)$/i)) {
-      toast.error('Please upload GLB, FBX, GLTF, GIF, PNG, or JPG');
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'model/gltf-binary', 'application/octet-stream', 'application/json'];
+    const validExtensions = /\.(glb|fbx|gltf|gif|png|jpg|jpeg|json)$/i;
+    
+    if (!validTypes.includes(file.type) && !file.name.match(validExtensions)) {
+      toast.error('Please upload GLB, FBX, GLTF, GIF, PNG, JPG, or JSON');
       return;
     }
 
@@ -124,6 +127,26 @@ const AvatarPage: React.FC = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Please log in to upload avatars');
+
+      // Handle JSON configuration import
+      if (file.name.match(/\.json$/i)) {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          try {
+            const config = JSON.parse(e.target?.result as string);
+            setAvatarConfig({ ...avatarConfig, ...config });
+            await saveConfiguration({ ...avatarConfig, ...config });
+            toast.success('Avatar configuration imported!');
+          } catch (error) {
+            console.error('JSON parse error:', error);
+            toast.error('Invalid JSON configuration');
+          } finally {
+            setUploading(false);
+          }
+        };
+        reader.readAsText(file);
+        return;
+      }
 
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
@@ -147,12 +170,35 @@ const AvatarPage: React.FC = () => {
       setAvatarConfig(updatedConfig);
       await saveConfiguration(updatedConfig);
       
+      // Update both profile avatar_url and profile_pic_url for full sync
       await supabase
         .from('profiles')
-        .update({ avatar_url: publicUrl })
+        .update({ 
+          avatar_url: publicUrl,
+          profile_pic_url: isModel ? avatarConfig.thumbnail_url : publicUrl
+        })
         .eq('id', user.id);
+
+      // Update active avatar configuration
+      const { data: configs } = await supabase
+        .from('avatar_configurations')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .single();
+
+      if (configs) {
+        await supabase
+          .from('avatar_configurations')
+          .update({
+            model_url: isModel ? publicUrl : updatedConfig.model_url,
+            thumbnail_url: isModel ? updatedConfig.thumbnail_url : publicUrl,
+            configuration_data: updatedConfig
+          })
+          .eq('id', configs.id);
+      }
       
-      toast.success('Avatar uploaded and set successfully!');
+      toast.success('Avatar uploaded and linked to all previews!');
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('Failed to upload avatar');
@@ -240,16 +286,18 @@ const AvatarPage: React.FC = () => {
     toast.success('Avatar reset');
   };
 
-  const handleExport = async () => {
+  const handleExport = async (format?: string) => {
+    const exportFmt = format || exportFormat;
     try {
-      if (avatarConfig.model_url) {
+      // If model URL exists and requesting model format
+      if (avatarConfig.model_url && ['glb', 'fbx', 'gltf'].includes(exportFmt)) {
         const response = await fetch(avatarConfig.model_url);
         if (!response.ok) throw new Error('Failed to download');
         
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        const filename = avatarConfig.model_url.split('/').pop() || 'avatar.glb';
+        const filename = avatarConfig.avatarName.replace(/\s+/g, '_') + '.' + exportFmt;
         a.href = url;
         a.download = filename;
         document.body.appendChild(a);
@@ -257,12 +305,110 @@ const AvatarPage: React.FC = () => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         
-        toast.success('Avatar downloaded!');
+        toast.success(`Avatar exported as ${exportFmt.toUpperCase()}!`);
+      } else if (avatarConfig.thumbnail_url && exportFmt === 'gif') {
+        // Export thumbnail as GIF
+        const response = await fetch(avatarConfig.thumbnail_url);
+        if (!response.ok) throw new Error('Failed to download');
+        
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${avatarConfig.avatarName.replace(/\s+/g, '_')}.gif`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        toast.success('Avatar exported as GIF!');
       } else {
+        // Export as JSON configuration with all morph and material properties
         const exportData = {
-          ...avatarConfig,
+          version: '2.0',
           exportDate: new Date().toISOString(),
-          version: '1.0'
+          avatarName: avatarConfig.avatarName,
+          format: 'json',
+          // Morph properties
+          morphology: {
+            gender: avatarConfig.gender,
+            age: avatarConfig.age,
+            ethnicity: avatarConfig.ethnicity,
+            height: avatarConfig.height,
+            weight: avatarConfig.weight,
+            muscle: avatarConfig.muscle,
+            fat: avatarConfig.fat,
+            bodyProportions: {
+              torsoLength: avatarConfig.torsoLength,
+              legLength: avatarConfig.legLength,
+              shoulderWidth: avatarConfig.shoulderWidth,
+              handSize: avatarConfig.handSize,
+              headSize: avatarConfig.headSize
+            }
+          },
+          // Facial morph properties
+          facialStructure: {
+            headShape: avatarConfig.headShape,
+            faceWidth: avatarConfig.faceWidth,
+            jawline: avatarConfig.jawline,
+            cheekbones: avatarConfig.cheekbones,
+            chinSize: avatarConfig.chinSize,
+            eyes: {
+              size: avatarConfig.eyeSize,
+              distance: avatarConfig.eyeDistance,
+              shape: avatarConfig.eyeShape,
+              color: avatarConfig.eyeColor
+            },
+            nose: {
+              size: avatarConfig.noseSize,
+              width: avatarConfig.noseWidth,
+              shape: avatarConfig.noseShape
+            },
+            mouth: {
+              width: avatarConfig.mouthWidth,
+              lipThickness: avatarConfig.lipThickness,
+              lipShape: avatarConfig.lipShape,
+              smileCurvature: avatarConfig.smileCurvature
+            },
+            ears: {
+              size: avatarConfig.earSize,
+              position: avatarConfig.earPosition,
+              shape: avatarConfig.earShape
+            }
+          },
+          // Material properties
+          materials: {
+            skin: {
+              tone: avatarConfig.skinTone,
+              texture: avatarConfig.skinTexture
+            },
+            hair: {
+              style: avatarConfig.hairStyle,
+              color: avatarConfig.hairColor,
+              length: avatarConfig.hairLength
+            },
+            facialHair: {
+              style: avatarConfig.facialHair,
+              color: avatarConfig.facialHairColor
+            }
+          },
+          // Clothing and accessories
+          clothing: {
+            top: avatarConfig.clothingTop,
+            bottom: avatarConfig.clothingBottom,
+            shoes: avatarConfig.shoes,
+            accessories: avatarConfig.accessories
+          },
+          // Animation properties
+          animation: {
+            expression: avatarConfig.currentExpression,
+            pose: avatarConfig.currentPose
+          },
+          // Asset URLs
+          assets: {
+            modelUrl: avatarConfig.model_url,
+            thumbnailUrl: avatarConfig.thumbnail_url
+          }
         };
         
         const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -275,7 +421,7 @@ const AvatarPage: React.FC = () => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         
-        toast.success('Configuration exported!');
+        toast.success('Configuration with all properties exported!');
       }
     } catch (error) {
       console.error('Export error:', error);
@@ -455,10 +601,27 @@ const AvatarPage: React.FC = () => {
                 <RotateCcw className="w-4 h-4 mr-2" />
                 Reset
               </Button>
-              <Button variant="outline" size="sm" onClick={handleExport}>
-                <Download className="w-4 h-4 mr-2" />
-                Export
-              </Button>
+              <div className="relative group">
+                <Button variant="outline" size="sm" onClick={() => handleExport()}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export {exportFormat.toUpperCase()}
+                </Button>
+                <div className="absolute right-0 top-full mt-1 hidden group-hover:block bg-popover border rounded-md shadow-lg p-2 z-50 min-w-[120px]">
+                  <div className="text-xs font-medium mb-2 text-muted-foreground">Format:</div>
+                  {['json', 'glb', 'fbx', 'gltf', 'gif'].map((fmt) => (
+                    <button
+                      key={fmt}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExportFormat(fmt as any);
+                      }}
+                      className={`block w-full text-left px-2 py-1 text-sm rounded hover:bg-accent ${exportFormat === fmt ? 'bg-accent' : ''}`}
+                    >
+                      {fmt.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <Button size="sm" onClick={handleSave} disabled={saving}>
                 <Save className="w-4 h-4 mr-2" />
                 {saving ? 'Saving...' : 'Save'}
@@ -515,14 +678,14 @@ const AvatarPage: React.FC = () => {
                   <input
                     id="avatar-file-upload"
                     type="file"
-                    accept=".png,.jpg,.jpeg,.gif,.glb,.fbx,.gltf"
+                    accept=".png,.jpg,.jpeg,.gif,.glb,.fbx,.gltf,.json"
                     className="hidden"
                     onChange={handleFileUpload}
                   />
                 </div>
                 
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={handleExport}>
+                  <Button variant="outline" size="sm" onClick={() => handleExport()}>
                     <Download className="w-4 h-4" />
                   </Button>
                   <Button size="sm" onClick={handleSave} disabled={saving}>
