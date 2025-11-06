@@ -101,47 +101,46 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
 
       if (!targetUserId) return;
 
-    // Subscribe to avatar_configurations changes
-    const avatarChannel = supabase
-      .channel('avatar-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'avatar_configurations',
-          filter: `user_id=eq.${targetUserId}`
-        },
-        () => {
-          fetchAvatarData();
-        }
-      )
-      .subscribe();
-
-    // Subscribe to profiles changes
-    const profileChannel = supabase
-      .channel('profile-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'profiles',
-          filter: `id=eq.${targetUserId}`
-        },
-        () => {
-          fetchAvatarData();
-        }
-      )
-      .subscribe();
+      // Subscribe to avatar_configurations changes with real-time sync
+      const avatarChannel = supabase
+        .channel(`avatar-realtime-${targetUserId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'avatar_configurations',
+            filter: `user_id=eq.${targetUserId}`
+          },
+          (payload) => {
+            console.log('Avatar config changed:', payload);
+            fetchAvatarData();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'profiles',
+            filter: `id=eq.${targetUserId}`
+          },
+          (payload) => {
+            console.log('Profile updated:', payload);
+            fetchAvatarData();
+          }
+        )
+        .subscribe();
 
       return () => {
         supabase.removeChannel(avatarChannel);
-        supabase.removeChannel(profileChannel);
       };
     };
 
-    setupSubscriptions();
+    const cleanup = setupSubscriptions();
+    return () => {
+      cleanup.then(fn => fn && fn());
+    };
   }, [userId]);
 
   const getAvatarDisplay = () => {

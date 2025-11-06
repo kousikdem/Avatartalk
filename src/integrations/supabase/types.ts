@@ -59,6 +59,7 @@ export type Database = {
           cheekbones: number
           clothing_bottom: string | null
           clothing_top: string | null
+          configuration_data: Json | null
           created_at: string
           current_expression: string
           current_pose: string
@@ -104,6 +105,7 @@ export type Database = {
           cheekbones?: number
           clothing_bottom?: string | null
           clothing_top?: string | null
+          configuration_data?: Json | null
           created_at?: string
           current_expression?: string
           current_pose?: string
@@ -149,6 +151,7 @@ export type Database = {
           cheekbones?: number
           clothing_bottom?: string | null
           clothing_top?: string | null
+          configuration_data?: Json | null
           created_at?: string
           current_expression?: string
           current_pose?: string

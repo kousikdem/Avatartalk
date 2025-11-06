@@ -164,6 +164,61 @@ export const useAvatarConfigurations = () => {
         return;
       }
 
+      // Prepare complete configuration data
+      const configurationData = {
+        morphology: {
+          height: config.height,
+          weight: config.weight,
+          muscle: config.muscle,
+          fat: config.fat,
+          torsoLength: config.torsoLength,
+          legLength: config.legLength,
+          shoulderWidth: config.shoulderWidth,
+          handSize: config.handSize,
+        },
+        facialStructure: {
+          headSize: config.headSize,
+          headShape: config.headShape,
+          faceWidth: config.faceWidth,
+          jawline: config.jawline,
+          cheekbones: config.cheekbones,
+          eyeSize: config.eyeSize,
+          eyeDistance: config.eyeDistance,
+          eyeShape: config.eyeShape,
+          eyeColor: config.eyeColor,
+          noseSize: config.noseSize,
+          noseWidth: config.noseWidth,
+          noseShape: config.noseShape,
+          mouthWidth: config.mouthWidth,
+          lipThickness: config.lipThickness,
+          lipShape: config.lipShape,
+          earSize: config.earSize,
+          earPosition: config.earPosition,
+          earShape: config.earShape,
+        },
+        materials: {
+          skinTone: config.skinTone,
+          skinTexture: config.skinTexture,
+          hairColor: config.hairColor,
+          facialHairColor: config.facialHairColor,
+        },
+        clothing: {
+          top: config.clothingTop,
+          bottom: config.clothingBottom,
+          shoes: config.shoes,
+          accessories: config.accessories || [],
+        },
+        animation: {
+          currentPose: config.currentPose,
+          currentExpression: config.currentExpression,
+        },
+        assets: {
+          hairStyle: config.hairStyle,
+          hairLength: config.hairLength,
+          facialHair: config.facialHair,
+        },
+      };
+
       const dbConfig = {
         user_id: user.id,
         avatar_name: config.avatarName || 'My Avatar',
@@ -204,6 +259,7 @@ export const useAvatarConfigurations = () => {
         current_expression: config.currentExpression || 'neutral',
         model_url: config.model_url || null,
         thumbnail_url: config.thumbnail_url || null,
+        configuration_data: configurationData,
         is_active: true
       };
 

@@ -115,62 +115,87 @@ const AvatarPage: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'model/gltf-binary', 'application/octet-stream', 'application/json'];
-    const validExtensions = /\.(glb|fbx|gltf|gif|png|jpg|jpeg|json)$/i;
-    
-    if (!validTypes.includes(file.type) && !file.name.match(validExtensions)) {
-      toast.error('Please upload GLB, FBX, GLTF, GIF, PNG, JPG, or JSON');
+    if (!file.name.match(/\.(glb|fbx|gltf|gif|png|jpg|jpeg|json)$/i)) {
+      toast.error('Please upload .glb, .fbx, .gltf, .gif, .png, .jpg, or .json file');
+      return;
+    }
+
+    // Handle JSON configuration import
+    if (file.name.endsWith('.json')) {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const jsonConfig = JSON.parse(e.target?.result as string);
+          setAvatarConfig(prev => ({ ...prev, ...jsonConfig }));
+          await saveConfiguration({ ...avatarConfig, ...jsonConfig });
+          toast.success('Configuration imported from JSON!');
+        } catch (error) {
+          console.error('JSON parse error:', error);
+          toast.error('Invalid JSON configuration file');
+        }
+      };
+      reader.readAsText(file);
       return;
     }
 
     setUploading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Please log in to upload avatars');
-
-      // Handle JSON configuration import
-      if (file.name.match(/\.json$/i)) {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          try {
-            const config = JSON.parse(e.target?.result as string);
-            setAvatarConfig({ ...avatarConfig, ...config });
-            await saveConfiguration({ ...avatarConfig, ...config });
-            toast.success('Avatar configuration imported!');
-          } catch (error) {
-            console.error('JSON parse error:', error);
-            toast.error('Invalid JSON configuration');
-          } finally {
-            setUploading(false);
-          }
-        };
-        reader.readAsText(file);
+      if (!user) {
+        toast.error('Please log in to upload avatars');
         return;
       }
 
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-      
+      const isImage = file.name.match(/\.(png|jpg|jpeg|gif)$/i);
+      const bucket = isImage ? 'thumbnails' : 'profile-pictures';
+      const fileExt = file.name.substring(file.name.lastIndexOf('.'));
+      const fileName = `${user.id}/avatar_${Date.now()}${fileExt}`;
+
       const { error: uploadError } = await supabase.storage
-        .from('profile-pictures')
-        .upload(fileName, file, { cacheControl: '3600', upsert: false });
+        .from(bucket)
+        .upload(fileName, file);
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('profile-pictures')
+        .from(bucket)
         .getPublicUrl(fileName);
+
+      // Compress file in background
+      const compressFile = async () => {
+        try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          const token = sessionData?.session?.access_token;
+          if (!token) return;
+
+          await fetch('https://hnxnvdzrwbtmcohdptfq.supabase.co/functions/v1/avatar-file-compress', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              filePath: fileName,
+              bucket,
+              format: fileExt.replace('.', ''),
+            }),
+          });
+        } catch (error) {
+          console.error('Compression error:', error);
+        }
+      };
+      compressFile();
 
       const isModel = file.name.match(/\.(glb|fbx|gltf)$/i);
       const updatedConfig = {
         ...avatarConfig,
-        [isModel ? 'model_url' : 'thumbnail_url']: publicUrl
+        [isModel ? 'model_url' : 'thumbnail_url']: publicUrl,
+        configuration_data: avatarConfig
       };
       
       setAvatarConfig(updatedConfig);
       await saveConfiguration(updatedConfig);
       
-      // Update both profile avatar_url and profile_pic_url for full sync
       await supabase
         .from('profiles')
         .update({ 
@@ -179,7 +204,6 @@ const AvatarPage: React.FC = () => {
         })
         .eq('id', user.id);
 
-      // Update active avatar configuration
       const { data: configs } = await supabase
         .from('avatar_configurations')
         .select('id')
