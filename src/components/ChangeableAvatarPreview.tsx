@@ -147,11 +147,13 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
     // Priority order for avatar display:
     // 1. Custom uploaded thumbnail from active avatar configuration
     if (avatarData?.thumbnail_url) return avatarData.thumbnail_url;
-    // 2. Linked avatar_url from profile (pointing to avatar_configurations)
+    // 2. Custom uploaded model URL
+    if (avatarData?.model_url) return avatarData.model_url;
+    // 3. Linked avatar_url from profile (pointing to avatar_configurations)
     if (profileData?.avatar_url) return profileData.avatar_url;
-    // 3. Profile picture URL
+    // 4. Profile picture URL
     if (profileData?.profile_pic_url) return profileData.profile_pic_url;
-    // 4. Fallback to default avatar image
+    // 5. Fallback to default avatar image
     return '/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png';
   };
 
