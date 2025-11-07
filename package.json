@@ -52,6 +52,7 @@
     "embla-carousel-react": "^8.3.0",
     "file-saver": "^2.0.5",
     "framer-motion": "^12.19.1",
+    "gifshot": "^0.4.5",
     "input-otp": "^1.2.4",
     "jspdf": "^2.5.2",
     "lucide-react": "^0.462.0",
@@ -67,6 +68,7 @@
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.179.1",
+    "three-stdlib": "^2.36.0",
     "vaul": "^0.9.3",
     "xlsx": "^0.18.5",
     "zod": "^3.23.8"
