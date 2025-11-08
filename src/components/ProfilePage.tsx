@@ -489,7 +489,7 @@ const ProfilePage: React.FC = () => {
       timestamp: new Date().toISOString(),
       sender: 'user',
       senderName: currentUser?.email?.split('@')[0] || 'Guest',
-      senderAvatar: currentUser?.user_metadata?.avatar_url,
+      senderAvatar: currentUser?.user_metadata?.profile_pic_url || currentUser?.user_metadata?.avatar_url,
       isVoiceMessage: isVoiceInput,
       voiceTranscript: isVoiceInput ? messageContent : undefined
     };

@@ -21,12 +21,12 @@ export const useCustomAvatarUpload = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Validate file type
-      const validFormats = ['.glb', '.gltf', '.fbx', '.obj'];
+      // Validate file type - support ALL avatar formats
+      const validFormats = ['.glb', '.gltf', '.fbx', '.obj', '.json', '.gif', '.png', '.jpg', '.jpeg'];
       const fileExt = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
       
       if (!validFormats.includes(fileExt)) {
-        throw new Error('Invalid file format. Supported: GLB, GLTF, FBX, OBJ');
+        throw new Error(`Invalid file format. Supported: ${validFormats.join(', ').toUpperCase()}`);
       }
 
       setProgress(30);
@@ -51,12 +51,15 @@ export const useCustomAvatarUpload = () => {
 
       setProgress(80);
 
-      // Generate thumbnail (for now, use placeholder - can be enhanced with 3D rendering)
-      const thumbnailUrl = '/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png';
+      // For image formats, use as thumbnail; for 3D formats, use default thumbnail
+      const isImageFormat = ['.gif', '.png', '.jpg', '.jpeg'].includes(fileExt);
+      const thumbnailUrl = isImageFormat 
+        ? urlData.publicUrl 
+        : '/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png';
 
       setProgress(100);
 
-      toast.success('Custom avatar uploaded successfully!');
+      toast.success(`Custom avatar uploaded successfully! (${fileExt.toUpperCase()})`);
 
       return {
         model_url: urlData.publicUrl,
