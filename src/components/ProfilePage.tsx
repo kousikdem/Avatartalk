@@ -173,7 +173,7 @@ const ProfilePage: React.FC = () => {
     stopSpeech 
   } = useCoquiTTS();
 
-  // Initialize and load chat messages from localStorage
+  // Initialize and load chat messages - use profile_pic_url for chat avatar (2D)
   useEffect(() => {
     if (profile) {
       // No longer using localStorage for chat history
@@ -185,7 +185,7 @@ const ProfilePage: React.FC = () => {
           timestamp: new Date().toISOString(),
           sender: 'avatar',
           senderName: profile.display_name || profile.username,
-          senderAvatar: profile.profile_pic_url || profile.avatar_url
+          senderAvatar: profile.profile_pic_url
         }
       ];
       setChatMessages(initialMessages);
@@ -265,7 +265,7 @@ const ProfilePage: React.FC = () => {
     }
   }, [profile?.id]);
 
-  // Realtime subscriptions for profile data
+  // Optimized realtime subscriptions - only subscribe to critical updates
   useEffect(() => {
     if (!profile?.id) return;
 
@@ -274,7 +274,7 @@ const ProfilePage: React.FC = () => {
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'posts',
           filter: `user_id=eq.${profile.id}`
@@ -286,26 +286,7 @@ const ProfilePage: React.FC = () => {
       .on(
         'postgres_changes',
         {
-          event: '*',
-          schema: 'public',
-          table: 'products',
-          filter: `user_id=eq.${profile.id}`
-        },
-        async () => {
-          const { data } = await supabase
-            .from('products')
-            .select('*')
-            .eq('user_id', profile.id)
-            .eq('status', 'published')
-            .order('created_at', { ascending: false })
-            .limit(6);
-          if (data) setProducts(data);
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
+          event: 'UPDATE',
           schema: 'public',
           table: 'profiles',
           filter: `id=eq.${profile.id}`
@@ -316,43 +297,16 @@ const ProfilePage: React.FC = () => {
           if (data && data.length > 0) setProfile(data[0]);
         }
       )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'follows'
-        },
-        () => {
-          refetchFollows();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_stats',
-          filter: `user_id=eq.${profile.id}`
-        },
-        async () => {
-          const { data } = await supabase
-            .from('user_stats')
-            .select('*')
-            .eq('user_id', profile.id)
-            .maybeSingle();
-          if (data) setUserStats(data);
-        }
-      )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.id, fetchPosts, refetchFollows]);
+  }, [profile?.id, fetchPosts]);
 
   const fetchProfile = async () => {
     try {
+      setLoading(true);
       // First get the profile ID by username
       const { data: profileIdData, error: idError } = await supabase
         .from('profiles')
@@ -375,23 +329,27 @@ const ProfilePage: React.FC = () => {
       }
       
       const profileData = profileDataArray[0];
-
       setProfile(profileData);
 
-      // Now fetch related data using the profile ID
-      const [statsResponse, productsResponse, eventsResponse, avatarResponse, socialLinksResponse] = await Promise.all([
+      // Fetch only essential data initially - rest can load lazily
+      const [statsResponse, avatarResponse, socialLinksResponse] = await Promise.all([
         supabase.from('user_stats').select('*').eq('user_id', profileData.id).maybeSingle(),
-        supabase.from('products').select('*').eq('user_id', profileData.id).eq('status', 'published').order('created_at', { ascending: false }).limit(6),
-        supabase.from('events').select('*').eq('user_id', profileData.id).order('created_at', { ascending: false }).limit(6),
         supabase.from('avatar_configurations').select('*').eq('user_id', profileData.id).eq('is_active', true).maybeSingle(),
         supabase.from('social_links').select('*').eq('user_id', profileData.id).maybeSingle()
       ]);
 
       setUserStats(statsResponse.data);
-      setProducts(productsResponse.data || []);
-      setEvents(eventsResponse.data || []);
       setAvatarConfig(avatarResponse.data);
       setSocialLinks(socialLinksResponse.data);
+
+      // Load products and events lazily to improve initial load
+      supabase.from('products').select('*').eq('user_id', profileData.id).eq('status', 'published').order('created_at', { ascending: false }).limit(6).then(({data}) => {
+        if (data) setProducts(data);
+      });
+      
+      supabase.from('events').select('*').eq('user_id', profileData.id).order('created_at', { ascending: false }).limit(6).then(({data}) => {
+        if (data) setEvents(data);
+      });
 
       // Track profile visit (fire and forget)
       if (profileData.id !== currentUser?.id) {
@@ -515,14 +473,14 @@ const ProfilePage: React.FC = () => {
 
       const { response: aiResponse } = response.data;
 
-      // Add AI response
+      // Add AI response - use profile_pic_url for chat avatar (2D)
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         content: aiResponse,
         timestamp: new Date().toISOString(),
         sender: 'avatar',
         senderName: profile.display_name || profile.username || 'AI',
-        senderAvatar: profile.avatar_url || profile.profile_pic_url,
+        senderAvatar: profile.profile_pic_url,
         isVoiceMessage: false
       };
 
@@ -544,14 +502,14 @@ const ProfilePage: React.FC = () => {
     } catch (error) {
       console.error('Error generating AI response:', error);
       
-      // Add fallback response
+      // Add fallback response - use profile_pic_url for chat avatar (2D)
       const fallbackMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         content: "I'm Avatartalk personalized AI powered by Llama 3, and I'm having trouble responding right now. Please try again in a moment.",
         timestamp: new Date().toISOString(),
         sender: 'avatar',
         senderName: profile.display_name || profile.username || 'Avatartalk AI',
-        senderAvatar: profile.avatar_url || profile.profile_pic_url,
+        senderAvatar: profile.profile_pic_url,
         isVoiceMessage: false
       };
 
