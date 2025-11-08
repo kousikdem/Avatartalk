@@ -283,16 +283,16 @@ export const useAvatarConfigurations = () => {
 
       // Link avatar with profile and all previews
       const avatarId = result.data.id;
-      const thumbnailUrl = config.thumbnail_url || result.data.thumbnail_url || '/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png';
-      const modelUrl = config.model_url || result.data.model_url;
+      const avatarUrl = config.model_url || result.data.model_url || config.thumbnail_url || result.data.thumbnail_url;
       
-      // Update profile with avatar link - this will trigger real-time updates across all components
+      // Update profile with avatar link - ONLY update avatar_url, NOT profile_pic_url
+      // avatar_url = 3D avatar model/preview
+      // profile_pic_url = 2D profile picture (separate)
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ 
           avatar_id: avatarId,
-          avatar_url: thumbnailUrl,
-          profile_pic_url: thumbnailUrl,
+          avatar_url: avatarUrl,
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);

@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import * as THREE from 'three';
 import { GLTFExporter } from 'three-stdlib';
+// @ts-ignore - gltf-pipeline doesn't have types
+import gltfPipeline from 'gltf-pipeline';
 
 interface AvatarBuildOptions {
   format: 'json' | 'gif' | 'glb' | 'gltf' | 'fbx';
@@ -118,25 +120,45 @@ export const useAvatarBuilder = () => {
     return scene;
   };
 
-  const buildAvatarGLTF = async (config: any): Promise<ArrayBuffer> => {
+  const buildAvatarGLTF = async (config: any, binary: boolean = true): Promise<ArrayBuffer> => {
     const scene = buildAvatar3DScene(config);
     const exporter = new GLTFExporter();
 
     return new Promise((resolve, reject) => {
       exporter.parse(
         scene,
-        (result) => {
-          if (result instanceof ArrayBuffer) {
-            resolve(result);
-          } else {
-            // Convert JSON to ArrayBuffer
-            const json = JSON.stringify(result);
-            const buffer = new TextEncoder().encode(json);
-            resolve(buffer.buffer);
+        async (result) => {
+          try {
+            if (result instanceof ArrayBuffer) {
+              // Already binary GLB format
+              resolve(result);
+            } else {
+              // GLTF JSON format - optionally optimize with gltf-pipeline
+              if (binary) {
+                // Convert to GLB using gltf-pipeline
+                try {
+                  const glbResult = await gltfPipeline.gltfToGlb(result);
+                  resolve(glbResult.glb.buffer);
+                } catch (pipelineError) {
+                  console.warn('gltf-pipeline conversion failed, using fallback:', pipelineError);
+                  // Fallback: manual conversion
+                  const json = JSON.stringify(result);
+                  const buffer = new TextEncoder().encode(json);
+                  resolve(buffer.buffer);
+                }
+              } else {
+                // Return as JSON
+                const json = JSON.stringify(result);
+                const buffer = new TextEncoder().encode(json);
+                resolve(buffer.buffer);
+              }
+            }
+          } catch (error) {
+            reject(error);
           }
         },
         (error) => reject(error),
-        { binary: true }
+        { binary }
       );
     });
   };

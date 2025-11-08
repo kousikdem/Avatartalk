@@ -53,6 +53,7 @@
     "file-saver": "^2.0.5",
     "framer-motion": "^12.19.1",
     "gifshot": "^0.4.5",
+    "gltf-pipeline": "^4.3.0",
     "input-otp": "^1.2.4",
     "jspdf": "^2.5.2",
     "lucide-react": "^0.462.0",
