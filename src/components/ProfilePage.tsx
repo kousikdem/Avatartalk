@@ -210,8 +210,19 @@ const ProfilePage: React.FC = () => {
       const { data } = await supabase.auth.getUser();
       setCurrentUser(data.user);
       
-      // Create default avatar for new users
+      // Fetch visitor's profile data for profile_pic_url
       if (data.user) {
+        const { data: visitorProfileData } = await supabase
+          .from('profiles')
+          .select('profile_pic_url')
+          .eq('id', data.user.id)
+          .single();
+        
+        if (visitorProfileData) {
+          setVisitorProfile(visitorProfileData);
+        }
+        
+        // Create default avatar for new users
         await createDefaultForNewUsers();
       }
     };
@@ -702,9 +713,9 @@ const ProfilePage: React.FC = () => {
                 <div className="relative">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
                     <div className={`w-full h-full rounded-full ${isDarkTheme ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center overflow-hidden`}>
-                       {profile?.profile_pic_url || profile?.avatar_url ? (
+                       {profile?.profile_pic_url ? (
                          <img 
-                           src={profile.profile_pic_url || profile.avatar_url} 
+                           src={profile.profile_pic_url} 
                            alt={profileData.displayName}
                            className="w-full h-full object-cover"
                          />
@@ -738,7 +749,7 @@ const ProfilePage: React.FC = () => {
                 </Button>
                 
                 {/* Visitor/User Profile Button - Navigate to Dashboard */}
-                {currentUser && (
+                {currentUser && visitorProfile && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -748,9 +759,9 @@ const ProfilePage: React.FC = () => {
                   >
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[1px]">
                       <div className={`w-full h-full rounded-full ${isDarkTheme ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center overflow-hidden`}>
-                        {currentUser?.user_metadata?.avatar_url ? (
+                        {visitorProfile?.profile_pic_url ? (
                           <img 
-                            src={currentUser.user_metadata.avatar_url} 
+                            src={visitorProfile.profile_pic_url} 
                             alt="Your Profile"
                             className="w-full h-full object-cover"
                           />
