@@ -128,6 +128,7 @@ const ProfilePage: React.FC = () => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isTalking, setIsTalking] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUserProfile, setCurrentUserProfile] = useState<Profile | null>(null);
   const [topChatMessage, setTopChatMessage] = useState('');
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
@@ -210,8 +211,19 @@ const ProfilePage: React.FC = () => {
       const { data } = await supabase.auth.getUser();
       setCurrentUser(data.user);
       
-      // Create default avatar for new users
+      // Fetch current user's profile for profile_pic_url
       if (data.user) {
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('id, username, display_name, bio, avatar_url, profile_pic_url, profession')
+          .eq('id', data.user.id)
+          .single();
+        
+        if (userProfile) {
+          setCurrentUserProfile(userProfile);
+        }
+        
+        // Create default avatar for new users
         await createDefaultForNewUsers();
       }
     };
@@ -702,9 +714,9 @@ const ProfilePage: React.FC = () => {
                 <div className="relative">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
                     <div className={`w-full h-full rounded-full ${isDarkTheme ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center overflow-hidden`}>
-                       {profile?.profile_pic_url || profile?.avatar_url ? (
+                       {profile?.profile_pic_url ? (
                          <img 
-                           src={profile.profile_pic_url || profile.avatar_url} 
+                           src={profile.profile_pic_url} 
                            alt={profileData.displayName}
                            className="w-full h-full object-cover"
                          />
@@ -748,9 +760,9 @@ const ProfilePage: React.FC = () => {
                   >
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[1px]">
                       <div className={`w-full h-full rounded-full ${isDarkTheme ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center overflow-hidden`}>
-                        {currentUser?.user_metadata?.avatar_url ? (
+                        {currentUserProfile?.profile_pic_url ? (
                           <img 
-                            src={currentUser.user_metadata.avatar_url} 
+                            src={currentUserProfile.profile_pic_url} 
                             alt="Your Profile"
                             className="w-full h-full object-cover"
                           />
