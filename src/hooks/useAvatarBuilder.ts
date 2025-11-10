@@ -233,12 +233,7 @@ export const useAvatarBuilder = () => {
     }
   };
 
-  const validateFormat = (format: string): boolean => {
-    const validFormats = ['json', 'gif', 'glb', 'gltf', 'fbx', 'obj'];
-    return validFormats.includes(format.toLowerCase());
-  };
-
-  const buildAndExport = async (config: any, options: AvatarBuildOptions, canvas?: HTMLCanvasElement): Promise<string> => {
+  const buildAndExport = async (config: any, options: AvatarBuildOptions, canvas?: HTMLCanvasElement) => {
     setBuilding(true);
     setProgress(0);
 
@@ -246,30 +241,23 @@ export const useAvatarBuilder = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      if (!validateFormat(options.format)) {
-        throw new Error(`Invalid format: ${options.format}`);
-      }
-
       setProgress(20);
       let fileBlob: Blob;
       let fileName: string;
-      let exportUrlField: string;
 
       switch (options.format) {
         case 'json':
           const jsonContent = await buildAvatarJSON(config);
           fileBlob = new Blob([jsonContent], { type: 'application/json' });
           fileName = `avatar_${config.avatarName || 'export'}.json`;
-          exportUrlField = 'json_export_url';
           break;
 
         case 'glb':
         case 'gltf':
           setProgress(40);
-          const gltfBuffer = await buildAvatarGLTF(config, options.format === 'glb');
+          const gltfBuffer = await buildAvatarGLTF(config);
           fileBlob = new Blob([gltfBuffer], { type: 'model/gltf-binary' });
           fileName = `avatar_${config.avatarName || 'export'}.${options.format}`;
-          exportUrlField = `${options.format}_export_url`;
           break;
 
         case 'gif':
@@ -277,16 +265,14 @@ export const useAvatarBuilder = () => {
           setProgress(40);
           fileBlob = await buildAvatarGIF(config, canvas);
           fileName = `avatar_${config.avatarName || 'export'}.gif`;
-          exportUrlField = 'gif_export_url';
           break;
 
         case 'fbx':
-          setProgress(40);
-          const fbxBuffer = await buildAvatarGLTF(config, true);
+          // FBX export would require additional library
+          // For now, export as GLTF with FBX extension
+          const fbxBuffer = await buildAvatarGLTF(config);
           fileBlob = new Blob([fbxBuffer], { type: 'application/octet-stream' });
           fileName = `avatar_${config.avatarName || 'export'}.fbx`;
-          exportUrlField = 'fbx_export_url';
-          toast.warning('FBX export requires Blender for full compatibility');
           break;
 
         default:
@@ -300,11 +286,10 @@ export const useAvatarBuilder = () => {
       if (options.compress && options.format !== 'json') {
         setProgress(70);
         finalUrl = await compressFile(fileBlob, options.format, user.id);
-        exportUrlField = `compressed_${options.format}_url`;
         setProgress(90);
       } else {
         // Upload without compression
-        const filePath = `${user.id}/avatars/exports/${fileName}`;
+        const filePath = `${user.id}/${fileName}`;
         const { error: uploadError } = await supabase.storage
           .from('thumbnails')
           .upload(filePath, fileBlob, {
@@ -321,21 +306,7 @@ export const useAvatarBuilder = () => {
         finalUrl = urlData.publicUrl;
       }
 
-      setProgress(80);
-
-      // Save export URL to avatar_configurations if config has an id
-      if (config.id) {
-        const { error: updateError } = await supabase
-          .from('avatar_configurations')
-          .update({ [exportUrlField]: finalUrl })
-          .eq('id', config.id);
-
-        if (updateError) {
-          console.error('Failed to update configuration with export URL:', updateError);
-        }
-      }
-
-      setProgress(90);
+      setProgress(100);
 
       // Download file
       const url = URL.createObjectURL(fileBlob);
@@ -347,11 +318,10 @@ export const useAvatarBuilder = () => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      setProgress(100);
       toast.success(`Avatar exported as ${options.format.toUpperCase()}!`);
       return finalUrl;
 
-    } catch (error: any) {
+    } catch (error) {
       console.error('Build error:', error);
       toast.error(`Failed to build avatar: ${error.message}`);
       throw error;
@@ -361,31 +331,10 @@ export const useAvatarBuilder = () => {
     }
   };
 
-  const exportAllFormats = async (config: any, compress: boolean = false): Promise<Record<string, string>> => {
-    const formats: Array<'json' | 'gif' | 'glb' | 'gltf'> = ['json', 'gif', 'glb', 'gltf'];
-    const results: Record<string, string> = {};
-
-    for (const format of formats) {
-      try {
-        toast.info(`Exporting ${format.toUpperCase()}...`);
-        const url = await buildAndExport(config, { format, compress });
-        results[format] = url;
-      } catch (error) {
-        console.error(`Failed to export ${format}:`, error);
-        toast.error(`Failed to export ${format.toUpperCase()}`);
-      }
-    }
-
-    toast.success('Batch export completed!');
-    return results;
-  };
-
   return {
     building,
     progress,
     buildAndExport,
     buildAvatarJSON,
-    exportAllFormats,
-    validateFormat,
   };
 };
