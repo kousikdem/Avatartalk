@@ -128,7 +128,6 @@ const ProfilePage: React.FC = () => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isTalking, setIsTalking] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [currentUserProfile, setCurrentUserProfile] = useState<Profile | null>(null);
   const [topChatMessage, setTopChatMessage] = useState('');
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
@@ -211,16 +210,16 @@ const ProfilePage: React.FC = () => {
       const { data } = await supabase.auth.getUser();
       setCurrentUser(data.user);
       
-      // Fetch current user's profile for profile_pic_url
+      // Fetch visitor's profile data for profile_pic_url
       if (data.user) {
-        const { data: userProfile } = await supabase
+        const { data: visitorProfileData } = await supabase
           .from('profiles')
-          .select('id, username, display_name, bio, avatar_url, profile_pic_url, profession')
+          .select('profile_pic_url')
           .eq('id', data.user.id)
           .single();
         
-        if (userProfile) {
-          setCurrentUserProfile(userProfile);
+        if (visitorProfileData) {
+          setVisitorProfile(visitorProfileData);
         }
         
         // Create default avatar for new users
@@ -750,7 +749,7 @@ const ProfilePage: React.FC = () => {
                 </Button>
                 
                 {/* Visitor/User Profile Button - Navigate to Dashboard */}
-                {currentUser && (
+                {currentUser && visitorProfile && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -760,9 +759,9 @@ const ProfilePage: React.FC = () => {
                   >
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[1px]">
                       <div className={`w-full h-full rounded-full ${isDarkTheme ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center overflow-hidden`}>
-                        {currentUserProfile?.profile_pic_url ? (
+                        {visitorProfile?.profile_pic_url ? (
                           <img 
-                            src={currentUserProfile.profile_pic_url} 
+                            src={visitorProfile.profile_pic_url} 
                             alt="Your Profile"
                             className="w-full h-full object-cover"
                           />
