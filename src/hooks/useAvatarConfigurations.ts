@@ -307,14 +307,12 @@ export const useAvatarConfigurations = () => {
       const avatarId = result.data.id;
       const avatarUrl = config.model_url || result.data.model_url || config.thumbnail_url || result.data.thumbnail_url;
       
-      // Update profile with avatar link - ONLY update avatar_url, NOT profile_pic_url
-      // avatar_url = 3D avatar model/preview
-      // profile_pic_url = 2D profile picture (separate)
+      // Update profile to link the 3D avatar (NEVER touch profile_pic_url)
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ 
           avatar_id: avatarId,
-          avatar_url: avatarUrl,
+          avatar_url: avatarUrl, // 3D avatar URL only
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);

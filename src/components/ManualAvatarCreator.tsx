@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Save, Download, RotateCcw, User, Eye, Shirt, Smile, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
+import { supabase } from '@/integrations/supabase/client';
 import AdvancedAvatarPreview from './AdvancedAvatarPreview';
 import DetailedBodyControls from './DetailedBodyControls';
 import DetailedFaceControls from './DetailedFaceControls';
@@ -107,69 +108,141 @@ const ManualAvatarCreator: React.FC<ManualAvatarCreatorProps> = ({
     }
   };
 
-  const handleReset = () => {
-    setAvatarConfig({
-      gender: 'male',
-      age: 25,
-      ethnicity: 'caucasian',
-      height: 170,
-      weight: 70,
-      muscle: 50,
-      fat: 20,
-      torsoLength: 50,
-      legLength: 50,
-      shoulderWidth: 50,
-      handSize: 50,
-      headSize: 50,
-      headShape: 'oval',
-      faceWidth: 50,
-      jawline: 50,
-      cheekbones: 50,
-      eyeSize: 50,
-      eyeDistance: 50,
-      eyeShape: 'almond',
-      eyeColor: '#8B4513',
-      noseSize: 50,
-      noseWidth: 50,
-      noseShape: 'straight',
-      mouthWidth: 50,
-      lipThickness: 50,
-      lipShape: 'normal',
-      earSize: 50,
-      earPosition: 50,
-      earShape: 'normal',
-      skinTone: '#F1C27D',
-      skinTexture: 'smooth',
-      hairStyle: 'medium',
-      hairColor: '#8B4513',
-      hairLength: 50,
-      facialHair: 'none',
-      clothingTop: 'tshirt',
-      clothingBottom: 'jeans',
-      shoes: 'sneakers',
-      accessories: [],
-      currentExpression: 'neutral',
-      currentPose: 'standing',
-      avatarName: 'My Avatar',
-      // Clear ALL uploaded and exported URLs
-      model_url: undefined,
-      thumbnail_url: undefined,
-      json_export_url: undefined,
-      gif_export_url: undefined,
-      glb_export_url: undefined,
-      gltf_export_url: undefined,
-      fbx_export_url: undefined,
-      obj_export_url: undefined,
-      compressed_json_url: undefined,
-      compressed_glb_url: undefined,
-      compressed_gif_url: undefined,
-      compression_ratio: undefined
-    });
-    setCustomAvatarUploaded(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+  const extractPathFromUrl = (url: string): string | null => {
+    try {
+      const urlObj = new URL(url);
+      const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/public\/[^/]+\/(.+)/);
+      return pathMatch ? pathMatch[1] : null;
+    } catch {
+      return null;
     }
-    toast.success('Avatar reset to defaults, all uploads and exports cleared');
+  };
+
+  const handleReset = async () => {
+    if (!confirm('This will completely reset your avatar and delete all uploads/exports. Continue?')) {
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Delete avatar configuration from database if exists
+      if (avatarConfig.id) {
+        const { error: deleteError } = await supabase
+          .from('avatar_configurations')
+          .delete()
+          .eq('id', avatarConfig.id);
+        
+        if (deleteError) throw deleteError;
+      }
+
+      // Collect all file paths to delete from storage
+      const filesToDelete: string[] = [];
+      
+      if (avatarConfig.model_url) {
+        const modelPath = extractPathFromUrl(avatarConfig.model_url);
+        if (modelPath) filesToDelete.push(modelPath);
+      }
+      
+      if (avatarConfig.thumbnail_url && !avatarConfig.thumbnail_url.includes('lovable-uploads')) {
+        const thumbPath = extractPathFromUrl(avatarConfig.thumbnail_url);
+        if (thumbPath) filesToDelete.push(thumbPath);
+      }
+
+      // Delete all export URLs
+      ['json', 'gif', 'glb', 'gltf', 'fbx', 'obj'].forEach(format => {
+        const url = avatarConfig[`${format}_export_url`];
+        if (url) {
+          const path = extractPathFromUrl(url);
+          if (path) filesToDelete.push(path);
+        }
+      });
+
+      // Delete compressed URLs
+      ['json', 'glb', 'gif'].forEach(format => {
+        const url = avatarConfig[`compressed_${format}_url`];
+        if (url) {
+          const path = extractPathFromUrl(url);
+          if (path) filesToDelete.push(path);
+        }
+      });
+
+      // Delete files from storage
+      if (filesToDelete.length > 0) {
+        const { error: storageError } = await supabase.storage
+          .from('thumbnails')
+          .remove(filesToDelete);
+        
+        if (storageError) console.warn('Storage cleanup warning:', storageError);
+      }
+
+      // Reset local state to defaults
+      setAvatarConfig({
+        gender: 'male',
+        age: 25,
+        ethnicity: 'caucasian',
+        height: 170,
+        weight: 70,
+        muscle: 50,
+        fat: 20,
+        torsoLength: 50,
+        legLength: 50,
+        shoulderWidth: 50,
+        handSize: 50,
+        headSize: 50,
+        headShape: 'oval',
+        faceWidth: 50,
+        jawline: 50,
+        cheekbones: 50,
+        eyeSize: 50,
+        eyeDistance: 50,
+        eyeShape: 'almond',
+        eyeColor: '#8B4513',
+        noseSize: 50,
+        noseWidth: 50,
+        noseShape: 'straight',
+        mouthWidth: 50,
+        lipThickness: 50,
+        lipShape: 'normal',
+        earSize: 50,
+        earPosition: 50,
+        earShape: 'normal',
+        skinTone: '#F1C27D',
+        skinTexture: 'smooth',
+        hairStyle: 'medium',
+        hairColor: '#8B4513',
+        hairLength: 50,
+        facialHair: 'none',
+        clothingTop: 'tshirt',
+        clothingBottom: 'jeans',
+        shoes: 'sneakers',
+        accessories: [],
+        currentExpression: 'neutral',
+        currentPose: 'standing',
+        avatarName: 'My Avatar'
+      });
+      setCustomAvatarUploaded(false);
+      
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+
+      // Update profile to remove avatar link
+      await supabase
+        .from('profiles')
+        .update({ 
+          avatar_id: null,
+          avatar_url: null
+        })
+        .eq('id', user.id);
+
+      toast.success('Avatar completely reset and all files deleted');
+      
+    } catch (error) {
+      console.error('Reset error:', error);
+      toast.error('Failed to completely reset avatar');
+    }
   };
 
   const handleCustomAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {

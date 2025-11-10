@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.avatar-file-compress]
 verify_jwt = true
+
+[functions.avatar-format-converter]
+verify_jwt = true

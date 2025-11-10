@@ -1,11 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Download, Save, FileImage, Box, Package, FileJson } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Download, Save, FileImage, Box, Package, FileJson, Check, Copy } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAvatarBuilder } from '@/hooks/useAvatarBuilder';
 import { useAvatarConfigurations } from '@/hooks/useAvatarConfigurations';
 
@@ -17,8 +17,7 @@ interface AvatarExporterProps {
 
 const AvatarExporter: React.FC<AvatarExporterProps> = ({ config, onSave, canvasRef }) => {
   const [compressionEnabled, setCompressionEnabled] = useState(true);
-  const { toast } = useToast();
-  const { building, progress, buildAndExport } = useAvatarBuilder();
+  const { building, progress, buildAndExport, exportAllFormats } = useAvatarBuilder();
   const { saveConfiguration, saving } = useAvatarConfigurations();
 
   const exportFormats = [
@@ -27,39 +26,46 @@ const AvatarExporter: React.FC<AvatarExporterProps> = ({ config, onSave, canvasR
       name: 'JSON', 
       icon: FileJson, 
       description: 'Configuration data with all morph and material properties',
-      fileSize: '< 1 MB'
+      size: '< 1 MB'
     },
     { 
       id: 'gif', 
       name: 'GIF Animation', 
       icon: FileImage, 
       description: 'Animated avatar preview for social media and websites',
-      fileSize: '1-3 MB'
+      size: '1-3 MB'
     },
     { 
       id: 'glb', 
       name: 'GLB', 
       icon: Box, 
       description: 'Binary GLTF - Web-optimized 3D format',
-      fileSize: '2-5 MB'
+      size: '2-5 MB'
     },
     { 
       id: 'gltf', 
       name: 'GLTF', 
       icon: Box, 
       description: 'GLTF with separate textures and materials',
-      fileSize: '3-6 MB'
+      size: '3-6 MB'
     },
     { 
       id: 'fbx', 
       name: 'FBX', 
       icon: Package, 
-      description: 'Industry standard for Unity, Unreal Engine',
-      fileSize: '5-10 MB'
+      description: 'Industry standard for Unity, Unreal Engine (note: exports as GLB)',
+      size: '5-10 MB'
+    },
+    { 
+      id: 'obj', 
+      name: 'OBJ', 
+      icon: Package, 
+      description: 'Wavefront OBJ with MTL material file',
+      size: '3-6 MB'
     }
   ];
 
-  const handleExport = async (format: 'json' | 'gif' | 'glb' | 'gltf' | 'fbx') => {
+  const handleExport = async (format: 'json' | 'gif' | 'glb' | 'gltf' | 'fbx' | 'obj') => {
     try {
       const canvas = canvasRef?.current;
       await buildAndExport(config, {
@@ -75,10 +81,27 @@ const AvatarExporter: React.FC<AvatarExporterProps> = ({ config, onSave, canvasR
   const handleSaveToProfile = async () => {
     try {
       await saveConfiguration(config);
-      onSave?.();
+      if (onSave) {
+        onSave();
+      }
+      toast.success('Avatar configuration saved to your profile');
     } catch (error) {
-      console.error('Save error:', error);
+      toast.error('Failed to save avatar configuration');
     }
+  };
+
+  const handleExportAll = async () => {
+    try {
+      await exportAllFormats(config, compressionEnabled);
+      toast.success('All formats exported successfully!');
+    } catch (error) {
+      toast.error('Batch export failed');
+    }
+  };
+
+  const handleCopyUrl = (url: string, format: string) => {
+    navigator.clipboard.writeText(url);
+    toast.success(`${format.toUpperCase()} URL copied to clipboard!`);
   };
 
   return (
@@ -155,37 +178,75 @@ const AvatarExporter: React.FC<AvatarExporterProps> = ({ config, onSave, canvasR
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="mb-4">
+            <Button
+              onClick={handleExportAll}
+              disabled={building}
+              className="w-full"
+              variant="outline"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export All Formats
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {exportFormats.map((format) => {
-              const IconComponent = format.icon;
+              const exportUrlKey = `${format.id}_export_url` as keyof typeof config;
+              const isExported = !!config[exportUrlKey];
+              const exportDate = config.last_export_date && config.last_export_format === format.id 
+                ? new Date(config.last_export_date).toLocaleDateString() 
+                : null;
+
               return (
-                <div 
-                  key={format.id}
-                  className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50/50 transition-colors"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg flex items-center justify-center">
-                      <IconComponent className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="font-medium">{format.name}</h4>
-                        <span className="text-xs text-muted-foreground">{format.fileSize}</span>
+                <Card key={format.id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <format.icon className="w-5 h-5 text-primary" />
+                        <div>
+                          <CardTitle className="text-lg">{format.name}</CardTitle>
+                          <CardDescription className="text-xs">
+                            {format.description}
+                          </CardDescription>
+                        </div>
                       </div>
-                      <p className="text-xs text-muted-foreground mb-3">{format.description}</p>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
+                      {isExported && <Check className="w-5 h-5 text-green-500" />}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="text-xs text-muted-foreground">
+                        Estimated size: {format.size}
+                      </div>
+                      {isExported && exportDate && (
+                        <div className="text-xs text-green-600">
+                          Exported: {exportDate}
+                        </div>
+                      )}
+                      <Button
                         onClick={() => handleExport(format.id as any)}
                         disabled={building}
                         className="w-full"
+                        size="sm"
                       >
-                        <Download className="w-3 h-3 mr-2" />
-                        {building ? 'Building...' : `Export ${format.name}`}
+                        <Download className="w-4 h-4 mr-2" />
+                        {isExported ? 'Re-export' : 'Export'} {format.name}
                       </Button>
+                      {isExported && config[exportUrlKey] && (
+                        <Button
+                          onClick={() => handleCopyUrl(config[exportUrlKey] as string, format.name)}
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                        >
+                          <Copy className="w-4 h-4 mr-2" />
+                          Copy URL
+                        </Button>
+                      )}
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               );
             })}
           </div>
