@@ -7,7 +7,7 @@ import { GLTFExporter } from 'three-stdlib';
 import gltfPipeline from 'gltf-pipeline';
 
 interface AvatarBuildOptions {
-  format: 'json' | 'gif' | 'glb' | 'gltf' | 'fbx' | 'obj';
+  format: 'json' | 'gif' | 'glb' | 'gltf' | 'fbx';
   compress?: boolean;
   quality?: number;
 }
@@ -118,49 +118,6 @@ export const useAvatarBuilder = () => {
     scene.add(group);
 
     return scene;
-  };
-
-  const buildAvatarOBJ = (config: any): { obj: string; mtl: string } => {
-    // Build basic OBJ format
-    const objContent = `# Avatar OBJ Export
-# Name: ${config.avatarName || 'Avatar'}
-mtllib ${config.avatarName || 'avatar'}.mtl
-
-o Avatar
-v 0.0 0.0 0.0
-v 1.0 0.0 0.0
-v 1.0 1.0 0.0
-v 0.0 1.0 0.0
-v 0.5 1.5 0.0
-
-vn 0.0 0.0 1.0
-
-usemtl AvatarMaterial
-f 1//1 2//1 3//1
-f 1//1 3//1 4//1
-f 4//1 3//1 5//1
-`;
-
-    const mtlContent = `# Avatar MTL Material
-newmtl AvatarMaterial
-Ka 1.000 1.000 1.000
-Kd ${hexToRgb(config.skinTone || '#F1C27D')}
-Ks 0.500 0.500 0.500
-Ns 32.0
-d 1.0
-illum 2
-`;
-
-    return { obj: objContent, mtl: mtlContent };
-  };
-
-  const hexToRgb = (hex: string): string => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (!result) return '1.000 1.000 1.000';
-    const r = parseInt(result[1], 16) / 255;
-    const g = parseInt(result[2], 16) / 255;
-    const b = parseInt(result[3], 16) / 255;
-    return `${r.toFixed(3)} ${g.toFixed(3)} ${b.toFixed(3)}`;
   };
 
   const buildAvatarGLTF = async (config: any, binary: boolean = true): Promise<ArrayBuffer> => {
@@ -310,42 +267,13 @@ illum 2
           fileName = `avatar_${config.avatarName || 'export'}.gif`;
           break;
 
-    case 'fbx':
-      setProgress(40);
-      // WARNING: True FBX export requires Autodesk FBX SDK or Blender
-      // This exports GLB format with .fbx extension as a workaround
-      // For real FBX, use Blender Python API or commercial tools
-      const fbxArrayBuffer = await buildAvatarGLTF(config, true);
-      fileBlob = new Blob([fbxArrayBuffer], { type: 'model/fbx' });
-      fileName = `avatar_${config.avatarName || 'export'}.fbx`;
-      toast.info('FBX: Exporting as GLB format (requires Blender for true FBX)', { duration: 4000 });
-      break;
-
-    case 'obj':
-      setProgress(40);
-      // Build OBJ format with MTL material file
-      const objData = buildAvatarOBJ(config);
-      fileBlob = new Blob([objData.obj], { type: 'text/plain' });
-      fileName = `avatar_${config.avatarName || 'export'}.obj`;
-      
-      // Also save MTL file
-      const mtlBlob = new Blob([objData.mtl], { type: 'text/plain' });
-      const mtlFileName = fileName.replace('.obj', '.mtl');
-      
-      try {
-        const { data: mtlUploadData, error: mtlUploadError } = await supabase.storage
-          .from('thumbnails')
-          .upload(`${user.id}/avatars/exports/${mtlFileName}`, mtlBlob, {
-            contentType: 'text/plain',
-            upsert: true,
-          });
-
-        if (mtlUploadError) throw mtlUploadError;
-        console.log('MTL file uploaded:', mtlFileName);
-      } catch (error) {
-        console.error('MTL upload error:', error);
-      }
-      break;
+        case 'fbx':
+          // FBX export would require additional library
+          // For now, export as GLTF with FBX extension
+          const fbxBuffer = await buildAvatarGLTF(config);
+          fileBlob = new Blob([fbxBuffer], { type: 'application/octet-stream' });
+          fileName = `avatar_${config.avatarName || 'export'}.fbx`;
+          break;
 
         default:
           throw new Error(`Unsupported format: ${options.format}`);
@@ -378,30 +306,6 @@ illum 2
         finalUrl = urlData.publicUrl;
       }
 
-      // Save export URL to database
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user && config.id) {
-          const exportUrlField = `${options.format}_export_url`;
-          const { error: updateError } = await supabase
-            .from('avatar_configurations')
-            .update({ 
-              [exportUrlField]: finalUrl,
-              last_export_format: options.format,
-              last_export_date: new Date().toISOString()
-            })
-            .eq('id', config.id);
-          
-          if (updateError) {
-            console.error('Failed to save export URL:', updateError);
-          } else {
-            console.log(`Saved ${options.format} export URL to database`);
-          }
-        }
-      } catch (dbError) {
-        console.error('Database update error:', dbError);
-      }
-
       setProgress(100);
 
       // Download file
@@ -427,34 +331,10 @@ illum 2
     }
   };
 
-  const exportAllFormats = async (config: any, compress: boolean = false): Promise<Record<string, any>> => {
-    const formats: Array<'json' | 'gif' | 'glb' | 'gltf' | 'obj'> = ['json', 'glb', 'gltf', 'obj'];
-    const results: Record<string, any> = {};
-    let completedCount = 0;
-
-    toast.info('Starting batch export of all formats...');
-
-    for (const format of formats) {
-      try {
-        setProgress((completedCount / formats.length) * 100);
-        const url = await buildAndExport(config, { format, compress });
-        results[format] = { success: true, url };
-        completedCount++;
-      } catch (error: any) {
-        results[format] = { success: false, error: error.message };
-        console.error(`Failed to export ${format}:`, error);
-      }
-    }
-
-    toast.success(`Batch export complete: ${completedCount}/${formats.length} formats`);
-    return results;
-  };
-
   return {
     building,
     progress,
     buildAndExport,
     buildAvatarJSON,
-    exportAllFormats
   };
 };

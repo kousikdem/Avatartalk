@@ -59,10 +59,6 @@ export type Database = {
           cheekbones: number
           clothing_bottom: string | null
           clothing_top: string | null
-          compressed_gif_url: string | null
-          compressed_glb_url: string | null
-          compressed_json_url: string | null
-          compression_ratio: number | null
           configuration_data: Json | null
           created_at: string
           current_expression: string
@@ -75,11 +71,7 @@ export type Database = {
           eye_shape: string
           eye_size: number
           face_width: number
-          fbx_export_url: string | null
           gender: string
-          gif_export_url: string | null
-          glb_export_url: string | null
-          gltf_export_url: string | null
           hair_color: string
           hair_length: number
           hair_style: string
@@ -89,9 +81,6 @@ export type Database = {
           id: string
           is_active: boolean
           jawline: number
-          json_export_url: string | null
-          last_export_date: string | null
-          last_export_format: string | null
           lip_shape: string
           lip_thickness: number
           model_url: string | null
@@ -100,7 +89,6 @@ export type Database = {
           nose_shape: string
           nose_size: number
           nose_width: number
-          obj_export_url: string | null
           shoes: string | null
           skin_texture: string
           skin_tone: string
@@ -117,10 +105,6 @@ export type Database = {
           cheekbones?: number
           clothing_bottom?: string | null
           clothing_top?: string | null
-          compressed_gif_url?: string | null
-          compressed_glb_url?: string | null
-          compressed_json_url?: string | null
-          compression_ratio?: number | null
           configuration_data?: Json | null
           created_at?: string
           current_expression?: string
@@ -133,11 +117,7 @@ export type Database = {
           eye_shape?: string
           eye_size?: number
           face_width?: number
-          fbx_export_url?: string | null
           gender?: string
-          gif_export_url?: string | null
-          glb_export_url?: string | null
-          gltf_export_url?: string | null
           hair_color?: string
           hair_length?: number
           hair_style?: string
@@ -147,9 +127,6 @@ export type Database = {
           id?: string
           is_active?: boolean
           jawline?: number
-          json_export_url?: string | null
-          last_export_date?: string | null
-          last_export_format?: string | null
           lip_shape?: string
           lip_thickness?: number
           model_url?: string | null
@@ -158,7 +135,6 @@ export type Database = {
           nose_shape?: string
           nose_size?: number
           nose_width?: number
-          obj_export_url?: string | null
           shoes?: string | null
           skin_texture?: string
           skin_tone?: string
@@ -175,10 +151,6 @@ export type Database = {
           cheekbones?: number
           clothing_bottom?: string | null
           clothing_top?: string | null
-          compressed_gif_url?: string | null
-          compressed_glb_url?: string | null
-          compressed_json_url?: string | null
-          compression_ratio?: number | null
           configuration_data?: Json | null
           created_at?: string
           current_expression?: string
@@ -191,11 +163,7 @@ export type Database = {
           eye_shape?: string
           eye_size?: number
           face_width?: number
-          fbx_export_url?: string | null
           gender?: string
-          gif_export_url?: string | null
-          glb_export_url?: string | null
-          gltf_export_url?: string | null
           hair_color?: string
           hair_length?: number
           hair_style?: string
@@ -205,9 +173,6 @@ export type Database = {
           id?: string
           is_active?: boolean
           jawline?: number
-          json_export_url?: string | null
-          last_export_date?: string | null
-          last_export_format?: string | null
           lip_shape?: string
           lip_thickness?: number
           model_url?: string | null
@@ -216,7 +181,6 @@ export type Database = {
           nose_shape?: string
           nose_size?: number
           nose_width?: number
-          obj_export_url?: string | null
           shoes?: string | null
           skin_texture?: string
           skin_tone?: string
