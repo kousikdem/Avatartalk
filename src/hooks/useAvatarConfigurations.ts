@@ -51,18 +51,6 @@ interface AvatarConfiguration {
   isActive?: boolean;
   thumbnail_url?: string;
   model_url?: string;
-  // All export format URLs
-  json_export_url?: string;
-  gif_export_url?: string;
-  glb_export_url?: string;
-  gltf_export_url?: string;
-  fbx_export_url?: string;
-  obj_export_url?: string;
-  // Compressed format URLs
-  compressed_json_url?: string;
-  compressed_glb_url?: string;
-  compressed_gif_url?: string;
-  compression_ratio?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -271,16 +259,6 @@ export const useAvatarConfigurations = () => {
         current_expression: config.currentExpression || 'neutral',
         model_url: config.model_url || null,
         thumbnail_url: config.thumbnail_url || null,
-        json_export_url: config.json_export_url || null,
-        gif_export_url: config.gif_export_url || null,
-        glb_export_url: config.glb_export_url || null,
-        gltf_export_url: config.gltf_export_url || null,
-        fbx_export_url: config.fbx_export_url || null,
-        obj_export_url: config.obj_export_url || null,
-        compressed_json_url: config.compressed_json_url || null,
-        compressed_glb_url: config.compressed_glb_url || null,
-        compressed_gif_url: config.compressed_gif_url || null,
-        compression_ratio: config.compression_ratio || null,
         configuration_data: configurationData,
         is_active: true
       };

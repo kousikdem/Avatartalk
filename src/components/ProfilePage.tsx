@@ -173,7 +173,7 @@ const ProfilePage: React.FC = () => {
     stopSpeech 
   } = useCoquiTTS();
 
-  // Initialize and load chat messages - use profile_pic_url for chat avatar (2D)
+  // Initialize and load chat messages from localStorage
   useEffect(() => {
     if (profile) {
       // No longer using localStorage for chat history
@@ -185,7 +185,7 @@ const ProfilePage: React.FC = () => {
           timestamp: new Date().toISOString(),
           sender: 'avatar',
           senderName: profile.display_name || profile.username,
-          senderAvatar: profile.profile_pic_url
+          senderAvatar: profile.profile_pic_url || profile.avatar_url
         }
       ];
       setChatMessages(initialMessages);
@@ -210,19 +210,8 @@ const ProfilePage: React.FC = () => {
       const { data } = await supabase.auth.getUser();
       setCurrentUser(data.user);
       
-      // Fetch visitor's profile data for profile_pic_url
+      // Create default avatar for new users
       if (data.user) {
-        const { data: visitorProfileData } = await supabase
-          .from('profiles')
-          .select('profile_pic_url')
-          .eq('id', data.user.id)
-          .single();
-        
-        if (visitorProfileData) {
-          setVisitorProfile(visitorProfileData);
-        }
-        
-        // Create default avatar for new users
         await createDefaultForNewUsers();
       }
     };
@@ -276,7 +265,7 @@ const ProfilePage: React.FC = () => {
     }
   }, [profile?.id]);
 
-  // Optimized realtime subscriptions - only subscribe to critical updates
+  // Realtime subscriptions for profile data
   useEffect(() => {
     if (!profile?.id) return;
 
@@ -285,7 +274,7 @@ const ProfilePage: React.FC = () => {
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
           table: 'posts',
           filter: `user_id=eq.${profile.id}`
@@ -297,7 +286,26 @@ const ProfilePage: React.FC = () => {
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*',
+          schema: 'public',
+          table: 'products',
+          filter: `user_id=eq.${profile.id}`
+        },
+        async () => {
+          const { data } = await supabase
+            .from('products')
+            .select('*')
+            .eq('user_id', profile.id)
+            .eq('status', 'published')
+            .order('created_at', { ascending: false })
+            .limit(6);
+          if (data) setProducts(data);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
           schema: 'public',
           table: 'profiles',
           filter: `id=eq.${profile.id}`
@@ -308,16 +316,43 @@ const ProfilePage: React.FC = () => {
           if (data && data.length > 0) setProfile(data[0]);
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'follows'
+        },
+        () => {
+          refetchFollows();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_stats',
+          filter: `user_id=eq.${profile.id}`
+        },
+        async () => {
+          const { data } = await supabase
+            .from('user_stats')
+            .select('*')
+            .eq('user_id', profile.id)
+            .maybeSingle();
+          if (data) setUserStats(data);
+        }
+      )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.id, fetchPosts]);
+  }, [profile?.id, fetchPosts, refetchFollows]);
 
   const fetchProfile = async () => {
     try {
-      setLoading(true);
       // First get the profile ID by username
       const { data: profileIdData, error: idError } = await supabase
         .from('profiles')
@@ -340,27 +375,23 @@ const ProfilePage: React.FC = () => {
       }
       
       const profileData = profileDataArray[0];
+
       setProfile(profileData);
 
-      // Fetch only essential data initially - rest can load lazily
-      const [statsResponse, avatarResponse, socialLinksResponse] = await Promise.all([
+      // Now fetch related data using the profile ID
+      const [statsResponse, productsResponse, eventsResponse, avatarResponse, socialLinksResponse] = await Promise.all([
         supabase.from('user_stats').select('*').eq('user_id', profileData.id).maybeSingle(),
+        supabase.from('products').select('*').eq('user_id', profileData.id).eq('status', 'published').order('created_at', { ascending: false }).limit(6),
+        supabase.from('events').select('*').eq('user_id', profileData.id).order('created_at', { ascending: false }).limit(6),
         supabase.from('avatar_configurations').select('*').eq('user_id', profileData.id).eq('is_active', true).maybeSingle(),
         supabase.from('social_links').select('*').eq('user_id', profileData.id).maybeSingle()
       ]);
 
       setUserStats(statsResponse.data);
+      setProducts(productsResponse.data || []);
+      setEvents(eventsResponse.data || []);
       setAvatarConfig(avatarResponse.data);
       setSocialLinks(socialLinksResponse.data);
-
-      // Load products and events lazily to improve initial load
-      supabase.from('products').select('*').eq('user_id', profileData.id).eq('status', 'published').order('created_at', { ascending: false }).limit(6).then(({data}) => {
-        if (data) setProducts(data);
-      });
-      
-      supabase.from('events').select('*').eq('user_id', profileData.id).order('created_at', { ascending: false }).limit(6).then(({data}) => {
-        if (data) setEvents(data);
-      });
 
       // Track profile visit (fire and forget)
       if (profileData.id !== currentUser?.id) {
@@ -458,7 +489,7 @@ const ProfilePage: React.FC = () => {
       timestamp: new Date().toISOString(),
       sender: 'user',
       senderName: currentUser?.email?.split('@')[0] || 'Guest',
-      senderAvatar: currentUser?.user_metadata?.profile_pic_url || currentUser?.user_metadata?.avatar_url,
+      senderAvatar: currentUser?.user_metadata?.avatar_url,
       isVoiceMessage: isVoiceInput,
       voiceTranscript: isVoiceInput ? messageContent : undefined
     };
@@ -484,14 +515,14 @@ const ProfilePage: React.FC = () => {
 
       const { response: aiResponse } = response.data;
 
-      // Add AI response - use profile_pic_url for chat avatar (2D)
+      // Add AI response
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         content: aiResponse,
         timestamp: new Date().toISOString(),
         sender: 'avatar',
         senderName: profile.display_name || profile.username || 'AI',
-        senderAvatar: profile.profile_pic_url,
+        senderAvatar: profile.avatar_url || profile.profile_pic_url,
         isVoiceMessage: false
       };
 
@@ -513,14 +544,14 @@ const ProfilePage: React.FC = () => {
     } catch (error) {
       console.error('Error generating AI response:', error);
       
-      // Add fallback response - use profile_pic_url for chat avatar (2D)
+      // Add fallback response
       const fallbackMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         content: "I'm Avatartalk personalized AI powered by Llama 3, and I'm having trouble responding right now. Please try again in a moment.",
         timestamp: new Date().toISOString(),
         sender: 'avatar',
         senderName: profile.display_name || profile.username || 'Avatartalk AI',
-        senderAvatar: profile.profile_pic_url,
+        senderAvatar: profile.avatar_url || profile.profile_pic_url,
         isVoiceMessage: false
       };
 
@@ -713,9 +744,9 @@ const ProfilePage: React.FC = () => {
                 <div className="relative">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
                     <div className={`w-full h-full rounded-full ${isDarkTheme ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center overflow-hidden`}>
-                       {profile?.profile_pic_url ? (
+                       {profile?.profile_pic_url || profile?.avatar_url ? (
                          <img 
-                           src={profile.profile_pic_url} 
+                           src={profile.profile_pic_url || profile.avatar_url} 
                            alt={profileData.displayName}
                            className="w-full h-full object-cover"
                          />
@@ -749,7 +780,7 @@ const ProfilePage: React.FC = () => {
                 </Button>
                 
                 {/* Visitor/User Profile Button - Navigate to Dashboard */}
-                {currentUser && visitorProfile && (
+                {currentUser && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -759,9 +790,9 @@ const ProfilePage: React.FC = () => {
                   >
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[1px]">
                       <div className={`w-full h-full rounded-full ${isDarkTheme ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center overflow-hidden`}>
-                        {visitorProfile?.profile_pic_url ? (
+                        {currentUser?.user_metadata?.avatar_url ? (
                           <img 
-                            src={visitorProfile.profile_pic_url} 
+                            src={currentUser.user_metadata.avatar_url} 
                             alt="Your Profile"
                             className="w-full h-full object-cover"
                           />

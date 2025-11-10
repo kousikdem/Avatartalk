@@ -151,25 +151,11 @@ const ManualAvatarCreator: React.FC<ManualAvatarCreatorProps> = ({
       currentExpression: 'neutral',
       currentPose: 'standing',
       avatarName: 'My Avatar',
-      // Clear ALL uploaded and exported URLs
       model_url: undefined,
-      thumbnail_url: undefined,
-      json_export_url: undefined,
-      gif_export_url: undefined,
-      glb_export_url: undefined,
-      gltf_export_url: undefined,
-      fbx_export_url: undefined,
-      obj_export_url: undefined,
-      compressed_json_url: undefined,
-      compressed_glb_url: undefined,
-      compressed_gif_url: undefined,
-      compression_ratio: undefined
+      thumbnail_url: undefined
     });
     setCustomAvatarUploaded(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-    toast.success('Avatar reset to defaults, all uploads and exports cleared');
+    toast.success('Avatar reset to defaults');
   };
 
   const handleCustomAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -178,33 +164,11 @@ const ManualAvatarCreator: React.FC<ManualAvatarCreatorProps> = ({
 
     const result = await uploadCustomAvatar(file);
     if (result) {
-      const fileExt = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
-      
-      // Update config with appropriate URL based on file type
-      const updates: any = {
+      setAvatarConfig(prev => ({
+        ...prev,
         model_url: result.model_url,
         thumbnail_url: result.thumbnail_url,
         avatarName: file.name.replace(/\.[^/.]+$/, "")
-      };
-
-      // Set format-specific export URL
-      if (fileExt === '.json') {
-        updates.json_export_url = result.model_url;
-      } else if (fileExt === '.gif') {
-        updates.gif_export_url = result.model_url;
-      } else if (fileExt === '.glb') {
-        updates.glb_export_url = result.model_url;
-      } else if (fileExt === '.gltf') {
-        updates.gltf_export_url = result.model_url;
-      } else if (fileExt === '.fbx') {
-        updates.fbx_export_url = result.model_url;
-      } else if (fileExt === '.obj') {
-        updates.obj_export_url = result.model_url;
-      }
-
-      setAvatarConfig(prev => ({
-        ...prev,
-        ...updates
       }));
       setCustomAvatarUploaded(true);
     }
@@ -214,19 +178,13 @@ const ManualAvatarCreator: React.FC<ManualAvatarCreatorProps> = ({
     setAvatarConfig(prev => ({
       ...prev,
       model_url: undefined,
-      thumbnail_url: undefined,
-      json_export_url: undefined,
-      gif_export_url: undefined,
-      glb_export_url: undefined,
-      gltf_export_url: undefined,
-      fbx_export_url: undefined,
-      obj_export_url: undefined
+      thumbnail_url: undefined
     }));
     setCustomAvatarUploaded(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    toast.success('Custom avatar and all exports removed');
+    toast.success('Custom avatar removed');
   };
 
   return (
