@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -18,58 +18,82 @@ interface AvatarExporterProps {
 const AvatarExporter: React.FC<AvatarExporterProps> = ({ config, onSave, canvasRef }) => {
   const [compressionEnabled, setCompressionEnabled] = useState(true);
   const { toast } = useToast();
-  const { building, progress, buildAndExport } = useAvatarBuilder();
+  const { building, progress, buildAndExport, exportAllFormats } = useAvatarBuilder();
   const { saveConfiguration, saving } = useAvatarConfigurations();
 
   const exportFormats = [
     { 
-      id: 'json', 
       name: 'JSON', 
-      icon: FileJson, 
+      extension: 'json',
+      icon: <FileJson className="w-5 h-5" />, 
       description: 'Configuration data with all morph and material properties',
       fileSize: '< 1 MB'
     },
     { 
-      id: 'gif', 
       name: 'GIF Animation', 
-      icon: FileImage, 
+      extension: 'gif',
+      icon: <FileImage className="w-5 h-5" />, 
       description: 'Animated avatar preview for social media and websites',
       fileSize: '1-3 MB'
     },
     { 
-      id: 'glb', 
       name: 'GLB', 
-      icon: Box, 
+      extension: 'glb',
+      icon: <Box className="w-5 h-5" />, 
       description: 'Binary GLTF - Web-optimized 3D format',
       fileSize: '2-5 MB'
     },
     { 
-      id: 'gltf', 
       name: 'GLTF', 
-      icon: Box, 
+      extension: 'gltf',
+      icon: <Box className="w-5 h-5" />, 
       description: 'GLTF with separate textures and materials',
       fileSize: '3-6 MB'
     },
     { 
-      id: 'fbx', 
       name: 'FBX', 
-      icon: Package, 
+      extension: 'fbx',
+      icon: <Package className="w-5 h-5" />, 
       description: 'Industry standard for Unity, Unreal Engine',
       fileSize: '5-10 MB'
     }
   ];
 
-  const handleExport = async (format: 'json' | 'gif' | 'glb' | 'gltf' | 'fbx') => {
-    try {
-      const canvas = canvasRef?.current;
-      await buildAndExport(config, {
-        format,
-        compress: compressionEnabled,
-        quality: 85,
-      }, canvas || undefined);
-    } catch (error) {
-      console.error('Export error:', error);
+  const handleExport = async (format: string) => {
+    if (!config) {
+      toast({ title: "Error", description: "No avatar configuration to export", variant: "destructive" });
+      return;
     }
+
+    try {
+      await buildAndExport(config, {
+        format: format as 'json' | 'gif' | 'glb' | 'gltf' | 'fbx',
+        compress: compressionEnabled,
+        quality: 0.8,
+      }, canvasRef?.current || undefined);
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
+  };
+
+  const handleExportAll = async () => {
+    if (!config) {
+      toast({ title: "Error", description: "No avatar configuration to export", variant: "destructive" });
+      return;
+    }
+
+    try {
+      toast({ title: "Starting batch export..." });
+      await exportAllFormats(config, compressionEnabled);
+    } catch (error) {
+      console.error('Batch export failed:', error);
+      toast({ title: "Error", description: "Batch export failed", variant: "destructive" });
+    }
+  };
+
+  const getExportStatus = (format: string) => {
+    const urlField = `${format}_export_url`;
+    return config?.[urlField as keyof typeof config];
   };
 
   const handleSaveToProfile = async () => {
@@ -83,9 +107,8 @@ const AvatarExporter: React.FC<AvatarExporterProps> = ({ config, onSave, canvasR
 
   return (
     <div className="space-y-6">
-      {/* Export Progress */}
       {building && (
-        <Card className="avatar-control-panel">
+        <Card>
           <CardContent className="p-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -98,132 +121,84 @@ const AvatarExporter: React.FC<AvatarExporterProps> = ({ config, onSave, canvasR
         </Card>
       )}
 
-      {/* Compression Settings */}
-      <Card className="avatar-control-panel">
-        <CardHeader className="avatar-section-header">
+      <Card>
+        <CardHeader>
           <CardTitle className="text-base">Export Settings</CardTitle>
         </CardHeader>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="compression">Enable Compression</Label>
-              <p className="text-xs text-muted-foreground">
-                Reduce file size without quality loss
-              </p>
+              <p className="text-xs text-muted-foreground">Reduce file size without quality loss</p>
             </div>
-            <Switch
-              id="compression"
-              checked={compressionEnabled}
-              onCheckedChange={setCompressionEnabled}
-            />
+            <Switch id="compression" checked={compressionEnabled} onCheckedChange={setCompressionEnabled} />
           </div>
         </CardContent>
       </Card>
 
-      {/* Save to Profile */}
-      <Card className="avatar-control-panel">
-        <CardHeader className="avatar-section-header">
+      <Card>
+        <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Save className="w-5 h-5 text-primary" />
+            <Save className="w-5 h-5" />
             Save to Profile
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4">
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Save your avatar to your AvatarTalk.bio profile for real-time 3D display and sharing.
-            </p>
-            <Button 
-              onClick={handleSaveToProfile}
-              className="w-full"
-              variant="default"
-              disabled={building || saving}
-            >
-              <Save className="w-4 h-4 mr-2" />
-              {saving ? 'Saving...' : 'Save to Profile'}
-            </Button>
-          </div>
+          <Button onClick={handleSaveToProfile} className="w-full" disabled={building || saving}>
+            <Save className="w-4 h-4 mr-2" />
+            {saving ? 'Saving...' : 'Save to Profile'}
+          </Button>
         </CardContent>
       </Card>
 
-      {/* Export Formats */}
-      <Card className="avatar-control-panel">
-        <CardHeader className="avatar-section-header">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Download className="w-5 h-5 text-primary" />
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Download className="w-5 h-5" />
             Export Formats
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <CardContent>
+          <div className="mb-4">
+            <Button onClick={handleExportAll} disabled={building} className="w-full">
+              <Download className="w-4 h-4 mr-2" />
+              Export All Formats
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {exportFormats.map((format) => {
-              const IconComponent = format.icon;
+              const exportUrl = getExportStatus(format.extension);
+              const isExported = !!exportUrl;
+              
               return (
-                <div 
-                  key={format.id}
-                  className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50/50 transition-colors"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg flex items-center justify-center">
-                      <IconComponent className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="font-medium">{format.name}</h4>
-                        <span className="text-xs text-muted-foreground">{format.fileSize}</span>
+                <div key={format.name} className="p-4 border rounded-lg hover:border-primary transition-colors">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      {format.icon}
+                      <div>
+                        <h3 className="font-semibold flex items-center gap-2">
+                          {format.name}
+                          {isExported && <span className="text-green-500">✓</span>}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">{format.description}</p>
                       </div>
-                      <p className="text-xs text-muted-foreground mb-3">{format.description}</p>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => handleExport(format.id as any)}
-                        disabled={building}
-                        className="w-full"
-                      >
-                        <Download className="w-3 h-3 mr-2" />
-                        {building ? 'Building...' : `Export ${format.name}`}
-                      </Button>
                     </div>
                   </div>
+                  <div className="flex items-center justify-between mt-4">
+                    <span className="text-sm text-muted-foreground">~{format.fileSize}</span>
+                    <Button size="sm" onClick={() => handleExport(format.extension)} disabled={building} variant={isExported ? "outline" : "default"}>
+                      <Download className="w-4 h-4 mr-2" />
+                      {isExported ? 'Re-export' : 'Export'}
+                    </Button>
+                  </div>
+                  {isExported && exportUrl && (
+                    <div className="mt-2 text-xs text-muted-foreground truncate">
+                      Exported: {new Date().toLocaleDateString()}
+                    </div>
+                  )}
                 </div>
               );
             })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Integration Guide */}
-      <Card className="avatar-control-panel">
-        <CardHeader className="avatar-section-header">
-          <CardTitle className="text-base">Integration Guide</CardTitle>
-        </CardHeader>
-        <CardContent className="p-4">
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-              <div className="p-3 bg-primary/5 rounded-lg">
-                <Box className="w-8 h-8 text-primary mx-auto mb-2" />
-                <h4 className="font-medium text-sm">Web Integration</h4>
-                <p className="text-xs text-muted-foreground">Three.js, Babylon.js, WebGL</p>
-              </div>
-              <div className="p-3 bg-primary/5 rounded-lg">
-                <Package className="w-8 h-8 text-primary mx-auto mb-2" />
-                <h4 className="font-medium text-sm">Game Engines</h4>
-                <p className="text-xs text-muted-foreground">Unity, Unreal Engine</p>
-              </div>
-              <div className="p-3 bg-primary/5 rounded-lg">
-                <FileImage className="w-8 h-8 text-primary mx-auto mb-2" />
-                <h4 className="font-medium text-sm">VR/AR/Metaverse</h4>
-                <p className="text-xs text-muted-foreground">VRChat, Horizon, Spatial</p>
-              </div>
-            </div>
-            
-            <div className="p-4 bg-muted rounded-lg">
-              <h4 className="font-medium mb-2">🚀 Ready for the Metaverse</h4>
-              <p className="text-sm text-muted-foreground">
-                Your avatar includes all morph and material properties, optimized with realistic proportions, 
-                PBR materials, and proper rigging for seamless integration across platforms.
-              </p>
-            </div>
           </div>
         </CardContent>
       </Card>

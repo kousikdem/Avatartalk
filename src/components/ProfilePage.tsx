@@ -202,6 +202,8 @@ const ProfilePage: React.FC = () => {
     avatarInitial: (profile?.display_name?.[0] || profile?.username?.[0] || 'U').toUpperCase()
   }), [profile]);
 
+  const [currentUserProfile, setCurrentUserProfile] = useState<any>(null);
+
   // Check if this is the user's own profile
   const isOwnProfile = currentUser?.id === profile?.id;
 
@@ -210,9 +212,15 @@ const ProfilePage: React.FC = () => {
       const { data } = await supabase.auth.getUser();
       setCurrentUser(data.user);
       
-      // Create default avatar for new users
+      // Fetch current user's profile for visitor button
       if (data.user) {
         await createDefaultForNewUsers();
+        const { data: currentProfile } = await supabase
+          .from('profiles')
+          .select('profile_pic_url')
+          .eq('id', data.user.id)
+          .single();
+        setCurrentUserProfile(currentProfile);
       }
     };
     getCurrentUser();
@@ -744,17 +752,17 @@ const ProfilePage: React.FC = () => {
                 <div className="relative">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
                     <div className={`w-full h-full rounded-full ${isDarkTheme ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center overflow-hidden`}>
-                       {profile?.profile_pic_url || profile?.avatar_url ? (
-                         <img 
-                           src={profile.profile_pic_url || profile.avatar_url} 
-                           alt={profileData.displayName}
-                           className="w-full h-full object-cover"
-                         />
-                       ) : (
-                         <span className={`text-lg font-bold ${textPrimaryClass}`}>
-                           {profileData.avatarInitial}
-                         </span>
-                       )}
+                       {profile?.profile_pic_url ? (
+                          <img 
+                            src={profile.profile_pic_url} 
+                            alt={profileData.displayName}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className={`text-lg font-bold ${textPrimaryClass}`}>
+                            {profileData.avatarInitial}
+                          </span>
+                        )}
                     </div>
                   </div>
                   <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 shadow-sm" />
@@ -790,9 +798,9 @@ const ProfilePage: React.FC = () => {
                   >
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[1px]">
                       <div className={`w-full h-full rounded-full ${isDarkTheme ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center overflow-hidden`}>
-                        {currentUser?.user_metadata?.avatar_url ? (
+                        {currentUserProfile?.profile_pic_url ? (
                           <img 
-                            src={currentUser.user_metadata.avatar_url} 
+                            src={currentUserProfile.profile_pic_url} 
                             alt="Your Profile"
                             className="w-full h-full object-cover"
                           />

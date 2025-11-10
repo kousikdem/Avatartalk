@@ -281,24 +281,21 @@ export const useAvatarConfigurations = () => {
 
       if (result.error) throw result.error;
 
-      // Link avatar with profile and all previews
-      const avatarId = result.data.id;
-      const avatarUrl = config.model_url || result.data.model_url || config.thumbnail_url || result.data.thumbnail_url;
-      
-      // Update profile with avatar link - ONLY update avatar_url, NOT profile_pic_url
-      // avatar_url = 3D avatar model/preview
-      // profile_pic_url = 2D profile picture (separate)
+      const savedConfig = result.data;
+
+      // Update profile with avatar reference (3D avatar only, NOT profile_pic_url)
+      // avatar_url is for 3D avatar preview/model
+      // profile_pic_url is managed separately by ProfilePictureUpload component
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ 
-          avatar_id: avatarId,
-          avatar_url: avatarUrl,
-          updated_at: new Date().toISOString()
+        .update({
+          avatar_id: savedConfig.id,
+          avatar_url: savedConfig.model_url || savedConfig.glb_export_url || savedConfig.thumbnail_url,
         })
         .eq('id', user.id);
 
       if (profileError) {
-        console.error('Error updating profile with avatar:', profileError);
+        console.error('Error updating profile:', profileError);
       }
 
       // Reload configurations to reflect changes

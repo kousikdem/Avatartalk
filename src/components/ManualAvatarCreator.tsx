@@ -16,6 +16,7 @@ import ComprehensiveClothingControls from './ComprehensiveClothingControls';
 import PoseAndExpressionLibrary from './PoseAndExpressionLibrary';
 import { useAvatarConfigurations } from '@/hooks/useAvatarConfigurations';
 import { useCustomAvatarUpload } from '@/hooks/useCustomAvatarUpload';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ManualAvatarCreatorProps {
   initialConfig?: any;
@@ -107,55 +108,108 @@ const ManualAvatarCreator: React.FC<ManualAvatarCreatorProps> = ({
     }
   };
 
-  const handleReset = () => {
-    setAvatarConfig({
-      gender: 'male',
-      age: 25,
-      ethnicity: 'caucasian',
-      height: 170,
-      weight: 70,
-      muscle: 50,
-      fat: 20,
-      torsoLength: 50,
-      legLength: 50,
-      shoulderWidth: 50,
-      handSize: 50,
-      headSize: 50,
-      headShape: 'oval',
-      faceWidth: 50,
-      jawline: 50,
-      cheekbones: 50,
-      eyeSize: 50,
-      eyeDistance: 50,
-      eyeShape: 'almond',
-      eyeColor: '#8B4513',
-      noseSize: 50,
-      noseWidth: 50,
-      noseShape: 'straight',
-      mouthWidth: 50,
-      lipThickness: 50,
-      lipShape: 'normal',
-      earSize: 50,
-      earPosition: 50,
-      earShape: 'normal',
-      skinTone: '#F1C27D',
-      skinTexture: 'smooth',
-      hairStyle: 'medium',
-      hairColor: '#8B4513',
-      hairLength: 50,
-      facialHair: 'none',
-      clothingTop: 'tshirt',
-      clothingBottom: 'jeans',
-      shoes: 'sneakers',
-      accessories: [],
-      currentExpression: 'neutral',
-      currentPose: 'standing',
-      avatarName: 'My Avatar',
-      model_url: undefined,
-      thumbnail_url: undefined
-    });
-    setCustomAvatarUploaded(false);
-    toast.success('Avatar reset to defaults');
+  const handleReset = async () => {
+    if (!window.confirm('Are you sure you want to reset your avatar? This will delete all configurations and uploaded files.')) {
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const defaultConfig = {
+        gender: 'male',
+        age: 25,
+        ethnicity: 'caucasian',
+        height: 170,
+        weight: 70,
+        muscle: 50,
+        fat: 20,
+        torsoLength: 50,
+        legLength: 50,
+        shoulderWidth: 50,
+        handSize: 50,
+        headSize: 50,
+        headShape: 'oval',
+        faceWidth: 50,
+        jawline: 50,
+        cheekbones: 50,
+        eyeSize: 50,
+        eyeDistance: 50,
+        eyeShape: 'almond',
+        eyeColor: '#8B4513',
+        noseSize: 50,
+        noseWidth: 50,
+        noseShape: 'straight',
+        mouthWidth: 50,
+        lipThickness: 50,
+        lipShape: 'normal',
+        earSize: 50,
+        earPosition: 50,
+        earShape: 'normal',
+        skinTone: '#F1C27D',
+        skinTexture: 'smooth',
+        hairStyle: 'medium',
+        hairColor: '#8B4513',
+        hairLength: 50,
+        facialHair: 'none',
+        clothingTop: 'tshirt',
+        clothingBottom: 'jeans',
+        shoes: 'sneakers',
+        accessories: [],
+        currentExpression: 'neutral',
+        currentPose: 'standing',
+        avatarName: 'My Avatar',
+        model_url: undefined,
+        thumbnail_url: undefined
+      };
+      
+      // 1. Reset local state
+      setAvatarConfig(defaultConfig);
+      
+      // 2. Clear uploaded files from storage
+      if ((avatarConfig as any).model_url) {
+        const urlPath = (avatarConfig as any).model_url.split('/').slice(-2).join('/');
+        await supabase.storage.from('thumbnails').remove([urlPath]);
+      }
+      
+      // 3. Clear export URLs from active configuration
+      const { data: activeConfig } = await supabase
+        .from('avatar_configurations')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .single();
+      
+      if (activeConfig) {
+        await supabase
+          .from('avatar_configurations')
+          .update({
+            json_export_url: null,
+            gif_export_url: null,
+            glb_export_url: null,
+            gltf_export_url: null,
+            fbx_export_url: null,
+            obj_export_url: null,
+            compressed_json_url: null,
+            compressed_glb_url: null,
+            compressed_gif_url: null,
+            model_url: null,
+            thumbnail_url: null,
+          })
+          .eq('id', activeConfig.id);
+      }
+      
+      // 4. Update UI
+      setCustomAvatarUploaded(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      toast.success('Avatar completely reset');
+    } catch (error: any) {
+      console.error('Reset error:', error);
+      toast.error(`Reset failed: ${error.message}`);
+    }
   };
 
   const handleCustomAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
