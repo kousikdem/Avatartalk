@@ -28,6 +28,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAvatarSettings } from '@/hooks/useAvatarSettings';
+import ProfilePictureUpload from '@/components/ProfilePictureUpload';
 
 const SettingsPage = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -156,38 +157,8 @@ const SettingsPage = () => {
     }
   };
 
-  const handleProfileImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !currentUser) return;
-
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${currentUser.id}/avatar.${fileExt}`;
-
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('profile-pictures')
-        .upload(fileName, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('profile-pictures')
-        .getPublicUrl(fileName);
-
-      setProfileData(prev => ({ ...prev, profile_pic_url: publicUrl }));
-
-      toast({
-        title: "Success",
-        description: "Profile picture uploaded successfully",
-      });
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      toast({
-        title: "Error",
-        description: "Failed to upload profile picture",
-        variant: "destructive",
-      });
-    }
+  const handleProfileImageUpdate = (newImageUrl: string) => {
+    setProfileData(prev => ({ ...prev, profile_pic_url: newImageUrl }));
   };
 
   const saveProfileSettings = async () => {
@@ -321,33 +292,12 @@ const SettingsPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Profile Picture */}
-                <div className="flex items-center gap-6">
-                  <Avatar className="h-20 w-20">
-                    <AvatarImage src={profileData.profile_pic_url} alt="Profile" />
-                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xl">
-                      {(profileData.display_name?.[0] || profileData.username?.[0] || currentUser?.email?.[0] || 'U').toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Profile Picture</h3>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleProfileImageUpload}
-                      className="hidden"
-                      id="profile-image-upload"
-                    />
-                    <Button
-                      variant="outline"
-                      onClick={() => document.getElementById('profile-image-upload')?.click()}
-                      className="flex items-center gap-2"
-                    >
-                      <Upload className="h-4 w-4" />
-                      Upload New Picture
-                    </Button>
-                  </div>
-                </div>
+                {/* Profile Picture Upload Component */}
+                <ProfilePictureUpload
+                  currentImageUrl={profileData.profile_pic_url}
+                  onImageUpdate={handleProfileImageUpdate}
+                  displayName={profileData.display_name || profileData.username || currentUser?.email || 'User'}
+                />
 
                 <Separator />
 

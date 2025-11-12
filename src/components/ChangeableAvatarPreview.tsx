@@ -149,9 +149,11 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
     if (avatarData?.thumbnail_url) return avatarData.thumbnail_url;
     // 2. Custom uploaded model URL
     if (avatarData?.model_url) return avatarData.model_url;
-    // 3. Linked avatar_url from profile (3D avatar model/preview, NOT profile picture)
+    // 3. Linked avatar_url from profile (3D avatar model/preview)
     if (profileData?.avatar_url) return profileData.avatar_url;
-    // 4. Fallback to default avatar image (NOT profile_pic_url)
+    // 4. Profile picture as fallback (2D image)
+    if (profileData?.profile_pic_url) return profileData.profile_pic_url;
+    // 5. Default avatar image
     return '/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png';
   };
 
@@ -173,7 +175,7 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
   }
 
   const avatarImageUrl = getAvatarDisplay();
-  const hasUploadedAvatar = avatarData?.thumbnail_url || avatarData?.model_url;
+  const hasUploadedAvatar = avatarData?.thumbnail_url || avatarData?.model_url || profileData?.avatar_url || profileData?.profile_pic_url;
 
   return (
     <>
