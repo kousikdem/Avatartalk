@@ -54,7 +54,7 @@ export const useCustomAvatarUpload = () => {
       // Use the same model URL as thumbnail (user sees the 3D model)
       const thumbnailUrl = urlData.publicUrl;
 
-      // Update profile with the new avatar
+      // Update profile with the new avatar - ONLY avatar_url, NOT profile_pic_url
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ 

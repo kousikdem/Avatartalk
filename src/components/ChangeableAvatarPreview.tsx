@@ -144,17 +144,16 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
   }, [userId]);
 
   const getAvatarDisplay = () => {
-    // Priority order for avatar display:
+    // ONLY show 3D avatar sources, NOT profile_pic_url
+    // Priority order for 3D avatar display:
     // 1. Custom uploaded thumbnail from active avatar configuration
     if (avatarData?.thumbnail_url) return avatarData.thumbnail_url;
     // 2. Custom uploaded model URL
     if (avatarData?.model_url) return avatarData.model_url;
-    // 3. Linked avatar_url from profile (3D avatar model/preview)
+    // 3. Linked avatar_url from profile (3D avatar model/preview ONLY)
     if (profileData?.avatar_url) return profileData.avatar_url;
-    // 4. Profile picture as fallback (2D image)
-    if (profileData?.profile_pic_url) return profileData.profile_pic_url;
-    // 5. Default avatar image
-    return '/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png';
+    // 4. No fallback to profile_pic_url - that's for 2D profile pictures only
+    return null;
   };
 
   const handleAvatarClick = () => {
@@ -175,7 +174,7 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
   }
 
   const avatarImageUrl = getAvatarDisplay();
-  const hasUploadedAvatar = avatarData?.thumbnail_url || avatarData?.model_url || profileData?.avatar_url || profileData?.profile_pic_url;
+  const hasUploadedAvatar = avatarData?.thumbnail_url || avatarData?.model_url || profileData?.avatar_url;
 
   return (
     <>
