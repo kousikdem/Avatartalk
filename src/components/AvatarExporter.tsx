@@ -74,10 +74,31 @@ const AvatarExporter: React.FC<AvatarExporterProps> = ({ config, onSave, canvasR
 
   const handleSaveToProfile = async () => {
     try {
-      await saveConfiguration(config);
+      toast({ title: "Building avatar...", description: "Generating 3D model and thumbnail" });
+      
+      // Build GLB format first to get the model URL
+      const canvas = canvasRef?.current;
+      const modelUrl = await buildAndExport(config, {
+        format: 'glb',
+        compress: compressionEnabled,
+        quality: 85,
+      }, canvas || undefined);
+
+      // Use the same URL as thumbnail for now (can be enhanced with actual thumbnail generation)
+      const thumbnailUrl = modelUrl;
+
+      // Save configuration with the generated URLs
+      await saveConfiguration({
+        ...config,
+        model_url: modelUrl,
+        thumbnail_url: thumbnailUrl,
+      });
+
+      toast({ title: "Success!", description: "Avatar saved to your profile" });
       onSave?.();
     } catch (error) {
       console.error('Save error:', error);
+      toast({ title: "Error", description: "Failed to save avatar", variant: "destructive" });
     }
   };
 
