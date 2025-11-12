@@ -49,27 +49,14 @@ export const useCustomAvatarUpload = () => {
         .from('thumbnails')
         .getPublicUrl(fileName);
 
-      setProgress(70);
+      setProgress(80);
 
-      // Use the same model URL as thumbnail (user sees the 3D model)
-      const thumbnailUrl = urlData.publicUrl;
-
-      // Update profile with the new avatar
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ 
-          avatar_url: urlData.publicUrl,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
-
-      if (profileError) {
-        console.error('Error updating profile:', profileError);
-      }
+      // Generate thumbnail (for now, use placeholder - can be enhanced with 3D rendering)
+      const thumbnailUrl = '/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png';
 
       setProgress(100);
 
-      toast.success('Custom avatar uploaded and synced with profile!');
+      toast.success('Custom avatar uploaded successfully!');
 
       return {
         model_url: urlData.publicUrl,
