@@ -170,11 +170,20 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
       };
       
       setAvatarConfig(updatedConfig);
+
+      // Update profile with avatar_url ONLY (never touch profile_pic_url)
+      await supabase
+        .from('profiles')
+        .update({ 
+          avatar_url: publicUrl,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
       
       // Save to database - this will trigger real-time updates across all avatar previews
       await saveConfiguration(updatedConfig);
       
-      toast.success('Custom avatar uploaded and linked with all previews!');
+      toast.success('Custom avatar uploaded! Avatar preview updated.');
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('Failed to upload avatar file');
@@ -183,17 +192,45 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
     }
   };
 
-  const handleReset = () => {
-    setAvatarConfig({
-      ...avatarConfig,
-      muscle: 50,
-      fat: 20,
-      height: 170,
-      weight: 70,
-      currentExpression: 'neutral',
-      currentPose: 'standing'
-    });
-    toast.success('Avatar reset to defaults');
+  const handleReset = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Clear custom uploaded avatar (model_url, thumbnail_url)
+      // Keep built avatar config, just remove custom uploads
+      const resetConfig = {
+        ...avatarConfig,
+        model_url: null,
+        thumbnail_url: null,
+        muscle: 50,
+        fat: 20,
+        height: 170,
+        weight: 70,
+        currentExpression: 'neutral',
+        currentPose: 'standing'
+      };
+      
+      setAvatarConfig(resetConfig);
+
+      // Update profile to clear custom avatar, show built avatar instead
+      // ONLY update avatar_url (3D avatar), NEVER touch profile_pic_url
+      await supabase
+        .from('profiles')
+        .update({ 
+          avatar_url: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      // Save the reset configuration to database
+      await saveConfiguration(resetConfig);
+      
+      toast.success('Custom avatar cleared! Showing built avatar.');
+    } catch (error) {
+      console.error('Reset error:', error);
+      toast.error('Failed to reset avatar');
+    }
   };
 
   const handleExport = async () => {
