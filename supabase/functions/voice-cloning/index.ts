@@ -1,11 +1,43 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.1';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schemas
+const voiceDataSchema = z.object({
+  originalPath: z.string().min(1, 'Original voice path is required'),
+  duration: z.number().optional(),
+  size: z.number().optional()
+});
+
+const voiceSettingsSchema = z.object({
+  language: z.string().optional(),
+  pitch: z.number().min(-12).max(12).optional(),
+  speed: z.number().min(0.5).max(2.0).optional(),
+  volume: z.number().min(0).max(1).optional()
+});
+
+const startCloningSchema = z.object({
+  action: z.literal('start_cloning'),
+  voiceData: voiceDataSchema,
+  voiceSettings: voiceSettingsSchema.optional()
+});
+
+const synthesizeSpeechSchema = z.object({
+  action: z.literal('synthesize_speech'),
+  text: z.string().min(1).max(5000, 'Text must be 5000 characters or less'),
+  cloningId: z.string().uuid('Invalid cloning ID format')
+});
+
+const requestSchema = z.discriminatedUnion('action', [
+  startCloningSchema,
+  synthesizeSpeechSchema
+]);
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -69,7 +101,22 @@ serve(async (req) => {
       });
     }
 
-    const { action, voiceData = {}, voiceSettings = {}, cloningId } = requestBody;
+    // Validate input
+    const validationResult = requestSchema.safeParse(requestBody);
+    
+    if (!validationResult.success) {
+      console.error('❌ Validation failed:', validationResult.error.errors);
+      return new Response(JSON.stringify({ 
+        error: 'Invalid input',
+        details: validationResult.error.errors.map(e => e.message).join(', '),
+        success: false
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { action, voiceData, voiceSettings, cloningId } = validationResult.data as any;
 
     console.log('Voice cloning request:', { action, cloningId, voiceData });
 

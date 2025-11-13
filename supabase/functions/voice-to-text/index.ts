@@ -1,9 +1,37 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
+
+// Input validation schema
+const audioSchema = z.object({
+  audio: z.string()
+    .min(1, 'Audio data cannot be empty')
+    .refine(
+      (val) => {
+        // Check if it's valid base64
+        try {
+          const base64Pattern = /^[A-Za-z0-9+/]*={0,2}$/;
+          return base64Pattern.test(val);
+        } catch {
+          return false;
+        }
+      },
+      'Invalid audio data format'
+    )
+    .refine(
+      (val) => {
+        // Limit size to ~10MB (base64 encoded)
+        const sizeInBytes = (val.length * 3) / 4;
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        return sizeInBytes <= maxSize;
+      },
+      'Audio data exceeds 10MB limit'
+    )
+});
 
 // Process base64 in chunks to prevent memory issues
 function processBase64Chunks(base64String: string, chunkSize = 32768) {
@@ -125,11 +153,22 @@ serve(async (req) => {
   }
 
   try {
-    const { audio } = await req.json()
+    // Parse and validate input
+    const body = await req.json();
+    const validationResult = audioSchema.safeParse(body);
     
-    if (!audio) {
-      throw new Error('No audio data provided')
+    if (!validationResult.success) {
+      console.error('❌ Validation failed:', validationResult.error.errors);
+      return new Response(JSON.stringify({ 
+        error: 'Invalid input',
+        details: validationResult.error.errors.map(e => e.message).join(', ')
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
+    
+    const { audio } = validationResult.data;
 
     console.log('Processing audio with Coqui STT...');
 

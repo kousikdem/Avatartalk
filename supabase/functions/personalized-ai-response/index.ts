@@ -1,11 +1,22 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.1';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const messageSchema = z.object({
+  userMessage: z.string()
+    .min(1, 'Message cannot be empty')
+    .max(2000, 'Message must be 2000 characters or less')
+    .trim(),
+  profileId: z.string().uuid('Invalid profile ID format'),
+  userId: z.string().uuid('Invalid user ID format').optional()
+});
 
 const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -18,11 +29,22 @@ serve(async (req) => {
   }
 
   try {
-    const { userMessage, profileId, userId } = await req.json();
-
-    if (!userMessage || !profileId) {
-      throw new Error('User message and profile ID are required');
+    // Parse and validate input
+    const body = await req.json();
+    const validationResult = messageSchema.safeParse(body);
+    
+    if (!validationResult.success) {
+      console.error('❌ Validation failed:', validationResult.error.errors);
+      return new Response(JSON.stringify({ 
+        error: 'Invalid input',
+        details: validationResult.error.errors.map(e => e.message).join(', ')
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
+
+    const { userMessage, profileId, userId } = validationResult.data;
 
     console.log('Generating personalized AI response for profile:', profileId);
 
