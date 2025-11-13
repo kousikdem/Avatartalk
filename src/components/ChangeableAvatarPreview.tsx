@@ -144,15 +144,15 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
   }, [userId]);
 
   const getAvatarDisplay = () => {
-    // ONLY show 3D avatar sources (avatar_url), NEVER profile_pic_url
+    // ONLY show 3D avatar sources, NEVER profile_pic_url (profile picture is separate)
     // Priority order for 3D avatar display:
-    // 1. Linked avatar_url from profile (set by both custom upload & built avatars)
-    if (profileData?.avatar_url) return profileData.avatar_url;
-    // 2. Custom uploaded thumbnail from active avatar configuration
-    if (avatarData?.thumbnail_url) return avatarData.thumbnail_url;
-    // 3. Custom uploaded model URL from avatar configuration
+    // 1. Custom uploaded model from avatar configuration (highest priority for custom uploads)
     if (avatarData?.model_url) return avatarData.model_url;
-    // 4. No 3D avatar exists - show default FuturisticAvatar3D component
+    // 2. Custom uploaded thumbnail from avatar configuration
+    if (avatarData?.thumbnail_url) return avatarData.thumbnail_url;
+    // 3. Profile avatar_url (fallback for direct uploads)
+    if (profileData?.avatar_url) return profileData.avatar_url;
+    // 4. No 3D avatar exists - show default built avatar (FuturisticAvatar3D)
     return null;
   };
 

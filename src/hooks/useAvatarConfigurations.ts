@@ -283,11 +283,12 @@ export const useAvatarConfigurations = () => {
 
       // Link avatar with profile and all previews
       const avatarId = result.data.id;
-      const avatarUrl = config.model_url || result.data.model_url || config.thumbnail_url || result.data.thumbnail_url;
+      // Only set avatar_url if there's a custom uploaded file, otherwise null (show built avatar)
+      const avatarUrl = config.model_url || result.data.model_url || config.thumbnail_url || result.data.thumbnail_url || null;
       
       // Update profile with avatar link - ONLY update avatar_url, NOT profile_pic_url
-      // avatar_url = 3D avatar model/preview
-      // profile_pic_url = 2D profile picture (separate)
+      // avatar_url = 3D avatar model/preview (null = show built avatar)
+      // profile_pic_url = 2D profile picture (completely separate)
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ 
