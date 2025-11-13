@@ -14,11 +14,29 @@ export const usePersonalizedAIChat = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const sendMessage = async (userMessage: string, profileId?: string, userId?: string) => {
-    if (!userMessage.trim()) return;
+    // Client-side validation
+    const trimmedMessage = userMessage.trim();
+    
+    if (!trimmedMessage) {
+      console.error('Message cannot be empty');
+      return;
+    }
+    
+    if (trimmedMessage.length > 2000) {
+      console.error('Message must be 2000 characters or less');
+      const errorResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "Your message is too long. Please keep it under 2000 characters.",
+        sender: 'ai',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorResponse]);
+      return;
+    }
 
     const newUserMessage: Message = {
       id: Date.now().toString(),
-      text: userMessage,
+      text: trimmedMessage,
       sender: 'user',
       timestamp: new Date()
     };
@@ -30,7 +48,7 @@ export const usePersonalizedAIChat = () => {
       // Call the personalized AI response function
       const { data, error } = await supabase.functions.invoke('personalized-ai-response', {
         body: {
-          userMessage,
+          userMessage: trimmedMessage,
           profileId: profileId || userId,
           userId
         }
