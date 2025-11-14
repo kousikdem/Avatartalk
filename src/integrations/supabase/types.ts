@@ -59,6 +59,10 @@ export type Database = {
           cheekbones: number
           clothing_bottom: string | null
           clothing_top: string | null
+          compressed_gif_url: string | null
+          compressed_glb_url: string | null
+          compressed_json_url: string | null
+          compression_ratio: number | null
           configuration_data: Json | null
           created_at: string
           current_expression: string
@@ -71,7 +75,11 @@ export type Database = {
           eye_shape: string
           eye_size: number
           face_width: number
+          fbx_export_url: string | null
           gender: string
+          gif_export_url: string | null
+          glb_export_url: string | null
+          gltf_export_url: string | null
           hair_color: string
           hair_length: number
           hair_style: string
@@ -81,6 +89,9 @@ export type Database = {
           id: string
           is_active: boolean
           jawline: number
+          json_export_url: string | null
+          last_export_date: string | null
+          last_export_format: string | null
           lip_shape: string
           lip_thickness: number
           model_url: string | null
@@ -89,6 +100,7 @@ export type Database = {
           nose_shape: string
           nose_size: number
           nose_width: number
+          obj_export_url: string | null
           shoes: string | null
           skin_texture: string
           skin_tone: string
@@ -105,6 +117,10 @@ export type Database = {
           cheekbones?: number
           clothing_bottom?: string | null
           clothing_top?: string | null
+          compressed_gif_url?: string | null
+          compressed_glb_url?: string | null
+          compressed_json_url?: string | null
+          compression_ratio?: number | null
           configuration_data?: Json | null
           created_at?: string
           current_expression?: string
@@ -117,7 +133,11 @@ export type Database = {
           eye_shape?: string
           eye_size?: number
           face_width?: number
+          fbx_export_url?: string | null
           gender?: string
+          gif_export_url?: string | null
+          glb_export_url?: string | null
+          gltf_export_url?: string | null
           hair_color?: string
           hair_length?: number
           hair_style?: string
@@ -127,6 +147,9 @@ export type Database = {
           id?: string
           is_active?: boolean
           jawline?: number
+          json_export_url?: string | null
+          last_export_date?: string | null
+          last_export_format?: string | null
           lip_shape?: string
           lip_thickness?: number
           model_url?: string | null
@@ -135,6 +158,7 @@ export type Database = {
           nose_shape?: string
           nose_size?: number
           nose_width?: number
+          obj_export_url?: string | null
           shoes?: string | null
           skin_texture?: string
           skin_tone?: string
@@ -151,6 +175,10 @@ export type Database = {
           cheekbones?: number
           clothing_bottom?: string | null
           clothing_top?: string | null
+          compressed_gif_url?: string | null
+          compressed_glb_url?: string | null
+          compressed_json_url?: string | null
+          compression_ratio?: number | null
           configuration_data?: Json | null
           created_at?: string
           current_expression?: string
@@ -163,7 +191,11 @@ export type Database = {
           eye_shape?: string
           eye_size?: number
           face_width?: number
+          fbx_export_url?: string | null
           gender?: string
+          gif_export_url?: string | null
+          glb_export_url?: string | null
+          gltf_export_url?: string | null
           hair_color?: string
           hair_length?: number
           hair_style?: string
@@ -173,6 +205,9 @@ export type Database = {
           id?: string
           is_active?: boolean
           jawline?: number
+          json_export_url?: string | null
+          last_export_date?: string | null
+          last_export_format?: string | null
           lip_shape?: string
           lip_thickness?: number
           model_url?: string | null
@@ -181,6 +216,7 @@ export type Database = {
           nose_shape?: string
           nose_size?: number
           nose_width?: number
+          obj_export_url?: string | null
           shoes?: string | null
           skin_texture?: string
           skin_tone?: string
@@ -475,6 +511,149 @@ export type Database = {
           thumbnail_url?: string | null
           title?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      follower_analytics: {
+        Row: {
+          created_at: string | null
+          date: string
+          followers_gained: number | null
+          followers_lost: number | null
+          id: string
+          net_growth: number | null
+          total_followers: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string
+          followers_gained?: number | null
+          followers_lost?: number | null
+          id?: string
+          net_growth?: number | null
+          total_followers?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          followers_gained?: number | null
+          followers_lost?: number | null
+          id?: string
+          net_growth?: number | null
+          total_followers?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      follower_categories: {
+        Row: {
+          category_name: string
+          color: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          category_name: string
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          category_name?: string
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      follower_category_assignments: {
+        Row: {
+          category_id: string
+          created_at: string | null
+          following_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string | null
+          following_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string | null
+          following_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follower_category_assignments_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "follower_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      follower_engagement: {
+        Row: {
+          chat_interactions: number | null
+          created_at: string | null
+          engagement_score: number | null
+          follower_id: string
+          id: string
+          last_interaction_at: string | null
+          link_clicks: number | null
+          post_comments: number | null
+          post_likes: number | null
+          product_purchases: number | null
+          profile_visits: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          chat_interactions?: number | null
+          created_at?: string | null
+          engagement_score?: number | null
+          follower_id: string
+          id?: string
+          last_interaction_at?: string | null
+          link_clicks?: number | null
+          post_comments?: number | null
+          post_likes?: number | null
+          product_purchases?: number | null
+          profile_visits?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          chat_interactions?: number | null
+          created_at?: string | null
+          engagement_score?: number | null
+          follower_id?: string
+          id?: string
+          last_interaction_at?: string | null
+          link_clicks?: number | null
+          post_comments?: number | null
+          post_likes?: number | null
+          product_purchases?: number | null
+          profile_visits?: number | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []

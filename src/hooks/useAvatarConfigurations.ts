@@ -283,6 +283,20 @@ export const useAvatarConfigurations = () => {
 
       // Link avatar with profile and all previews
       const avatarId = result.data.id;
+      
+      // Deactivate all other avatars for this user
+      await supabase
+        .from('avatar_configurations')
+        .update({ is_active: false })
+        .eq('user_id', user.id)
+        .neq('id', avatarId);
+      
+      // Activate this avatar
+      await supabase
+        .from('avatar_configurations')
+        .update({ is_active: true })
+        .eq('id', avatarId);
+      
       // Only set avatar_url if there's a custom uploaded file, otherwise null (show built avatar)
       const avatarUrl = config.model_url || result.data.model_url || config.thumbnail_url || result.data.thumbnail_url || null;
       
