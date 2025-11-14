@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Mic, MicOff } from 'lucide-react';
 import { useDefaultAvatar } from '@/hooks/useDefaultAvatar';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AvatarPreviewProps {
   isLarge?: boolean;
@@ -19,26 +19,89 @@ const AvatarPreview: React.FC<AvatarPreviewProps> = ({
   profileData 
 }) => {
   const [isTalking, setIsTalking] = React.useState(false);
+  const [liveProfileData, setLiveProfileData] = React.useState(profileData);
+  const [liveAvatarConfig, setLiveAvatarConfig] = React.useState(avatarConfig);
   const { defaultConfig } = useDefaultAvatar();
 
-  // Use profile data first, then avatar configuration, then default
+  // Subscribe to real-time profile updates
+  React.useEffect(() => {
+    if (!profileData?.id) return;
+
+    const channel = supabase
+      .channel('avatar-preview-profile')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${profileData.id}`
+        },
+        (payload: any) => {
+          setLiveProfileData(payload.new);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profileData?.id]);
+
+  // Subscribe to real-time avatar config updates
+  React.useEffect(() => {
+    if (!profileData?.id) return;
+
+    const channel = supabase
+      .channel('avatar-preview-config')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'avatar_configurations',
+          filter: `user_id=eq.${profileData.id}`
+        },
+        (payload: any) => {
+          if (payload.new && payload.new.is_active) {
+            setLiveAvatarConfig(payload.new);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profileData?.id]);
+
+  // Update local state when props change
+  React.useEffect(() => {
+    setLiveProfileData(profileData);
+  }, [profileData]);
+
+  React.useEffect(() => {
+    setLiveAvatarConfig(avatarConfig);
+  }, [avatarConfig]);
+
+  // Use live data with real-time updates
   const getAvatarDisplay = () => {
-    // First priority: Custom uploaded thumbnail from avatar config
-    if (avatarConfig?.thumbnail_url) {
-      return avatarConfig.thumbnail_url;
+    // First priority: Custom uploaded thumbnail from live avatar config
+    if (liveAvatarConfig?.thumbnail_url) {
+      return liveAvatarConfig.thumbnail_url;
     }
-    // Second priority: avatar_url from profile (3D avatar model/preview, NOT profile picture)
-    if (profileData?.avatar_url) {
-      return profileData.avatar_url;
+    // Second priority: avatar_url from live profile (3D avatar model/preview, NOT profile picture)
+    if (liveProfileData?.avatar_url) {
+      return liveProfileData.avatar_url;
     }
     // Fallback: default avatar image
     return "/lovable-uploads/28a7b1bf-3631-42ba-ab7e-d0557c2d9bae.png";
   };
 
   const getAvatarName = () => {
-    if (avatarConfig?.avatar_name) return avatarConfig.avatar_name;
+    if (liveAvatarConfig?.avatar_name) return liveAvatarConfig.avatar_name;
     if (defaultConfig?.avatar_name) return defaultConfig.avatar_name;
-    if (profileData?.display_name) return profileData.display_name;
+    if (liveProfileData?.display_name) return liveProfileData.display_name;
     return "Avatar";
   };
 
@@ -62,7 +125,7 @@ const AvatarPreview: React.FC<AvatarPreviewProps> = ({
             )}
             
             {/* Avatar Configuration Visual Indicators */}
-            {(avatarConfig || defaultConfig) && (
+            {(liveAvatarConfig || defaultConfig) && (
               <div className="absolute bottom-2 right-2 flex gap-1">
                 <div className="w-2 h-2 bg-green-400 rounded-full shadow-lg shadow-green-400/50"></div>
                 <div className="w-2 h-2 bg-blue-400 rounded-full shadow-lg shadow-blue-400/50"></div>
@@ -93,7 +156,7 @@ const AvatarPreview: React.FC<AvatarPreviewProps> = ({
             <p className="text-white/90 text-sm font-medium text-center">
               {getAvatarName()}
             </p>
-            {(avatarConfig || defaultConfig) && (
+            {(liveAvatarConfig || defaultConfig) && (
               <p className="text-slate-300 text-xs text-center mt-1">
                 Linked with Avatar Dashboard
               </p>
