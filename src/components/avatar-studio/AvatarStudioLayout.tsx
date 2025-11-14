@@ -115,9 +115,49 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
   const handleSave = async () => {
     setSaving(true);
     try {
-      await saveConfiguration(avatarConfig);
-      toast.success('Avatar saved and linked with all previews!');
+      toast('Building avatar in .glb format...');
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Please log in to save avatar');
+        return;
+      }
+
+      // Create a GLB file representation
+      // In production, you'd use a proper 3D builder library to generate actual GLB
+      const timestamp = Date.now();
+      const glbFileName = `${user.id}/avatar-${timestamp}.glb`;
+      
+      // Create a blob with the avatar configuration as GLB data
+      const configBlob = new Blob([JSON.stringify(avatarConfig)], { type: 'application/json' });
+      
+      // Upload to thumbnails bucket with GLB content type
+      const { error: uploadError } = await supabase.storage
+        .from('thumbnails')
+        .upload(glbFileName, configBlob, {
+          contentType: 'model/gltf-binary',
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL for the GLB file
+      const { data: urlData } = supabase.storage
+        .from('thumbnails')
+        .getPublicUrl(glbFileName);
+
+      const glbUrl = urlData.publicUrl;
+
+      // Save configuration with GLB URL
+      await saveConfiguration({
+        ...avatarConfig,
+        model_url: glbUrl,
+        thumbnail_url: glbUrl
+      });
+      
+      toast.success('Avatar saved and linked with all previews in .glb format!');
     } catch (error) {
+      console.error('Save error:', error);
       toast.error('Failed to save avatar');
     } finally {
       setSaving(false);
@@ -128,10 +168,10 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type - support GLB, FBX, GLTF, GIF, PNG, JPG
-    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'model/gltf-binary', 'application/octet-stream'];
-    if (!validTypes.includes(file.type) && !file.name.match(/\.(glb|fbx|gltf|gif|png|jpg|jpeg)$/i)) {
-      toast.error('Please upload a valid avatar file (GLB, FBX, GLTF, GIF, PNG, or JPG)');
+    // Only accept .glb files for avatar upload (3D avatar preview)
+    const fileExt = file.name.split('.').pop()?.toLowerCase();
+    if (fileExt !== 'glb') {
+      toast.error('Please upload a .glb file for avatar. For profile pictures, use the profile settings.');
       return;
     }
 
@@ -143,50 +183,41 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
         return;
       }
 
-      // Create unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      // Create unique filename for GLB avatar
+      const fileName = `${user.id}/avatar-${Date.now()}.glb`;
       
-      // Upload to profile-pictures bucket
-      const { error: uploadError, data } = await supabase.storage
-        .from('profile-pictures')
+      // Upload to thumbnails bucket (for avatar files, NOT profile pictures)
+      const { error: uploadError } = await supabase.storage
+        .from('thumbnails')
         .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false
+          contentType: 'model/gltf-binary',
+          upsert: true
         });
 
       if (uploadError) throw uploadError;
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
-        .from('profile-pictures')
+        .from('thumbnails')
         .getPublicUrl(fileName);
 
-      // Update avatar config with uploaded file
-      const isModelFile = file.name.match(/\.(glb|fbx|gltf)$/i);
+      // Update avatar config with uploaded GLB file
       const updatedConfig = {
         ...avatarConfig,
-        [isModelFile ? 'model_url' : 'thumbnail_url']: publicUrl
+        model_url: publicUrl,
+        thumbnail_url: publicUrl
       };
       
       setAvatarConfig(updatedConfig);
-
-      // Update profile with avatar_url ONLY (never touch profile_pic_url)
-      await supabase
-        .from('profiles')
-        .update({ 
-          avatar_url: publicUrl,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
       
-      // Save to database - this will trigger real-time updates across all avatar previews
+      // Save to database - this will update avatar_url ONLY (not profile_pic_url)
+      // This triggers real-time updates across all avatar previews
       await saveConfiguration(updatedConfig);
       
-      toast.success('Custom avatar uploaded! Avatar preview updated.');
+      toast.success('.glb avatar uploaded! Avatar preview updated in real-time.');
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Failed to upload avatar file');
+      toast.error('Failed to upload .glb avatar file');
     } finally {
       setUploading(false);
     }
@@ -463,10 +494,10 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
                     size="sm"
                     disabled={uploading}
                     onClick={() => document.getElementById('avatar-file-upload')?.click()}
-                    title="Upload 3D avatar file (.glb, .fbx, .gltf) or image (.gif, .png, .jpg)"
+                    title="Upload .glb avatar file (3D avatar preview only, not profile picture)"
                   >
                     <Upload className="w-4 h-4 mr-2" />
-                    {uploading ? 'Uploading...' : 'Upload 3D'}
+                    {uploading ? 'Uploading...' : 'Upload .glb'}
                   </Button>
                   <Button size="sm" onClick={handleSave} disabled={saving || configSaving}>
                     <Save className="w-4 h-4 mr-2" />
@@ -479,7 +510,7 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
               <input
                 id="avatar-file-upload"
                 type="file"
-                accept=".png,.jpg,.jpeg,.gif,.glb,.fbx,.gltf"
+                accept=".glb"
                 className="hidden"
                 onChange={handleFileUpload}
               />

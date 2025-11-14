@@ -85,12 +85,14 @@ const AvatarPreview: React.FC<AvatarPreviewProps> = ({
   }, [avatarConfig]);
 
   // Use live data with real-time updates
+  // IMPORTANT: This shows 3D avatar preview (avatar_url), NOT profile picture (profile_pic_url)
   const getAvatarDisplay = () => {
-    // First priority: Custom uploaded thumbnail from live avatar config
+    // First priority: Custom uploaded .glb thumbnail from live avatar config
     if (liveAvatarConfig?.thumbnail_url) {
       return liveAvatarConfig.thumbnail_url;
     }
-    // Second priority: avatar_url from live profile (3D avatar model/preview, NOT profile picture)
+    // Second priority: avatar_url from live profile (3D avatar model/preview ONLY)
+    // NOTE: profile_pic_url is for 2D profile pictures and is NOT used here
     if (liveProfileData?.avatar_url) {
       return liveProfileData.avatar_url;
     }

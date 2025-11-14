@@ -297,17 +297,19 @@ export const useAvatarConfigurations = () => {
         .update({ is_active: true })
         .eq('id', avatarId);
       
-      // Only set avatar_url if there's a custom uploaded file, otherwise null (show built avatar)
+      // Set avatar_url with .glb model URL for 3D avatar preview
+      // IMPORTANT: avatar_url is for 3D avatars ONLY (built or uploaded .glb files)
+      // profile_pic_url is for 2D profile pictures and is NEVER changed by avatar system
       const avatarUrl = config.model_url || result.data.model_url || config.thumbnail_url || result.data.thumbnail_url || null;
       
       // Update profile with avatar link - ONLY update avatar_url, NOT profile_pic_url
-      // avatar_url = 3D avatar model/preview (null = show built avatar)
-      // profile_pic_url = 2D profile picture (completely separate)
+      // avatar_url = 3D avatar model/preview (.glb format)
+      // profile_pic_url = 2D profile picture (managed separately by ProfilePictureUpload)
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ 
           avatar_id: avatarId,
-          avatar_url: avatarUrl,
+          avatar_url: avatarUrl,  // .glb file URL for avatar preview
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);
