@@ -95,7 +95,33 @@ export const useFollows = (userId?: string): UseFollowsReturn => {
   const followUser = async (followingId: string) => {
     try {
       const { data: currentUser } = await supabase.auth.getUser();
-      if (!currentUser.user) throw new Error('Not authenticated');
+      if (!currentUser.user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to follow users",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Prevent following yourself
+      if (currentUser.user.id === followingId) {
+        toast({
+          title: "Error",
+          description: "You cannot follow yourself",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if already following
+      if (isFollowing(followingId)) {
+        toast({
+          title: "Info",
+          description: "You are already following this user",
+        });
+        return;
+      }
 
       const { error } = await supabase
         .from('follows')
@@ -106,7 +132,18 @@ export const useFollows = (userId?: string): UseFollowsReturn => {
           },
         ]);
 
-      if (error) throw error;
+      if (error) {
+        // Handle duplicate follow error
+        if (error.code === '23505') {
+          toast({
+            title: "Info",
+            description: "You are already following this user",
+          });
+          await fetchFollows();
+          return;
+        }
+        throw error;
+      }
 
       toast({
         title: "Success",
@@ -118,7 +155,7 @@ export const useFollows = (userId?: string): UseFollowsReturn => {
       console.error('Error following user:', error);
       toast({
         title: "Error",
-        description: "Failed to follow user",
+        description: error.message || "Failed to follow user",
         variant: "destructive",
       });
     }
@@ -127,7 +164,23 @@ export const useFollows = (userId?: string): UseFollowsReturn => {
   const unfollowUser = async (followingId: string) => {
     try {
       const { data: currentUser } = await supabase.auth.getUser();
-      if (!currentUser.user) throw new Error('Not authenticated');
+      if (!currentUser.user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to unfollow users",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if not following
+      if (!isFollowing(followingId)) {
+        toast({
+          title: "Info",
+          description: "You are not following this user",
+        });
+        return;
+      }
 
       const { error } = await supabase
         .from('follows')
@@ -147,7 +200,7 @@ export const useFollows = (userId?: string): UseFollowsReturn => {
       console.error('Error unfollowing user:', error);
       toast({
         title: "Error",
-        description: "Failed to unfollow user",
+        description: error.message || "Failed to unfollow user",
         variant: "destructive",
       });
     }
