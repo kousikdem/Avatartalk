@@ -21,7 +21,8 @@ const FollowButton: React.FC<FollowButtonProps> = ({
   className = ''
 }) => {
   const { toast } = useToast();
-  const { isFollowing, followUser, unfollowUser, loading } = useFollows();
+  const { isFollowing, followUser, unfollowUser, loading, refetch } = useFollows();
+  const [isProcessing, setIsProcessing] = React.useState(false);
 
   // Don't show follow button for own profile
   if (currentUserId === targetUserId) {
@@ -46,8 +47,14 @@ const FollowButton: React.FC<FollowButtonProps> = ({
   }
 
   const handleFollowClick = async () => {
+    // Debounce: Prevent rapid clicks
+    if (isProcessing || loading) return;
+    
+    setIsProcessing(true);
+    const wasFollowing = isFollowing(targetUserId);
+    
     try {
-      if (isFollowing(targetUserId)) {
+      if (wasFollowing) {
         await unfollowUser(targetUserId);
         toast({
           title: "Unfollowed",
@@ -62,11 +69,16 @@ const FollowButton: React.FC<FollowButtonProps> = ({
       }
     } catch (error) {
       console.error('Error toggling follow:', error);
+      // Rollback optimistic update by refetching current state
+      await refetch();
       toast({
         title: "Error",
-        description: "Failed to update follow status",
+        description: "Failed to update follow status. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      // Reset processing state after 1 second to prevent spam
+      setTimeout(() => setIsProcessing(false), 1000);
     }
   };
 
@@ -78,7 +90,7 @@ const FollowButton: React.FC<FollowButtonProps> = ({
           variant={isUserFollowing ? "default" : "outline"}
           size="sm"
           onClick={handleFollowClick}
-          disabled={loading}
+          disabled={loading || isProcessing}
           className={`${
             isUserFollowing 
               ? 'bg-gradient-to-r from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white border-0 shadow-lg hover:shadow-red-500/30' 
@@ -108,7 +120,7 @@ const FollowButton: React.FC<FollowButtonProps> = ({
           : 'bg-gradient-to-r from-gray-500 via-gray-600 to-gray-700 hover:from-gray-600 hover:via-gray-700 hover:to-gray-800 border-0 text-white shadow-lg hover:shadow-gray-500/30'
       } ${className}`}
       onClick={handleFollowClick}
-      disabled={loading}
+      disabled={loading || isProcessing}
     >
       {loading ? (
         <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />

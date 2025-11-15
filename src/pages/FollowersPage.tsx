@@ -141,6 +141,16 @@ const FollowersPage = () => {
 
   const handleFollow = async (userId: string) => {
     try {
+      // Prevent following anonymous visitors
+      if (userId.startsWith('anonymous_')) {
+        toast({
+          title: "Cannot Follow",
+          description: "Anonymous visitors cannot be followed. They need to sign up first.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       await followUser(userId);
       await refetch(); // Refresh the data
       toast({
