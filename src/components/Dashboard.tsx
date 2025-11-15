@@ -14,10 +14,10 @@ import { useToast } from '@/hooks/use-toast';
 const Dashboard = () => {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const { profileData, loading } = useUserProfile();
-  const { following, followersCount, followingCount, refetch } = useFollows(profileData?.id);
+  const { following, refetch } = useFollows(profileData?.id);
   const { toast } = useToast();
 
-  // Realtime follows updates for stats
+  // Realtime follows updates for stats - refetch profile data
   React.useEffect(() => {
     if (!profileData?.id) return;
 
@@ -28,22 +28,11 @@ const Dashboard = () => {
         {
           event: '*',
           schema: 'public',
-          table: 'follows',
-          filter: `follower_id=eq.${profileData.id}`
+          table: 'profiles',
+          filter: `id=eq.${profileData.id}`
         },
         () => {
-          refetch();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'follows',
-          filter: `following_id=eq.${profileData.id}`
-        },
-        () => {
+          // Profile data will auto-refresh from useUserProfile
           refetch();
         }
       )
@@ -123,7 +112,7 @@ const Dashboard = () => {
             <Users className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{followersCount}</div>
+            <div className="text-2xl font-bold text-gray-900">{profileData?.followers_count || 0}</div>
             <p className="text-xs text-gray-600">+20% from last month</p>
           </CardContent>
         </Card>

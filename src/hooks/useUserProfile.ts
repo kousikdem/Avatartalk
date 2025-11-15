@@ -15,6 +15,8 @@ interface UserProfileData {
   age: number;
   profession: string;
   public_link: string;
+  followers_count: number;
+  following_count: number;
   avatar_data: {
     style: string;
     voice: string;
@@ -104,6 +106,8 @@ export const useUserProfile = () => {
         age: profile?.age || 18,
         profession: profile?.profession || '',
         public_link: `${window.location.origin}/${profile?.username || user.id}`,
+        followers_count: profile?.followers_count || 0,
+        following_count: profile?.following_count || 0,
         avatar_data: {
           style: avatarSettings?.avatar_type || 'realistic',
           voice: avatarSettings?.voice_type || 'neutral',
