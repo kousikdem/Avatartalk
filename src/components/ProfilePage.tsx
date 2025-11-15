@@ -447,12 +447,16 @@ const ProfilePage: React.FC = () => {
     try {
       if (isFollowing(profile.id)) {
         await unfollowUser(profile.id);
+        // Refetch profile to update follower counts
+        await fetchProfile();
         toast({
           title: "Unfollowed",
           description: `You unfollowed ${profile.display_name || profile.username}`,
         });
       } else {
         await followUser(profile.id);
+        // Refetch profile to update follower counts
+        await fetchProfile();
         toast({
           title: "Following",
           description: `You are now following ${profile.display_name || profile.username}`,
