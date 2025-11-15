@@ -441,37 +441,7 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  const handleFollow = async () => {
-    if (!profile || !currentUser) return;
-    
-    try {
-      if (isFollowing(profile.id)) {
-        await unfollowUser(profile.id);
-        // Refetch profile to update follower counts
-        await fetchProfile();
-        toast({
-          title: "Unfollowed",
-          description: `You unfollowed ${profile.display_name || profile.username}`,
-        });
-      } else {
-        await followUser(profile.id);
-        // Refetch profile to update follower counts
-        await fetchProfile();
-        toast({
-          title: "Following",
-          description: `You are now following ${profile.display_name || profile.username}`,
-        });
-      }
-      await refetchFollows();
-    } catch (error) {
-      console.error('Error following user:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update follow status",
-        variant: "destructive",
-      });
-    }
-  };
+  // handleFollow removed - now using FollowButton component instead
 
   const handleChatSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
