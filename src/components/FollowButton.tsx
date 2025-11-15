@@ -21,16 +21,26 @@ const FollowButton: React.FC<FollowButtonProps> = ({
   className = ''
 }) => {
   const { toast } = useToast();
-  const { isFollowing, followUser, unfollowUser, loading, refetch } = useFollows();
   const [isProcessing, setIsProcessing] = React.useState(false);
+  const [authUser, setAuthUser] = React.useState<string | null>(null);
+  
+  // Get current authenticated user
+  React.useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setAuthUser(data.user?.id || null);
+    });
+  }, []);
+
+  // Use the authUser for the hook, not the prop
+  const { isFollowing, followUser, unfollowUser, loading, refetch } = useFollows(authUser || undefined);
 
   // Don't show follow button for own profile
-  if (currentUserId === targetUserId) {
+  if (authUser === targetUserId || currentUserId === targetUserId) {
     return null;
   }
 
-  // Require real authentication for following
-  if (!currentUserId) {
+  // Show loading state while checking auth
+  if (!authUser) {
     return (
       <Button
         variant="outline"
