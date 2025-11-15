@@ -24,8 +24,6 @@ interface Follow {
 interface UseFollowsReturn {
   followers: Follow[];
   following: Follow[];
-  followersCount: number;
-  followingCount: number;
   loading: boolean;
   followUser: (followingId: string) => Promise<void>;
   unfollowUser: (followingId: string) => Promise<void>;
@@ -257,8 +255,6 @@ export const useFollows = (userId?: string): UseFollowsReturn => {
   return {
     followers,
     following,
-    followersCount: followers.length,
-    followingCount: following.length,
     loading,
     followUser,
     unfollowUser,

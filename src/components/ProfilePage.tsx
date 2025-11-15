@@ -62,6 +62,8 @@ interface Profile {
   avatar_url: string;
   profile_pic_url?: string;
   profession: string;
+  followers_count?: number;
+  following_count?: number;
 }
 
 interface AvatarConfiguration {
@@ -142,8 +144,8 @@ const ProfilePage: React.FC = () => {
   const { toast } = useToast();
 
   const {
-    followersCount,
-    followingCount,
+    followers,
+    following,
     isFollowing,
     followUser,
     unfollowUser,
@@ -205,7 +207,7 @@ const ProfilePage: React.FC = () => {
   // Check if this is the user's own profile
   const isOwnProfile = currentUser?.id === profile?.id;
 
-  // Real-time follower count updates
+  // Real-time follower count updates from database
   useEffect(() => {
     if (!profile?.id) return;
 
@@ -216,10 +218,11 @@ const ProfilePage: React.FC = () => {
         {
           event: '*',
           schema: 'public',
-          table: 'follows',
-          filter: `following_id=eq.${profile.id}`
+          table: 'profiles',
+          filter: `id=eq.${profile.id}`
         },
         () => {
+          // Profile will be refetched when it changes
           refetchFollows();
         }
       )
@@ -894,7 +897,7 @@ const ProfilePage: React.FC = () => {
                 </div>
                 <div className={`text-center rounded-xl py-2 backdrop-blur-sm border ${isDarkTheme ? 'bg-slate-800/30 border-slate-700/20' : 'bg-gradient-to-br from-blue-50 to-purple-50 border-gray-200'}`}>
                   <div className={`text-lg font-bold mb-0.5 ${textPrimaryClass}`}>
-                    {followersCount >= 1000 ? `${(followersCount/1000).toFixed(1)}K` : followersCount}
+                    {(profile?.followers_count || 0) >= 1000 ? `${((profile?.followers_count || 0)/1000).toFixed(1)}K` : (profile?.followers_count || 0)}
                   </div>
                   <div className={`text-xs font-medium ${textSecondaryClass}`}>Followers</div>
                 </div>

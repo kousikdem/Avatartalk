@@ -32,8 +32,6 @@ const RealtimeFollowWidget: React.FC<RealtimeFollowWidgetProps> = ({ currentUser
   const { 
     followers, 
     following, 
-    followersCount, 
-    followingCount, 
     loading,
     refetch 
   } = useFollows(currentUserId);
@@ -232,11 +230,11 @@ const RealtimeFollowWidget: React.FC<RealtimeFollowWidgetProps> = ({ currentUser
         </CardTitle>
         <div className="flex space-x-4 text-sm">
           <div className="flex items-center space-x-1">
-            <Badge variant="secondary">{followersCount}</Badge>
+            <Badge variant="secondary">{followers.length}</Badge>
             <span className="text-gray-600">Followers</span>
           </div>
           <div className="flex items-center space-x-1">
-            <Badge variant="secondary">{followingCount}</Badge>
+            <Badge variant="secondary">{following.length}</Badge>
             <span className="text-gray-600">Following</span>
           </div>
         </div>
