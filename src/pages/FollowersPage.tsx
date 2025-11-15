@@ -200,6 +200,34 @@ const FollowersPage = () => {
     }
   };
 
+  const handleChatClick = async (userId: string) => {
+    try {
+      // Get username for the user
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', userId)
+        .single();
+
+      if (profileData?.username) {
+        window.location.href = `/${profileData.username}`;
+      } else {
+        toast({
+          title: "Error",
+          description: "Unable to open chat",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error navigating to profile:', error);
+      toast({
+        title: "Error",
+        description: "Unable to open chat",
+        variant: "destructive",
+      });
+    }
+  };
+
   const UserCard = ({ user, showFollowButton = false, isFollowing = false, showMessageButton = false }: {
     user: User;
     showFollowButton?: boolean;
@@ -261,7 +289,12 @@ const FollowersPage = () => {
             
             <div className="flex flex-col space-y-2">
               {showMessageButton && (
-                <Button size="sm" variant="outline" className="hover:bg-blue-50 hover:border-blue-200">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="hover:bg-blue-50 hover:border-blue-200"
+                  onClick={() => handleChatClick(user.id)}
+                >
                   <MessageSquare className="w-4 h-4" />
                 </Button>
               )}

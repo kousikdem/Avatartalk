@@ -149,7 +149,7 @@ const ProfilePage: React.FC = () => {
     unfollowUser,
     loading: followsLoading,
     refetch: refetchFollows
-  } = useFollows();
+  } = useFollows(profile?.id);
 
   const { trainings, currentTraining } = usePersonalizedAI();
   const { posts: userPosts, isLoading: postsLoading, fetchPosts } = usePosts(profile?.id);
@@ -204,6 +204,31 @@ const ProfilePage: React.FC = () => {
 
   // Check if this is the user's own profile
   const isOwnProfile = currentUser?.id === profile?.id;
+
+  // Real-time follower count updates
+  useEffect(() => {
+    if (!profile?.id) return;
+
+    const channel = supabase
+      .channel('profile-follows-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'follows',
+          filter: `following_id=eq.${profile.id}`
+        },
+        () => {
+          refetchFollows();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.id, refetchFollows]);
 
   useEffect(() => {
     const getCurrentUser = async () => {
