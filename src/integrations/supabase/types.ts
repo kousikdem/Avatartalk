@@ -980,6 +980,8 @@ export type Database = {
           created_at: string | null
           display_name: string | null
           email: string | null
+          followers_count: number | null
+          following_count: number | null
           full_name: string | null
           gender: string | null
           id: string
@@ -996,6 +998,8 @@ export type Database = {
           created_at?: string | null
           display_name?: string | null
           email?: string | null
+          followers_count?: number | null
+          following_count?: number | null
           full_name?: string | null
           gender?: string | null
           id: string
@@ -1012,6 +1016,8 @@ export type Database = {
           created_at?: string | null
           display_name?: string | null
           email?: string | null
+          followers_count?: number | null
+          following_count?: number | null
           full_name?: string | null
           gender?: string | null
           id?: string
