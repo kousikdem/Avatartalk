@@ -293,30 +293,6 @@ const ProfilePage: React.FC = () => {
     }
   }, [profile?.id]);
 
-  // Track profile visitor
-  useEffect(() => {
-    const trackVisitor = async () => {
-      if (!profile?.id) return;
-      
-      try {
-        const { data: currentUser } = await supabase.auth.getUser();
-        
-        // Don't track if viewing own profile
-        if (currentUser.user && currentUser.user.id === profile.id) return;
-        
-        await supabase.from('profile_visitors').insert({
-          visited_profile_id: profile.id,
-          visitor_id: currentUser.user?.id || null,
-          is_anonymous: !currentUser.user
-        });
-      } catch (error) {
-        console.error('Error tracking visitor:', error);
-      }
-    };
-    
-    trackVisitor();
-  }, [profile?.id]);
-
   // Realtime subscriptions for profile data
   useEffect(() => {
     if (!profile?.id) return;
@@ -465,7 +441,37 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  // handleFollow removed - now using FollowButton component instead
+  const handleFollow = async () => {
+    if (!profile || !currentUser) return;
+    
+    try {
+      if (isFollowing(profile.id)) {
+        await unfollowUser(profile.id);
+        // Refetch profile to update follower counts
+        await fetchProfile();
+        toast({
+          title: "Unfollowed",
+          description: `You unfollowed ${profile.display_name || profile.username}`,
+        });
+      } else {
+        await followUser(profile.id);
+        // Refetch profile to update follower counts
+        await fetchProfile();
+        toast({
+          title: "Following",
+          description: `You are now following ${profile.display_name || profile.username}`,
+        });
+      }
+      await refetchFollows();
+    } catch (error) {
+      console.error('Error following user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update follow status",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleChatSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();

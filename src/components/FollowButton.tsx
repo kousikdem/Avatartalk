@@ -21,26 +21,16 @@ const FollowButton: React.FC<FollowButtonProps> = ({
   className = ''
 }) => {
   const { toast } = useToast();
+  const { isFollowing, followUser, unfollowUser, loading, refetch } = useFollows();
   const [isProcessing, setIsProcessing] = React.useState(false);
-  const [authUser, setAuthUser] = React.useState<string | null>(null);
-  
-  // Get current authenticated user
-  React.useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setAuthUser(data.user?.id || null);
-    });
-  }, []);
-
-  // Use the authUser for the hook, not the prop
-  const { isFollowing, followUser, unfollowUser, loading, refetch } = useFollows(authUser || undefined);
 
   // Don't show follow button for own profile
-  if (authUser === targetUserId || currentUserId === targetUserId) {
+  if (currentUserId === targetUserId) {
     return null;
   }
 
-  // Show loading state while checking auth
-  if (!authUser) {
+  // Require real authentication for following
+  if (!currentUserId) {
     return (
       <Button
         variant="outline"
@@ -93,7 +83,6 @@ const FollowButton: React.FC<FollowButtonProps> = ({
   };
 
   const isUserFollowing = isFollowing(targetUserId);
-  const [isHovering, setIsHovering] = React.useState(false);
 
   if (variant === 'compact') {
       return (
@@ -102,23 +91,21 @@ const FollowButton: React.FC<FollowButtonProps> = ({
           size="sm"
           onClick={handleFollowClick}
           disabled={loading || isProcessing}
-          onMouseEnter={() => setIsHovering(true)}
-          onMouseLeave={() => setIsHovering(false)}
           className={`${
             isUserFollowing 
-              ? 'bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:from-red-500 hover:via-red-600 hover:to-red-700 text-white border-0 shadow-lg hover:shadow-red-500/30' 
-              : 'bg-gradient-to-r from-gray-500 via-gray-600 to-gray-700 hover:from-blue-600 hover:via-blue-700 hover:to-blue-800 text-white border-0 shadow-lg hover:shadow-blue-500/30'
+              ? 'bg-gradient-to-r from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white border-0 shadow-lg hover:shadow-red-500/30' 
+              : 'bg-gradient-to-r from-gray-500 via-gray-600 to-gray-700 hover:from-gray-600 hover:via-gray-700 hover:to-gray-800 text-white border-0 shadow-lg hover:shadow-gray-500/30'
           } transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${className}`}
         >
           {loading ? (
             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
           ) : isUserFollowing ? (
-            isHovering ? <UserMinus className="h-4 w-4" /> : <Users className="h-4 w-4" />
+            <UserMinus className="h-4 w-4" />
           ) : (
             <UserPlus className="h-4 w-4" />
           )}
           <span className="ml-2">
-            {isUserFollowing ? (isHovering ? 'Unfollow' : 'Following') : 'Follow'}
+            {isUserFollowing ? 'Following' : 'Follow'}
           </span>
         </Button>
       );
@@ -129,22 +116,20 @@ const FollowButton: React.FC<FollowButtonProps> = ({
       variant={isUserFollowing ? "default" : "outline"}
       className={`py-4 rounded-2xl text-base font-semibold transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${
         isUserFollowing 
-          ? 'bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:from-red-500 hover:via-red-600 hover:to-red-700 text-white border-0 shadow-lg hover:shadow-red-500/30' 
-          : 'bg-gradient-to-r from-gray-500 via-gray-600 to-gray-700 hover:from-blue-600 hover:via-blue-700 hover:to-blue-800 border-0 text-white shadow-lg hover:shadow-blue-500/30'
+          ? 'bg-gradient-to-r from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white border-0 shadow-lg hover:shadow-red-500/30' 
+          : 'bg-gradient-to-r from-gray-500 via-gray-600 to-gray-700 hover:from-gray-600 hover:via-gray-700 hover:to-gray-800 border-0 text-white shadow-lg hover:shadow-gray-500/30'
       } ${className}`}
       onClick={handleFollowClick}
       disabled={loading || isProcessing}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
     >
       {loading ? (
         <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
       ) : isUserFollowing ? (
-        isHovering ? <UserMinus className="h-4 w-4" /> : <Users className="h-4 w-4" />
+        <UserMinus className="h-4 w-4" />
       ) : (
         <UserPlus className="h-4 w-4" />
       )}
-      {isUserFollowing ? (isHovering ? 'Unfollow' : 'Following') : 'Follow'}
+      {isUserFollowing ? 'Following' : 'Follow'}
     </Button>
   );
 };
