@@ -46,36 +46,45 @@ const FollowersPage = () => {
         const { data: currentUser } = await supabase.auth.getUser();
         if (!currentUser.user) return;
 
-        // Fetch visitors with profile data
+        // Fetch visitors - handle both authenticated and anonymous
         const { data: visitorsData, error } = await supabase
           .from('profile_visitors')
-          .select(`
-            visitor_id,
-            visited_at,
-            is_anonymous,
-            profiles!profile_visitors_visitor_id_fkey (
-              id,
-              username,
-              display_name,
-              avatar_url,
-              bio
-            )
-          `)
+          .select('visitor_id, visited_at, is_anonymous')
           .eq('visited_profile_id', currentUser.user.id)
           .order('visited_at', { ascending: false })
           .limit(30);
 
         if (error) throw error;
 
+        // Get unique visitor IDs (exclude nulls for anonymous)
+        const visitorIds = [...new Set(visitorsData?.filter(v => v.visitor_id).map(v => v.visitor_id))] as string[];
+
+        // Fetch profile data for authenticated visitors
+        let profilesMap: Record<string, any> = {};
+        if (visitorIds.length > 0) {
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('id, username, display_name, avatar_url, bio')
+            .in('id', visitorIds);
+
+          profilesData?.forEach(profile => {
+            profilesMap[profile.id] = profile;
+          });
+        }
+
         // Transform visitors data with profile information
-        const formattedVisitors: User[] = visitorsData?.map(visitor => ({
-          id: visitor.visitor_id || `anonymous_${visitor.visited_at}`,
-          full_name: visitor.profiles?.display_name || visitor.profiles?.username || 'Anonymous Visitor',
-          email: '', // Don't show email for privacy
-          avatar_url: visitor.profiles?.avatar_url,
-          bio: visitor.profiles?.bio || (visitor.visitor_id ? 'Registered user' : 'Anonymous visitor'),
-          last_seen: visitor.visited_at
-        })) || [];
+        const formattedVisitors: User[] = visitorsData?.map(visitor => {
+          const profile = visitor.visitor_id ? profilesMap[visitor.visitor_id] : null;
+          return {
+            id: visitor.visitor_id || `anonymous_${visitor.visited_at}`,
+            full_name: profile?.display_name || profile?.username || 'Anonymous Visitor',
+            email: '', // Don't show email for privacy
+            avatar_url: profile?.avatar_url,
+            bio: profile?.bio || (visitor.visitor_id ? 'Registered user' : 'Anonymous visitor'),
+            last_seen: visitor.visited_at,
+            username: profile?.username
+          };
+        }) || [];
 
         setVisitors(formattedVisitors);
       } catch (error) {
@@ -137,10 +146,11 @@ const FollowersPage = () => {
 
   // Sort function
   const sortUsers = (users: User[]): User[] => {
+    if (!users || users.length === 0) return [];
     const sorted = [...users];
     switch (sortBy) {
       case 'alphabetical':
-        return sorted.sort((a, b) => a.full_name.localeCompare(b.full_name));
+        return sorted.sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
       case 'online':
         return sorted.sort((a, b) => {
           const aOnline = a.last_seen ? new Date(a.last_seen).getTime() : 0;
@@ -161,19 +171,19 @@ const FollowersPage = () => {
 
   const filteredFollowers = sortUsers(
     displayFollowers.filter(user =>
-      user.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+      (user.full_name || '').toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
 
   const filteredFollowing = sortUsers(
     displayFollowing.filter(user =>
-      user.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+      (user.full_name || '').toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
 
   const filteredVisitors = sortUsers(
     visitors.filter(user =>
-      user.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+      (user.full_name || '').toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
 
