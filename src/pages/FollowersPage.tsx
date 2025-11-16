@@ -5,12 +5,14 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { Users, UserPlus, UserMinus, Search, Eye, MessageSquare, Trash2, Filter, Clock } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Users, UserPlus, UserMinus, Search, Eye, MessageSquare, Trash2, Filter, Clock, ArrowUpDown, Sparkles } from 'lucide-react';
 import { useFollows } from '@/hooks/useFollows';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
+import FollowButton from '@/components/FollowButton';
 
 interface User {
   id: string;
@@ -21,7 +23,11 @@ interface User {
   followers_count?: number;
   following_count?: number;
   last_seen?: string;
+  username?: string;
 }
+
+type SortOption = 'recent' | 'alphabetical' | 'online' | 'interactions';
+type FilterOption = 'all' | 'creators' | 'users' | 'business';
 
 const FollowersPage = () => {
   const { followers, following, loading, followUser, unfollowUser, isFollowing, refetch } = useFollows();
@@ -29,6 +35,8 @@ const FollowersPage = () => {
   const [visitors, setVisitors] = useState<User[]>([]);
   const [activeTab, setActiveTab] = useState('followers');
   const [showFilter, setShowFilter] = useState(false);
+  const [sortBy, setSortBy] = useState<SortOption>('recent');
+  const [filterBy, setFilterBy] = useState<FilterOption>('all');
   const { toast } = useToast();
 
   // Fetch visitors from profile_visitors table with real-time updates
@@ -127,16 +135,46 @@ const FollowersPage = () => {
     last_seen: follow.created_at
   }));
 
-  const filteredFollowers = displayFollowers.filter(user =>
-    user.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+  // Sort function
+  const sortUsers = (users: User[]): User[] => {
+    const sorted = [...users];
+    switch (sortBy) {
+      case 'alphabetical':
+        return sorted.sort((a, b) => a.full_name.localeCompare(b.full_name));
+      case 'online':
+        return sorted.sort((a, b) => {
+          const aOnline = a.last_seen ? new Date(a.last_seen).getTime() : 0;
+          const bOnline = b.last_seen ? new Date(b.last_seen).getTime() : 0;
+          return bOnline - aOnline;
+        });
+      case 'interactions':
+        return sorted.sort((a, b) => (b.followers_count || 0) - (a.followers_count || 0));
+      case 'recent':
+      default:
+        return sorted.sort((a, b) => {
+          const aTime = a.last_seen ? new Date(a.last_seen).getTime() : 0;
+          const bTime = b.last_seen ? new Date(b.last_seen).getTime() : 0;
+          return bTime - aTime;
+        });
+    }
+  };
+
+  const filteredFollowers = sortUsers(
+    displayFollowers.filter(user =>
+      user.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
 
-  const filteredFollowing = displayFollowing.filter(user =>
-    user.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredFollowing = sortUsers(
+    displayFollowing.filter(user =>
+      user.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
 
-  const filteredVisitors = visitors.filter(user =>
-    user.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredVisitors = sortUsers(
+    visitors.filter(user =>
+      user.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
 
   const handleFollow = async (userId: string) => {
@@ -310,28 +348,11 @@ const FollowersPage = () => {
               )}
               
               {showFollowButton && (
-                <Button
-                  size="sm"
-                  variant={isFollowing ? "outline" : "default"}
-                  onClick={() => isFollowing ? handleUnfollow(user.id) : handleFollow(user.id)}
-                  disabled={loading}
-                  className={isFollowing 
-                    ? "hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-all duration-300" 
-                    : "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl"
-                  }
-                >
-                  {isFollowing ? (
-                    <>
-                      <UserMinus className="w-4 h-4 mr-1" />
-                      Unfollow
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="w-4 h-4 mr-1" />
-                      Follow
-                    </>
-                  )}
-                </Button>
+                <FollowButton
+                  targetUserId={user.id}
+                  targetUsername={user.username}
+                  variant="compact"
+                />
               )}
             </div>
           </div>
@@ -361,16 +382,32 @@ const FollowersPage = () => {
             </div>
           </div>
           
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilter(!showFilter)}
-              className="bg-white/80 hover:bg-blue-50"
-            >
-              <Filter className="w-4 h-4 mr-2" />
-              Filter
-            </Button>
+          <div className="flex items-center gap-3">
+            <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+              <SelectTrigger className="w-[180px] bg-white/80 border-white/60 shadow-sm">
+                <ArrowUpDown className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recent">Most Recent</SelectItem>
+                <SelectItem value="alphabetical">Alphabetical</SelectItem>
+                <SelectItem value="online">Recently Active</SelectItem>
+                <SelectItem value="interactions">Top Interactions</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Select value={filterBy} onValueChange={(value: FilterOption) => setFilterBy(value)}>
+              <SelectTrigger className="w-[160px] bg-white/80 border-white/60 shadow-sm">
+                <Filter className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Filter" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Users</SelectItem>
+                <SelectItem value="creators">Creators</SelectItem>
+                <SelectItem value="users">Users</SelectItem>
+                <SelectItem value="business">Business</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </motion.div>
 

@@ -293,6 +293,30 @@ const ProfilePage: React.FC = () => {
     }
   }, [profile?.id]);
 
+  // Track profile visitor
+  useEffect(() => {
+    const trackVisitor = async () => {
+      if (!profile?.id) return;
+      
+      try {
+        const { data: currentUser } = await supabase.auth.getUser();
+        
+        // Don't track if viewing own profile
+        if (currentUser.user && currentUser.user.id === profile.id) return;
+        
+        await supabase.from('profile_visitors').insert({
+          visited_profile_id: profile.id,
+          visitor_id: currentUser.user?.id || null,
+          is_anonymous: !currentUser.user
+        });
+      } catch (error) {
+        console.error('Error tracking visitor:', error);
+      }
+    };
+    
+    trackVisitor();
+  }, [profile?.id]);
+
   // Realtime subscriptions for profile data
   useEffect(() => {
     if (!profile?.id) return;
