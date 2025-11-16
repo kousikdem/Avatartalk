@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Share2, Users, MessageSquare, BarChart3, Calendar, LogOut, Settings, Home, ShoppingBag } from 'lucide-react';
+import { Share2, Users, MessageSquare, BarChart3, Calendar, LogOut, Settings, Home, ShoppingBag, Eye, UserPlus } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import ShareModal from './ShareModal';
 import ChangeableAvatarPreview from './ChangeableAvatarPreview';
@@ -10,12 +10,14 @@ import RealtimeFollowWidget from './RealtimeFollowWidget';
 import { useFollows } from '@/hooks/useFollows';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const { profileData, loading } = useUserProfile();
   const { following, refetch } = useFollows(profileData?.id);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Realtime follows updates for stats - refetch profile data
   React.useEffect(() => {
@@ -106,47 +108,56 @@ const Dashboard = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 hover:shadow-lg transition-all duration-300">
+        <Card 
+          className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 hover:shadow-lg transition-all duration-300 cursor-pointer hover:scale-[1.02]"
+          onClick={() => navigate('/followers?tab=followers')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-700">Total Followers</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-700">Followers</CardTitle>
             <Users className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">{profileData?.followers_count || 0}</div>
-            <p className="text-xs text-gray-600">+20% from last month</p>
+            <p className="text-xs text-gray-600">People following you</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 hover:shadow-lg transition-all duration-300">
+        <Card 
+          className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 hover:shadow-lg transition-all duration-300 cursor-pointer hover:scale-[1.02]"
+          onClick={() => navigate('/followers?tab=following')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-700">Messages</CardTitle>
-            <MessageSquare className="h-4 w-4 text-purple-600" />
+            <CardTitle className="text-sm font-medium text-gray-700">Following</CardTitle>
+            <UserPlus className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">567</div>
-            <p className="text-xs text-gray-600">+15% from last month</p>
+            <div className="text-2xl font-bold text-gray-900">{profileData?.following_count || 0}</div>
+            <p className="text-xs text-gray-600">People you follow</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 hover:shadow-lg transition-all duration-300">
+        <Card 
+          className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 hover:shadow-lg transition-all duration-300 cursor-pointer hover:scale-[1.02]"
+          onClick={() => navigate('/followers?tab=visitors')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-700">Engagement</CardTitle>
-            <BarChart3 className="h-4 w-4 text-green-600" />
+            <CardTitle className="text-sm font-medium text-gray-700">Visitors</CardTitle>
+            <Eye className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">89%</div>
-            <p className="text-xs text-gray-600">+5% from last month</p>
+            <div className="text-2xl font-bold text-gray-900">{profileData?.analytics?.profile_views || 0}</div>
+            <p className="text-xs text-gray-600">Profile views</p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200 hover:shadow-lg transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-700">Events</CardTitle>
-            <Calendar className="h-4 w-4 text-orange-600" />
+            <CardTitle className="text-sm font-medium text-gray-700">Engagement</CardTitle>
+            <BarChart3 className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">12</div>
-            <p className="text-xs text-gray-600">3 upcoming</p>
+            <div className="text-2xl font-bold text-gray-900">{Math.round(profileData?.analytics?.engagement_score || 0)}</div>
+            <p className="text-xs text-gray-600">Total interactions</p>
           </CardContent>
         </Card>
       </div>
