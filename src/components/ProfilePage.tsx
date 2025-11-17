@@ -816,7 +816,7 @@ const ProfilePage: React.FC = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => window.location.href = '/dashboard'}
+                    onClick={() => window.open('/settings/dashboard', '_blank')}
                     className={`p-0 rounded-full ${isDarkTheme ? 'bg-slate-800/30 hover:bg-slate-700/50' : 'bg-gray-100 hover:bg-gray-200'} transition-all duration-200`}
                     title="Go to Dashboard"
                   >
