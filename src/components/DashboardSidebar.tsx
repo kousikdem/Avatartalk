@@ -8,7 +8,6 @@ import {
   Settings, 
   BarChart3,
   Bell,
-  Bookmark,
   Calendar,
   Brain,
   User,
@@ -45,9 +44,7 @@ const navigationItems = [
   { title: "Social Links", icon: Share2, url: "/settings/social-links" },
   { title: "Analytics", icon: BarChart3, url: "/settings/analytics" },
   { title: "Followers", icon: Users, url: "/settings/followers" },
-  { title: "Profiles", icon: Users, url: "/settings/profiles" },
   { title: "Notifications", icon: Bell, url: "/settings/notifications" },
-  { title: "Bookmarks", icon: Bookmark, url: "/settings/bookmarks" },
   { title: "Calendar", icon: Calendar, url: "/settings/calendar" },
   { title: "Settings", icon: Settings, url: "/settings/account" },
 ];
