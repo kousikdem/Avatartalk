@@ -52,14 +52,14 @@ const App = () => {
   // Redirect authenticated users to dashboard
   const shouldRedirectToDashboard = () => {
     if (loading) return false;
-    if (user && window.location.pathname === '/' && !new URLSearchParams(window.location.search).get('view')) {
+    if (user && window.location.pathname === '/') {
       return true;
     }
     return false;
   };
 
   if (shouldRedirectToDashboard()) {
-    window.location.href = '/?view=dashboard';
+    window.location.href = '/settings/dashboard';
     return null;
   }
 
@@ -90,15 +90,14 @@ const App = () => {
                   
                   <main className="flex-1 min-w-0 transition-all duration-300 bg-white">
                     <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/dashboard" element={<Index />} />
-                      <Route path="/avatar" element={<AvatarPage />} />
-                      <Route path="/calendar" element={<CalendarPage />} />
-                      <Route path="/products" element={<ProductsPage />} />
-                      <Route path="/settings" element={<SettingsPage />} />
-                      <Route path="/social-links" element={<SocialLinksPage />} />
-                      <Route path="/feed" element={<FeedPage />} />
-                      <Route path="/followers" element={<FollowersPage />} />
+                      <Route path="/settings/dashboard" element={<Index />} />
+                      <Route path="/settings/avatar" element={<AvatarPage />} />
+                      <Route path="/settings/calendar" element={<CalendarPage />} />
+                      <Route path="/settings/products" element={<ProductsPage />} />
+                      <Route path="/settings/account" element={<SettingsPage />} />
+                      <Route path="/settings/social-links" element={<SocialLinksPage />} />
+                      <Route path="/settings/feed" element={<FeedPage />} />
+                      <Route path="/settings/followers" element={<FollowersPage />} />
                       <Route path="/:username" element={<UsernameRedirect />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
