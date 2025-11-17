@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -22,9 +23,12 @@ import {
   Loader2,
   Plus,
   Trash2,
-  Upload
+  Upload,
+  Link as LinkIcon,
+  Plug
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import IntegrationsTab from './IntegrationsTab';
 
 interface SocialLink {
   id: string;
@@ -204,15 +208,37 @@ const SocialLinksManager: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <Card className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-slate-700/50 shadow-2xl backdrop-blur-lg">
-            <CardHeader>
-              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-                Social Links Manager
-              </CardTitle>
-              <p className="text-sm text-slate-400 mt-2">
-                Manage your social media links and customize their display order on your profile
-              </p>
-            </CardHeader>
+          <div className="text-center mb-6">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent mb-2">
+              Social Links & Integrations
+            </h1>
+            <p className="text-slate-400">
+              Connect your social profiles, integrations, and customize their order
+            </p>
+          </div>
+
+          <Tabs defaultValue="social" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
+              <TabsTrigger value="social">
+                <LinkIcon className="w-4 h-4 mr-2" />
+                Social Links
+              </TabsTrigger>
+              <TabsTrigger value="integrations">
+                <Plug className="w-4 h-4 mr-2" />
+                Integrations
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="social">
+              <Card className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-slate-700/50 shadow-2xl backdrop-blur-lg">
+                <CardHeader>
+                  <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                    Social Links Manager
+                  </CardTitle>
+                  <p className="text-sm text-slate-400 mt-2">
+                    Manage your social media links and customize their display order on your profile
+                  </p>
+                </CardHeader>
             <CardContent className="space-y-6">
               {/* Social Platforms */}
               <div className="space-y-3">
@@ -414,6 +440,12 @@ const SocialLinksManager: React.FC = () => {
               </Button>
             </CardContent>
           </Card>
+            </TabsContent>
+
+            <TabsContent value="integrations">
+              <IntegrationsTab />
+            </TabsContent>
+          </Tabs>
         </motion.div>
       </div>
     </div>
