@@ -41,7 +41,7 @@ const Navbar: React.FC<NavbarProps> = ({ showAuth = false }) => {
   const handleProfileClick = () => {
     if (currentUser) {
       // User is logged in, navigate to dashboard
-      navigate('/dashboard');
+      navigate('/settings/dashboard');
     } else {
       // User is not logged in, prompt to login
       setIsMainAuthOpen(true);
