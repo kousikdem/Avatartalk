@@ -39,6 +39,8 @@ interface UserProfileData {
     total_conversations: number;
     engagement_score: number;
     followers_count: number;
+    total_chats_sent?: number;
+    total_chats_received?: number;
   };
   created_at: string;
   updated_at: string;
@@ -130,6 +132,8 @@ export const useUserProfile = () => {
           total_conversations: userStats?.total_conversations || 0,
           engagement_score: userStats?.engagement_score || 0,
           followers_count: userStats?.followers_count || 0,
+          total_chats_sent: userStats?.total_chats_sent || 0,
+          total_chats_received: userStats?.total_chats_received || 0,
         },
         created_at: profile?.created_at || new Date().toISOString(),
         updated_at: profile?.updated_at || new Date().toISOString(),

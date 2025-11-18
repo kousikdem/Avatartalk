@@ -374,6 +374,71 @@ export type Database = {
           },
         ]
       }
+      chat_conversations: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_message_at: string | null
+          other_user_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          other_user_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          other_user_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          conversation_id: string
+          created_at: string | null
+          id: string
+          message: string
+          read: boolean | null
+          receiver_id: string
+          sender_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          message: string
+          read?: boolean | null
+          receiver_id: string
+          sender_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          message?: string
+          read?: boolean | null
+          receiver_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       collaborations: {
         Row: {
           collaboration_type: string | null
@@ -1482,6 +1547,8 @@ export type Database = {
           following_count: number | null
           id: string
           profile_views: number | null
+          total_chats_received: number | null
+          total_chats_sent: number | null
           total_conversations: number | null
           updated_at: string | null
           user_id: string
@@ -1493,6 +1560,8 @@ export type Database = {
           following_count?: number | null
           id?: string
           profile_views?: number | null
+          total_chats_received?: number | null
+          total_chats_sent?: number | null
           total_conversations?: number | null
           updated_at?: string | null
           user_id: string
@@ -1504,6 +1573,8 @@ export type Database = {
           following_count?: number | null
           id?: string
           profile_views?: number | null
+          total_chats_received?: number | null
+          total_chats_sent?: number | null
           total_conversations?: number | null
           updated_at?: string | null
           user_id?: string
