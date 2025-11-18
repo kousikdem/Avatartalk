@@ -221,13 +221,12 @@ const AITrainingPage = () => {
     }
 
     try {
-      await createTraining(trainingName, {
+      await createTraining({
+        name: trainingName,
         documents: documents.map(d => d.id),
         qaPairs: qaPairs.map(q => q.id),
-        scrapedUrls: scrapedData.map(s => s.id),
-        voiceRecordings: recordings.map(r => r.id),
-        personality: personalitySettings
-      });
+        voiceRecordings: recordings.map(r => r.id)
+      }, personalitySettings);
       
       toast({
         title: "Success",
