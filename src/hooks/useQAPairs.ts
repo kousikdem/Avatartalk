@@ -8,6 +8,8 @@ interface QAPair {
   answer: string;
   category?: string;
   tags?: string[];
+  custom_link_url?: string;
+  custom_link_button_name?: string;
 }
 
 export const useQAPairs = () => {
@@ -30,7 +32,9 @@ export const useQAPairs = () => {
         question: item.question,
         answer: item.answer,
         category: item.category,
-        tags: item.tags
+        tags: item.tags,
+        custom_link_url: item.custom_link_url,
+        custom_link_button_name: item.custom_link_button_name
       })));
     } catch (error) {
       console.error('Error fetching Q&A pairs:', error);
@@ -57,7 +61,9 @@ export const useQAPairs = () => {
           question: qaPair.question,
           answer: qaPair.answer,
           category: qaPair.category,
-          tags: qaPair.tags
+          tags: qaPair.tags,
+          custom_link_url: qaPair.custom_link_url,
+          custom_link_button_name: qaPair.custom_link_button_name
         })
         .select()
         .single();
@@ -69,7 +75,9 @@ export const useQAPairs = () => {
         question: data.question,
         answer: data.answer,
         category: data.category,
-        tags: data.tags
+        tags: data.tags,
+        custom_link_url: data.custom_link_url,
+        custom_link_button_name: data.custom_link_button_name
       };
 
       setQaPairs(prev => [newPair, ...prev]);
@@ -110,7 +118,9 @@ export const useQAPairs = () => {
         question: data.question,
         answer: data.answer,
         category: data.category,
-        tags: data.tags
+        tags: data.tags,
+        custom_link_url: data.custom_link_url,
+        custom_link_button_name: data.custom_link_button_name
       };
 
       setQaPairs(prev => prev.map(pair => 

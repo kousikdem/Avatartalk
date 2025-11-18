@@ -94,6 +94,7 @@ const AITrainingPage = () => {
     category: '',
     tags: [] as string[],
     customLink: '',
+    customLinkButtonName: '',
     keywords: [] as string[]
   });
   
@@ -127,7 +128,9 @@ const AITrainingPage = () => {
         question: newQAPair.question,
         answer: newQAPair.answer,
         category: newQAPair.category || 'general',
-        tags: newQAPair.tags
+        tags: newQAPair.tags,
+        custom_link_url: newQAPair.customLink,
+        custom_link_button_name: newQAPair.customLinkButtonName
       });
       
       setNewQAPair({
@@ -136,6 +139,7 @@ const AITrainingPage = () => {
         category: '',
         tags: [],
         customLink: '',
+        customLinkButtonName: '',
         keywords: []
       });
       
@@ -378,6 +382,16 @@ const AITrainingPage = () => {
               </div>
 
               <div>
+                <Label htmlFor="customLinkButtonName">Custom Button Name (Optional)</Label>
+                <Input
+                  id="customLinkButtonName"
+                  value={newQAPair.customLinkButtonName}
+                  onChange={(e) => setNewQAPair(prev => ({ ...prev, customLinkButtonName: e.target.value }))}
+                  placeholder="e.g., Learn More, Visit Website"
+                />
+              </div>
+
+              <div>
                 <Label>Keywords for Auto-Reply</Label>
                 <div className="flex gap-2">
                   <Input
@@ -476,6 +490,19 @@ const AITrainingPage = () => {
                               {qa.tags.map((tag, i) => (
                                 <Badge key={i} variant="secondary" className="text-xs">{tag}</Badge>
                               ))}
+                            </div>
+                          )}
+                          {qa.custom_link_url && (
+                            <div className="mt-2">
+                              <Button 
+                                variant="link" 
+                                size="sm" 
+                                className="h-auto p-0 text-primary"
+                                onClick={() => window.open(qa.custom_link_url, '_blank')}
+                              >
+                                <LinkIcon className="w-3 h-3 mr-1" />
+                                {qa.custom_link_button_name || 'Visit Link'}
+                              </Button>
                             </div>
                           )}
                         </div>
