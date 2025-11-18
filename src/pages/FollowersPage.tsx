@@ -5,31 +5,52 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { Users, UserPlus, UserMinus, Search, Eye, MessageSquare, Trash2, Filter, Clock } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Users, UserPlus, UserMinus, Search, Eye, MessageSquare, Trash2, Filter, Clock, SortAsc, CircleDot } from 'lucide-react';
 import { useFollows } from '@/hooks/useFollows';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
+import FollowButton from '@/components/FollowButton';
 
 interface User {
   id: string;
   full_name: string;
+  username?: string;
   email: string;
   avatar_url?: string;
   bio?: string;
   followers_count?: number;
   following_count?: number;
   last_seen?: string;
+  visit_count?: number;
+  is_online?: boolean;
 }
+
+type SortOption = 'recent' | 'alphabetical' | 'online' | 'interactions';
+type FilterOption = 'all' | 'creators' | 'users' | 'business' | 'ai';
 
 const FollowersPage = () => {
   const { followers, following, loading, followUser, unfollowUser, isFollowing, refetch } = useFollows();
   const [searchTerm, setSearchTerm] = useState('');
   const [visitors, setVisitors] = useState<User[]>([]);
   const [activeTab, setActiveTab] = useState('followers');
-  const [showFilter, setShowFilter] = useState(false);
+  const [sortBy, setSortBy] = useState<SortOption>('recent');
+  const [filterBy, setFilterBy] = useState<FilterOption>('all');
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // Get current user ID
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    getCurrentUser();
+  }, []);
 
   // Fetch visitors from profile_visitors table with real-time updates
   useEffect(() => {
@@ -38,35 +59,42 @@ const FollowersPage = () => {
         const { data: currentUser } = await supabase.auth.getUser();
         if (!currentUser.user) return;
 
-        // Fetch visitors with profile data
+        // Fetch visitors with profile data including visit_count
         const { data: visitorsData, error } = await supabase
           .from('profile_visitors')
           .select(`
             visitor_id,
             visited_at,
             is_anonymous,
+            visit_count,
             profiles!profile_visitors_visitor_id_fkey (
               id,
               username,
               display_name,
               avatar_url,
-              bio
+              bio,
+              followers_count,
+              following_count
             )
           `)
           .eq('visited_profile_id', currentUser.user.id)
-          .order('visited_at', { ascending: false })
-          .limit(30);
+          .order('visited_at', { ascending: false });
 
         if (error) throw error;
 
         // Transform visitors data with profile information
         const formattedVisitors: User[] = visitorsData?.map(visitor => ({
           id: visitor.visitor_id || `anonymous_${visitor.visited_at}`,
+          username: visitor.profiles?.username,
           full_name: visitor.profiles?.display_name || visitor.profiles?.username || 'Anonymous Visitor',
-          email: '', // Don't show email for privacy
+          email: '',
           avatar_url: visitor.profiles?.avatar_url,
           bio: visitor.profiles?.bio || (visitor.visitor_id ? 'Registered user' : 'Anonymous visitor'),
-          last_seen: visitor.visited_at
+          followers_count: visitor.profiles?.followers_count || 0,
+          following_count: visitor.profiles?.following_count || 0,
+          last_seen: visitor.visited_at,
+          visit_count: visitor.visit_count || 1,
+          is_online: false
         })) || [];
 
         setVisitors(formattedVisitors);
@@ -88,12 +116,12 @@ const FollowersPage = () => {
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
           table: 'profile_visitors'
         },
         () => {
-          fetchVisitors(); // Refetch when new visitor
+          fetchVisitors(); // Refetch when visitor changes
         }
       )
       .subscribe();
@@ -106,80 +134,71 @@ const FollowersPage = () => {
   // Transform followers data for display
   const displayFollowers: User[] = followers.map(follow => ({
     id: follow.follower?.id || '',
+    username: follow.follower?.username,
     full_name: follow.follower?.display_name || follow.follower?.username || 'Unknown',
-    email: '', // Don't show email for privacy
+    email: '',
     avatar_url: follow.follower?.avatar_url,
-    bio: '', // Add bio if needed
+    bio: 'Follower',
     followers_count: 0,
     following_count: 0,
-    last_seen: follow.created_at
+    is_online: false
   }));
 
   // Transform following data for display
   const displayFollowing: User[] = following.map(follow => ({
     id: follow.following?.id || '',
+    username: follow.following?.username,
     full_name: follow.following?.display_name || follow.following?.username || 'Unknown',
-    email: '', // Don't show email for privacy
+    email: '',
     avatar_url: follow.following?.avatar_url,
-    bio: '', // Add bio if needed
+    bio: 'Following',
     followers_count: 0,
     following_count: 0,
-    last_seen: follow.created_at
+    is_online: false
   }));
 
-  const filteredFollowers = displayFollowers.filter(user =>
-    user.full_name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const filteredFollowing = displayFollowing.filter(user =>
-    user.full_name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const filteredVisitors = visitors.filter(user =>
-    user.full_name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleFollow = async (userId: string) => {
-    try {
-      // Prevent following anonymous visitors
-      if (userId.startsWith('anonymous_')) {
-        toast({
-          title: "Cannot Follow",
-          description: "Anonymous visitors cannot be followed. They need to sign up first.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      await followUser(userId);
-      await refetch(); // Refresh the data
-      toast({
-        title: "Success",
-        description: "Successfully followed user",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to follow user",
-        variant: "destructive",
-      });
+  // Sort function
+  const sortUsers = (users: User[]) => {
+    const sorted = [...users];
+    switch (sortBy) {
+      case 'alphabetical':
+        return sorted.sort((a, b) => a.full_name.localeCompare(b.full_name));
+      case 'online':
+        return sorted.sort((a, b) => (b.is_online ? 1 : 0) - (a.is_online ? 1 : 0));
+      case 'interactions':
+        return sorted.sort((a, b) => (b.visit_count || 0) - (a.visit_count || 0));
+      case 'recent':
+      default:
+        return sorted;
     }
   };
+
+  // Filter and search logic
+  const filterAndSearchUsers = (users: User[]) => {
+    let filtered = users.filter(user =>
+      user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+
+    // Apply filter (can be enhanced with actual user types)
+    if (filterBy !== 'all') {
+      // Placeholder for future filter logic
+      filtered = filtered;
+    }
+
+    return sortUsers(filtered);
+  };
+
+  const filteredFollowers = filterAndSearchUsers(displayFollowers);
+  const filteredFollowing = filterAndSearchUsers(displayFollowing);
+  const filteredVisitors = filterAndSearchUsers(visitors);
 
   const handleUnfollow = async (userId: string) => {
     try {
       await unfollowUser(userId);
-      await refetch(); // Refresh the data
-      toast({
-        title: "Success",
-        description: "Successfully unfollowed user",
-      });
+      await refetch();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to unfollow user",
-        variant: "destructive",
-      });
+      console.error('Error unfollowing user:', error);
     }
   };
 
@@ -198,7 +217,7 @@ const FollowersPage = () => {
       setVisitors([]);
       toast({
         title: "Success",
-        description: "Visitor history cleared",
+        description: "Visitor history cleared successfully",
       });
     } catch (error) {
       console.error('Error clearing visitor history:', error);
@@ -210,388 +229,358 @@ const FollowersPage = () => {
     }
   };
 
-  const handleChatClick = async (userId: string) => {
-    try {
-      // Get username for the user
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('id', userId)
-        .single();
-
-      if (profileData?.username) {
-        window.location.href = `/${profileData.username}`;
-      } else {
-        toast({
-          title: "Error",
-          description: "Unable to open chat",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Error navigating to profile:', error);
-      toast({
-        title: "Error",
-        description: "Unable to open chat",
-        variant: "destructive",
-      });
+  const handleChatClick = (userId: string, username?: string) => {
+    if (username) {
+      navigate(`/${username}`);
     }
   };
 
-  const UserCard = ({ user, showFollowButton = false, isFollowing = false, showMessageButton = false }: {
+  // UserCard Component
+  const UserCard: React.FC<{
     user: User;
-    showFollowButton?: boolean;
-    isFollowing?: boolean;
-    showMessageButton?: boolean;
-  }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.3 }}
-    >
-      <Card className="group hover:shadow-2xl transition-all duration-500 bg-gradient-to-br from-white/90 via-blue-50/40 to-indigo-50/30 backdrop-blur-lg border border-white/60 hover:border-blue-200/60 transform hover:-translate-y-1">
-        <CardContent className="p-5">
-          <div className="flex items-start space-x-4">
-            <div className="relative">
-              <Avatar className="w-14 h-14 ring-2 ring-blue-100 group-hover:ring-blue-300 transition-all duration-300">
-                <AvatarImage src={user.avatar_url} />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-semibold">
-                  {user.full_name.split(' ').map(n => n[0]).join('')}
-                </AvatarFallback>
-              </Avatar>
-              {user.last_seen && (
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
-              )}
-            </div>
-            
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="font-semibold text-gray-900 truncate text-base group-hover:text-blue-900 transition-colors">
-                  {user.full_name}
-                </h3>
-                {user.last_seen && (
-                  <Badge variant="outline" className="text-xs bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700">
-                    <Clock className="w-3 h-3 mr-1" />
-                    {formatDistanceToNow(new Date(user.last_seen), { addSuffix: true })}
-                  </Badge>
+    type: 'follower' | 'following' | 'visitor';
+  }> = ({ user, type }) => {
+    const isAnonymous = user.id.startsWith('anonymous_');
+    
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.3 }}
+        className="group"
+      >
+        <Card className="hover:shadow-xl transition-all duration-300 border hover:border-primary/40 bg-card">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              {/* Avatar with Online Status */}
+              <div className="relative">
+                <Avatar className="h-16 w-16 border-2 border-primary/30 ring-2 ring-background group-hover:border-primary transition-colors">
+                  <AvatarImage src={user.avatar_url} alt={user.full_name} />
+                  <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-bold text-lg">
+                    {user.full_name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                {user.is_online && (
+                  <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-background flex items-center justify-center">
+                    <CircleDot className="h-2 w-2 text-white" />
+                  </div>
                 )}
               </div>
-              
-              {user.bio && (
-                <p className="text-sm text-gray-600 mb-2 line-clamp-2 leading-relaxed">{user.bio}</p>
-              )}
-              
-              {(user.followers_count !== undefined || user.following_count !== undefined) && (
-                <div className="flex space-x-4 text-sm text-gray-500">
-                  {user.followers_count !== undefined && (
-                    <span className="flex items-center">
-                      <Users className="w-3 h-3 mr-1" />
-                      {user.followers_count} followers
-                    </span>
+
+              <div className="flex-1 min-w-0">
+                {/* User Info */}
+                <div className="space-y-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-lg text-foreground truncate group-hover:text-primary transition-colors">
+                        {user.full_name}
+                      </h3>
+                      {user.username && (
+                        <p className="text-sm text-muted-foreground">
+                          @{user.username}
+                        </p>
+                      )}
+                    </div>
+                    {type === 'visitor' && user.visit_count && user.visit_count > 1 && (
+                      <Badge variant="secondary" className="shrink-0">
+                        <Eye className="h-3 w-3 mr-1" />
+                        {user.visit_count} visits
+                      </Badge>
+                    )}
+                  </div>
+
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {user.bio || 'No bio available'}
+                  </p>
+                </div>
+
+                {/* Stats */}
+                <div className="flex gap-4 mt-3 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer">
+                    <Users className="h-3.5 w-3.5" />
+                    <span className="font-medium">{user.followers_count || 0}</span> followers
+                  </span>
+                  <span className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer">
+                    <UserPlus className="h-3.5 w-3.5" />
+                    <span className="font-medium">{user.following_count || 0}</span> following
+                  </span>
+                </div>
+
+                {/* Last Seen / Visit Info */}
+                {user.last_seen && type === 'visitor' && (
+                  <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                    <Clock className="h-3.5 w-3.5" />
+                    <span>Last visited {formatDistanceToNow(new Date(user.last_seen), { addSuffix: true })}</span>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 mt-4">
+                  {!isAnonymous && user.username && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleChatClick(user.id, user.username)}
+                      className="flex-1 group-hover:border-primary/50 transition-colors"
+                    >
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Message
+                    </Button>
                   )}
-                  {user.following_count !== undefined && (
-                    <span>{user.following_count} following</span>
+
+                  {!isAnonymous && type === 'follower' && (
+                    <FollowButton
+                      targetUserId={user.id}
+                      targetUsername={user.username}
+                      currentUserId={currentUserId || undefined}
+                      variant="compact"
+                      className="flex-1"
+                    />
+                  )}
+
+                  {type === 'following' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleUnfollow(user.id)}
+                      className="flex-1 border-destructive/50 text-destructive hover:bg-destructive/10 hover:border-destructive transition-colors"
+                    >
+                      <UserMinus className="h-4 w-4 mr-2" />
+                      Unfollow
+                    </Button>
+                  )}
+
+                  {type === 'visitor' && !isAnonymous && (
+                    <FollowButton
+                      targetUserId={user.id}
+                      targetUsername={user.username}
+                      currentUserId={currentUserId || undefined}
+                      variant="compact"
+                      className="flex-1"
+                    />
                   )}
                 </div>
-              )}
+              </div>
             </div>
-            
-            <div className="flex flex-col space-y-2">
-              {showMessageButton && (
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="hover:bg-blue-50 hover:border-blue-200"
-                  onClick={() => handleChatClick(user.id)}
-                >
-                  <MessageSquare className="w-4 h-4" />
-                </Button>
-              )}
-              
-              {showFollowButton && (
-                <Button
-                  size="sm"
-                  variant={isFollowing ? "outline" : "default"}
-                  onClick={() => isFollowing ? handleUnfollow(user.id) : handleFollow(user.id)}
-                  disabled={loading}
-                  className={isFollowing 
-                    ? "hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-all duration-300" 
-                    : "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl"
-                  }
-                >
-                  {isFollowing ? (
-                    <>
-                      <UserMinus className="w-4 h-4 mr-1" />
-                      Unfollow
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="w-4 h-4 mr-1" />
-                      Follow
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/50 p-6">
-      <div className="max-w-5xl mx-auto">
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="flex items-center justify-between mb-8"
-        >
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <Users className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-700 via-blue-700 to-indigo-700 bg-clip-text text-transparent">
-                Social Connections
-              </h1>
-              <p className="text-slate-600 text-lg">Manage your network and discover new connections</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilter(!showFilter)}
-              className="bg-white/80 hover:bg-blue-50"
-            >
-              <Filter className="w-4 h-4 mr-2" />
-              Filter
-            </Button>
-          </div>
-        </motion.div>
-
-        {/* Enhanced Search Bar */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="mb-8"
-        >
-          <div className="relative max-w-md mx-auto">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <Input
-              placeholder="Search users by name or bio..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 pr-4 py-3 bg-gradient-to-r from-white/90 to-blue-50/40 border-white/60 backdrop-blur-lg rounded-2xl text-base placeholder-gray-500 focus:border-blue-300 focus:ring-4 focus:ring-blue-100 shadow-lg transition-all duration-300"
-            />
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm('')}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                ×
-              </button>
-            )}
-          </div>
-        </motion.div>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-white/90 via-blue-50/60 to-indigo-50/40 backdrop-blur-lg border border-white/60 shadow-lg rounded-2xl p-1">
-            <TabsTrigger 
-              value="followers"
-              className="rounded-xl font-semibold transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
-            >
-              <Users className="w-4 h-4 mr-2" />
-              Followers ({filteredFollowers.length})
-            </TabsTrigger>
-            <TabsTrigger 
-              value="following"
-              className="rounded-xl font-semibold transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
-            >
-              <UserPlus className="w-4 h-4 mr-2" />
-              Following ({filteredFollowing.length})
-            </TabsTrigger>
-            <TabsTrigger 
-              value="visitors"
-              className="rounded-xl font-semibold transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
-            >
-              <Eye className="w-4 h-4 mr-2" />
-              Visitors ({filteredVisitors.length})
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="followers" className="mt-8">
-            <AnimatePresence mode="wait">
-              {filteredFollowers.length === 0 ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  <Card className="bg-gradient-to-r from-white/90 via-blue-50/40 to-indigo-50/30 backdrop-blur-lg border border-white/60">
-                    <CardContent className="text-center py-16">
-                      <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <Users className="w-8 h-8 text-blue-600" />
-                      </div>
-                      <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                        {searchTerm ? 'No followers found' : 'No followers yet'}
-                      </h3>
-                      <p className="text-gray-500 max-w-md mx-auto">
-                        {searchTerm 
-                          ? 'Try adjusting your search terms to find specific followers' 
-                          : 'Share your profile to start building your community!'
-                        }
-                      </p>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ) : (
-                <motion.div className="space-y-4">
-                  <AnimatePresence>
-                    {filteredFollowers.map((user, index) => (
-                      <motion.div
-                        key={user.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 20 }}
-                        transition={{ delay: index * 0.1 }}
-                      >
-                        <UserCard
-                          user={user}
-                          showMessageButton={true}
-                        />
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </TabsContent>
-
-          <TabsContent value="following" className="mt-8">
-            <AnimatePresence mode="wait">
-              {filteredFollowing.length === 0 ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  <Card className="bg-gradient-to-r from-white/90 via-blue-50/40 to-indigo-50/30 backdrop-blur-lg border border-white/60">
-                    <CardContent className="text-center py-16">
-                      <div className="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <UserPlus className="w-8 h-8 text-indigo-600" />
-                      </div>
-                      <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                        {searchTerm ? 'No matches found' : 'Not following anyone yet'}
-                      </h3>
-                      <p className="text-gray-500 max-w-md mx-auto">
-                        {searchTerm 
-                          ? 'Try different search terms to find who you are following' 
-                          : 'Discover interesting profiles and start following to build your network!'
-                        }
-                      </p>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ) : (
-                <motion.div className="space-y-4">
-                  <AnimatePresence>
-                    {filteredFollowing.map((user, index) => (
-                      <motion.div
-                        key={user.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 20 }}
-                        transition={{ delay: index * 0.1 }}
-                      >
-                        <UserCard
-                          user={user}
-                          showFollowButton={true}
-                          isFollowing={isFollowing(user.id)}
-                          showMessageButton={true}
-                        />
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </TabsContent>
-
-          <TabsContent value="visitors" className="mt-8">
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex items-center space-x-2">
-                <Eye className="w-5 h-5 text-gray-600" />
-                <span className="text-sm text-gray-600">Recent profile visitors (last 30)</span>
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <Card className="shadow-2xl border-primary/20 overflow-hidden">
+        <CardHeader className="border-b bg-gradient-to-r from-primary/10 via-primary/5 to-background pb-6">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 text-primary shadow-lg">
+                  <Users className="h-7 w-7" />
+                </div>
+                <div>
+                  <CardTitle className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                    Community
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Manage your connections and track engagement
+                  </p>
+                </div>
               </div>
-              {filteredVisitors.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={clearVisitorHistory}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Clear History
-                </Button>
-              )}
             </div>
 
-            <AnimatePresence mode="wait">
-              {filteredVisitors.length === 0 ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  <Card className="bg-gradient-to-r from-white/90 via-blue-50/40 to-indigo-50/30 backdrop-blur-lg border border-white/60">
-                    <CardContent className="text-center py-16">
-                      <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <Eye className="w-8 h-8 text-purple-600" />
-                      </div>
-                      <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                        {searchTerm ? 'No visitors found' : 'No recent visitors'}
-                      </h3>
-                      <p className="text-gray-500 max-w-md mx-auto">
-                        {searchTerm 
-                          ? 'Try different search terms to find specific visitors' 
-                          : 'Share your profile link to start tracking visitors!'
-                        }
-                      </p>
-                    </CardContent>
-                  </Card>
-                </motion.div>
+            {/* Search and Controls */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search by name or username..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-background/50 border-primary/20 focus:border-primary/40"
+                />
+              </div>
+              
+              <div className="flex gap-2">
+                <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+                  <SelectTrigger className="w-[160px] border-primary/20">
+                    <SortAsc className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="recent">Most Recent</SelectItem>
+                    <SelectItem value="alphabetical">Alphabetical</SelectItem>
+                    <SelectItem value="online">Online First</SelectItem>
+                    <SelectItem value="interactions">Top Interactions</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={filterBy} onValueChange={(value: FilterOption) => setFilterBy(value)}>
+                  <SelectTrigger className="w-[140px] border-primary/20">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Filter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Users</SelectItem>
+                    <SelectItem value="creators">Creators</SelectItem>
+                    <SelectItem value="users">Users</SelectItem>
+                    <SelectItem value="business">Business</SelectItem>
+                    <SelectItem value="ai">AI Avatars</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-3 mb-8 p-1 h-auto bg-muted/50 rounded-xl">
+              <TabsTrigger 
+                value="followers" 
+                className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-md rounded-lg py-3 transition-all"
+              >
+                <Users className="h-4 w-4" />
+                <span className="font-semibold">Followers</span>
+                <Badge variant="secondary" className="ml-1 bg-primary/20 text-primary border-0">
+                  {followers.length}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="following" 
+                className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-md rounded-lg py-3 transition-all"
+              >
+                <UserPlus className="h-4 w-4" />
+                <span className="font-semibold">Following</span>
+                <Badge variant="secondary" className="ml-1 bg-primary/20 text-primary border-0">
+                  {following.length}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="visitors" 
+                className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-md rounded-lg py-3 transition-all"
+              >
+                <Eye className="h-4 w-4" />
+                <span className="font-semibold">Visitors</span>
+                <Badge variant="secondary" className="ml-1 bg-primary/20 text-primary border-0">
+                  {visitors.length}
+                </Badge>
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Followers Tab */}
+            <TabsContent value="followers" className="mt-0">
+              {loading ? (
+                <div className="flex flex-col justify-center items-center py-16">
+                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary/20 border-t-primary mb-4"></div>
+                  <p className="text-muted-foreground">Loading followers...</p>
+                </div>
+              ) : filteredFollowers.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="p-6 rounded-full bg-primary/10 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+                    <Users className="h-12 w-12 text-primary" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-foreground mb-2">No Followers Yet</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    {searchTerm ? "No followers match your search criteria" : "When people follow you, they'll appear here. Share your profile to grow your audience!"}
+                  </p>
+                </div>
               ) : (
-                <motion.div className="space-y-4">
-                  <AnimatePresence>
-                    {filteredVisitors.map((user, index) => (
-                      <motion.div
-                        key={user.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 20 }}
-                        transition={{ delay: index * 0.1 }}
-                      >
-                        <UserCard
-                          user={user}
-                          showFollowButton={user.id !== `anonymous_${user.last_seen}` && !user.id.startsWith('anonymous_')}
-                          isFollowing={isFollowing(user.id)}
-                          showMessageButton={user.id !== `anonymous_${user.last_seen}` && !user.id.startsWith('anonymous_')}
-                        />
-                      </motion.div>
+                <AnimatePresence mode="popLayout">
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+                    {filteredFollowers.map((follower) => (
+                      <UserCard
+                        key={follower.id}
+                        user={follower}
+                        type="follower"
+                      />
                     ))}
-                  </AnimatePresence>
-                </motion.div>
+                  </div>
+                </AnimatePresence>
               )}
-            </AnimatePresence>
-          </TabsContent>
-        </Tabs>
-      </div>
+            </TabsContent>
+
+            {/* Following Tab */}
+            <TabsContent value="following" className="mt-0">
+              {loading ? (
+                <div className="flex flex-col justify-center items-center py-16">
+                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary/20 border-t-primary mb-4"></div>
+                  <p className="text-muted-foreground">Loading following...</p>
+                </div>
+              ) : filteredFollowing.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="p-6 rounded-full bg-primary/10 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+                    <UserPlus className="h-12 w-12 text-primary" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-foreground mb-2">Not Following Anyone</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    {searchTerm ? "No users match your search criteria" : "Start following interesting creators and users to build your network!"}
+                  </p>
+                </div>
+              ) : (
+                <AnimatePresence mode="popLayout">
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+                    {filteredFollowing.map((user) => (
+                      <UserCard
+                        key={user.id}
+                        user={user}
+                        type="following"
+                      />
+                    ))}
+                  </div>
+                </AnimatePresence>
+              )}
+            </TabsContent>
+
+            {/* Visitors Tab */}
+            <TabsContent value="visitors" className="mt-0">
+              <div className="flex items-center justify-between mb-6 p-4 bg-muted/30 rounded-lg border border-border/50">
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Eye className="h-4 w-4" />
+                  Track who's viewing your profile and their engagement
+                </p>
+                {visitors.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearVisitorHistory}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Clear History
+                  </Button>
+                )}
+              </div>
+
+              {filteredVisitors.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="p-6 rounded-full bg-primary/10 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+                    <Eye className="h-12 w-12 text-primary" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-foreground mb-2">No Profile Visitors</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    {searchTerm ? "No visitors match your search criteria" : "When people visit your profile, they'll show up here with visit counts and timestamps"}
+                  </p>
+                </div>
+              ) : (
+                <AnimatePresence mode="popLayout">
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+                    {filteredVisitors.map((visitor) => (
+                      <UserCard
+                        key={visitor.id}
+                        user={visitor}
+                        type="visitor"
+                      />
+                    ))}
+                  </div>
+                </AnimatePresence>
+              )}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 };

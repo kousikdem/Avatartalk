@@ -1077,6 +1077,7 @@ export type Database = {
         Row: {
           id: string
           is_anonymous: boolean | null
+          visit_count: number | null
           visited_at: string
           visited_profile_id: string
           visitor_id: string | null
@@ -1084,6 +1085,7 @@ export type Database = {
         Insert: {
           id?: string
           is_anonymous?: boolean | null
+          visit_count?: number | null
           visited_at?: string
           visited_profile_id: string
           visitor_id?: string | null
@@ -1091,6 +1093,7 @@ export type Database = {
         Update: {
           id?: string
           is_anonymous?: boolean | null
+          visit_count?: number | null
           visited_at?: string
           visited_profile_id?: string
           visitor_id?: string | null
