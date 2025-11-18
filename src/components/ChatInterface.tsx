@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, ArrowLeft } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { Send, ArrowLeft, Bot } from 'lucide-react';
 import { useChatConversations, useChatMessages } from '@/hooks/useChatConversations';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
@@ -12,9 +14,12 @@ import { formatDistanceToNow } from 'date-fns';
 interface ChatInterfaceProps {
   otherUserId?: string;
   onBack?: () => void;
+  isVisitorChat?: boolean;
+  profileOwnerId?: string;
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ otherUserId, onBack }) => {
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ otherUserId, onBack, isVisitorChat, profileOwnerId }) => {
+  const { toast } = useToast();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -63,8 +68,39 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ otherUserId, onBack }) =>
   const handleSendMessage = async () => {
     if (!messageInput.trim() || !selectedConversationId || !selectedUser) return;
 
-    await sendMessage(selectedUser.id, messageInput);
-    setMessageInput('');
+    try {
+      await sendMessage(selectedUser.id, messageInput);
+      setMessageInput('');
+
+      // If this is a visitor chat, trigger AI response
+      if (isVisitorChat && profileOwnerId) {
+        try {
+          const { data: aiResponse } = await supabase.functions.invoke('personalized-ai-response', {
+            body: {
+              userMessage: messageInput,
+              profileId: profileOwnerId,
+              userId: currentUserId
+            }
+          });
+          
+          if (aiResponse?.response) {
+            // Wait a moment then send AI response
+            setTimeout(async () => {
+              await sendMessage(selectedUser.id, aiResponse.response);
+            }, 1000);
+          }
+        } catch (aiError) {
+          console.error('Error getting AI response:', aiError);
+        }
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -97,6 +133,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ otherUserId, onBack }) =>
               </Button>
             )}
             Conversations
+            {isVisitorChat && (
+              <Badge variant="secondary" className="text-xs ml-auto">
+                <Bot className="w-3 h-3 mr-1" />
+                AI Powered
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
