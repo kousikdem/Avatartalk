@@ -94,31 +94,17 @@ export const useFollows = (userId?: string): UseFollowsReturn => {
     try {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) {
-        toast({
-          title: "Error",
-          description: "You must be logged in to follow users",
-          variant: "destructive",
-        });
-        return;
+        throw new Error("You must be logged in to follow users");
       }
 
       // Prevent following yourself
       if (currentUser.user.id === followingId) {
-        toast({
-          title: "Error",
-          description: "You cannot follow yourself",
-          variant: "destructive",
-        });
-        return;
+        throw new Error("You cannot follow yourself");
       }
 
       // Check if already following
       if (isFollowing(followingId)) {
-        toast({
-          title: "Info",
-          description: "You are already following this user",
-        });
-        return;
+        return; // Already following, silently return
       }
 
       const { error } = await supabase
@@ -133,29 +119,15 @@ export const useFollows = (userId?: string): UseFollowsReturn => {
       if (error) {
         // Handle duplicate follow error
         if (error.code === '23505') {
-          toast({
-            title: "Info",
-            description: "You are already following this user",
-          });
-          await fetchFollows();
-          return;
+          return; // Already following, silently return
         }
         throw error;
       }
 
-      toast({
-        title: "Success",
-        description: "Successfully followed user",
-      });
-
       await fetchFollows();
     } catch (error: any) {
       console.error('Error following user:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to follow user",
-        variant: "destructive",
-      });
+      throw error;
     }
   };
 
@@ -163,21 +135,12 @@ export const useFollows = (userId?: string): UseFollowsReturn => {
     try {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) {
-        toast({
-          title: "Error",
-          description: "You must be logged in to unfollow users",
-          variant: "destructive",
-        });
-        return;
+        throw new Error("You must be logged in to unfollow users");
       }
 
       // Check if not following
       if (!isFollowing(followingId)) {
-        toast({
-          title: "Info",
-          description: "You are not following this user",
-        });
-        return;
+        return; // Not following, silently return
       }
 
       const { error } = await supabase
@@ -188,19 +151,10 @@ export const useFollows = (userId?: string): UseFollowsReturn => {
 
       if (error) throw error;
 
-      toast({
-        title: "Success",
-        description: "Successfully unfollowed user",
-      });
-
       await fetchFollows();
     } catch (error: any) {
       console.error('Error unfollowing user:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to unfollow user",
-        variant: "destructive",
-      });
+      throw error;
     }
   };
 
