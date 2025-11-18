@@ -123,8 +123,12 @@ const Dashboard = () => {
             <MessageSquare className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">567</div>
-            <p className="text-xs text-gray-600">+15% from last month</p>
+            <div className="text-2xl font-bold text-gray-900">
+              {(profileData?.analytics?.total_chats_sent || 0) + (profileData?.analytics?.total_chats_received || 0)}
+            </div>
+            <p className="text-xs text-gray-600">
+              {profileData?.analytics?.total_chats_sent || 0} sent • {profileData?.analytics?.total_chats_received || 0} received
+            </p>
           </CardContent>
         </Card>
 
