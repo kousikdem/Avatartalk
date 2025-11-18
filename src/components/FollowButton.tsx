@@ -70,76 +70,31 @@ const FollowButton: React.FC<FollowButtonProps> = ({
     try {
       if (wasFollowing) {
         await unfollowUser(targetUserId);
-        
-        // Update profile follower count
-        const { data: currentProfile } = await supabase
-          .from('profiles')
-          .select('followers_count')
-          .eq('id', targetUserId)
-          .single();
-          
-        if (currentProfile) {
-          await supabase
-            .from('profiles')
-            .update({ followers_count: Math.max(0, (currentProfile.followers_count || 1) - 1) })
-            .eq('id', targetUserId);
-        }
-        
         toast({
           title: "Unfollowed",
           description: `You unfollowed ${targetUsername || 'user'}`,
         });
       } else {
         await followUser(targetUserId);
-        
-        // Update profile follower count
-        const { data: currentProfile } = await supabase
-          .from('profiles')
-          .select('followers_count')
-          .eq('id', targetUserId)
-          .single();
-          
-        if (currentProfile) {
-          await supabase
-            .from('profiles')
-            .update({ followers_count: (currentProfile.followers_count || 0) + 1 })
-            .eq('id', targetUserId);
-        }
-        
-        // Update current user's following count
-        const { data: myProfile } = await supabase
-          .from('profiles')
-          .select('following_count')
-          .eq('id', currentUserId)
-          .single();
-          
-        if (myProfile) {
-          await supabase
-            .from('profiles')
-            .update({ following_count: (myProfile.following_count || 0) + 1 })
-            .eq('id', currentUserId);
-        }
-        
         toast({
           title: "Following",
           description: `You are now following ${targetUsername || 'user'}`,
         });
       }
       
-      // Refetch to update button state
+      // Refetch to update button state - counts are updated automatically by database trigger
       await refetch();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error toggling follow:', error);
-      // Rollback optimistic update by refetching current state
       await refetch();
       toast({
         title: "Error",
-        description: "Failed to update follow status. Please try again.",
+        description: error?.message || "Failed to update follow status. Please try again.",
         variant: "destructive",
       });
     } finally {
-      // Reset processing state after 1 second to prevent spam
-      setTimeout(() => setIsProcessing(false), 1000);
+      // Reset processing state after 500ms
+      setTimeout(() => setIsProcessing(false), 500);
     }
   };
 
