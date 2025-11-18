@@ -109,8 +109,8 @@ const FollowButton: React.FC<FollowButtonProps> = ({
           disabled={loading || isProcessing}
           className={`${
             isUserFollowing 
-              ? 'bg-gradient-to-r from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white border-0 shadow-lg hover:shadow-red-500/30' 
-              : 'bg-gradient-to-r from-gray-500 via-gray-600 to-gray-700 hover:from-gray-600 hover:via-gray-700 hover:to-gray-800 text-white border-0 shadow-lg hover:shadow-gray-500/30'
+              ? 'bg-gradient-to-r from-green-500 via-green-600 to-green-700 hover:from-green-600 hover:via-green-700 hover:to-green-800 text-white border-0 shadow-lg hover:shadow-green-500/30' 
+              : 'bg-gradient-to-r from-primary via-primary/90 to-primary/80 hover:from-primary/90 hover:via-primary/80 hover:to-primary/70 text-white border-0 shadow-lg hover:shadow-primary/30'
           } transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${className}`}
         >
           {loading ? (
@@ -132,8 +132,8 @@ const FollowButton: React.FC<FollowButtonProps> = ({
       variant={isUserFollowing ? "default" : "outline"}
       className={`py-4 rounded-2xl text-base font-semibold transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${
         isUserFollowing 
-          ? 'bg-gradient-to-r from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white border-0 shadow-lg hover:shadow-red-500/30' 
-          : 'bg-gradient-to-r from-gray-500 via-gray-600 to-gray-700 hover:from-gray-600 hover:via-gray-700 hover:to-gray-800 border-0 text-white shadow-lg hover:shadow-gray-500/30'
+          ? 'bg-gradient-to-r from-green-500 via-green-600 to-green-700 hover:from-green-600 hover:via-green-700 hover:to-green-800 text-white border-0 shadow-lg hover:shadow-green-500/30' 
+          : 'bg-gradient-to-r from-primary via-primary/90 to-primary/80 hover:from-primary/90 hover:via-primary/80 hover:to-primary/70 border-0 text-white shadow-lg hover:shadow-primary/30'
       } ${className}`}
       onClick={handleFollowClick}
       disabled={loading || isProcessing}
