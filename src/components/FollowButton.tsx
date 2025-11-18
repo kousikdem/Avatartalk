@@ -21,8 +21,17 @@ const FollowButton: React.FC<FollowButtonProps> = ({
   className = ''
 }) => {
   const { toast } = useToast();
-  const { isFollowing, followUser, unfollowUser, loading, refetch } = useFollows();
   const [isProcessing, setIsProcessing] = React.useState(false);
+  
+  // Only initialize useFollows if user is authenticated
+  const followsHook = useFollows(currentUserId);
+  const { isFollowing, followUser, unfollowUser, loading, refetch } = currentUserId ? followsHook : {
+    isFollowing: () => false,
+    followUser: async () => {},
+    unfollowUser: async () => {},
+    loading: false,
+    refetch: async () => {}
+  };
 
   // Don't show follow button for own profile
   if (currentUserId === targetUserId) {
@@ -50,23 +59,75 @@ const FollowButton: React.FC<FollowButtonProps> = ({
     // Debounce: Prevent rapid clicks
     if (isProcessing || loading) return;
     
+    if (!currentUserId) {
+      window.dispatchEvent(new CustomEvent('show-visitor-auth'));
+      return;
+    }
+    
     setIsProcessing(true);
     const wasFollowing = isFollowing(targetUserId);
     
     try {
       if (wasFollowing) {
         await unfollowUser(targetUserId);
+        
+        // Update profile follower count
+        const { data: currentProfile } = await supabase
+          .from('profiles')
+          .select('followers_count')
+          .eq('id', targetUserId)
+          .single();
+          
+        if (currentProfile) {
+          await supabase
+            .from('profiles')
+            .update({ followers_count: Math.max(0, (currentProfile.followers_count || 1) - 1) })
+            .eq('id', targetUserId);
+        }
+        
         toast({
           title: "Unfollowed",
           description: `You unfollowed ${targetUsername || 'user'}`,
         });
       } else {
         await followUser(targetUserId);
+        
+        // Update profile follower count
+        const { data: currentProfile } = await supabase
+          .from('profiles')
+          .select('followers_count')
+          .eq('id', targetUserId)
+          .single();
+          
+        if (currentProfile) {
+          await supabase
+            .from('profiles')
+            .update({ followers_count: (currentProfile.followers_count || 0) + 1 })
+            .eq('id', targetUserId);
+        }
+        
+        // Update current user's following count
+        const { data: myProfile } = await supabase
+          .from('profiles')
+          .select('following_count')
+          .eq('id', currentUserId)
+          .single();
+          
+        if (myProfile) {
+          await supabase
+            .from('profiles')
+            .update({ following_count: (myProfile.following_count || 0) + 1 })
+            .eq('id', currentUserId);
+        }
+        
         toast({
           title: "Following",
           description: `You are now following ${targetUsername || 'user'}`,
         });
       }
+      
+      // Refetch to update button state
+      await refetch();
     } catch (error) {
       console.error('Error toggling follow:', error);
       // Rollback optimistic update by refetching current state

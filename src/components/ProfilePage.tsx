@@ -151,7 +151,7 @@ const ProfilePage: React.FC = () => {
     unfollowUser,
     loading: followsLoading,
     refetch: refetchFollows
-  } = useFollows(profile?.id);
+  } = useFollows(currentUser?.id); // Use current user's ID, not profile being viewed
 
   const { trainings, currentTraining } = usePersonalizedAI();
   const { posts: userPosts, isLoading: postsLoading, fetchPosts } = usePosts(profile?.id);
