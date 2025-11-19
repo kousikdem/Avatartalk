@@ -492,15 +492,15 @@ const AITrainingPage = () => {
                               ))}
                             </div>
                           )}
-                          {qa.custom_link_url && (
+                           {qa.custom_link_url && (
                             <div className="mt-2">
                               <Button 
-                                variant="link" 
+                                variant="outline" 
                                 size="sm" 
-                                className="h-auto p-0 text-primary"
                                 onClick={() => window.open(qa.custom_link_url, '_blank')}
+                                className="gap-1"
                               >
-                                <LinkIcon className="w-3 h-3 mr-1" />
+                                <LinkIcon className="w-3 h-3" />
                                 {qa.custom_link_button_name || 'Visit Link'}
                               </Button>
                             </div>
