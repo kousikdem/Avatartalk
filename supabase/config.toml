@@ -5,3 +5,15 @@ verify_jwt = false
 
 [functions.avatar-file-compress]
 verify_jwt = true
+
+[functions.realtime-voice-chat]
+verify_jwt = true
+
+[functions.personalized-ai-response]
+verify_jwt = false
+
+[functions.voice-cloning]
+verify_jwt = true
+
+[functions.web-scraper]
+verify_jwt = false

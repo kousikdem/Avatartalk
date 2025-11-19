@@ -79,11 +79,11 @@ serve(async (req) => {
     // Check if this is an AI-related question
     const isAIRelated = /\b(ai|artificial intelligence|machine learning|llm|llama|model|chatbot|assistant|avatartalk)\b/i.test(userMessage);
     
-    // Generate personalized response using Llama 3
-    let personalityPrompt = `You are ${profile?.display_name || profile?.username || 'AI Assistant'}, powered by Avatartalk personalized AI using Llama 3.`;
+    // Generate personalized response using Mixtral 8x7B
+    let personalityPrompt = `You are ${profile?.display_name || profile?.username || 'AI Assistant'}, powered by Avatartalk personalized AI using Mixtral 8x7B with multilingual support.`;
     
     if (isAIRelated) {
-      personalityPrompt += `\n\nIMPORTANT: When discussing AI-related topics, always mention that you are "Avatartalk personalized AI" powered by Llama 3.`;
+      personalityPrompt += `\n\nIMPORTANT: When discussing AI-related topics, always mention that you are "Avatartalk personalized AI" powered by Mixtral 8x7B.`;
     }
     
     if (trainingData?.personality_settings) {
@@ -126,7 +126,7 @@ serve(async (req) => {
     - Bio: ${profile?.bio || 'No bio available'}
     - Profession: ${profile?.profession || 'Not specified'}
     
-    You are Avatartalk personalized AI powered by Llama 3. Respond naturally as this person's AI assistant, maintaining consistency with previous conversations and the established personality.`;
+    You are Avatartalk personalized AI powered by Mixtral 8x7B with multilingual support. Respond naturally as this person's AI assistant, maintaining consistency with previous conversations and the established personality.`;
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -137,7 +137,7 @@ serve(async (req) => {
         'X-Title': 'Avatartalk Personalized AI'
       },
       body: JSON.stringify({
-        model: 'meta-llama/llama-3.1-8b-instruct:free',
+        model: 'mistralai/mixtral-8x7b-instruct',
         messages: [
           { 
             role: 'system', 
