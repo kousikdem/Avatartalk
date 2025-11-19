@@ -29,6 +29,17 @@ serve(async (req) => {
   }
 
   try {
+    // Validate API key is present
+    if (!openRouterApiKey) {
+      console.error('❌ OPENROUTER_API_KEY is not configured');
+      return new Response(JSON.stringify({ 
+        error: 'OpenRouter API key is not configured',
+        response: "I'm Avatartalk personalized AI powered by Mixtral 8x7B, and I'm not properly configured. Please contact support."
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     // Parse and validate input
     const body = await req.json();
     const validationResult = messageSchema.safeParse(body);
@@ -194,7 +205,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: false, 
         error: errorMessage,
-        response: "I'm Avatartalk personalized AI powered by Llama 3, and I'm having trouble generating a response right now. Please try again in a moment."
+        response: "I'm Avatartalk personalized AI powered by Mixtral 8x7B, and I'm having trouble generating a response right now. Please try again in a moment."
       }),
       {
         status: 500,
