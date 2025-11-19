@@ -30,10 +30,10 @@ serve(async (req) => {
 
   try {
     // Validate API key is present
-    if (!openRouterApiKey) {
-      console.error('❌ OPENROUTER_API_KEY is not configured');
+    if (!mistralApiKey) {
+      console.error('❌ MISTRAL_API_KEY is not configured');
       return new Response(JSON.stringify({ 
-        error: 'OpenRouter API key is not configured',
+        error: 'Mistral API key is not configured',
         response: "I'm Avatartalk personalized AI powered by Mixtral 8x7B, and I'm not properly configured. Please contact support."
       }), {
         status: 500,
