@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,19 +17,14 @@ import {
   Volume2,
   VolumeX
 } from 'lucide-react';
-
-interface Message {
-  id: string;
-  text: string;
-  sender: 'user' | 'ai';
-  timestamp: Date;
-  isTyping?: boolean;
-}
+import { usePersonalizedAIChat } from '@/hooks/usePersonalizedAIChat';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AiChatBotProps {
   avatarName?: string;
   avatarImage?: string;
   personality?: string;
+  profileId?: string;
   onMessageSent?: (message: string) => void;
 }
 
@@ -38,101 +32,59 @@ const AiChatBot: React.FC<AiChatBotProps> = ({
   avatarName = "AI Assistant", 
   avatarImage,
   personality = "friendly",
+  profileId,
   onMessageSent 
 }) => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: `Hi! I'm ${avatarName}. How can I help you today?`,
-      sender: 'ai',
-      timestamp: new Date()
-    }
-  ]);
+  const { messages: aiMessages, isLoading: aiLoading, sendMessage, initializeChat } = usePersonalizedAIChat();
   const [inputMessage, setInputMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Initialize chat and get user ID
+  useEffect(() => {
+    const initUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+      }
+    };
+    initUser();
+    initializeChat(avatarName);
+  }, [avatarName]);
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      text: inputMessage,
-      sender: 'user',
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
+    const messageText = inputMessage;
     setInputMessage('');
-    setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        text: generateAiResponse(inputMessage, personality),
-        sender: 'ai',
-        timestamp: new Date()
-      };
-      
-      setMessages(prev => [...prev, aiResponse]);
-      setIsLoading(false);
-      
-      if (onMessageSent) {
-        onMessageSent(inputMessage);
-      }
-    }, 1500);
-  };
-
-  const generateAiResponse = (userInput: string, personality: string): string => {
-    // Check if this is an AI-related question
-    const isAIRelated = /\b(ai|artificial intelligence|machine learning|llm|llama|model|chatbot|assistant|avatartalk)\b/i.test(userInput);
+    // Use profileId if provided, otherwise use current userId
+    const targetProfileId = profileId || userId;
     
-    const responses = {
-      friendly: [
-        isAIRelated ? "I'm Avatartalk personalized AI powered by Llama 3! That's a great question about AI. Let me think about that for you." : "That's a great question! Let me think about that for you.",
-        isAIRelated ? "As Avatartalk personalized AI using Llama 3, I'd be happy to help you with that AI question!" : "I'd be happy to help you with that! Here's what I think...",
-        isAIRelated ? "Thanks for asking about AI! I'm Avatartalk personalized AI powered by Llama 3. From my perspective..." : "Thanks for asking! From my perspective...",
-        "Interesting point! I believe...",
-        "I appreciate you sharing that with me. Here's my take..."
-      ],
-      professional: [
-        isAIRelated ? "Thank you for your AI inquiry. As Avatartalk personalized AI powered by Llama 3, I can provide you with analysis based on my training..." : "Thank you for your inquiry. Based on my analysis...",
-        "I understand your concern. Let me provide you with a comprehensive response.",
-        isAIRelated ? "Your AI question is well-formulated. As Avatartalk personalized AI using Llama 3, here's my professional assessment..." : "Your question is well-formulated. Here's my professional assessment...",
-        "I appreciate the opportunity to address this matter.",
-        "Allow me to provide you with a detailed explanation..."
-      ],
-      mysterious: [
-        isAIRelated ? "Ah, you seek answers about AI... I am Avatartalk personalized AI, powered by the mysteries of Llama 3..." : "Ah, you seek answers... but are you prepared for what you might find?",
-        "The question you ask opens doors to deeper mysteries...",
-        "In the shadows of knowledge, I find your answer...",
-        "Some truths are hidden in plain sight...",
-        "The universe whispers its secrets to those who listen..."
-      ]
-    };
+    if (targetProfileId) {
+      await sendMessage(messageText, targetProfileId, userId || undefined);
+    }
 
-    const personalityResponses = responses[personality as keyof typeof responses] || responses.friendly;
-    return personalityResponses[Math.floor(Math.random() * personalityResponses.length)];
+    if (onMessageSent) {
+      onMessageSent(messageText);
+    }
   };
 
-  const handleVoiceToggle = () => {
+  const handleVoiceInput = () => {
     setIsRecording(!isRecording);
-    // Voice recording logic would be implemented here
   };
 
   const handleSpeechToggle = () => {
     setIsSpeaking(!isSpeaking);
-    // Text-to-speech logic would be implemented here
   };
 
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [aiMessages]);
 
   return (
     <Card className="h-96 flex flex-col bg-white border-2 border-blue-200 shadow-lg">
@@ -169,7 +121,7 @@ const AiChatBot: React.FC<AiChatBotProps> = ({
         <ScrollArea className="flex-1 px-4" ref={scrollAreaRef}>
           <div className="space-y-4 pb-4">
             <AnimatePresence>
-              {messages.map((message) => (
+              {aiMessages.map((message) => (
                 <motion.div
                   key={message.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -197,7 +149,7 @@ const AiChatBot: React.FC<AiChatBotProps> = ({
               ))}
             </AnimatePresence>
             
-            {isLoading && (
+            {aiLoading && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -220,28 +172,29 @@ const AiChatBot: React.FC<AiChatBotProps> = ({
             )}
           </div>
         </ScrollArea>
-        
-        <div className="border-t border-gray-200 p-4">
-          <div className="flex space-x-2">
+
+        <div className="p-4 border-t border-gray-200">
+          <div className="flex items-center space-x-2">
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              onClick={handleVoiceToggle}
-              className={`w-10 h-10 p-0 ${isRecording ? 'bg-red-50 border-red-300 text-red-600' : 'border-gray-300 text-gray-600'}`}
+              onClick={handleVoiceInput}
+              className={`w-8 h-8 p-0 ${isRecording ? 'text-red-500 animate-pulse' : 'text-gray-500'}`}
             >
               {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
             </Button>
             <Input
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
               placeholder="Type your message..."
               className="flex-1 border-gray-300"
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+              disabled={aiLoading}
             />
             <Button
               onClick={handleSendMessage}
-              disabled={!inputMessage.trim() || isLoading}
-              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
+              disabled={!inputMessage.trim() || aiLoading}
+              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
             >
               <Send className="w-4 h-4" />
             </Button>
