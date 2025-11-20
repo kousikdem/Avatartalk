@@ -38,7 +38,7 @@ serve(async (req) => {
       console.error('❌ LLAMA_CPP_SERVER_URL is not configured');
       return new Response(JSON.stringify({ 
         error: 'Llama.cpp server URL is not configured',
-        response: "I'm Avatartalk personalized AI powered by Mistral 7B, and I'm not properly configured. Please contact support."
+        response: "I'm Avatartalk personalized AI powered by Mistral 7B via llama.cpp, and I'm not properly configured. Please contact support."
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -96,7 +96,7 @@ serve(async (req) => {
     const isAIRelated = /\b(ai|artificial intelligence|machine learning|llm|llama|model|chatbot|assistant|avatartalk)\b/i.test(userMessage);
     
     // Generate personalized response using Mistral 7B via llama.cpp
-    let personalityPrompt = `You are ${profile?.display_name || profile?.username || 'AI Assistant'}, powered by Avatartalk personalized AI using Mistral 7B.`;
+    let personalityPrompt = `You are ${profile?.display_name || profile?.username || 'AI Assistant'}, powered by Avatartalk personalized AI using Mistral 7B with multilingual support.`;
     
     if (isAIRelated) {
       personalityPrompt += `\n\nIMPORTANT: When discussing AI-related topics, always mention that you are "Avatartalk personalized AI" powered by Mistral 7B running on llama.cpp.`;
@@ -142,7 +142,7 @@ serve(async (req) => {
     - Bio: ${profile?.bio || 'No bio available'}
     - Profession: ${profile?.profession || 'Not specified'}
     
-    You are Avatartalk personalized AI powered by Mistral 7B. Respond naturally as this person's AI assistant, maintaining consistency with previous conversations and the established personality.`;
+    You are Avatartalk personalized AI powered by Mistral 7B running on llama.cpp with multilingual support. Respond naturally as this person's AI assistant, maintaining consistency with previous conversations and the established personality.`;
 
     // Build messages with conversation history
     const messages = [
@@ -212,7 +212,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: false, 
         error: errorMessage,
-        response: "I'm Avatartalk personalized AI powered by Mistral 7B, and I'm having trouble generating a response right now. Please try again in a moment."
+        response: "I'm Avatartalk personalized AI powered by Mistral 7B via llama.cpp, and I'm having trouble generating a response right now. Please try again in a moment."
       }),
       {
         status: 500,

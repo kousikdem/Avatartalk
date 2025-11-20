@@ -579,7 +579,7 @@ const ProfilePage: React.FC = () => {
       // Add fallback response
       const fallbackMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        content: "I'm Avatartalk personalized AI powered by Mistral 7B, and I'm having trouble responding right now. Please try again in a moment.",
+        content: "I'm Avatartalk personalized AI powered by Mixtral 8x7B, and I'm having trouble responding right now. Please try again in a moment.",
         timestamp: new Date().toISOString(),
         sender: 'avatar',
         senderName: profile.display_name || profile.username || 'Avatartalk AI',
@@ -591,7 +591,7 @@ const ProfilePage: React.FC = () => {
       
       toast({
         title: "Response Error",
-        description: "Failed to generate Mistral 7B AI response. Please try again.",
+        description: "Failed to generate Mixtral 8x7B AI response. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -675,7 +675,7 @@ const ProfilePage: React.FC = () => {
           });
           
           toast({
-            title: "Playing Mistral 7B AI Response",
+            title: "Playing Llama 3 AI Response",
             description: "Voice output with Avatartalk personalized tone",
           });
         } catch (error) {
@@ -856,27 +856,17 @@ const ProfilePage: React.FC = () => {
               />
             </div>
 
-            {/* Action Buttons - Talk to Me + Subscribe (left) and Follow (right) */}
+            {/* Action Buttons - Subscribe (left wider) and Follow (right) - Enhanced design */}
             <div className="px-6 pb-4">
               <div className="grid grid-cols-5 gap-2">
-                {/* Left Side - Talk to Me Button (2 columns) */}
+                {/* Left Side - Subscribe Button (wider - 3 columns) */}
                 <Button
                   size="sm"
-                  className="col-span-2 bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 hover:from-purple-700 hover:via-pink-700 hover:to-red-700 text-white py-3 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-                  onClick={() => window.location.href = '/?view=chat'}
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  Talk to Me
-                </Button>
-                
-                {/* Middle - Subscribe Button (1 column) */}
-                <Button
-                  size="sm"
-                  className="col-span-1 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 text-white py-3 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-1 hover:scale-[1.02] active:scale-[0.98]"
+                  className="col-span-3 bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-3 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
                   onClick={() => {}} // Just a visual button
                 >
-                  <Sparkles className="h-3 w-3" />
-                  <span className="hidden sm:inline">Sub</span>
+                  <Sparkles className="h-4 w-4" />
+                  Subscribe - $9.99/mo
                 </Button>
                 
                 {/* Right Side - Enhanced Follow Button (2 columns) */}

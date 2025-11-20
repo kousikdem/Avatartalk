@@ -99,18 +99,11 @@ export const useVoiceInput = () => {
       console.error('Speech recognition error:', event.error);
       setIsListening(false);
       
-      // Only show errors that are actionable, ignore 'no-speech' and 'aborted'
-      if (event.error !== 'aborted' && event.error !== 'no-speech') {
+      if (event.error !== 'aborted') {
         toast({
           title: "Voice Input Error",
           description: `Speech recognition error: ${event.error}`,
           variant: "destructive",
-        });
-      } else if (event.error === 'no-speech') {
-        toast({
-          title: "No Speech Detected",
-          description: "Please try speaking again",
-          variant: "default",
         });
       }
     };
