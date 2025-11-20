@@ -14,8 +14,12 @@ const messageSchema = z.object({
     .min(1, 'Message cannot be empty')
     .max(2000, 'Message must be 2000 characters or less')
     .trim(),
-  profileId: z.string().uuid('Invalid profile ID format'),
-  userId: z.string().uuid('Invalid user ID format').optional()
+  profileId: z.string().uuid('Invalid profile ID format').optional(),
+  userId: z.string().uuid('Invalid user ID format').optional(),
+  conversationHistory: z.array(z.object({
+    role: z.enum(['user', 'assistant']),
+    content: z.string()
+  })).optional()
 });
 
 const llamaCppServerUrl = Deno.env.get('LLAMA_CPP_SERVER_URL') || 'http://localhost:8080';
@@ -55,37 +59,38 @@ serve(async (req) => {
       });
     }
 
-    const { userMessage, profileId, userId } = validationResult.data;
+    const { userMessage, profileId, userId, conversationHistory } = validationResult.data;
+    const targetId = profileId || userId;
 
-    console.log('Generating personalized AI response for profile:', profileId);
+    console.log('Generating personalized AI response for profile:', targetId);
 
     // Create Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get user's personalized AI training data
-    const { data: trainingData } = await supabase
+    const { data: trainingData } = targetId ? await supabase
       .from('personalized_ai_training')
       .select('*')
-      .eq('user_id', profileId)
+      .eq('user_id', targetId)
       .eq('model_status', 'completed')
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle() : { data: null };
 
     // Get user profile information
-    const { data: profile } = await supabase
+    const { data: profile } = targetId ? await supabase
       .from('profiles')
       .select('*')
-      .eq('id', profileId)
-      .single();
+      .eq('id', targetId)
+      .maybeSingle() : { data: null };
 
     // Get user's behavior learning data for context
-    const { data: behaviorData } = await supabase
+    const { data: behaviorData } = targetId ? await supabase
       .from('behavior_learning_data')
       .select('*')
-      .eq('user_id', profileId)
+      .eq('user_id', targetId)
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(10) : { data: null };
 
     // Check if this is an AI-related question
     const isAIRelated = /\b(ai|artificial intelligence|machine learning|llm|llama|model|chatbot|assistant|avatartalk)\b/i.test(userMessage);
@@ -139,22 +144,28 @@ serve(async (req) => {
     
     You are Avatartalk personalized AI powered by Mistral 7B running on llama.cpp with multilingual support. Respond naturally as this person's AI assistant, maintaining consistency with previous conversations and the established personality.`;
 
+    // Build messages with conversation history
+    const messages = [
+      { role: 'system', content: personalityPrompt }
+    ];
+    
+    // Add conversation history if provided
+    if (conversationHistory && Array.isArray(conversationHistory)) {
+      messages.push(...conversationHistory.slice(-10)); // Last 10 messages
+    }
+    
+    // Add current message
+    messages.push({ role: 'user', content: userMessage });
+
+    console.log('🤖 Sending to Mistral 7B with', messages.length, 'messages');
+
     const response = await fetch(`${llamaCppServerUrl}/v1/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        messages: [
-          { 
-            role: 'system', 
-            content: personalityPrompt
-          },
-          { 
-            role: 'user', 
-            content: userMessage 
-          }
-        ],
+        messages,
         max_tokens: 300,
         temperature: 0.8,
       }),
@@ -170,15 +181,15 @@ serve(async (req) => {
     const aiResponse = data.choices[0].message.content;
 
     // Store the conversation in behavior learning data
-    if (userId) {
+    if (targetId) {
       await supabase.from('behavior_learning_data').insert({
-        user_id: profileId,
+        user_id: targetId,
         interaction_type: 'ai_response',
         user_input: userMessage,
         ai_response: aiResponse,
         context_data: { 
           timestamp: new Date().toISOString(),
-          requester_id: userId
+          requester_id: userId || targetId
         }
       });
     }
