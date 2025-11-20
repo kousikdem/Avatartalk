@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
@@ -8,8 +9,8 @@ const corsHeaders = {
 
 const textSchema = z.object({
   text: z.string().min(1, 'Text cannot be empty').max(5000, 'Text too long'),
-  voice_id: z.string().optional(),
-  model_id: z.string().optional(),
+  user_id: z.string().optional(),
+  profile_id: z.string().optional(),
 });
 
 serve(async (req) => {
@@ -18,15 +19,8 @@ serve(async (req) => {
   }
 
   try {
-    const elevenLabsApiKey = Deno.env.get('ELEVENLABS_API_KEY');
-    if (!elevenLabsApiKey) {
-      console.error('❌ ELEVENLABS_API_KEY is not configured');
-      return new Response(JSON.stringify({ error: 'ElevenLabs API key not configured' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
+    const openVoiceUrl = Deno.env.get('OPENVOICE_URL') || 'http://localhost:8001';
+    
     const body = await req.json();
     const validationResult = textSchema.safeParse(body);
     
@@ -41,33 +35,64 @@ serve(async (req) => {
       });
     }
 
-    const { text, voice_id = '9BWtsMINqrJLrRacOk9x', model_id = 'eleven_turbo_v2_5' } = validationResult.data;
+    const { text, user_id, profile_id } = validationResult.data;
 
-    console.log(`🎤 Generating speech for text (${text.length} chars) with voice ${voice_id}`);
+    console.log(`🎤 Generating personalized speech with OpenVoice (${text.length} chars)`);
 
-    const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${voice_id}/stream`,
-      {
-        method: 'POST',
-        headers: {
-          'Accept': 'audio/mpeg',
-          'xi-api-key': elevenLabsApiKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          text,
-          model_id,
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
-          },
-        }),
+    // Get user profile for voice personalization
+    let voiceSettings = {
+      speaker: 'default',
+      style: 'default',
+      speed: 1.0,
+    };
+
+    if (user_id || profile_id) {
+      try {
+        const supabaseClient = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        );
+
+        const targetId = profile_id || user_id;
+        const { data: profile } = await supabaseClient
+          .from('profiles')
+          .select('*')
+          .eq('id', targetId)
+          .single();
+
+        if (profile) {
+          // Customize voice based on profile (gender, age, etc.)
+          voiceSettings = {
+            speaker: profile.gender === 'female' ? 'female_voice' : 'male_voice',
+            style: profile.age && profile.age < 30 ? 'young' : 'mature',
+            speed: 1.0,
+          };
+          console.log('✅ Using personalized voice settings:', voiceSettings);
+        }
+      } catch (error) {
+        console.warn('⚠️ Could not fetch profile, using default voice:', error);
       }
-    );
+    }
+
+    // Call OpenVoice API
+    const response = await fetch(`${openVoiceUrl}/v1/audio/speech`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text,
+        speaker: voiceSettings.speaker,
+        style: voiceSettings.style,
+        speed: voiceSettings.speed,
+        language: 'en',
+        output_format: 'mp3',
+      }),
+    });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ ElevenLabs API error:', response.status, errorText);
+      console.error('❌ OpenVoice API error:', response.status, errorText);
       return new Response(JSON.stringify({ 
         error: 'Text-to-speech generation failed',
         details: errorText
@@ -80,12 +105,13 @@ serve(async (req) => {
     const audioBuffer = await response.arrayBuffer();
     const base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)));
 
-    console.log('✅ Speech generated successfully');
+    console.log('✅ Personalized speech generated successfully');
 
     return new Response(JSON.stringify({ 
       success: true,
       audio: base64Audio,
-      format: 'mp3'
+      format: 'mp3',
+      voice_settings: voiceSettings
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

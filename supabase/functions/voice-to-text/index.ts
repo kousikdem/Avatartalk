@@ -113,37 +113,52 @@ function detectSpeech(audioData: Uint8Array): boolean {
   return average > threshold;
 }
 
-// Coqui STT implementation using Web Speech API fallback
-async function transcribeWithCoquiSTT(audioData: Uint8Array): Promise<string> {
+// Faster-Whisper implementation
+async function transcribeWithFasterWhisper(audioData: Uint8Array): Promise<string> {
   try {
-    // For now, using a simplified approach since Coqui STT requires model hosting
-    // In production, you would use the actual Coqui STT model
+    const fasterWhisperUrl = Deno.env.get('FASTER_WHISPER_URL') || 'http://localhost:8000';
     
-    // Convert to WAV format
+    console.log('🎤 Transcribing with Faster-Whisper at:', fasterWhisperUrl);
+    
+    // Convert to WAV format for better compatibility
     const wavData = convertToWav(audioData);
     
     // Check if there's speech in the audio
     if (!detectSpeech(audioData)) {
+      console.log('⚠️ No speech detected in audio');
       return "";
     }
     
-    // Simulate Coqui STT processing
-    // In a real implementation, you would:
-    // 1. Load the Coqui STT model
-    // 2. Process the audio through the model
-    // 3. Return the transcription
+    // Create form data for Faster-Whisper API
+    const formData = new FormData();
+    const audioBlob = new Blob([wavData], { type: 'audio/wav' });
+    formData.append('audio_file', audioBlob, 'audio.wav');
+    formData.append('task', 'transcribe');
+    formData.append('language', 'en');
+    formData.append('vad_filter', 'true');
+    formData.append('word_timestamps', 'false');
     
-    // For now, return a placeholder indicating successful processing
-    // You would replace this with actual Coqui STT inference
+    const response = await fetch(`${fasterWhisperUrl}/v1/audio/transcriptions`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Faster-Whisper API error:', response.status, errorText);
+      throw new Error(`Faster-Whisper API returned ${response.status}: ${errorText}`);
+    }
+
+    const result = await response.json();
+    const transcription = result.text || result.transcription || '';
     
-    // Simulated transcription result
-    // In production, this would be the actual Coqui STT output
-    return "Coqui STT transcription would appear here";
+    console.log('✅ Faster-Whisper transcription:', transcription);
+    return transcription;
     
   } catch (error) {
-    console.error('Coqui STT error:', error);
+    console.error('Faster-Whisper error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    throw new Error(`Coqui STT processing failed: ${errorMessage}`);
+    throw new Error(`Faster-Whisper processing failed: ${errorMessage}`);
   }
 }
 
@@ -170,20 +185,20 @@ serve(async (req) => {
     
     const { audio } = validationResult.data;
 
-    console.log('Processing audio with Coqui STT...');
+    console.log('🎤 Processing audio with Faster-Whisper...');
 
     // Process audio in chunks
     const binaryAudio = processBase64Chunks(audio);
     
-    // Use Coqui STT for transcription
-    const transcription = await transcribeWithCoquiSTT(binaryAudio);
+    // Use Faster-Whisper for real-time transcription
+    const transcription = await transcribeWithFasterWhisper(binaryAudio);
 
-    console.log('Coqui STT transcription completed:', transcription);
+    console.log('✅ Faster-Whisper transcription completed:', transcription);
 
     return new Response(
       JSON.stringify({ 
         text: transcription,
-        engine: 'coqui-stt',
+        engine: 'faster-whisper',
         timestamp: new Date().toISOString()
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -195,7 +210,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: errorMessage,
-        engine: 'coqui-stt'
+        engine: 'faster-whisper'
       }),
       {
         status: 500,

@@ -91,42 +91,98 @@ const VoiceTextChat: React.FC<VoiceTextChatProps> = ({
     setInputMessage('');
     setIsLoading(true);
 
+    // Create placeholder for AI response
+    const aiMessageId = (Date.now() + 1).toString();
+    const placeholderMessage: Message = {
+      id: aiMessageId,
+      text: '',
+      sender: 'ai',
+      timestamp: new Date(),
+      hasAudio: voiceEnabled
+    };
+    setMessages(prev => [...prev, placeholderMessage]);
+
     try {
       const targetProfileId = profileId || userId;
       
-      // Get AI text response
-      console.log('📤 Sending message to AI...');
-      const { data: aiData, error: aiError } = await supabase.functions.invoke('personalized-ai-response', {
-        body: {
-          userMessage: messageText,
-          profileId: targetProfileId,
-          userId
-        }
-      });
+      // Build conversation history
+      const conversationHistory = messages.map(msg => ({
+        role: msg.sender === 'user' ? 'user' : 'assistant',
+        content: msg.text
+      }));
 
-      if (aiError) throw aiError;
-
-      const aiText = aiData.response || "I'm having trouble responding right now.";
+      console.log('📤 Sending message with streaming...');
       
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: aiText,
-        sender: 'ai',
-        timestamp: new Date(),
-        hasAudio: voiceEnabled
-      };
+      // Use streaming coordinator for real-time response
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/streaming-coordinator`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            userMessage: messageText,
+            profileId: targetProfileId,
+            userId,
+            conversationHistory
+          }),
+        }
+      );
 
-      setMessages(prev => [...prev, aiMessage]);
+      if (!response.ok) throw new Error('Streaming request failed');
 
-      // Generate voice if enabled
-      if (voiceEnabled && aiText) {
-        console.log('🎤 Generating voice response...');
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedText = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                
+                if (data.type === 'text_delta' && data.content) {
+                  accumulatedText += data.content;
+                  
+                  // Update AI message in real-time
+                  setMessages(prev => prev.map(msg => 
+                    msg.id === aiMessageId 
+                      ? { ...msg, text: accumulatedText }
+                      : msg
+                  ));
+                } else if (data.type === 'done') {
+                  console.log('✅ Streaming completed');
+                }
+              } catch (e) {
+                console.error('Error parsing stream data:', e);
+              }
+            }
+          }
+        }
+      }
+
+      // Generate voice for final response if enabled
+      if (voiceEnabled && accumulatedText) {
+        console.log('🎤 Generating personalized voice...');
         const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
-          body: { text: aiText }
+          body: { 
+            text: accumulatedText,
+            user_id: userId,
+            profile_id: targetProfileId
+          }
         });
 
         if (!ttsError && ttsData?.audio) {
-          console.log('✅ Playing voice response');
+          console.log('✅ Playing personalized voice');
           await playAudio(ttsData.audio);
         } else {
           console.error('Voice generation error:', ttsError);
@@ -141,13 +197,12 @@ const VoiceTextChat: React.FC<VoiceTextChatProps> = ({
         variant: "destructive",
       });
       
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: "I'm having trouble responding right now. Please try again.",
-        sender: 'ai',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      // Update placeholder with error
+      setMessages(prev => prev.map(msg => 
+        msg.id === aiMessageId 
+          ? { ...msg, text: "I'm having trouble responding right now. Please try again." }
+          : msg
+      ));
     } finally {
       setIsLoading(false);
     }
