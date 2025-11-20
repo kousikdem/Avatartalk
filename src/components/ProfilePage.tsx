@@ -844,8 +844,8 @@ const ProfilePage: React.FC = () => {
               </p>
             </div>
 
-            {/* Changeable 3D Avatar Preview */}
-            <div className="px-6 pb-6">
+            {/* Changeable 3D Avatar Preview with Talk to Me Button */}
+            <div className="px-6 pb-6 relative">
               <ChangeableAvatarPreview
                 userId={profile?.id}
                 isLarge={true}
@@ -854,6 +854,26 @@ const ProfilePage: React.FC = () => {
                 isTalking={isTalking}
                 onAvatarClick={currentUser?.id === profile?.id ? () => window.location.href = '/avatar' : undefined}
               />
+              
+              {/* Floating Talk to Me Button */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.5 }}
+                className="absolute bottom-4 right-10"
+              >
+                <Button
+                  size="lg"
+                  onClick={() => {
+                    // Navigate to voice chat
+                    window.location.href = '/?view=chat';
+                  }}
+                  className="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 hover:from-purple-700 hover:via-pink-700 hover:to-red-700 text-white rounded-full shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 px-6 py-6 font-bold text-base border-0 flex items-center gap-3 hover:scale-110 active:scale-95 animate-pulse-zoom"
+                >
+                  <MessageCircle className="h-6 w-6" />
+                  Talk to Me
+                </Button>
+              </motion.div>
             </div>
 
             {/* Action Buttons - Subscribe (left wider) and Follow (right) - Enhanced design */}
