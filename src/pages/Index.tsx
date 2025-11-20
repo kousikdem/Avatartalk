@@ -7,6 +7,8 @@ import Dashboard from '@/components/Dashboard';
 import PricingPage from '@/components/PricingPage';
 import EnhancedAvatarStudio from '@/components/EnhancedAvatarStudio';
 import VisitorAuth from '@/components/VisitorAuth';
+import VoiceTextChat from '@/components/VoiceTextChat';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect, useState } from 'react';
 
@@ -55,6 +57,27 @@ const Index = () => {
   if (user) {
     if (view === 'avatar') {
       return <EnhancedAvatarStudio />;
+    }
+    if (view === 'chat') {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-background to-muted/30 p-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="mb-4">
+              <Button 
+                onClick={() => window.location.href = '/'} 
+                variant="outline"
+                className="mb-2"
+              >
+                ← Back to Dashboard
+              </Button>
+            </div>
+            <VoiceTextChat 
+              avatarName="Mistral AI"
+              profileId={user.id}
+            />
+          </div>
+        </div>
+      );
     }
     // Show dashboard for authenticated users by default
     return <Dashboard />;

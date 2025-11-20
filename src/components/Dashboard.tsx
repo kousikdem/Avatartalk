@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Share2, Users, MessageSquare, BarChart3, Calendar, LogOut, Settings, Home, ShoppingBag, Brain } from 'lucide-react';
+import { Share2, Users, MessageSquare, BarChart3, Calendar, LogOut, Settings, Home, ShoppingBag, Brain, Mic } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import ShareModal from './ShareModal';
 import ChangeableAvatarPreview from './ChangeableAvatarPreview';
@@ -185,6 +185,17 @@ const Dashboard = () => {
                   <div className="text-center">
                     <Brain className="h-6 w-6 mx-auto mb-1" />
                     <div className="text-sm">AI Training</div>
+                  </div>
+                </Button>
+
+                <Button 
+                  variant="outline" 
+                  className="h-16 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white border-0"
+                  onClick={() => window.location.href = '/?view=chat'}
+                >
+                  <div className="text-center">
+                    <Mic className="h-6 w-6 mx-auto mb-1" />
+                    <div className="text-sm">Voice Chat</div>
                   </div>
                 </Button>
                 
