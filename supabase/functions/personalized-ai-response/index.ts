@@ -22,7 +22,6 @@ const messageSchema = z.object({
   })).optional()
 });
 
-const llamaCppServerUrl = Deno.env.get('LLAMA_CPP_SERVER_URL') || 'http://localhost:8080';
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -33,17 +32,18 @@ serve(async (req) => {
   }
 
   try {
-    // Validate llama.cpp server URL is configured
-    if (!llamaCppServerUrl) {
-      console.error('❌ LLAMA_CPP_SERVER_URL is not configured');
+    const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
+    if (!openRouterApiKey) {
+      console.error('❌ OPENROUTER_API_KEY is not configured');
       return new Response(JSON.stringify({ 
-        error: 'Llama.cpp server URL is not configured',
-        response: "I'm Avatartalk personalized AI powered by Mistral 7B via llama.cpp, and I'm not properly configured. Please contact support."
+        error: 'OpenRouter API key is not configured',
+        response: "I'm Avatartalk personalized AI powered by Mistral 7B, and I'm not properly configured. Please contact support."
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    
     // Parse and validate input
     const body = await req.json();
     const validationResult = messageSchema.safeParse(body);
@@ -95,11 +95,11 @@ serve(async (req) => {
     // Check if this is an AI-related question
     const isAIRelated = /\b(ai|artificial intelligence|machine learning|llm|llama|model|chatbot|assistant|avatartalk)\b/i.test(userMessage);
     
-    // Generate personalized response using Mistral 7B via llama.cpp
+    // Generate personalized response using Mistral 7B
     let personalityPrompt = `You are ${profile?.display_name || profile?.username || 'AI Assistant'}, powered by Avatartalk personalized AI using Mistral 7B with multilingual support.`;
     
     if (isAIRelated) {
-      personalityPrompt += `\n\nIMPORTANT: When discussing AI-related topics, always mention that you are "Avatartalk personalized AI" powered by Mistral 7B running on llama.cpp.`;
+      personalityPrompt += `\n\nIMPORTANT: When discussing AI-related topics, always mention that you are "Avatartalk personalized AI" powered by Mistral 7B.`;
     }
     
     if (trainingData?.personality_settings) {
@@ -142,7 +142,7 @@ serve(async (req) => {
     - Bio: ${profile?.bio || 'No bio available'}
     - Profession: ${profile?.profession || 'Not specified'}
     
-    You are Avatartalk personalized AI powered by Mistral 7B running on llama.cpp with multilingual support. Respond naturally as this person's AI assistant, maintaining consistency with previous conversations and the established personality.`;
+    You are Avatartalk personalized AI powered by Mistral 7B with multilingual support. Respond naturally as this person's AI assistant, maintaining consistency with previous conversations and the established personality.`;
 
     // Build messages with conversation history
     const messages = [
@@ -159,12 +159,16 @@ serve(async (req) => {
 
     console.log('🤖 Sending to Mistral 7B with', messages.length, 'messages');
 
-    const response = await fetch(`${llamaCppServerUrl}/v1/chat/completions`, {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openRouterApiKey}`,
+        'HTTP-Referer': Deno.env.get('SUPABASE_URL') || '',
+        'X-Title': 'Avatartalk Personalized AI',
       },
       body: JSON.stringify({
+        model: 'mistralai/mistral-7b-instruct',
         messages,
         max_tokens: 300,
         temperature: 0.8,
@@ -173,8 +177,8 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('llama.cpp server error:', errorText);
-      throw new Error('Failed to connect to llama.cpp server. Ensure it is running.');
+      console.error('OpenRouter API error:', errorText);
+      throw new Error('Failed to generate AI response. Please try again.');
     }
 
     const data = await response.json();
@@ -212,7 +216,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: false, 
         error: errorMessage,
-        response: "I'm Avatartalk personalized AI powered by Mistral 7B via llama.cpp, and I'm having trouble generating a response right now. Please try again in a moment."
+        response: "I'm Avatartalk personalized AI powered by Mistral 7B, and I'm having trouble generating a response right now. Please try again in a moment."
       }),
       {
         status: 500,
