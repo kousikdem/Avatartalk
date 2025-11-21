@@ -115,12 +115,12 @@ const VoiceTextChat: React.FC<VoiceTextChatProps> = ({
       
       // Use streaming coordinator for real-time response
       const response = await fetch(
-        `https://hnxnvdzrwbtmcohdptfq.supabase.co/functions/v1/streaming-coordinator`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/streaming-coordinator`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueG52ZHpyd2J0bWNvaGRwdGZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2MjA1MzMsImV4cCI6MjA2NjE5NjUzM30.bJerrLVY2DdTkaDurRoVBZIqmLRVYt-sxAH9sUDWgu8`,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           },
           body: JSON.stringify({
             userMessage: messageText,
@@ -131,11 +131,7 @@ const VoiceTextChat: React.FC<VoiceTextChatProps> = ({
         }
       );
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Streaming request failed:', response.status, errorText);
-        throw new Error(`Streaming request failed: ${response.status}`);
-      }
+      if (!response.ok) throw new Error('Streaming request failed');
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
@@ -193,28 +189,18 @@ const VoiceTextChat: React.FC<VoiceTextChatProps> = ({
         }
       }
 
-    } catch (error: any) {
-      console.error('❌ Error getting AI response:', error);
-      
-      let errorMessage = "Failed to get AI response. Please try again.";
-      
-      // Check for specific errors
-      if (error.message?.includes('llama.cpp server')) {
-        errorMessage = "AI server is not available. Please ensure llama.cpp is running with Mistral 7B model.";
-      } else if (error.message?.includes('Connection refused')) {
-        errorMessage = "Cannot connect to AI server. Please check your server configuration.";
-      }
-      
+    } catch (error) {
+      console.error('Error getting AI response:', error);
       toast({
         title: "Error",
-        description: errorMessage,
+        description: "Failed to get AI response. Please try again.",
         variant: "destructive",
       });
       
       // Update placeholder with error
       setMessages(prev => prev.map(msg => 
         msg.id === aiMessageId 
-          ? { ...msg, text: "I'm having trouble connecting to the AI server right now. Please ensure llama.cpp is running with the Mistral 7B model." }
+          ? { ...msg, text: "I'm having trouble responding right now. Please try again." }
           : msg
       ));
     } finally {

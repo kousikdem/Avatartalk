@@ -73,7 +73,6 @@ export const useVoiceInput = () => {
     recognition.language = options.language || 'en-US';
 
     recognition.onstart = () => {
-      console.log('Speech recognition started');
       setIsListening(true);
       setTranscript('');
       setInterimTranscript('');
@@ -92,19 +91,15 @@ export const useVoiceInput = () => {
         }
       }
 
-      if (finalTranscript) {
-        console.log('Final transcript:', finalTranscript);
-        setTranscript(prev => prev + finalTranscript);
-      }
+      setTranscript(prev => prev + finalTranscript);
       setInterimTranscript(interimTranscript);
     };
 
     recognition.onerror = (event: CustomSpeechRecognitionErrorEvent) => {
-      console.error('Speech recognition error:', event.error, event.message);
+      console.error('Speech recognition error:', event.error);
       setIsListening(false);
       
-      // Don't show errors for aborted, no-speech, or audio-capture (these are normal)
-      if (event.error !== 'aborted' && event.error !== 'no-speech' && event.error !== 'audio-capture') {
+      if (event.error !== 'aborted') {
         toast({
           title: "Voice Input Error",
           description: `Speech recognition error: ${event.error}`,
@@ -114,22 +109,15 @@ export const useVoiceInput = () => {
     };
 
     recognition.onend = () => {
-      console.log('Speech recognition ended');
       setIsListening(false);
       setInterimTranscript('');
     };
 
     try {
       recognition.start();
-      console.log('Starting speech recognition...');
     } catch (error) {
       console.error('Failed to start speech recognition:', error);
       setIsListening(false);
-      toast({
-        title: "Voice Input Failed",
-        description: "Could not start voice recognition. Please check microphone permissions.",
-        variant: "destructive",
-      });
     }
   }, [initializeRecognition, toast]);
 
