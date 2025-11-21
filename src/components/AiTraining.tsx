@@ -221,7 +221,7 @@ const AiTraining = () => {
         
         toast({
           title: "AI Training Completed",
-          description: "Your personalized AI model has been successfully trained with Mixtral 8x7B + Scikit-learn",
+          description: "Your personalized AI model has been successfully trained with Mistral 7B + Scikit-learn",
         });
 
       } catch (trainError: any) {
@@ -394,7 +394,7 @@ const AiTraining = () => {
             AI Training & Voice Cloning
           </h1>
           <p className="text-gray-700">
-            Train your personalized AI with LlamaIndex → Mixtral 8x7B + Scikit-learn ML pipeline
+            Train your personalized AI with LlamaIndex → Mistral 7B + Scikit-learn ML pipeline
           </p>
         </div>
 

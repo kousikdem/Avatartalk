@@ -62,7 +62,7 @@ serve(async (req) => {
     // Build messages for streaming with personalized training context
     const messages = [];
     
-    let systemPrompt = `You are a helpful AI assistant powered by Mixtral 8x7B with personalized training.
+    let systemPrompt = `You are a helpful AI assistant powered by Mistral 7B with personalized training.
 ${userContext}`;
 
     // Add personalized training context if available
@@ -107,7 +107,7 @@ ${userContext}`;
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          console.log('📡 Starting Mixtral 8x7B streaming response...');
+          console.log('📡 Starting Mistral 7B streaming response...');
           
           const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
@@ -118,7 +118,7 @@ ${userContext}`;
               'X-Title': 'Personalized AI Chat',
             },
             body: JSON.stringify({
-              model: 'mistralai/mixtral-8x7b-instruct',
+              model: 'mistralai/mistral-7b-instruct',
               messages,
               temperature: 0.7,
               max_tokens: 800,

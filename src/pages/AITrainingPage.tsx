@@ -234,7 +234,7 @@ const AITrainingPage = () => {
       
       toast({
         title: "Success",
-        description: "AI training started successfully with Mixtral 8x7B",
+        description: "AI training started successfully with Mistral 7B",
       });
     } catch (error) {
       console.error('Error starting training:', error);
@@ -247,7 +247,7 @@ const AITrainingPage = () => {
         <div>
           <h1 className="text-3xl font-bold mb-2">AI Training Dashboard</h1>
           <p className="text-muted-foreground">
-            Train your personalized AI using Mixtral 8x7B, Scikit-learn ML, and Large Language Models
+            Train your personalized AI using Mistral 7B, Scikit-learn ML, and Large Language Models
           </p>
         </div>
         <Button onClick={handleStartTraining} disabled={isTraining || isAiLoading}>

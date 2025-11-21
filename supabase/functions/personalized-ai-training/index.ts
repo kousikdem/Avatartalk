@@ -235,10 +235,10 @@ serve(async (req) => {
           .update({ training_progress: 20 })
           .eq('id', trainingId);
 
-        console.log('🤖 Step 2: Initializing Mixtral 8x7B model with Scikit-learn ML pipeline...');
+        console.log('🤖 Step 2: Initializing Mistral 7B model with Scikit-learn ML pipeline...');
         
-        const mixtralConfig = {
-          model: 'mistralai/Mixtral-8x7B-Instruct-v0.1',
+        const mistralConfig = {
+          model: 'mistralai/mistral-7b-instruct',
           ml_framework: 'scikit-learn',
           fine_tuning: {
             method: 'qlora',
@@ -262,18 +262,18 @@ serve(async (req) => {
           .update({ training_progress: 35 })
           .eq('id', trainingId);
 
-        console.log('⚡ Step 3: LlamaIndex → Mixtral 8x7B + Scikit-learn ML pipeline execution...');
+        console.log('⚡ Step 3: LlamaIndex → Mistral 7B + Scikit-learn ML pipeline execution...');
 
-        // Realistic training progress with Mixtral and Scikit-learn
+        // Realistic training progress with Mistral and Scikit-learn
         const progressSteps = [
           { progress: 40, stage: 'llamaindex_document_processing', description: 'Processing documents with LlamaIndex' },
           { progress: 50, stage: 'sklearn_feature_extraction', description: 'Extracting features with Scikit-learn TF-IDF' },
           { progress: 60, stage: 'embedding_generation', description: 'Generating embeddings for knowledge base' },
           { progress: 70, stage: 'sklearn_classification', description: 'Training intent classifier with Random Forest' },
-          { progress: 78, stage: 'qlora_initialization', description: 'Initializing QLoRA adapters for Mixtral 8x7B' },
-          { progress: 86, stage: 'mixtral_fine_tuning', description: 'Fine-tuning Mixtral 8x7B with processed data' },
+          { progress: 78, stage: 'qlora_initialization', description: 'Initializing QLoRA adapters for Mistral 7B' },
+          { progress: 86, stage: 'mistral_fine_tuning', description: 'Fine-tuning Mistral 7B with processed data' },
           { progress: 92, stage: 'personality_integration', description: 'Integrating personality settings' },
-          { progress: 97, stage: 'model_validation', description: 'Validating trained Mixtral model' },
+          { progress: 97, stage: 'model_validation', description: 'Validating trained Mistral model' },
           { progress: 100, stage: 'completed', description: 'AI training completed successfully' }
         ];
 
@@ -295,7 +295,7 @@ serve(async (req) => {
         }
 
         // Generate unique model ID for deployment
-        const modelId = `mixtral8x7b_sklearn_${trainingId}_${Date.now()}`;
+        const modelId = `mistral7b_sklearn_${trainingId}_${Date.now()}`;
         
         await supabaseServiceRole
           .from('personalized_ai_training')
@@ -307,20 +307,20 @@ serve(async (req) => {
 
         console.log('🎉 AI Training completed successfully!');
         console.log('📋 Model ID:', modelId);
-        console.log('🔬 ML Framework: Scikit-learn + Mixtral 8x7B');
+        console.log('🔬 ML Framework: Scikit-learn + Mistral 7B');
 
         return new Response(JSON.stringify({ 
           success: true, 
-          message: 'AI model training completed successfully with Mixtral 8x7B + Scikit-learn ML pipeline',
+          message: 'AI model training completed successfully with Mistral 7B + Scikit-learn ML pipeline',
           progress: 100,
           modelId: modelId,
-          pipeline: 'LlamaIndex → Mixtral 8x7B + Scikit-learn',
+          pipeline: 'LlamaIndex → Mistral 7B + Scikit-learn',
           features: [
             'Document processing with LlamaIndex',
             'Feature extraction with Scikit-learn TF-IDF',
             'Intent classification with Random Forest',
             'Advanced embedding generation',
-            'QLoRA fine-tuning with Mixtral 8x7B',
+            'QLoRA fine-tuning with Mistral 7B',
             'Personality-aware responses',
             'Multi-modal data integration',
             'Real-time ML inference'
