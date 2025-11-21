@@ -17,25 +17,50 @@ serve(async (req) => {
       throw new Error('URL is required');
     }
 
-    // Validate URL
+    // Validate URL format and protocol
+    let validatedUrl;
     try {
-      new URL(url);
-    } catch {
-      throw new Error('Invalid URL format');
+      validatedUrl = new URL(url);
+      if (!['http:', 'https:'].includes(validatedUrl.protocol)) {
+        throw new Error('Only HTTP and HTTPS protocols are supported');
+      }
+    } catch (e) {
+      throw new Error(`Invalid URL format: ${e.message}`);
     }
 
-    // Fetch the webpage
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; AvatarTalkBot/1.0)',
-      },
-    });
+    console.log('🌐 Scraping URL:', validatedUrl.href);
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch URL: ${response.statusText}`);
-    }
+    // Fetch the webpage with timeout and better headers
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
-    const html = await response.text();
+    try {
+      const response = await fetch(validatedUrl.href, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; AvatarTalkBot/1.0)',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+        },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeout);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch URL (${response.status}): ${response.statusText}`);
+      }
+
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('text/html') && !contentType.includes('text/plain')) {
+        throw new Error(`Unsupported content type: ${contentType}`);
+      }
+
+      const html = await response.text();
+
+      if (!html || html.length === 0) {
+        throw new Error('Empty response from URL');
+      }
 
     // Extract title
     const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);

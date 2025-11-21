@@ -24,6 +24,7 @@ serve(async (req) => {
 
     // Fetch user profile for personalization
     let userContext = '';
+    let personalizedTrainingData = null;
     const targetId = profileId || userId;
     
     if (targetId) {
@@ -36,15 +37,59 @@ serve(async (req) => {
       if (profile) {
         userContext = `User: ${profile.display_name || 'User'} (${profile.profession || 'General user'})`;
       }
+
+      // Fetch personalized AI training data
+      const { data: trainingData } = await supabaseClient
+        .from('personalized_ai_training')
+        .select('*')
+        .eq('user_id', targetId)
+        .eq('model_status', 'completed')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (trainingData) {
+        personalizedTrainingData = trainingData;
+        console.log('✅ Found personalized training data:', trainingData.voice_model_id);
+      }
     }
 
     const llamaCppServerUrl = Deno.env.get('LLAMA_CPP_SERVER_URL') || 'http://localhost:8080';
 
-    // Build messages for streaming
+    // Build messages for streaming with personalized training context
     const messages = [];
-    const systemPrompt = `You are a helpful AI assistant powered by Mistral 7B.
-${userContext}
-Provide concise, personalized responses.`;
+    
+    let systemPrompt = `You are a helpful AI assistant powered by Mixtral 8x7B with Scikit-learn ML integration.
+${userContext}`;
+
+    // Add personalized training context if available
+    if (personalizedTrainingData) {
+      const personalitySettings = personalizedTrainingData.personality_settings || {};
+      const trainingData = personalizedTrainingData.training_data || {};
+      
+      systemPrompt += `\n\nPersonality Configuration:
+- Formality: ${personalitySettings.formality || 50}%
+- Verbosity: ${personalitySettings.verbosity || 50}%
+- Friendliness: ${personalitySettings.friendliness || 80}%
+- Mode: ${personalitySettings.mode || 'adaptive'}`;
+
+      // Add Q&A pairs from training data
+      if (trainingData.qaPairs && trainingData.qaPairs.length > 0) {
+        systemPrompt += `\n\nTrained Q&A Knowledge:`;
+        trainingData.qaPairs.slice(0, 5).forEach((qa: any) => {
+          systemPrompt += `\nQ: ${qa.question}\nA: ${qa.answer}`;
+        });
+      }
+
+      // Add document context if available
+      if (trainingData.documents && trainingData.documents.length > 0) {
+        systemPrompt += `\n\nDocument Knowledge Base: ${trainingData.documents.length} documents processed`;
+      }
+
+      systemPrompt += `\n\nProvide responses based on this personalized training data while maintaining the specified personality traits.`;
+    } else {
+      systemPrompt += `\nProvide concise, personalized responses.`;
+    }
 
     messages.push({ role: 'system', content: systemPrompt });
     
