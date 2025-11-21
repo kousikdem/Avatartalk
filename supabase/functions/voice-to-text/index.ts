@@ -100,17 +100,36 @@ function convertToWav(audioData: Uint8Array, sampleRate = 16000): Uint8Array {
   return new Uint8Array(arrayBuffer);
 }
 
-// Simple voice activity detection
-function detectSpeech(audioData: Uint8Array): boolean {
-  const threshold = 0.01;
-  let sum = 0;
-  
-  for (let i = 0; i < audioData.length; i++) {
-    sum += Math.abs(audioData[i]);
+// Simple voice activity detection with improved sensitivity
+function detectSpeech(audioData: Uint8Array): boolean | null {
+  // Check for sufficient audio data
+  if (audioData.length < 1000) {
+    console.log('⚠️ Audio data too short');
+    return null;
   }
   
-  const average = sum / audioData.length;
-  return average > threshold;
+  // Calculate RMS (Root Mean Square) for better detection
+  let sumSquares = 0;
+  for (let i = 0; i < audioData.length; i++) {
+    const normalized = audioData[i] / 255.0 - 0.5; // Normalize to -0.5 to 0.5
+    sumSquares += normalized * normalized;
+  }
+  
+  const rms = Math.sqrt(sumSquares / audioData.length);
+  const threshold = 0.005; // Lower threshold for better sensitivity
+  
+  console.log(`🎤 Audio RMS: ${rms.toFixed(6)}, Threshold: ${threshold}`);
+  
+  if (rms > threshold) {
+    console.log('✅ Speech detected in audio');
+    return true;
+  } else if (rms > threshold * 0.3) {
+    console.log('⚠️ Weak signal detected, attempting transcription anyway...');
+    return true; // Try anyway for quiet speech
+  }
+  
+  console.log('❌ No speech detected - signal too weak');
+  return false;
 }
 
 // Faster-Whisper implementation
@@ -123,9 +142,16 @@ async function transcribeWithFasterWhisper(audioData: Uint8Array): Promise<strin
     // Convert to WAV format for better compatibility
     const wavData = convertToWav(audioData);
     
-    // Check if there's speech in the audio
-    if (!detectSpeech(audioData)) {
-      console.log('⚠️ No speech detected in audio');
+    // Check if there's speech in the audio (but still transcribe weak signals)
+    const speechDetected = detectSpeech(audioData);
+    
+    if (speechDetected === false) {
+      console.log('⚠️ Very weak or no audio signal - returning empty');
+      return "";
+    }
+    
+    if (speechDetected === null) {
+      console.log('⚠️ Audio too short - may not contain speech');
       return "";
     }
     
