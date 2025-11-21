@@ -79,7 +79,7 @@ export const useRealtimeVoiceChat = (profileId?: string) => {
             }
 
             console.log('🔄 Sending to realtime voice chat pipeline...');
-            console.log('📊 Pipeline: Faster-Whisper → Mixtral 8x7B → OpenVoice');
+            console.log('📊 Pipeline: Faster-Whisper → Mistral 7B (Ollama) → OpenVoice');
 
             // Send to realtime voice chat function
             const { data, error } = await supabase.functions.invoke('realtime-voice-chat', {
