@@ -60,7 +60,7 @@ export const usePersonalizedAIChat = () => {
 
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: data.response || "I'm Avatartalk personalized AI powered by Mixtral 8x7B. Sorry, I couldn't process that request.",
+        text: data.response || "I'm Avatartalk personalized AI powered by Mistral 7B. Sorry, I couldn't process that request.",
         sender: 'ai',
         timestamp: new Date()
       };
@@ -71,7 +71,7 @@ export const usePersonalizedAIChat = () => {
       
       const errorResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: "I'm Avatartalk personalized AI powered by Mixtral 8x7B, and I'm having trouble responding right now. Please try again.",
+        text: "I'm Avatartalk personalized AI powered by Mistral 7B, and I'm having trouble responding right now. Please try again.",
         sender: 'ai',
         timestamp: new Date()
       };
@@ -85,7 +85,7 @@ export const usePersonalizedAIChat = () => {
   const initializeChat = (avatarName: string) => {
     const initialMessage: Message = {
       id: '1',
-      text: `Hi! I'm ${avatarName}, powered by Avatartalk personalized AI using Mixtral 8x7B with Scikit-learn. How can I help you today?`,
+      text: `Hi! I'm ${avatarName}, powered by Avatartalk personalized AI using Mistral 7B with Scikit-learn. How can I help you today?`,
       sender: 'ai',
       timestamp: new Date()
     };

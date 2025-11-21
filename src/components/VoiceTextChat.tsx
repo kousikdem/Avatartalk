@@ -63,7 +63,7 @@ const VoiceTextChat: React.FC<VoiceTextChatProps> = ({
     // Initialize chat
     const initialMessage: Message = {
       id: '1',
-      text: `Hi! I'm ${avatarName}, your personalized AI assistant powered by Mixtral 8x7B. I understand your preferences and can respond with both text and voice using OpenVoice. How can I help you today?`,
+      text: `Hi! I'm ${avatarName}, your personalized AI assistant powered by Mistral 7B. I understand your preferences and can respond with both text and voice using OpenVoice. How can I help you today?`,
       sender: 'ai',
       timestamp: new Date(),
       hasAudio: false
