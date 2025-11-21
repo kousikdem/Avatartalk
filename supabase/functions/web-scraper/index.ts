@@ -62,39 +62,52 @@ serve(async (req) => {
         throw new Error('Empty response from URL');
       }
 
-    // Extract title
-    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-    const title = titleMatch ? titleMatch[1].trim() : url;
+      // Extract title
+      const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+      const title = titleMatch ? titleMatch[1].trim() : validatedUrl.href;
 
-    // Remove script and style tags
-    let content = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
-    content = content.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
-    
-    // Remove HTML tags
-    content = content.replace(/<[^>]+>/g, ' ');
-    
-    // Clean up whitespace
-    content = content.replace(/\s+/g, ' ').trim();
-    
-    // Limit content length
-    const maxLength = 50000;
-    if (content.length > maxLength) {
-      content = content.substring(0, maxLength) + '...';
-    }
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        title,
-        content,
-        url
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      // Remove script and style tags
+      let content = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+      content = content.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+      
+      // Remove HTML tags
+      content = content.replace(/<[^>]+>/g, ' ');
+      
+      // Clean up whitespace
+      content = content.replace(/\s+/g, ' ').trim();
+      
+      // Limit content length
+      const maxLength = 50000;
+      if (content.length > maxLength) {
+        content = content.substring(0, maxLength) + '...';
       }
-    );
+
+      console.log('✅ Successfully scraped:', validatedUrl.href, `(${content.length} chars)`);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          title,
+          content,
+          url: validatedUrl.href
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    } catch (fetchError) {
+      clearTimeout(timeout);
+      console.error('Fetch error:', fetchError);
+      
+      // Handle specific error types
+      if (fetchError.name === 'AbortError') {
+        throw new Error('Request timeout - the website took too long to respond');
+      }
+      
+      throw new Error(`Failed to fetch webpage: ${fetchError.message}`);
+    }
   } catch (error) {
-    console.error('Error scraping URL:', error);
+    console.error('❌ Error scraping URL:', error);
     return new Response(
       JSON.stringify({
         success: false,
