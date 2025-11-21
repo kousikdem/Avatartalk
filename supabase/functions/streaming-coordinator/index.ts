@@ -54,9 +54,9 @@ serve(async (req) => {
       }
     }
 
-    const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
-    if (!openRouterApiKey) {
-      throw new Error('OPENROUTER_API_KEY not configured');
+    const ollamaUrl = Deno.env.get('OLLAMA_URL');
+    if (!ollamaUrl) {
+      throw new Error('OLLAMA_URL not configured');
     }
 
     // Build messages for streaming with personalized training context
@@ -107,18 +107,15 @@ ${userContext}`;
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          console.log('📡 Starting Mistral 7B streaming response...');
+          console.log('📡 Starting Mistral 7B streaming response via Ollama...');
           
-          const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          const response = await fetch(`${ollamaUrl}/v1/chat/completions`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${openRouterApiKey}`,
-              'HTTP-Referer': Deno.env.get('SUPABASE_URL') || '',
-              'X-Title': 'Personalized AI Chat',
             },
             body: JSON.stringify({
-              model: 'mistralai/mistral-7b-instruct',
+              model: 'mistral',
               messages,
               temperature: 0.7,
               max_tokens: 800,
@@ -127,7 +124,9 @@ ${userContext}`;
           });
 
           if (!response.ok) {
-            throw new Error('LLM server error');
+            const errorText = await response.text();
+            console.error('❌ Ollama error:', errorText);
+            throw new Error('Ollama server error');
           }
 
           const reader = response.body?.getReader();

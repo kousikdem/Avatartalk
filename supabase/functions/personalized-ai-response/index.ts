@@ -32,12 +32,12 @@ serve(async (req) => {
   }
 
   try {
-    const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
-    if (!openRouterApiKey) {
-      console.error('❌ OPENROUTER_API_KEY is not configured');
+    const ollamaUrl = Deno.env.get('OLLAMA_URL');
+    if (!ollamaUrl) {
+      console.error('❌ OLLAMA_URL is not configured');
       return new Response(JSON.stringify({ 
-        error: 'OpenRouter API key is not configured',
-        response: "I'm Avatartalk personalized AI powered by Mistral 7B, and I'm not properly configured. Please contact support."
+        error: 'Ollama URL is not configured',
+        response: "I'm Avatartalk personalized AI powered by Mistral 7B via Ollama, and I'm not properly configured. Please contact support."
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -95,11 +95,11 @@ serve(async (req) => {
     // Check if this is an AI-related question
     const isAIRelated = /\b(ai|artificial intelligence|machine learning|llm|llama|model|chatbot|assistant|avatartalk)\b/i.test(userMessage);
     
-    // Generate personalized response using Mistral 7B
-    let personalityPrompt = `You are ${profile?.display_name || profile?.username || 'AI Assistant'}, powered by Avatartalk personalized AI using Mistral 7B with multilingual support.`;
+    // Generate personalized response using Mistral 7B via Ollama
+    let personalityPrompt = `You are ${profile?.display_name || profile?.username || 'AI Assistant'}, powered by Avatartalk personalized AI using Mistral 7B via Ollama with multilingual support.`;
     
     if (isAIRelated) {
-      personalityPrompt += `\n\nIMPORTANT: When discussing AI-related topics, always mention that you are "Avatartalk personalized AI" powered by Mistral 7B.`;
+      personalityPrompt += `\n\nIMPORTANT: When discussing AI-related topics, always mention that you are "Avatartalk personalized AI" powered by Mistral 7B running on Ollama.`;
     }
     
     if (trainingData?.personality_settings) {
@@ -142,7 +142,7 @@ serve(async (req) => {
     - Bio: ${profile?.bio || 'No bio available'}
     - Profession: ${profile?.profession || 'Not specified'}
     
-    You are Avatartalk personalized AI powered by Mistral 7B with multilingual support. Respond naturally as this person's AI assistant, maintaining consistency with previous conversations and the established personality.`;
+    You are Avatartalk personalized AI powered by Mistral 7B via Ollama with multilingual support. Respond naturally as this person's AI assistant, maintaining consistency with previous conversations and the established personality.`;
 
     // Build messages with conversation history
     const messages = [
@@ -157,28 +157,26 @@ serve(async (req) => {
     // Add current message
     messages.push({ role: 'user', content: userMessage });
 
-    console.log('🤖 Sending to Mistral 7B with', messages.length, 'messages');
+    console.log('🤖 Sending to Mistral 7B via Ollama with', messages.length, 'messages');
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const response = await fetch(`${ollamaUrl}/v1/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openRouterApiKey}`,
-        'HTTP-Referer': Deno.env.get('SUPABASE_URL') || '',
-        'X-Title': 'Avatartalk Personalized AI',
       },
       body: JSON.stringify({
-        model: 'mistralai/mistral-7b-instruct',
+        model: 'mistral',
         messages,
         max_tokens: 300,
         temperature: 0.8,
+        stream: false,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenRouter API error:', errorText);
-      throw new Error('Failed to generate AI response. Please try again.');
+      console.error('Ollama API error:', errorText);
+      throw new Error('Failed to generate AI response from Ollama. Please try again.');
     }
 
     const data = await response.json();
@@ -216,7 +214,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: false, 
         error: errorMessage,
-        response: "I'm Avatartalk personalized AI powered by Mistral 7B, and I'm having trouble generating a response right now. Please try again in a moment."
+        response: "I'm Avatartalk personalized AI powered by Mistral 7B via Ollama, and I'm having trouble generating a response right now. Please try again in a moment."
       }),
       {
         status: 500,

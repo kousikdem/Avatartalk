@@ -49,7 +49,7 @@ const RealtimeVoiceChat: React.FC = () => {
               Faster-Whisper STT
             </Badge>
             <Badge variant="outline" className="text-xs">
-              Mixtral 8x7B
+              Mistral 7B (Ollama)
             </Badge>
             <Badge variant="outline" className="text-xs">
               OpenVoice TTS
@@ -132,7 +132,7 @@ const RealtimeVoiceChat: React.FC = () => {
 
         <div className="pt-4 border-t">
           <p className="text-xs text-muted-foreground text-center">
-            Pipeline: Faster-Whisper (STT) → Mixtral 8x7B (LLM) → OpenVoice (TTS) + Web Scraper
+            Pipeline: Faster-Whisper (STT) → Mistral 7B via Ollama (LLM) → OpenVoice (TTS) + Web Scraper
           </p>
         </div>
       </CardContent>
