@@ -63,7 +63,7 @@ const VoiceTextChat: React.FC<VoiceTextChatProps> = ({
     // Initialize chat
     const initialMessage: Message = {
       id: '1',
-      text: `Hi! I'm ${avatarName}, your personalized AI assistant powered by Mistral 7B. I can respond with both text and voice. How can I help you today?`,
+      text: `Hi! I'm ${avatarName}, your personalized AI assistant powered by Mixtral 8x7B. I understand your preferences and can respond with both text and voice using OpenVoice. How can I help you today?`,
       sender: 'ai',
       timestamp: new Date(),
       hasAudio: false
@@ -131,7 +131,11 @@ const VoiceTextChat: React.FC<VoiceTextChatProps> = ({
         }
       );
 
-      if (!response.ok) throw new Error('Streaming request failed');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Streaming error:', errorText);
+        throw new Error(`Streaming request failed: ${response.status}`);
+      }
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
@@ -171,21 +175,30 @@ const VoiceTextChat: React.FC<VoiceTextChatProps> = ({
       }
 
       // Generate voice for final response if enabled
-      if (voiceEnabled && accumulatedText) {
-        console.log('🎤 Generating personalized voice...');
-        const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
-          body: { 
-            text: accumulatedText,
-            user_id: userId,
-            profile_id: targetProfileId
-          }
-        });
+      if (voiceEnabled && accumulatedText && accumulatedText.trim()) {
+        console.log('🎤 Generating personalized voice using OpenVoice...');
+        try {
+          const { data: ttsData, error: ttsError } = await supabase.functions.invoke('text-to-speech', {
+            body: { 
+              text: accumulatedText,
+              user_id: userId,
+              profile_id: targetProfileId
+            }
+          });
 
-        if (!ttsError && ttsData?.audio) {
-          console.log('✅ Playing personalized voice');
-          await playAudio(ttsData.audio);
-        } else {
-          console.error('Voice generation error:', ttsError);
+          if (!ttsError && ttsData?.audio) {
+            console.log('✅ Playing personalized voice response');
+            await playAudio(ttsData.audio);
+          } else {
+            console.error('OpenVoice generation error:', ttsError);
+            toast({
+              title: "Voice Generation Failed",
+              description: "Text response received, but voice generation failed.",
+              variant: "default",
+            });
+          }
+        } catch (voiceError) {
+          console.error('Voice processing error:', voiceError);
         }
       }
 
@@ -215,11 +228,22 @@ const VoiceTextChat: React.FC<VoiceTextChatProps> = ({
   const handleVoiceToggle = async () => {
     if (isRecording) {
       const transcription = await stopRecording();
-      if (transcription) {
+      if (transcription && transcription.trim()) {
         handleSendMessage(transcription);
+      } else if (transcription === '') {
+        toast({
+          title: "No Speech Detected",
+          description: "Please speak clearly and try again.",
+          variant: "default",
+        });
       }
     } else {
       await startRecording();
+      toast({
+        title: "Recording Started",
+        description: "Speak now using Faster-Whisper STT...",
+        variant: "default",
+      });
     }
   };
 

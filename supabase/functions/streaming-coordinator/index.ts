@@ -54,12 +54,15 @@ serve(async (req) => {
       }
     }
 
-    const llamaCppServerUrl = Deno.env.get('LLAMA_CPP_SERVER_URL') || 'http://localhost:8080';
+    const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
+    if (!openRouterApiKey) {
+      throw new Error('OPENROUTER_API_KEY not configured');
+    }
 
     // Build messages for streaming with personalized training context
     const messages = [];
     
-    let systemPrompt = `You are a helpful AI assistant powered by Mixtral 8x7B with Scikit-learn ML integration.
+    let systemPrompt = `You are a helpful AI assistant powered by Mixtral 8x7B with personalized training.
 ${userContext}`;
 
     // Add personalized training context if available
@@ -99,22 +102,26 @@ ${userContext}`;
     
     messages.push({ role: 'user', content: userMessage });
 
-    // Create streaming response
+    // Create streaming response using OpenRouter
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          console.log('📡 Starting streaming response...');
+          console.log('📡 Starting Mixtral 8x7B streaming response...');
           
-          const response = await fetch(`${llamaCppServerUrl}/v1/chat/completions`, {
+          const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': `Bearer ${openRouterApiKey}`,
+              'HTTP-Referer': Deno.env.get('SUPABASE_URL') || '',
+              'X-Title': 'Personalized AI Chat',
             },
             body: JSON.stringify({
+              model: 'mistralai/mixtral-8x7b-instruct',
               messages,
               temperature: 0.7,
-              max_tokens: 500,
+              max_tokens: 800,
               stream: true,
             }),
           });
