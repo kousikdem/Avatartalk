@@ -16,6 +16,7 @@ interface RecentActivity {
     username: string;
     display_name: string;
     avatar_url?: string;
+    profile_pic_url?: string;
   };
   timestamp: string;
 }
@@ -55,7 +56,7 @@ const RealtimeFollowWidget: React.FC<RealtimeFollowWidgetProps> = ({ currentUser
           // Fetch user info for new follower
           const { data: userProfile } = await supabase
             .from('profiles')
-            .select('username, display_name, avatar_url')
+            .select('username, display_name, profile_pic_url, avatar_url')
             .eq('id', payload.new.follower_id)
             .single();
 
@@ -90,7 +91,7 @@ const RealtimeFollowWidget: React.FC<RealtimeFollowWidgetProps> = ({ currentUser
           if (payload.new.visitor_id) {
             const { data: userProfile } = await supabase
               .from('profiles')
-              .select('username, display_name, avatar_url')
+              .select('username, display_name, profile_pic_url, avatar_url')
               .eq('id', payload.new.visitor_id)
               .single();
 
@@ -127,7 +128,7 @@ const RealtimeFollowWidget: React.FC<RealtimeFollowWidgetProps> = ({ currentUser
           .select(`
             id,
             created_at,
-            follower:profiles!follows_follower_id_fkey(username, display_name, avatar_url)
+            follower:profiles!follows_follower_id_fkey(username, display_name, profile_pic_url, avatar_url)
           `)
           .eq('following_id', currentUserId)
           .order('created_at', { ascending: false })
@@ -139,7 +140,7 @@ const RealtimeFollowWidget: React.FC<RealtimeFollowWidgetProps> = ({ currentUser
           .select(`
             id,
             visited_at,
-            visitor:profiles!profile_visitors_visitor_id_fkey(username, display_name, avatar_url)
+            visitor:profiles!profile_visitors_visitor_id_fkey(username, display_name, profile_pic_url, avatar_url)
           `)
           .eq('visited_profile_id', currentUserId)
           .not('visitor_id', 'is', null)
@@ -149,26 +150,32 @@ const RealtimeFollowWidget: React.FC<RealtimeFollowWidgetProps> = ({ currentUser
         const activities: RecentActivity[] = [];
 
         recentFollows?.forEach(follow => {
-          if (follow.follower) {
-            activities.push({
-              id: follow.id,
-              type: 'follow',
-              user: follow.follower,
-              timestamp: follow.created_at
-            });
-          }
-        });
+            if (follow.follower) {
+              activities.push({
+                id: follow.id,
+                type: 'follow',
+                user: {
+                  ...follow.follower,
+                  avatar_url: follow.follower.profile_pic_url || follow.follower.avatar_url
+                },
+                timestamp: follow.created_at
+              });
+            }
+          });
 
-        recentVisits?.forEach(visit => {
-          if (visit.visitor) {
-            activities.push({
-              id: visit.id,
-              type: 'visit',
-              user: visit.visitor,
-              timestamp: visit.visited_at
-            });
-          }
-        });
+          recentVisits?.forEach(visit => {
+            if (visit.visitor) {
+              activities.push({
+                id: visit.id,
+                type: 'visit',
+                user: {
+                  ...visit.visitor,
+                  avatar_url: visit.visitor.profile_pic_url || visit.visitor.avatar_url
+                },
+                timestamp: visit.visited_at
+              });
+            }
+          });
 
         // Sort by timestamp
         activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
@@ -304,7 +311,7 @@ const RealtimeFollowWidget: React.FC<RealtimeFollowWidgetProps> = ({ currentUser
               {(showAllFollowers ? followers : followers.slice(0, 3)).map((follow) => (
                 <div key={follow.id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 transition-colors">
                   <Avatar className="w-8 h-8">
-                    <AvatarImage src={follow.follower?.avatar_url} />
+                    <AvatarImage src={follow.follower?.profile_pic_url || follow.follower?.avatar_url} />
                     <AvatarFallback className="text-xs">
                       {(follow.follower?.display_name || follow.follower?.username || 'U')[0].toUpperCase()}
                     </AvatarFallback>
