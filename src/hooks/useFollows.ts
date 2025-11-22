@@ -12,12 +12,14 @@ interface Follow {
     username: string;
     display_name: string;
     avatar_url: string;
+    profile_pic_url?: string;
   };
   following?: {
     id: string;
     username: string;
     display_name: string;
     avatar_url: string;
+    profile_pic_url?: string;
   };
 }
 
@@ -53,7 +55,8 @@ export const useFollows = (userId?: string): UseFollowsReturn => {
             id,
             username,
             display_name,
-            avatar_url
+            avatar_url,
+            profile_pic_url
           )
         `)
         .eq('following_id', queryUserId);
@@ -69,7 +72,8 @@ export const useFollows = (userId?: string): UseFollowsReturn => {
             id,
             username,
             display_name,
-            avatar_url
+            avatar_url,
+            profile_pic_url
           )
         `)
         .eq('follower_id', queryUserId);
