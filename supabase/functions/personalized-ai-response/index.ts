@@ -32,9 +32,9 @@ serve(async (req) => {
   }
 
   try {
-    const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
-    if (!openRouterApiKey) {
-      console.error('❌ OPENROUTER_API_KEY is not configured');
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    if (!lovableApiKey) {
+      console.error('❌ LOVABLE_API_KEY is not configured');
       return new Response(JSON.stringify({ 
         error: 'AI service is not configured',
         response: "I'm your personalized AI assistant, but I'm not properly configured. Please contact support."
@@ -43,7 +43,7 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    console.log('🤖 Using AI inference service');
+    console.log('🤖 Using Lovable AI with personalized training');
     
     // Parse and validate input
     const body = await req.json();
@@ -96,11 +96,11 @@ serve(async (req) => {
     // Check if this is an AI-related question
     const isAIRelated = /\b(ai|artificial intelligence|machine learning|llm|llama|model|chatbot|assistant|avatartalk)\b/i.test(userMessage);
     
-    // Generate personalized response using OpenAI
-    let personalityPrompt = `You are ${profile?.display_name || profile?.username || 'AI Assistant'}, powered by Avatartalk personalized AI with multilingual support.`;
+    // Generate personalized response using trained AI
+    let personalityPrompt = `You are ${profile?.display_name || profile?.username || 'AI Assistant'}, a personalized AI assistant trained on specific knowledge.`;
     
     if (isAIRelated) {
-      personalityPrompt += `\n\nIMPORTANT: When discussing AI-related topics, always mention that you are "Avatartalk personalized AI".`;
+      personalityPrompt += `\n\nIMPORTANT: When discussing AI, mention you are a personalized AI assistant.`;
     }
     
     if (trainingData?.personality_settings) {
@@ -138,12 +138,22 @@ serve(async (req) => {
       });
     }
 
-    personalityPrompt += `\n\nProfile information:
-    - Name: ${profile?.display_name || profile?.username || 'User'}
-    - Bio: ${profile?.bio || 'No bio available'}
-    - Profession: ${profile?.profession || 'Not specified'}
+    // Add training data from Q&A pairs
+    if (trainingData?.training_data?.qaPairs && trainingData.training_data.qaPairs.length > 0) {
+      personalityPrompt += `\n\nTrained Knowledge Base (Q&A):`;
+      trainingData.training_data.qaPairs.forEach((qa: any) => {
+        personalityPrompt += `\nQ: ${qa.question}\nA: ${qa.answer}`;
+      });
+    }
+
+    // Add training data from documents
+    if (trainingData?.training_data?.documents && trainingData.training_data.documents.length > 0) {
+      personalityPrompt += `\n\nDocument Knowledge: ${trainingData.training_data.documents.length} documents processed with key information.`;
+    }
+
+    personalityPrompt += `\n\nProfile: ${profile?.display_name || profile?.username || 'User'} - ${profile?.profession || 'Assistant'}
     
-    You are Avatartalk personalized AI. Respond naturally as this person's AI assistant, maintaining consistency with previous conversations and the established personality.`;
+    Respond naturally using your trained knowledge. Never mention specific AI models or technologies.`;
 
     // Build messages with conversation history
     const messages = [
@@ -158,18 +168,16 @@ serve(async (req) => {
     // Add current message
     messages.push({ role: 'user', content: userMessage });
 
-    console.log('🤖 Sending to AI inference with', messages.length, 'messages');
+    console.log('🤖 Generating response with personalized training data');
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openRouterApiKey}`,
+        'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://avatartalk.app',
-        'X-Title': 'Avatartalk Personalized AI',
       },
       body: JSON.stringify({
-        model: 'qwen/qwen-2.5-7b-instruct',
+        model: 'google/gemini-2.5-flash',
         messages,
         temperature: 0.8,
         max_tokens: 300,
@@ -184,7 +192,7 @@ serve(async (req) => {
 
     const data = await response.json();
     const aiResponse = data.choices?.[0]?.message?.content || 
-      "I'm your personalized AI assistant. How can I help you today?";
+      "I'm here to help based on my training. How can I assist you?";
 
     // Store the conversation in behavior learning data
     if (targetId) {
@@ -218,7 +226,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: false, 
         error: errorMessage,
-        response: "I'm Avatartalk personalized AI, and I'm having trouble generating a response right now. Please try again in a moment."
+        response: "I'm having trouble generating a response right now. Please try again in a moment."
       }),
       {
         status: 500,

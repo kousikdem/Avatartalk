@@ -54,19 +54,19 @@ serve(async (req) => {
       }
     }
 
-    const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
-    if (!openRouterApiKey) {
-      throw new Error('OPENROUTER_API_KEY not configured');
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    if (!lovableApiKey) {
+      throw new Error('LOVABLE_API_KEY not configured');
     }
-    console.log('🤖 Using AI inference service');
+    console.log('🤖 Using personalized AI with trained knowledge');
 
-    // Build messages for streaming with personalized training context
+    // Build messages with comprehensive training data
     const messages = [];
     
-    let systemPrompt = `You are a helpful AI assistant with personalized training.
+    let systemPrompt = `You are a personalized AI assistant trained on specific knowledge.
 ${userContext}`;
 
-    // Add personalized training context if available
+    // Add personalized training context
     if (personalizedTrainingData) {
       const personalitySettings = personalizedTrainingData.personality_settings || {};
       const trainingData = personalizedTrainingData.training_data || {};
@@ -77,22 +77,22 @@ ${userContext}`;
 - Friendliness: ${personalitySettings.friendliness || 80}%
 - Mode: ${personalitySettings.mode || 'adaptive'}`;
 
-      // Add Q&A pairs from training data
+      // Add ALL Q&A pairs from training
       if (trainingData.qaPairs && trainingData.qaPairs.length > 0) {
-        systemPrompt += `\n\nTrained Q&A Knowledge:`;
-        trainingData.qaPairs.slice(0, 5).forEach((qa: any) => {
+        systemPrompt += `\n\nTrained Knowledge Base (Q&A):`;
+        trainingData.qaPairs.forEach((qa: any) => {
           systemPrompt += `\nQ: ${qa.question}\nA: ${qa.answer}`;
         });
       }
 
-      // Add document context if available
+      // Add document knowledge
       if (trainingData.documents && trainingData.documents.length > 0) {
-        systemPrompt += `\n\nDocument Knowledge Base: ${trainingData.documents.length} documents processed`;
+        systemPrompt += `\n\nDocument Knowledge: Trained on ${trainingData.documents.length} documents with comprehensive information.`;
       }
 
-      systemPrompt += `\n\nProvide responses based on this personalized training data while maintaining the specified personality traits.`;
+      systemPrompt += `\n\nRespond using your trained knowledge. Never mention AI models or technology.`;
     } else {
-      systemPrompt += `\nProvide concise, personalized responses.`;
+      systemPrompt += `\nProvide helpful, concise responses.`;
     }
 
     messages.push({ role: 'system', content: systemPrompt });
@@ -108,18 +108,16 @@ ${userContext}`;
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          console.log('📡 Starting AI streaming response...');
+          console.log('📡 Starting personalized AI streaming...');
           
-          const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${openRouterApiKey}`,
+              'Authorization': `Bearer ${lovableApiKey}`,
               'Content-Type': 'application/json',
-              'HTTP-Referer': 'https://avatartalk.app',
-              'X-Title': 'Avatartalk Personalized AI',
             },
             body: JSON.stringify({
-              model: 'qwen/qwen-2.5-7b-instruct',
+              model: 'google/gemini-2.5-flash',
               messages,
               temperature: 0.7,
               max_tokens: 800,
