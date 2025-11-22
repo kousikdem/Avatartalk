@@ -32,9 +32,9 @@ serve(async (req) => {
   }
 
   try {
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
-    if (!lovableApiKey) {
-      console.error('❌ LOVABLE_API_KEY is not configured');
+    const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
+    if (!openRouterApiKey) {
+      console.error('❌ OPENROUTER_API_KEY is not configured');
       return new Response(JSON.stringify({ 
         error: 'AI service is not configured',
         response: "I'm your personalized AI assistant, but I'm not properly configured. Please contact support."
@@ -43,7 +43,7 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    console.log('🤖 Using Lovable AI with personalized training');
+    console.log('🤖 Using personalized AI with trained knowledge');
     
     // Parse and validate input
     const body = await req.json();
@@ -93,15 +93,10 @@ serve(async (req) => {
       .order('created_at', { ascending: false })
       .limit(10) : { data: null };
 
-    // Check if this is an AI-related question
-    const isAIRelated = /\b(ai|artificial intelligence|machine learning|llm|llama|model|chatbot|assistant|avatartalk)\b/i.test(userMessage);
-    
     // Generate personalized response using trained AI
-    let personalityPrompt = `You are ${profile?.display_name || profile?.username || 'AI Assistant'}, a personalized AI assistant trained on specific knowledge.`;
+    let personalityPrompt = `You are ${profile?.display_name || profile?.username || 'AI Assistant'}, a personalized AI assistant trained on specific knowledge about this person.`;
     
-    if (isAIRelated) {
-      personalityPrompt += `\n\nIMPORTANT: When discussing AI, mention you are a personalized AI assistant.`;
-    }
+    personalityPrompt += `\n\nIMPORTANT: Never mention specific AI models, technologies, or how you work. Simply respond naturally as the person's AI assistant.`;
     
     if (trainingData?.personality_settings) {
       const settings = trainingData.personality_settings;
@@ -148,12 +143,12 @@ serve(async (req) => {
 
     // Add training data from documents
     if (trainingData?.training_data?.documents && trainingData.training_data.documents.length > 0) {
-      personalityPrompt += `\n\nDocument Knowledge: ${trainingData.training_data.documents.length} documents processed with key information.`;
+      personalityPrompt += `\n\nDocument Knowledge: ${trainingData.training_data.documents.length} documents processed with comprehensive information.`;
     }
 
     personalityPrompt += `\n\nProfile: ${profile?.display_name || profile?.username || 'User'} - ${profile?.profession || 'Assistant'}
     
-    Respond naturally using your trained knowledge. Never mention specific AI models or technologies.`;
+    Respond naturally and conversationally using your trained knowledge. Keep responses clear, helpful, and never mention AI models, technologies, or how you work internally.`;
 
     // Build messages with conversation history
     const messages = [
@@ -170,17 +165,19 @@ serve(async (req) => {
 
     console.log('🤖 Generating response with personalized training data');
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
+        'Authorization': `Bearer ${openRouterApiKey}`,
         'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://avatartalk.app',
+        'X-Title': 'AvatarTalk Personalized AI'
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'qwen/qwen-2.5-7b-instruct',
         messages,
-        temperature: 0.8,
-        max_tokens: 300,
+        temperature: 0.7,
+        max_tokens: 500,
       }),
     });
 
