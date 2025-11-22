@@ -28,42 +28,15 @@ const startCloningSchema = z.object({
   voiceSettings: voiceSettingsSchema.optional()
 });
 
-const getCloningStatusSchema = z.object({
-  action: z.literal('get_cloning_status'),
+const synthesizeSpeechSchema = z.object({
+  action: z.literal('synthesize_speech'),
+  text: z.string().min(1).max(5000, 'Text must be 5000 characters or less'),
   cloningId: z.string().uuid('Invalid cloning ID format')
-});
-
-const synthesizeWithClonedVoiceSchema = z.object({
-  action: z.literal('synthesize_with_cloned_voice'),
-  voiceData: z.object({
-    text: z.string().min(1).max(5000, 'Text must be 5000 characters or less'),
-    voiceModelId: z.string().min(1, 'Voice model ID is required'),
-    synthesisSettings: z.any().optional()
-  })
-});
-
-const listClonedVoicesSchema = z.object({
-  action: z.literal('list_cloned_voices')
-});
-
-const multiSpeakerSynthesisSchema = z.object({
-  action: z.literal('multi_speaker_synthesis'),
-  voiceData: z.object({
-    speakers: z.array(z.object({
-      name: z.string(),
-      voice_model_id: z.string()
-    })),
-    texts: z.array(z.string()),
-    voiceSettings: z.any().optional()
-  })
 });
 
 const requestSchema = z.discriminatedUnion('action', [
   startCloningSchema,
-  getCloningStatusSchema,
-  synthesizeWithClonedVoiceSchema,
-  listClonedVoicesSchema,
-  multiSpeakerSynthesisSchema
+  synthesizeSpeechSchema
 ]);
 
 serve(async (req) => {

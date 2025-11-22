@@ -579,7 +579,7 @@ const ProfilePage: React.FC = () => {
       // Add fallback response
       const fallbackMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        content: "I'm Avatartalk personalized AI powered by Mistral 7B via Ollama, and I'm having trouble responding right now. Please try again in a moment.",
+        content: "I'm Avatartalk personalized AI powered by Llama 3, and I'm having trouble responding right now. Please try again in a moment.",
         timestamp: new Date().toISOString(),
         sender: 'avatar',
         senderName: profile.display_name || profile.username || 'Avatartalk AI',
@@ -591,7 +591,7 @@ const ProfilePage: React.FC = () => {
       
       toast({
         title: "Response Error",
-        description: "Failed to generate Mistral 7B AI response. Please try again.",
+        description: "Failed to generate Llama 3 AI response. Please try again.",
         variant: "destructive",
       });
     } finally {

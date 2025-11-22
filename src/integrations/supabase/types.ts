@@ -1250,8 +1250,6 @@ export type Database = {
           answer: string
           category: string | null
           created_at: string
-          custom_link_button_name: string | null
-          custom_link_url: string | null
           id: string
           question: string
           tags: string[] | null
@@ -1262,8 +1260,6 @@ export type Database = {
           answer: string
           category?: string | null
           created_at?: string
-          custom_link_button_name?: string | null
-          custom_link_url?: string | null
           id?: string
           question: string
           tags?: string[] | null
@@ -1274,8 +1270,6 @@ export type Database = {
           answer?: string
           category?: string | null
           created_at?: string
-          custom_link_button_name?: string | null
-          custom_link_url?: string | null
           id?: string
           question?: string
           tags?: string[] | null

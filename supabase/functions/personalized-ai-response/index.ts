@@ -14,14 +14,11 @@ const messageSchema = z.object({
     .min(1, 'Message cannot be empty')
     .max(2000, 'Message must be 2000 characters or less')
     .trim(),
-  profileId: z.string().uuid('Invalid profile ID format').optional(),
-  userId: z.string().uuid('Invalid user ID format').optional(),
-  conversationHistory: z.array(z.object({
-    role: z.enum(['user', 'assistant']),
-    content: z.string()
-  })).optional()
+  profileId: z.string().uuid('Invalid profile ID format'),
+  userId: z.string().uuid('Invalid user ID format').optional()
 });
 
+const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -32,19 +29,6 @@ serve(async (req) => {
   }
 
   try {
-    const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
-    if (!openRouterApiKey) {
-      console.error('❌ OPENROUTER_API_KEY is not configured');
-      return new Response(JSON.stringify({ 
-        error: 'AI service is not configured',
-        response: "I'm your personalized AI assistant, but I'm not properly configured. Please contact support."
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-    console.log('🤖 Using personalized AI with trained knowledge');
-    
     // Parse and validate input
     const body = await req.json();
     const validationResult = messageSchema.safeParse(body);
@@ -60,43 +44,47 @@ serve(async (req) => {
       });
     }
 
-    const { userMessage, profileId, userId, conversationHistory } = validationResult.data;
-    const targetId = profileId || userId;
+    const { userMessage, profileId, userId } = validationResult.data;
 
-    console.log('Generating personalized AI response for profile:', targetId);
+    console.log('Generating personalized AI response for profile:', profileId);
 
     // Create Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get user's personalized AI training data
-    const { data: trainingData } = targetId ? await supabase
+    const { data: trainingData } = await supabase
       .from('personalized_ai_training')
       .select('*')
-      .eq('user_id', targetId)
+      .eq('user_id', profileId)
       .eq('model_status', 'completed')
       .order('created_at', { ascending: false })
       .limit(1)
-      .maybeSingle() : { data: null };
+      .single();
 
     // Get user profile information
-    const { data: profile } = targetId ? await supabase
+    const { data: profile } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', targetId)
-      .maybeSingle() : { data: null };
+      .eq('id', profileId)
+      .single();
 
     // Get user's behavior learning data for context
-    const { data: behaviorData } = targetId ? await supabase
+    const { data: behaviorData } = await supabase
       .from('behavior_learning_data')
       .select('*')
-      .eq('user_id', targetId)
+      .eq('user_id', profileId)
       .order('created_at', { ascending: false })
-      .limit(10) : { data: null };
+      .limit(10);
 
-    // Generate personalized response using trained AI
-    let personalityPrompt = `You are ${profile?.display_name || profile?.username || 'AI Assistant'}, a personalized AI assistant trained on specific knowledge about this person.`;
+    // Check if this is an AI-related question
+    const isAIRelated = /\b(ai|artificial intelligence|machine learning|llm|llama|model|chatbot|assistant|avatartalk)\b/i.test(userMessage);
     
-    personalityPrompt += `\n\nIMPORTANT: Never mention specific AI models, technologies, or how you work. Simply respond naturally as the person's AI assistant.`;
+    // Generate personalized response using Llama 3
+    let personalityPrompt = `You are ${profile?.display_name || profile?.username || 'AI Assistant'}, powered by Avatartalk personalized AI using Llama 3.`;
+    
+    if (isAIRelated) {
+      personalityPrompt += `\n\nIMPORTANT: When discussing AI-related topics, always mention that you are "Avatartalk personalized AI" powered by Llama 3.`;
+    }
     
     if (trainingData?.personality_settings) {
       const settings = trainingData.personality_settings;
@@ -133,37 +121,12 @@ serve(async (req) => {
       });
     }
 
-    // Add training data from Q&A pairs
-    if (trainingData?.training_data?.qaPairs && trainingData.training_data.qaPairs.length > 0) {
-      personalityPrompt += `\n\nTrained Knowledge Base (Q&A):`;
-      trainingData.training_data.qaPairs.forEach((qa: any) => {
-        personalityPrompt += `\nQ: ${qa.question}\nA: ${qa.answer}`;
-      });
-    }
-
-    // Add training data from documents
-    if (trainingData?.training_data?.documents && trainingData.training_data.documents.length > 0) {
-      personalityPrompt += `\n\nDocument Knowledge: ${trainingData.training_data.documents.length} documents processed with comprehensive information.`;
-    }
-
-    personalityPrompt += `\n\nProfile: ${profile?.display_name || profile?.username || 'User'} - ${profile?.profession || 'Assistant'}
+    personalityPrompt += `\n\nProfile information:
+    - Name: ${profile?.display_name || profile?.username || 'User'}
+    - Bio: ${profile?.bio || 'No bio available'}
+    - Profession: ${profile?.profession || 'Not specified'}
     
-    Respond naturally and conversationally using your trained knowledge. Keep responses clear, helpful, and never mention AI models, technologies, or how you work internally.`;
-
-    // Build messages with conversation history
-    const messages = [
-      { role: 'system', content: personalityPrompt }
-    ];
-    
-    // Add conversation history if provided
-    if (conversationHistory && Array.isArray(conversationHistory)) {
-      messages.push(...conversationHistory.slice(-10)); // Last 10 messages
-    }
-    
-    // Add current message
-    messages.push({ role: 'user', content: userMessage });
-
-    console.log('🤖 Generating response with personalized training data');
+    You are Avatartalk personalized AI powered by Llama 3. Respond naturally as this person's AI assistant, maintaining consistency with previous conversations and the established personality.`;
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -171,36 +134,44 @@ serve(async (req) => {
         'Authorization': `Bearer ${openRouterApiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'https://avatartalk.app',
-        'X-Title': 'AvatarTalk Personalized AI'
+        'X-Title': 'Avatartalk Personalized AI'
       },
       body: JSON.stringify({
-        model: 'qwen/qwen-2.5-7b-instruct',
-        messages,
-        temperature: 0.7,
-        max_tokens: 500,
+        model: 'meta-llama/llama-3.1-8b-instruct:free',
+        messages: [
+          { 
+            role: 'system', 
+            content: personalityPrompt
+          },
+          { 
+            role: 'user', 
+            content: userMessage 
+          }
+        ],
+        max_tokens: 300,
+        temperature: 0.8,
       }),
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('AI inference error:', errorText);
-      throw new Error('Failed to generate AI response. Please try again.');
+      const error = await response.json();
+      console.error('OpenRouter API error:', error);
+      throw new Error(error.error?.message || 'Failed to generate AI response');
     }
 
     const data = await response.json();
-    const aiResponse = data.choices?.[0]?.message?.content || 
-      "I'm here to help based on my training. How can I assist you?";
+    const aiResponse = data.choices[0].message.content;
 
     // Store the conversation in behavior learning data
-    if (targetId) {
+    if (userId) {
       await supabase.from('behavior_learning_data').insert({
-        user_id: targetId,
+        user_id: profileId,
         interaction_type: 'ai_response',
         user_input: userMessage,
         ai_response: aiResponse,
         context_data: { 
           timestamp: new Date().toISOString(),
-          requester_id: userId || targetId
+          requester_id: userId
         }
       });
     }
@@ -223,7 +194,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: false, 
         error: errorMessage,
-        response: "I'm having trouble generating a response right now. Please try again in a moment."
+        response: "I'm Avatartalk personalized AI powered by Llama 3, and I'm having trouble generating a response right now. Please try again in a moment."
       }),
       {
         status: 500,

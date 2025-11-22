@@ -143,7 +143,7 @@ export const usePersonalizedAI = () => {
       
       toast({
         title: "Success",
-        description: "AI training created successfully with Mistral 7B + Scikit-learn"
+        description: "AI training created successfully"
       });
       
       return training;
@@ -205,7 +205,7 @@ export const usePersonalizedAI = () => {
       
       toast({
         title: "Success",
-        description: "Mistral 7B model trained successfully with personalized data"
+        description: "AI model training completed successfully"
       });
       
       // Refresh trainings to get updated status
@@ -256,7 +256,7 @@ export const usePersonalizedAI = () => {
       
       toast({
         title: "Success",
-        description: `${documents.length} documents processed for Mistral 7B training`
+        description: `${documents.length} documents processed for LLaMA 3 training`
       });
       
       return processedDocuments;
@@ -316,7 +316,7 @@ export const usePersonalizedAI = () => {
       
       toast({
         title: "Success",
-        description: `Mistral 7B QLoRA fine-tuning completed: ${finetuneResult.model_id}`
+        description: `LLaMA 3 QLoRA fine-tuning completed: ${finetuneResult.model_id}`
       });
       
       return finetuneResult;
