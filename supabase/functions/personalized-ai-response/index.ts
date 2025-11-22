@@ -32,8 +32,8 @@ serve(async (req) => {
   }
 
   try {
-    const lmStudioUrl = Deno.env.get('LM_STUDIO_URL') || 'http://localhost:1234';
-    console.log('🤖 Using LM Studio at:', lmStudioUrl);
+    const ollamaUrl = Deno.env.get('OLLAMA_URL') || 'http://localhost:11434';
+    console.log('🤖 Using AI inference at:', ollamaUrl);
     
     // Parse and validate input
     const body = await req.json();
@@ -148,29 +148,33 @@ serve(async (req) => {
     // Add current message
     messages.push({ role: 'user', content: userMessage });
 
-    console.log('🤖 Sending to LM Studio with', messages.length, 'messages');
+    console.log('🤖 Sending to AI inference with', messages.length, 'messages');
 
-    const response = await fetch(`${lmStudioUrl}/v1/chat/completions`, {
+    const response = await fetch(`${ollamaUrl}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'qwen3-0.5b',
+        model: 'qwen2.5:0.5b',
         messages,
-        max_tokens: 300,
-        temperature: 0.8,
+        stream: false,
+        options: {
+          temperature: 0.8,
+          num_predict: 300,
+        }
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('LM Studio API error:', errorText);
+      console.error('AI inference error:', errorText);
       throw new Error('Failed to generate AI response. Please try again.');
     }
 
     const data = await response.json();
-    const aiResponse = data.choices[0].message.content;
+    const aiResponse = data.message?.content || 
+      "I'm your personalized AI assistant. How can I help you today?";
 
     // Store the conversation in behavior learning data
     if (targetId) {

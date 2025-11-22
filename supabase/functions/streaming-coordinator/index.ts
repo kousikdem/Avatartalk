@@ -54,8 +54,8 @@ serve(async (req) => {
       }
     }
 
-    const lmStudioUrl = Deno.env.get('LM_STUDIO_URL') || 'http://localhost:1234';
-    console.log('🤖 Using LM Studio at:', lmStudioUrl);
+    const ollamaUrl = Deno.env.get('OLLAMA_URL') || 'http://localhost:11434';
+    console.log('🤖 Using AI inference at:', ollamaUrl);
 
     // Build messages for streaming with personalized training context
     const messages = [];
@@ -105,26 +105,28 @@ ${userContext}`;
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          console.log('📡 Starting LM Studio streaming response...');
+          console.log('📡 Starting AI streaming response...');
           
-          const response = await fetch(`${lmStudioUrl}/v1/chat/completions`, {
+          const response = await fetch(`${ollamaUrl}/api/chat`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              model: 'qwen3-0.5b',
+              model: 'qwen2.5:0.5b',
               messages,
-              temperature: 0.7,
-              max_tokens: 800,
               stream: true,
+              options: {
+                temperature: 0.7,
+                num_predict: 800,
+              }
             }),
           });
 
           if (!response.ok) {
             const errorText = await response.text();
-            console.error('❌ LM Studio error:', errorText);
-            throw new Error('LM Studio API error');
+            console.error('❌ AI inference error:', errorText);
+            throw new Error('AI inference error');
           }
 
           const reader = response.body?.getReader();
@@ -137,43 +139,45 @@ ${userContext}`;
 
           while (true) {
             const { done, value } = await reader.read();
-            if (done) break;
+            if (done) {
+              // Send completion signal
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+                type: 'done' 
+              })}\n\n`));
+              controller.close();
+              console.log('✅ Streaming completed');
+              break;
+            }
 
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split('\n');
             buffer = lines.pop() || '';
 
             for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const data = line.slice(6);
-                if (data === '[DONE]') continue;
+              if (!line.trim()) continue;
 
-                try {
-                  const parsed = JSON.parse(data);
-                  const content = parsed.choices?.[0]?.delta?.content;
-                  
-                  if (content) {
-                    // Send chunk to client
-                    const chunk = encoder.encode(`data: ${JSON.stringify({ 
-                      type: 'text_delta',
-                      content 
-                    })}\n\n`);
-                    controller.enqueue(chunk);
-                  }
-                } catch (e) {
-                  console.error('Error parsing chunk:', e);
+              try {
+                const parsed = JSON.parse(line);
+                
+                // Handle Ollama streaming format
+                if (parsed.done) {
+                  continue;
                 }
+                
+                const content = parsed.message?.content;
+                if (content) {
+                  // Send chunk to client
+                  const chunk = encoder.encode(`data: ${JSON.stringify({ 
+                    type: 'text_delta',
+                    content 
+                  })}\n\n`);
+                  controller.enqueue(chunk);
+                }
+              } catch (e) {
+                console.error('Error parsing chunk:', e);
               }
             }
           }
-
-          // Send completion signal
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-            type: 'done' 
-          })}\n\n`));
-          
-          controller.close();
-          console.log('✅ Streaming completed');
 
         } catch (error) {
           console.error('Streaming error:', error);
