@@ -54,17 +54,19 @@ serve(async (req) => {
       }
     }
 
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
-    if (!lovableApiKey) {
-      throw new Error('LOVABLE_API_KEY not configured');
+    const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
+    if (!openRouterApiKey) {
+      throw new Error('OPENROUTER_API_KEY not configured');
     }
     console.log('🤖 Using personalized AI with trained knowledge');
 
     // Build messages with comprehensive training data
     const messages = [];
     
-    let systemPrompt = `You are a personalized AI assistant trained on specific knowledge.
-${userContext}`;
+    let systemPrompt = `You are a personalized AI assistant trained on specific knowledge about this user.
+${userContext}
+
+IMPORTANT: Never mention AI models, technologies, or how you work internally. Respond naturally as the user's personal assistant.`;
 
     // Add personalized training context
     if (personalizedTrainingData) {
@@ -90,9 +92,7 @@ ${userContext}`;
         systemPrompt += `\n\nDocument Knowledge: Trained on ${trainingData.documents.length} documents with comprehensive information.`;
       }
 
-      systemPrompt += `\n\nRespond using your trained knowledge. Never mention AI models or technology.`;
-    } else {
-      systemPrompt += `\nProvide helpful, concise responses.`;
+      systemPrompt += `\n\nRespond naturally and conversationally using your trained knowledge.`;
     }
 
     messages.push({ role: 'system', content: systemPrompt });
@@ -110,14 +110,16 @@ ${userContext}`;
         try {
           console.log('📡 Starting personalized AI streaming...');
           
-          const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+          const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${lovableApiKey}`,
+              'Authorization': `Bearer ${openRouterApiKey}`,
               'Content-Type': 'application/json',
+              'HTTP-Referer': 'https://avatartalk.app',
+              'X-Title': 'AvatarTalk Personalized AI'
             },
             body: JSON.stringify({
-              model: 'google/gemini-2.5-flash',
+              model: 'qwen/qwen-2.5-7b-instruct',
               messages,
               temperature: 0.7,
               max_tokens: 800,
