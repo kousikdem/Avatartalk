@@ -32,17 +32,8 @@ serve(async (req) => {
   }
 
   try {
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      console.error('❌ OPENAI_API_KEY is not configured');
-      return new Response(JSON.stringify({ 
-        error: 'OpenAI API key is not configured',
-        response: "I'm Avatartalk personalized AI, but I'm not properly configured. Please contact support."
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    const lmStudioUrl = Deno.env.get('LM_STUDIO_URL') || 'http://localhost:1234';
+    console.log('🤖 Using LM Studio at:', lmStudioUrl);
     
     // Parse and validate input
     const body = await req.json();
@@ -157,16 +148,15 @@ serve(async (req) => {
     // Add current message
     messages.push({ role: 'user', content: userMessage });
 
-    console.log('🤖 Sending to OpenAI with', messages.length, 'messages');
+    console.log('🤖 Sending to LM Studio with', messages.length, 'messages');
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch(`${lmStudioUrl}/v1/chat/completions`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'qwen3-0.5b',
         messages,
         max_tokens: 300,
         temperature: 0.8,
@@ -175,8 +165,8 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI API error:', errorText);
-      throw new Error('Failed to generate AI response from OpenAI. Please try again.');
+      console.error('LM Studio API error:', errorText);
+      throw new Error('Failed to generate AI response. Please try again.');
     }
 
     const data = await response.json();
