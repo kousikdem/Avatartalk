@@ -54,10 +54,8 @@ serve(async (req) => {
       }
     }
 
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      throw new Error('OPENAI_API_KEY not configured');
-    }
+    const lmStudioUrl = Deno.env.get('LM_STUDIO_URL') || 'http://localhost:1234';
+    console.log('🤖 Using LM Studio at:', lmStudioUrl);
 
     // Build messages for streaming with personalized training context
     const messages = [];
@@ -107,16 +105,15 @@ ${userContext}`;
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          console.log('📡 Starting OpenAI streaming response...');
+          console.log('📡 Starting LM Studio streaming response...');
           
-          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          const response = await fetch(`${lmStudioUrl}/v1/chat/completions`, {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${openAIApiKey}`,
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              model: 'gpt-4o-mini',
+              model: 'qwen3-0.5b',
               messages,
               temperature: 0.7,
               max_tokens: 800,
@@ -126,8 +123,8 @@ ${userContext}`;
 
           if (!response.ok) {
             const errorText = await response.text();
-            console.error('❌ OpenAI error:', errorText);
-            throw new Error('OpenAI API error');
+            console.error('❌ LM Studio error:', errorText);
+            throw new Error('LM Studio API error');
           }
 
           const reader = response.body?.getReader();
