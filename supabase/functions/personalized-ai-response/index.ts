@@ -32,8 +32,18 @@ serve(async (req) => {
   }
 
   try {
-    const ollamaUrl = Deno.env.get('OLLAMA_URL') || 'http://localhost:11434';
-    console.log('🤖 Using AI inference at:', ollamaUrl);
+    const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
+    if (!openRouterApiKey) {
+      console.error('❌ OPENROUTER_API_KEY is not configured');
+      return new Response(JSON.stringify({ 
+        error: 'AI service is not configured',
+        response: "I'm your personalized AI assistant, but I'm not properly configured. Please contact support."
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    console.log('🤖 Using AI inference service');
     
     // Parse and validate input
     const body = await req.json();
@@ -150,19 +160,19 @@ serve(async (req) => {
 
     console.log('🤖 Sending to AI inference with', messages.length, 'messages');
 
-    const response = await fetch(`${ollamaUrl}/api/chat`, {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${openRouterApiKey}`,
         'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://avatartalk.app',
+        'X-Title': 'Avatartalk Personalized AI',
       },
       body: JSON.stringify({
-        model: 'qwen2.5:0.5b',
+        model: 'qwen/qwen-2.5-7b-instruct',
         messages,
-        stream: false,
-        options: {
-          temperature: 0.8,
-          num_predict: 300,
-        }
+        temperature: 0.8,
+        max_tokens: 300,
       }),
     });
 
@@ -173,7 +183,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const aiResponse = data.message?.content || 
+    const aiResponse = data.choices?.[0]?.message?.content || 
       "I'm your personalized AI assistant. How can I help you today?";
 
     // Store the conversation in behavior learning data
