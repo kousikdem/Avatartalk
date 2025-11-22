@@ -54,8 +54,11 @@ serve(async (req) => {
       }
     }
 
-    const ollamaUrl = Deno.env.get('OLLAMA_URL') || 'http://localhost:11434';
-    console.log('🤖 Using AI inference at:', ollamaUrl);
+    const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
+    if (!openRouterApiKey) {
+      throw new Error('OPENROUTER_API_KEY not configured');
+    }
+    console.log('🤖 Using AI inference service');
 
     // Build messages for streaming with personalized training context
     const messages = [];
@@ -107,19 +110,20 @@ ${userContext}`;
         try {
           console.log('📡 Starting AI streaming response...');
           
-          const response = await fetch(`${ollamaUrl}/api/chat`, {
+          const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
+              'Authorization': `Bearer ${openRouterApiKey}`,
               'Content-Type': 'application/json',
+              'HTTP-Referer': 'https://avatartalk.app',
+              'X-Title': 'Avatartalk Personalized AI',
             },
             body: JSON.stringify({
-              model: 'qwen2.5:0.5b',
+              model: 'qwen/qwen-2.5-7b-instruct',
               messages,
+              temperature: 0.7,
+              max_tokens: 800,
               stream: true,
-              options: {
-                temperature: 0.7,
-                num_predict: 800,
-              }
             }),
           });
 
@@ -154,27 +158,25 @@ ${userContext}`;
             buffer = lines.pop() || '';
 
             for (const line of lines) {
-              if (!line.trim()) continue;
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6);
+                if (data === '[DONE]') continue;
 
-              try {
-                const parsed = JSON.parse(line);
-                
-                // Handle Ollama streaming format
-                if (parsed.done) {
-                  continue;
+                try {
+                  const parsed = JSON.parse(data);
+                  const content = parsed.choices?.[0]?.delta?.content;
+                  
+                  if (content) {
+                    // Send chunk to client
+                    const chunk = encoder.encode(`data: ${JSON.stringify({ 
+                      type: 'text_delta',
+                      content 
+                    })}\n\n`);
+                    controller.enqueue(chunk);
+                  }
+                } catch (e) {
+                  console.error('Error parsing chunk:', e);
                 }
-                
-                const content = parsed.message?.content;
-                if (content) {
-                  // Send chunk to client
-                  const chunk = encoder.encode(`data: ${JSON.stringify({ 
-                    type: 'text_delta',
-                    content 
-                  })}\n\n`);
-                  controller.enqueue(chunk);
-                }
-              } catch (e) {
-                console.error('Error parsing chunk:', e);
               }
             }
           }
