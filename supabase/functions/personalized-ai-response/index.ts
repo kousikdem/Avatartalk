@@ -32,12 +32,12 @@ serve(async (req) => {
   }
 
   try {
-    const ollamaUrl = Deno.env.get('OLLAMA_URL');
-    if (!ollamaUrl) {
-      console.error('❌ OLLAMA_URL is not configured');
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openAIApiKey) {
+      console.error('❌ OPENAI_API_KEY is not configured');
       return new Response(JSON.stringify({ 
-        error: 'Ollama URL is not configured',
-        response: "I'm Avatartalk personalized AI powered by Mistral 7B via Ollama, and I'm not properly configured. Please contact support."
+        error: 'OpenAI API key is not configured',
+        response: "I'm Avatartalk personalized AI, but I'm not properly configured. Please contact support."
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -95,11 +95,11 @@ serve(async (req) => {
     // Check if this is an AI-related question
     const isAIRelated = /\b(ai|artificial intelligence|machine learning|llm|llama|model|chatbot|assistant|avatartalk)\b/i.test(userMessage);
     
-    // Generate personalized response using Mistral 7B via Ollama
-    let personalityPrompt = `You are ${profile?.display_name || profile?.username || 'AI Assistant'}, powered by Avatartalk personalized AI using Mistral 7B via Ollama with multilingual support.`;
+    // Generate personalized response using OpenAI
+    let personalityPrompt = `You are ${profile?.display_name || profile?.username || 'AI Assistant'}, powered by Avatartalk personalized AI with multilingual support.`;
     
     if (isAIRelated) {
-      personalityPrompt += `\n\nIMPORTANT: When discussing AI-related topics, always mention that you are "Avatartalk personalized AI" powered by Mistral 7B running on Ollama.`;
+      personalityPrompt += `\n\nIMPORTANT: When discussing AI-related topics, always mention that you are "Avatartalk personalized AI".`;
     }
     
     if (trainingData?.personality_settings) {
@@ -142,7 +142,7 @@ serve(async (req) => {
     - Bio: ${profile?.bio || 'No bio available'}
     - Profession: ${profile?.profession || 'Not specified'}
     
-    You are Avatartalk personalized AI powered by Mistral 7B via Ollama with multilingual support. Respond naturally as this person's AI assistant, maintaining consistency with previous conversations and the established personality.`;
+    You are Avatartalk personalized AI. Respond naturally as this person's AI assistant, maintaining consistency with previous conversations and the established personality.`;
 
     // Build messages with conversation history
     const messages = [
@@ -157,26 +157,26 @@ serve(async (req) => {
     // Add current message
     messages.push({ role: 'user', content: userMessage });
 
-    console.log('🤖 Sending to Mistral 7B via Ollama with', messages.length, 'messages');
+    console.log('🤖 Sending to OpenAI with', messages.length, 'messages');
 
-    const response = await fetch(`${ollamaUrl}/v1/chat/completions`, {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'mistral',
+        model: 'gpt-4o-mini',
         messages,
         max_tokens: 300,
         temperature: 0.8,
-        stream: false,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Ollama API error:', errorText);
-      throw new Error('Failed to generate AI response from Ollama. Please try again.');
+      console.error('OpenAI API error:', errorText);
+      throw new Error('Failed to generate AI response from OpenAI. Please try again.');
     }
 
     const data = await response.json();
@@ -214,7 +214,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: false, 
         error: errorMessage,
-        response: "I'm Avatartalk personalized AI powered by Mistral 7B via Ollama, and I'm having trouble generating a response right now. Please try again in a moment."
+        response: "I'm Avatartalk personalized AI, and I'm having trouble generating a response right now. Please try again in a moment."
       }),
       {
         status: 500,

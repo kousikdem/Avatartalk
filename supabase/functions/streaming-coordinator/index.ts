@@ -54,15 +54,15 @@ serve(async (req) => {
       }
     }
 
-    const ollamaUrl = Deno.env.get('OLLAMA_URL');
-    if (!ollamaUrl) {
-      throw new Error('OLLAMA_URL not configured');
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openAIApiKey) {
+      throw new Error('OPENAI_API_KEY not configured');
     }
 
     // Build messages for streaming with personalized training context
     const messages = [];
     
-    let systemPrompt = `You are a helpful AI assistant powered by Mistral 7B with personalized training.
+    let systemPrompt = `You are a helpful AI assistant with personalized training.
 ${userContext}`;
 
     // Add personalized training context if available
@@ -107,15 +107,16 @@ ${userContext}`;
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          console.log('📡 Starting Mistral 7B streaming response via Ollama...');
+          console.log('📡 Starting OpenAI streaming response...');
           
-          const response = await fetch(`${ollamaUrl}/v1/chat/completions`, {
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
+              'Authorization': `Bearer ${openAIApiKey}`,
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              model: 'mistral',
+              model: 'gpt-4o-mini',
               messages,
               temperature: 0.7,
               max_tokens: 800,
@@ -125,8 +126,8 @@ ${userContext}`;
 
           if (!response.ok) {
             const errorText = await response.text();
-            console.error('❌ Ollama error:', errorText);
-            throw new Error('Ollama server error');
+            console.error('❌ OpenAI error:', errorText);
+            throw new Error('OpenAI API error');
           }
 
           const reader = response.body?.getReader();
