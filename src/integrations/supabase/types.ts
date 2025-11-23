@@ -1697,6 +1697,39 @@ export type Database = {
         }
         Relationships: []
       }
+      web_training_data: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          scraped_content: string | null
+          scraping_status: string | null
+          updated_at: string | null
+          url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          scraped_content?: string | null
+          scraping_status?: string | null
+          updated_at?: string | null
+          url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          scraped_content?: string | null
+          scraping_status?: string | null
+          updated_at?: string | null
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
