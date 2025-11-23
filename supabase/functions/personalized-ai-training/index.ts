@@ -486,27 +486,41 @@ async function processTrainingDataWithLlamaIndex(trainingData: any) {
   if (trainingData.documents && trainingData.documents.length > 0) {
     console.log(`📄 Processing ${trainingData.documents.length} documents with LlamaIndex...`);
     for (const doc of trainingData.documents) {
+      const content = doc.content || doc.extracted_content || '';
+      if (!content.trim()) {
+        console.log(`⚠️ Skipping document ${doc.id} - no content`);
+        continue;
+      }
+      
       const processed = {
         id: doc.id,
-        content: doc.content,
+        content: content,
         metadata: doc.metadata,
-        embeddings: await generateAdvancedEmbeddings(doc.content),
-        chunks: await smartChunking(doc.content),
-        llamaIndexNode: await createLlamaIndexNode(doc)
+        embeddings: await generateAdvancedEmbeddings(content),
+        chunks: await smartChunking(content),
+        llamaIndexNode: await createLlamaIndexNode({ ...doc, content })
       };
       processedData.documents.push(processed);
-      processedData.totalTokens += doc.content.split(' ').length;
+      processedData.totalTokens += content.split(' ').length;
     }
   }
 
   if (trainingData.qaPairs && trainingData.qaPairs.length > 0) {
     console.log(`❓ Processing ${trainingData.qaPairs.length} Q&A pairs for instruction tuning...`);
     for (const qa of trainingData.qaPairs) {
+      const question = qa.question || '';
+      const answer = qa.answer || '';
+      
+      if (!question.trim() || !answer.trim()) {
+        console.log(`⚠️ Skipping Q&A pair - missing question or answer`);
+        continue;
+      }
+      
       const processed = {
-        question: qa.question,
-        answer: qa.answer,
+        question: question,
+        answer: answer,
         context: qa.context,
-        embedding: await generateAdvancedEmbeddings(qa.question + ' ' + qa.answer),
+        embedding: await generateAdvancedEmbeddings(question + ' ' + answer),
         instructionFormat: formatForLLaMA3Training(qa)
       };
       processedData.qaPairs.push(processed);
@@ -523,7 +537,9 @@ async function processTrainingDataWithLlamaIndex(trainingData: any) {
 }
 
 async function generateAdvancedEmbeddings(text: string) {
-  console.log(`🔍 Generating advanced embeddings for: ${text.substring(0, 50)}...`);
+  const safeText = text || '';
+  const preview = safeText.length > 50 ? safeText.substring(0, 50) : safeText;
+  console.log(`🔍 Generating advanced embeddings for: ${preview}...`);
   await new Promise(resolve => setTimeout(resolve, 200));
   return Array.from({length: 1536}, () => Math.random() * 2 - 1);
 }
@@ -698,7 +714,9 @@ async function fineTuneLLaMA3(datasetId: string, personalityConfig: any) {
 }
 
 async function generateEmbeddings(text: string) {
-  console.log(`Generating embeddings for text: ${text.substring(0, 50)}...`);
+  const safeText = text || '';
+  const preview = safeText.length > 50 ? safeText.substring(0, 50) : safeText;
+  console.log(`Generating embeddings for text: ${preview}...`);
   await new Promise(resolve => setTimeout(resolve, 100));
   return Array.from({length: 768}, () => Math.random() * 2 - 1);
 }
