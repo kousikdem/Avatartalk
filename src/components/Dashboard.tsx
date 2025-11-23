@@ -221,6 +221,17 @@ const Dashboard = () => {
                 
                 <Button 
                   variant="outline" 
+                  className="h-16 bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500 hover:from-indigo-600 hover:via-violet-600 hover:to-purple-600 text-white border-0"
+                  onClick={() => window.location.href = '/settings/ai-training'}
+                >
+                  <div className="text-center">
+                    <MessageSquare className="h-6 w-6 mx-auto mb-1" />
+                    <div className="text-sm">AI Training</div>
+                  </div>
+                </Button>
+                
+                <Button 
+                  variant="outline" 
                   className="h-16 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 hover:from-violet-600 hover:via-purple-600 hover:to-fuchsia-600 text-white border-0"
                   onClick={() => window.location.href = '/'}
                 >
