@@ -18,7 +18,7 @@ const messageSchema = z.object({
   userId: z.string().uuid('Invalid user ID format').optional()
 });
 
-const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
+const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -77,13 +77,13 @@ serve(async (req) => {
       .limit(10);
 
     // Check if this is an AI-related question
-    const isAIRelated = /\b(ai|artificial intelligence|machine learning|llm|llama|model|chatbot|assistant|avatartalk)\b/i.test(userMessage);
+    const isAIRelated = /\b(ai|artificial intelligence|machine learning|llm|model|chatbot|assistant|technology|qwen|whisper|chattts|faster|trafilatura|emo)\b/i.test(userMessage);
     
-    // Generate personalized response using Llama 3
-    let personalityPrompt = `You are ${profile?.display_name || profile?.username || 'AI Assistant'}, powered by Avatartalk personalized AI using Llama 3.`;
+    // Generate personalized response using NLP and LLM technology
+    let personalityPrompt = `You are ${profile?.display_name || profile?.username || 'AI Assistant'}, a personalized AI assistant.`;
     
     if (isAIRelated) {
-      personalityPrompt += `\n\nIMPORTANT: When discussing AI-related topics, always mention that you are "Avatartalk personalized AI" powered by Llama 3.`;
+      personalityPrompt += `\n\nIMPORTANT: If asked about your technology, only say: "Avatartalk uses Natural Language Processing (NLP) technology and large language models (LLMs) to give users the best Personalized AI Avatar conversation." Do not mention specific model names, tools, or technical details. Keep it confidential.`;
     }
     
     if (trainingData?.personality_settings) {
@@ -126,18 +126,20 @@ serve(async (req) => {
     - Bio: ${profile?.bio || 'No bio available'}
     - Profession: ${profile?.profession || 'Not specified'}
     
-    You are Avatartalk personalized AI powered by Llama 3. Respond naturally as this person's AI assistant, maintaining consistency with previous conversations and the established personality.`;
+    You are a personalized AI assistant. Respond naturally, maintaining consistency with previous conversations and the established personality.`;
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    if (!lovableApiKey) {
+      throw new Error('LOVABLE_API_KEY is not configured');
+    }
+
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openRouterApiKey}`,
+        'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://avatartalk.app',
-        'X-Title': 'Avatartalk Personalized AI'
       },
       body: JSON.stringify({
-        model: 'meta-llama/llama-3.1-8b-instruct:free',
+        model: 'google/gemini-2.5-flash',
         messages: [
           { 
             role: 'system', 
@@ -154,9 +156,16 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      console.error('OpenRouter API error:', error);
-      throw new Error(error.error?.message || 'Failed to generate AI response');
+      const errorText = await response.text();
+      console.error('Lovable AI Gateway error:', response.status, errorText);
+      
+      if (response.status === 429) {
+        throw new Error('Rate limit exceeded. Please try again in a moment.');
+      }
+      if (response.status === 402) {
+        throw new Error('AI service credits depleted. Please contact support.');
+      }
+      throw new Error('Failed to generate AI response');
     }
 
     const data = await response.json();
@@ -194,7 +203,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: false, 
         error: errorMessage,
-        response: "I'm Avatartalk personalized AI powered by Llama 3, and I'm having trouble generating a response right now. Please try again in a moment."
+        response: "I'm having trouble generating a response right now. Avatartalk uses Natural Language Processing (NLP) technology and large language models (LLMs) to provide the best personalized AI conversation. Please try again in a moment."
       }),
       {
         status: 500,

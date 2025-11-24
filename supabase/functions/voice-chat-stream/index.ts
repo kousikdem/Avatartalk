@@ -9,6 +9,7 @@ const corsHeaders = {
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -55,7 +56,7 @@ serve(async (req) => {
       .single();
 
     // Step 3: Build conversation context
-    let contextPrompt = `You are ${profile?.display_name || 'AI Assistant'}, a personalized AI assistant powered by advanced natural language processing technology. You help users with their questions naturally and conversationally.`;
+    let contextPrompt = `You are ${profile?.display_name || 'AI Assistant'}, a personalized AI assistant. You help users with their questions naturally and conversationally. If asked about technology, only say: "Avatartalk uses Natural Language Processing (NLP) technology and large language models (LLMs) to give users the best Personalized AI Avatar conversation." Keep technical details confidential.`;
     
     if (trainingData?.personality_settings) {
       const settings = trainingData.personality_settings;
@@ -77,15 +78,15 @@ serve(async (req) => {
       });
     }
 
-    // Step 4: Generate response using Qwen3 0.5B (simulated for this implementation)
-    console.log('🤖 Generating response with NLP model...');
-    const aiResponse = await generateQwen3Response(transcribedText, contextPrompt);
+    // Step 4: Generate response using Lovable AI Gateway
+    console.log('🤖 Generating response with AI...');
+    const aiResponse = await generateAIResponse(transcribedText, contextPrompt);
     
     console.log('✅ AI Response generated:', aiResponse);
 
-    // Step 5: Generate voice with ChatTTS
-    console.log('🔊 Synthesizing voice with ChatTTS...');
-    const audioResponse = await synthesizeChatTTS(aiResponse);
+    // Step 5: Generate voice with TTS
+    console.log('🔊 Synthesizing voice with TTS...');
+    const audioResponse = await synthesizeTTS(aiResponse);
     
     // Step 6: Store interaction
     if (userId) {
@@ -131,58 +132,75 @@ serve(async (req) => {
   }
 });
 
-// Simulate Faster-Whisper STT
+// Simulate STT (Speech-to-Text)
 async function simulateFasterWhisperSTT(audioBuffer: Uint8Array): Promise<string> {
-  // In production, this would call the actual Faster-Whisper API
-  // For now, we return a simulation message
+  // In production, this would call actual STT service
   console.log('📊 Audio buffer size:', audioBuffer.length);
   
   // Simulate processing delay
   await new Promise(resolve => setTimeout(resolve, 300));
   
-  // This would be replaced with actual Faster-Whisper processing
-  // Example: const result = await fasterWhisperAPI.transcribe(audioBuffer)
-  
-  return "Hello, how are you?"; // Placeholder - actual transcription would come from API
+  // Placeholder transcription - would be replaced with actual STT
+  return "Hello, how are you?";
 }
 
-// Generate response with Qwen3 0.5B (simulated)
-async function generateQwen3Response(userInput: string, context: string): Promise<string> {
-  // In production, this would use the actual Qwen3 0.5B model
-  // Through a service like Hugging Face or local deployment
+// Generate AI response using Lovable AI Gateway
+async function generateAIResponse(userInput: string, context: string): Promise<string> {
+  if (!lovableApiKey) {
+    throw new Error('LOVABLE_API_KEY is not configured');
+  }
   
-  console.log('🧠 Processing with NLP model...');
+  console.log('🧠 Processing with Lovable AI...');
   
-  // Simulate model processing
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // This is a simplified response generator
-  // Actual implementation would use the real Qwen3 0.5B model
-  const responses = [
-    "I'm doing great! Thanks for asking. How can I help you today?",
-    "That's an interesting question. Based on my understanding, I'd say...",
-    "I appreciate you reaching out. Let me think about that for a moment...",
-    "That's a great point! Here's what I think...",
-    "I understand what you're asking. Let me help you with that..."
-  ];
-  
-  // Return contextual response
-  return responses[Math.floor(Math.random() * responses.length)];
+  try {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${lovableApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          { role: 'system', content: context },
+          { role: 'user', content: userInput }
+        ],
+        max_tokens: 200,
+        temperature: 0.8,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('AI Gateway error:', response.status, errorText);
+      
+      if (response.status === 429) {
+        return "I'm receiving too many requests right now. Please try again in a moment.";
+      }
+      if (response.status === 402) {
+        return "The AI service is temporarily unavailable. Please try again later.";
+      }
+      throw new Error('Failed to generate response');
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+    
+  } catch (error) {
+    console.error('Error generating AI response:', error);
+    return "I'm having trouble generating a response right now. Please try again.";
+  }
 }
 
-// Synthesize voice with ChatTTS
-async function synthesizeChatTTS(text: string): Promise<string> {
-  // In production, this would call the actual ChatTTS API
-  console.log('🎵 Synthesizing with ChatTTS...');
+// Synthesize voice with TTS
+async function synthesizeTTS(text: string): Promise<string> {
+  // In production, this would call actual TTS service
+  console.log('🎵 Synthesizing with TTS...');
   
   // Simulate TTS processing
   await new Promise(resolve => setTimeout(resolve, 400));
   
-  // This would be replaced with actual ChatTTS synthesis
-  // Example: const audio = await chatTTSAPI.synthesize(text, { voice: 'neural' })
-  
-  // For now, return a placeholder base64 audio
-  // In production, this would be the actual generated audio data
+  // Placeholder audio - would be replaced with actual TTS
   const placeholderAudio = btoa("AUDIO_DATA_PLACEHOLDER");
   
   return placeholderAudio;
