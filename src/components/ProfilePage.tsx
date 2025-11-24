@@ -13,6 +13,7 @@ import { usePersonalizedAI } from '@/hooks/usePersonalizedAI';
 import { usePosts } from '@/hooks/usePosts';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { useCoquiTTS } from '@/hooks/useCoquiTTS';
+import { useVoiceChat } from '@/hooks/useVoiceChat';
 import { useDefaultAvatar } from '@/hooks/useDefaultAvatar';
 import FuturisticAvatar3D from './FuturisticAvatar3D';
 import ChangeableAvatarPreview from './ChangeableAvatarPreview';
@@ -174,6 +175,15 @@ const ProfilePage: React.FC = () => {
     isPlaying, 
     stopSpeech 
   } = useCoquiTTS();
+  
+  // Import voice chat hook
+  const { 
+    isProcessing: isVoiceProcessing,
+    isPlayingAudio,
+    processVoiceChat,
+    playAudioResponse,
+    stopAudio
+  } = useVoiceChat();
 
   // Initialize and load chat messages from localStorage
   useEffect(() => {
@@ -475,27 +485,96 @@ const ProfilePage: React.FC = () => {
 
   const handleChatSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const messageContent = chatMessage.trim() || transcript.trim();
     
-    if (!messageContent || !profile) return;
+    if (!profile) return;
+    
+    // Check if this is voice input (transcript contains base64 audio)
+    const isVoiceMessage = transcript && transcript.length > 100 && !chatMessage.trim();
+    
+    let messageContent = '';
+    let audioData = '';
+    
+    if (isVoiceMessage) {
+      // Voice input - process with backend
+      audioData = transcript;
+      console.log('🎙️ Processing voice message...');
+      
+      setIsTyping(true);
+      
+      try {
+        const result = await processVoiceChat(audioData, {
+          profileId: profile.id,
+          userId: currentUser?.id,
+          conversationHistory: chatMessages
+        });
+        
+        if (!result) {
+          throw new Error('Failed to process voice message');
+        }
+        
+        messageContent = result.transcription;
+        
+        // Add user message with transcription
+        const userMessage: ChatMessage = {
+          id: Date.now().toString(),
+          content: messageContent,
+          timestamp: new Date().toISOString(),
+          sender: 'user',
+          senderName: currentUser?.email?.split('@')[0] || 'Guest',
+          senderAvatar: currentUser?.user_metadata?.avatar_url,
+          isVoiceMessage: true,
+          voiceTranscript: messageContent
+        };
+        
+        setChatMessages(prev => [...prev, userMessage]);
+        
+        // Add AI response
+        const aiMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          content: result.textResponse,
+          timestamp: new Date().toISOString(),
+          sender: 'avatar',
+          senderName: profile.display_name || profile.username || 'AI',
+          senderAvatar: profile.avatar_url || profile.profile_pic_url,
+          isVoiceMessage: false
+        };
+        
+        setChatMessages(prev => [...prev, aiMessage]);
+        
+        // Play audio response
+        if (result.audioResponse) {
+          await playAudioResponse(result.audioResponse);
+        }
+        
+        resetTranscript();
+        setIsTyping(false);
+        return;
+        
+      } catch (error) {
+        console.error('Voice processing error:', error);
+        toast({
+          title: "Voice Error",
+          description: "Failed to process voice message. Please try again.",
+          variant: "destructive",
+        });
+        setIsTyping(false);
+        resetTranscript();
+        return;
+      }
+    }
+    
+    // Text input
+    messageContent = chatMessage.trim();
+    
+    if (!messageContent) return;
     
     // Block AI origin related questions
     const aiOriginKeywords = [
-      'based on my training',
-      'ai training',
-      'training data',
-      'machine learning',
-      'neural network',
-      'algorithm',
-      'artificial intelligence',
-      'ai model',
-      'language model',
-      'llm',
-      'chatgpt',
-      'gpt',
-      'openai',
-      'anthropic',
-      'claude'
+      'qwen', 'faster whisper', 'chattts', 'which model', 'what model',
+      'based on my training', 'ai training', 'training data',
+      'machine learning', 'neural network', 'algorithm',
+      'artificial intelligence', 'ai model', 'language model',
+      'llm', 'chatgpt', 'gpt', 'openai', 'anthropic', 'claude'
     ];
     
     const containsAIOrigin = aiOriginKeywords.some(keyword => 
@@ -509,12 +588,10 @@ const ProfilePage: React.FC = () => {
         variant: "destructive",
       });
       setChatMessage('');
-      resetTranscript();
       return;
     }
     
-    // Add user message (check if it's a voice message)
-    const isVoiceInput = transcript.trim() && transcript.trim() === messageContent;
+    // Add user message
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       content: messageContent,
@@ -522,13 +599,11 @@ const ProfilePage: React.FC = () => {
       sender: 'user',
       senderName: currentUser?.email?.split('@')[0] || 'Guest',
       senderAvatar: currentUser?.user_metadata?.avatar_url,
-      isVoiceMessage: isVoiceInput,
-      voiceTranscript: isVoiceInput ? messageContent : undefined
+      isVoiceMessage: false
     };
     
     setChatMessages(prev => [...prev, userMessage]);
     setChatMessage('');
-    resetTranscript();
     setIsTyping(true);
     
     try {
@@ -560,7 +635,7 @@ const ProfilePage: React.FC = () => {
 
       setChatMessages(prev => [...prev, aiMessage]);
       
-      // Play voice response if available
+      // Play voice response using Web Speech API
       if (aiResponse) {
         try {
           await synthesizeSpeech(aiResponse, {
@@ -579,10 +654,10 @@ const ProfilePage: React.FC = () => {
       // Add fallback response
       const fallbackMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        content: "I'm Avatartalk personalized AI powered by Llama 3, and I'm having trouble responding right now. Please try again in a moment.",
+        content: "I'm having trouble responding right now. Please try again in a moment.",
         timestamp: new Date().toISOString(),
         sender: 'avatar',
-        senderName: profile.display_name || profile.username || 'Avatartalk AI',
+        senderName: profile.display_name || profile.username || 'AI',
         senderAvatar: profile.avatar_url || profile.profile_pic_url,
         isVoiceMessage: false
       };
@@ -591,7 +666,7 @@ const ProfilePage: React.FC = () => {
       
       toast({
         title: "Response Error",
-        description: "Failed to generate Llama 3 AI response. Please try again.",
+        description: "Failed to generate AI response. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -609,20 +684,30 @@ const ProfilePage: React.FC = () => {
     });
   };
 
-  // Voice input effects - update chat message with transcript
+  // Voice input effects - update chat message with transcript (only for text)
   useEffect(() => {
-    if (transcript && transcript.trim()) {
+    // Only update chat message if transcript is text (not base64 audio)
+    if (transcript && transcript.trim() && transcript.length < 100) {
       setChatMessage(transcript);
     }
   }, [transcript]);
 
   const handleVoiceToggle = async () => {
-    if (isRecording) {
+    if (isListening) {
+      // Stop recording and submit
       try {
-        stopRecording();
+        await stopListening();
+        
+        // Wait a bit for processing
+        setTimeout(() => {
+          if (transcript) {
+            handleChatSubmit();
+          }
+        }, 500);
+        
         toast({
           title: "Voice Recording Stopped",
-          description: "Processing your voice input with Coqui STT...",
+          description: "Processing your message...",
         });
       } catch (error) {
         console.error('Error stopping recording:', error);
@@ -633,11 +718,12 @@ const ProfilePage: React.FC = () => {
         });
       }
     } else {
+      // Start recording
       setChatMessage('');
+      resetTranscript();
       
       try {
-        // Use Coqui STT for high-quality voice recognition
-        await startRecording({ 
+        await startListening({ 
           language: 'en-US',
           continuous: false
         });

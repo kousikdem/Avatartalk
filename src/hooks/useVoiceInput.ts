@@ -40,7 +40,10 @@ export const useVoiceInput = () => {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [interimTranscript, setInterimTranscript] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const { toast } = useToast();
 
   const isSupported = useCallback(() => {
@@ -63,70 +66,80 @@ export const useVoiceInput = () => {
     return true;
   }, [isSupported, toast]);
 
-  const startListening = useCallback((options: VoiceInputOptions = {}) => {
-    if (!initializeRecognition()) return;
-
-    const recognition = recognitionRef.current;
-    
-    recognition.continuous = options.continuous || false;
-    recognition.interimResults = options.interimResults || true;
-    recognition.language = options.language || 'en-US';
-
-    recognition.onstart = () => {
+  const startListening = useCallback(async (options: VoiceInputOptions = {}) => {
+    try {
+      // Use backend voice recognition via MediaRecorder
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'audio/webm;codecs=opus'
+      });
+      
+      audioChunksRef.current = [];
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+      
+      mediaRecorder.onstop = () => {
+        setIsListening(false);
+        setIsProcessing(false);
+        stream.getTracks().forEach(track => track.stop());
+      };
+      
+      mediaRecorder.start();
+      mediaRecorderRef.current = mediaRecorder;
       setIsListening(true);
       setTranscript('');
       setInterimTranscript('');
-    };
-
-    recognition.onresult = (event: CustomSpeechRecognitionEvent) => {
-      let finalTranscript = '';
-      let interimTranscript = '';
-
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          finalTranscript += transcript;
-        } else {
-          interimTranscript += transcript;
-        }
-      }
-
-      setTranscript(prev => prev + finalTranscript);
-      setInterimTranscript(interimTranscript);
-    };
-
-    recognition.onerror = (event: CustomSpeechRecognitionErrorEvent) => {
-      console.error('Speech recognition error:', event.error);
-      setIsListening(false);
       
-      if (event.error !== 'aborted') {
-        toast({
-          title: "Voice Input Error",
-          description: `Speech recognition error: ${event.error}`,
-          variant: "destructive",
-        });
-      }
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-      setInterimTranscript('');
-    };
-
-    try {
-      recognition.start();
+      toast({
+        title: "Recording Started",
+        description: "Speak clearly into your microphone...",
+      });
+      
     } catch (error) {
-      console.error('Failed to start speech recognition:', error);
+      console.error('Failed to start recording:', error);
       setIsListening(false);
+      toast({
+        title: "Microphone Error",
+        description: "Could not access microphone. Please check permissions.",
+        variant: "destructive",
+      });
     }
-  }, [initializeRecognition, toast]);
+  }, [toast]);
 
-  const stopListening = useCallback(() => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
+  const stopListening = useCallback(async () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+      setIsProcessing(true);
+      
+      // Wait for recording to finish
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Get recorded audio
+      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      
+      // Convert to base64
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64Audio = (reader.result as string).split(',')[1];
+        
+        // Store for later use
+        setTranscript(base64Audio);
+        setIsProcessing(false);
+        
+        toast({
+          title: "Processing Voice",
+          description: "Voice recorded successfully. Send to process...",
+        });
+      };
+      reader.readAsDataURL(audioBlob);
     }
     setIsListening(false);
-  }, []);
+  }, [toast]);
 
   const resetTranscript = useCallback(() => {
     setTranscript('');
@@ -137,9 +150,10 @@ export const useVoiceInput = () => {
     isListening,
     transcript,
     interimTranscript,
+    isProcessing,
     startListening,
     stopListening,
     resetTranscript,
-    isSupported: isSupported()
+    isSupported: 'MediaRecorder' in window
   };
 };
