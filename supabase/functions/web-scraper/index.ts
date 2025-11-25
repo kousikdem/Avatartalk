@@ -19,7 +19,20 @@ serve(async (req) => {
       throw new Error('URL is required');
     }
 
-    console.log('📡 Scraping URL:', url);
+    // Normalize URL - add https:// if no protocol specified
+    let normalizedUrl = url.trim();
+    if (!normalizedUrl.match(/^https?:\/\//i)) {
+      normalizedUrl = 'https://' + normalizedUrl;
+    }
+
+    // Validate URL format
+    try {
+      new URL(normalizedUrl);
+    } catch (urlError) {
+      throw new Error(`Invalid URL format: ${url}. Please provide a valid URL (e.g., https://example.com)`);
+    }
+
+    console.log('📡 Scraping URL:', normalizedUrl);
 
     // Get user
     const authHeader = req.headers.get('Authorization');
@@ -38,12 +51,12 @@ serve(async (req) => {
       throw new Error('Invalid authentication');
     }
 
-    // Create initial record
+    // Create initial record with normalized URL
     const { data: record, error: insertError } = await supabaseClient
       .from('web_training_data')
       .insert({
         user_id: user.id,
-        url: url,
+        url: normalizedUrl,
         scraping_status: 'processing'
       })
       .select()
@@ -53,10 +66,11 @@ serve(async (req) => {
 
     // Fetch and parse the webpage using Trafilatura-like approach
     try {
-      const response = await fetch(url, {
+      const response = await fetch(normalizedUrl, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (compatible; AvatartalkBot/1.0)',
         },
+        redirect: 'follow',
       });
 
       if (!response.ok) {
