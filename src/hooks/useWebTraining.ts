@@ -45,9 +45,15 @@ export const useWebTraining = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // Validate URL before sending
+      const trimmedUrl = url.trim();
+      if (!trimmedUrl) {
+        throw new Error('Please enter a URL');
+      }
+
       // Call edge function to scrape URL
       const { data, error } = await supabase.functions.invoke('web-scraper', {
-        body: { url }
+        body: { url: trimmedUrl }
       });
 
       if (error) throw error;
@@ -56,15 +62,16 @@ export const useWebTraining = () => {
       
       toast({
         title: "Success",
-        description: "URL scraped successfully",
+        description: "URL scraped and added to AI training data",
       });
 
       return data;
     } catch (error) {
       console.error('Error scraping URL:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to scrape URL. Please check the URL and try again.';
       toast({
         title: "Error",
-        description: "Failed to scrape URL",
+        description: errorMessage,
         variant: "destructive",
       });
       throw error;
