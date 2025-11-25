@@ -57,6 +57,7 @@ const EnhancedPostCard: React.FC<EnhancedPostCardProps> = ({
   showComments = true 
 }) => {
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showCommentSection, setShowCommentSection] = useState(false);
   
   const { toast } = useToast();
   const { likesCount, isLiked, toggleLike, loading: likesLoading } = useLikes(post.id, 'post');
@@ -150,34 +151,34 @@ const EnhancedPostCard: React.FC<EnhancedPostCardProps> = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <Card className="mb-6 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <Card className="mb-6 bg-card border border-border shadow-sm hover:shadow-md transition-all duration-200">
           <CardHeader className="pb-3">
             <div className="flex items-center space-x-3">
               {/* Enhanced Avatar with Profile Picture */}
               <div className="relative">
-                <Avatar className="w-12 h-12 ring-2 ring-blue-500/20">
+                <Avatar className="w-12 h-12 ring-2 ring-primary/10">
                   <AvatarImage 
                     src={getProfileImage(post.profile)} 
                     alt={getDisplayName(post.profile)}
                   />
-                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold">
                     {getDisplayName(post.profile)[0].toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 {/* Online indicator */}
-                <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-sm" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-card shadow-sm" />
               </div>
               
               <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-gray-900 truncate">
+                <h4 className="font-semibold text-foreground truncate">
                   {getDisplayName(post.profile)}
                 </h4>
-                <p className="text-sm text-gray-500 truncate">
+                <p className="text-sm text-muted-foreground truncate">
                   @{getUsername(post.profile)} • {formatDistanceToNow(new Date(post.created_at))} ago
                 </p>
               </div>
               
-              <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
                 <MoreVertical className="w-4 h-4" />
               </Button>
             </div>
@@ -186,7 +187,7 @@ const EnhancedPostCard: React.FC<EnhancedPostCardProps> = ({
           <CardContent className="pt-0">
             {/* Post Content */}
             <div className="mb-4">
-              <p className="text-gray-800 leading-relaxed">{post.content}</p>
+              <p className="text-foreground leading-relaxed whitespace-pre-wrap">{post.content}</p>
               
               {/* Media */}
               {post.media_url && (
@@ -209,13 +210,23 @@ const EnhancedPostCard: React.FC<EnhancedPostCardProps> = ({
             </div>
 
             {/* Engagement Stats */}
-            <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
-              <span>{likesCount} {likesCount === 1 ? 'like' : 'likes'}</span>
-              <span>{post.comments_count} {post.comments_count === 1 ? 'comment' : 'comments'}</span>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3 pb-3 border-b border-border">
+              <button 
+                onClick={() => setShowCommentSection(!showCommentSection)}
+                className="hover:text-foreground transition-colors"
+              >
+                {likesCount} {likesCount === 1 ? 'like' : 'likes'}
+              </button>
+              <button 
+                onClick={() => setShowCommentSection(!showCommentSection)}
+                className="hover:text-foreground transition-colors"
+              >
+                {post.comments_count} {post.comments_count === 1 ? 'comment' : 'comments'}
+              </button>
             </div>
 
-            {/* Action Buttons with Gradients */}
-            <div className="flex items-center justify-between border-t pt-3">
+            {/* Action Buttons */}
+            <div className="flex items-center justify-around">
               <Button
                 variant="ghost"
                 size="sm"
@@ -230,37 +241,56 @@ const EnhancedPostCard: React.FC<EnhancedPostCardProps> = ({
                   toggleLike();
                 }}
                 disabled={likesLoading}
-                className={`flex items-center space-x-2 transition-all duration-200 ${
+                className={`flex items-center gap-2 transition-all duration-200 ${
                   isLiked 
-                    ? 'text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100' 
-                    : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
+                    ? 'text-red-500 hover:text-red-600 hover:bg-red-50' 
+                    : 'text-muted-foreground hover:text-red-500 hover:bg-red-50'
                 }`}
               >
                 <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
-                <span>Like</span>
+                <span className="font-medium">Like</span>
               </Button>
 
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowCommentSection(!showCommentSection)}
+                className={`flex items-center gap-2 transition-all duration-200 ${
+                  showCommentSection 
+                    ? 'text-primary hover:text-primary/80 hover:bg-primary/10' 
+                    : 'text-muted-foreground hover:text-primary hover:bg-primary/10'
+                }`}
+              >
+                <MessageCircle className={`w-5 h-5 ${showCommentSection ? 'fill-current' : ''}`} />
+                <span className="font-medium">Comment</span>
+              </Button>
 
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleShare}
-                className="flex items-center space-x-2 text-gray-500 hover:text-green-500 hover:bg-green-50 transition-all duration-200"
+                className="flex items-center gap-2 text-muted-foreground hover:text-green-500 hover:bg-green-50 transition-all duration-200"
               >
                 <Share2 className="w-5 h-5" />
-                <span>Share</span>
+                <span className="font-medium">Share</span>
               </Button>
             </div>
 
             {/* Comments Section */}
-            {showComments && (
-              <div className="mt-4 border-t pt-4">
+            {showComments && showCommentSection && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="mt-4 pt-4 border-t border-border"
+              >
                 <CommentSection 
                   itemId={post.id} 
                   itemType="post"
                   showCount={false}
                 />
-              </div>
+              </motion.div>
             )}
           </CardContent>
         </Card>
