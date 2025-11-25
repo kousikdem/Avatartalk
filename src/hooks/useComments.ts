@@ -144,6 +144,33 @@ export const useComments = (itemId?: string, itemType?: 'post' | 'profile') => {
     }
   };
 
+  const updateComment = async (commentId: string, content: string) => {
+    if (!content.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from('comments')
+        .update({ content: content.trim() })
+        .eq('id', commentId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Comment updated successfully",
+      });
+
+      await fetchComments();
+    } catch (error) {
+      console.error('Error updating comment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update comment",
+        variant: "destructive",
+      });
+    }
+  };
+
   const deleteComment = async (commentId: string) => {
     try {
       const { error } = await supabase
@@ -178,6 +205,7 @@ export const useComments = (itemId?: string, itemType?: 'post' | 'profile') => {
     loading,
     submitting,
     addComment,
+    updateComment,
     deleteComment,
     refetch: fetchComments
   };
