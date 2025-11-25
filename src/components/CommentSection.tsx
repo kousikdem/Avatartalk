@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquare, Trash2, Reply } from 'lucide-react';
+import { MessageSquare, Trash2, Reply, Edit2, X } from 'lucide-react';
 import { useComments } from '@/hooks/useComments';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,12 +21,14 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   showCount = true
 }) => {
   const navigate = useNavigate();
-  const { comments, loading, submitting, addComment, deleteComment } = useComments(itemId, itemType);
+  const { comments, loading, submitting, addComment, updateComment, deleteComment } = useComments(itemId, itemType);
   const [newComment, setNewComment] = useState('');
-  const [showComments, setShowComments] = useState(false);
+  const [showComments, setShowComments] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
 
   React.useEffect(() => {
     const getCurrentUser = async () => {
@@ -51,10 +53,28 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     setReplyingTo(null);
   };
 
+  const handleEditComment = async (commentId: string) => {
+    if (!editContent.trim()) return;
+    
+    await updateComment(commentId, editContent);
+    setEditingCommentId(null);
+    setEditContent('');
+  };
+
   const handleDeleteComment = async (commentId: string) => {
     if (window.confirm('Are you sure you want to delete this comment?')) {
       await deleteComment(commentId);
     }
+  };
+
+  const startEditComment = (comment: any) => {
+    setEditingCommentId(comment.id);
+    setEditContent(comment.content);
+  };
+
+  const cancelEdit = () => {
+    setEditingCommentId(null);
+    setEditContent('');
   };
 
   const handleProfileClick = (username?: string) => {
@@ -77,43 +97,82 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       </Avatar>
       
       <div className="flex-1 min-w-0">
-        <div className="bg-muted/50 rounded-lg p-3">
-          <div className="flex items-center justify-between mb-1">
-            <h4 
-              className="font-medium text-sm cursor-pointer hover:underline"
-              onClick={() => handleProfileClick(comment.profiles?.username)}
-            >
-              {comment.profiles?.display_name || 
-               comment.profiles?.full_name || 'Anonymous'}
-            </h4>
-            <div className="flex items-center gap-2">
-              {!isReply && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                  className="p-1 h-auto text-muted-foreground hover:text-foreground"
-                >
-                  <Reply className="w-3 h-3" />
-                </Button>
-              )}
-              {currentUser?.id === comment.user_id && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDeleteComment(comment.id)}
-                  className="p-1 h-auto text-muted-foreground hover:text-destructive"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
-              )}
+        {editingCommentId === comment.id ? (
+          <div className="space-y-2">
+            <Textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              className="min-h-[60px]"
+            />
+            <div className="flex gap-2">
+              <Button
+                onClick={() => handleEditComment(comment.id)}
+                disabled={submitting || !editContent.trim()}
+                size="sm"
+              >
+                Save
+              </Button>
+              <Button
+                onClick={cancelEdit}
+                variant="ghost"
+                size="sm"
+              >
+                <X className="w-3 h-3 mr-1" />
+                Cancel
+              </Button>
             </div>
           </div>
-          <p className="text-sm text-foreground">{comment.content}</p>
-        </div>
-        <p className="text-xs text-muted-foreground mt-1">
-          {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-        </p>
+        ) : (
+          <>
+            <div className="bg-muted/50 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-1">
+                <h4 
+                  className="font-medium text-sm cursor-pointer hover:underline"
+                  onClick={() => handleProfileClick(comment.profiles?.username)}
+                >
+                  {comment.profiles?.display_name || 
+                   comment.profiles?.full_name || 'Anonymous'}
+                </h4>
+                <div className="flex items-center gap-2">
+                  {!isReply && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                      className="p-1 h-auto text-muted-foreground hover:text-foreground"
+                    >
+                      <Reply className="w-3 h-3" />
+                    </Button>
+                  )}
+                  {currentUser?.id === comment.user_id && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => startEditComment(comment)}
+                        className="p-1 h-auto text-muted-foreground hover:text-foreground"
+                      >
+                        <Edit2 className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteComment(comment.id)}
+                        className="p-1 h-auto text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+              <p className="text-sm text-foreground">{comment.content}</p>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+            </p>
+          </>
+        )}
 
         {/* Reply input */}
         {replyingTo === comment.id && (
@@ -158,17 +217,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
 
   return (
     <div className="space-y-3">
-      {/* Comment button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setShowComments(!showComments)}
-        className="flex items-center space-x-1"
-      >
-        <MessageSquare className="w-4 h-4 text-muted-foreground" />
-        {showCount && <span className="text-sm">{comments.length}</span>}
-      </Button>
-
       {/* Comments section */}
       {showComments && (
         <div className="space-y-4 border-t pt-4">
