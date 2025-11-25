@@ -12,11 +12,15 @@ interface Comment {
   content: string;
   created_at: string;
   updated_at: string;
+  parent_comment_id?: string;
   profiles?: {
+    id: string;
     full_name: string;
     avatar_url?: string;
     display_name?: string;
+    username?: string;
   };
+  replies?: Comment[];
 }
 
 export const useComments = (itemId?: string, itemType?: 'post' | 'profile') => {
@@ -46,19 +50,38 @@ export const useComments = (itemId?: string, itemType?: 'post' | 'profile') => {
         const userIds = commentsData.map(comment => comment.user_id);
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
-          .select('id, full_name, avatar_url, display_name')
+          .select('id, full_name, avatar_url, display_name, username')
           .in('id', userIds);
 
         if (profilesError) throw profilesError;
 
-        // Combine comments with profiles
+        // Combine comments with profiles and organize replies
         const commentsWithProfiles = commentsData.map(comment => ({
           ...comment,
           comment_type: comment.comment_type as 'post' | 'profile',
           profiles: profilesData?.find(profile => profile.id === comment.user_id)
         }));
 
-        setComments(commentsWithProfiles);
+        // Organize comments with replies
+        const topLevelComments = commentsWithProfiles.filter(c => !c.parent_comment_id);
+        const repliesMap = new Map<string, Comment[]>();
+        
+        commentsWithProfiles.forEach(comment => {
+          if (comment.parent_comment_id) {
+            if (!repliesMap.has(comment.parent_comment_id)) {
+              repliesMap.set(comment.parent_comment_id, []);
+            }
+            repliesMap.get(comment.parent_comment_id)?.push(comment);
+          }
+        });
+
+        // Attach replies to their parent comments
+        const commentsWithReplies = topLevelComments.map(comment => ({
+          ...comment,
+          replies: repliesMap.get(comment.id) || []
+        }));
+
+        setComments(commentsWithReplies);
       } else {
         setComments([]);
       }
@@ -74,7 +97,7 @@ export const useComments = (itemId?: string, itemType?: 'post' | 'profile') => {
     }
   };
 
-  const addComment = async (content: string) => {
+  const addComment = async (content: string, parentCommentId?: string) => {
     if (!itemId || !itemType || !content.trim()) return;
 
     try {
@@ -93,7 +116,8 @@ export const useComments = (itemId?: string, itemType?: 'post' | 'profile') => {
         user_id: user.id,
         comment_type: itemType,
         content: content.trim(),
-        [itemType === 'post' ? 'post_id' : 'profile_id']: itemId
+        [itemType === 'post' ? 'post_id' : 'profile_id']: itemId,
+        parent_comment_id: parentCommentId || null
       };
 
       const { error } = await supabase
