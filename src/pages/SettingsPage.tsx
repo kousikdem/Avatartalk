@@ -800,8 +800,11 @@ const SettingsPage = () => {
                         value={convertPrice(newPlan.price_amount, newPlan.currency, selectedCurrency)}
                         onChange={(e) => {
                           const inputPrice = parseInt(e.target.value) || 99;
-                          const priceInINR = convertPrice(inputPrice, selectedCurrency, 'INR');
-                          setNewPlan(prev => ({ ...prev, price_amount: priceInINR, currency: selectedCurrency }));
+                          setNewPlan(prev => ({ 
+                            ...prev, 
+                            price_amount: inputPrice,
+                            currency: selectedCurrency 
+                          }));
                         }}
                       />
                     </div>
@@ -859,13 +862,16 @@ const SettingsPage = () => {
                         });
                         return;
                       }
-                      const success = await createPlan(newPlan);
+                      const success = await createPlan({
+                        ...newPlan,
+                        currency: selectedCurrency
+                      });
                       if (success) {
                         setNewPlan({
                           title: '',
                           description: '',
                           price_amount: 99,
-                          currency: 'INR',
+                          currency: selectedCurrency,
                           billing_cycle: 'monthly',
                           trial_days: 0,
                           benefits: [],
