@@ -20,3 +20,9 @@ verify_jwt = true
 
 [functions.voice-chat-stream]
 verify_jwt = false
+
+[functions.razorpay-create-order]
+verify_jwt = true
+
+[functions.razorpay-verify-payment]
+verify_jwt = true

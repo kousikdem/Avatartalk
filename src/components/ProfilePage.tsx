@@ -19,6 +19,7 @@ import FuturisticAvatar3D from './FuturisticAvatar3D';
 import ChangeableAvatarPreview from './ChangeableAvatarPreview';
 import SocialFeed from './SocialFeed';
 import FollowButton from './FollowButton';
+import SubscribeButton from './SubscribeButton';
 import EnhancedShareModal from './EnhancedShareModal';
 import SocialLinksMenu from './SocialLinksMenu';
 import SocialLinksPopup from './SocialLinksPopup';
@@ -946,14 +947,16 @@ const ProfilePage: React.FC = () => {
             <div className="px-6 pb-4">
               <div className="grid grid-cols-5 gap-2">
                 {/* Left Side - Subscribe Button (wider - 3 columns) */}
-                <Button
-                  size="sm"
-                  className="col-span-3 bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-3 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-                  onClick={() => {}} // Just a visual button
-                >
-                  <Sparkles className="h-4 w-4" />
-                  Subscribe - $9.99/mo
-                </Button>
+                {profile?.id && profile?.id !== currentUser?.id && (
+                  <div className="col-span-3">
+                    <SubscribeButton
+                      targetUserId={profile.id}
+                      targetUsername={profile.username}
+                      currentUserId={currentUser?.id}
+                      className="w-full bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-3 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                    />
+                  </div>
+                )}
                 
                 {/* Right Side - Enhanced Follow Button (2 columns) */}
                 {profile?.id && profile?.id !== currentUser?.id && (
