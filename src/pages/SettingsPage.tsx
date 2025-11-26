@@ -31,6 +31,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAvatarSettings } from '@/hooks/useAvatarSettings';
 import { useSubscriptionPlans } from '@/hooks/useSubscriptionPlans';
 import ProfilePictureUpload from '@/components/ProfilePictureUpload';
+import SocialLinksManager from '@/components/SocialLinksManager';
 
 const SettingsPage = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -91,6 +92,7 @@ const SettingsPage = () => {
     profession: '',
     age: 18,
     gender: '',
+    email: '',
     profile_pic_url: '',
   });
 
@@ -143,6 +145,7 @@ const SettingsPage = () => {
           profession: profileData.profession || '',
           age: profileData.age || 18,
           gender: profileData.gender || '',
+          email: profileData.email || '',
           profile_pic_url: profileData.profile_pic_url || '',
         });
       }
@@ -289,7 +292,7 @@ const SettingsPage = () => {
             </TabsTrigger>
             <TabsTrigger value="payment" className="flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
-              Payment
+              Subscription
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
@@ -376,6 +379,16 @@ const SettingsPage = () => {
                       value={profileData.gender}
                       onChange={(e) => setProfileData(prev => ({ ...prev, gender: e.target.value }))}
                       placeholder="Enter your gender"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={profileData.email}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="Enter your email"
                     />
                   </div>
                 </div>
@@ -492,95 +505,7 @@ const SettingsPage = () => {
 
           {/* Social Links */}
           <TabsContent value="social" className="space-y-6">
-            <Card className="bg-white border border-slate-200">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Link className="h-5 w-5 text-blue-600" />
-                  Social Media Links
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="website" className="flex items-center gap-2">
-                      <Globe className="h-4 w-4" />
-                      Website
-                    </Label>
-                    <Input
-                      id="website"
-                      value={socialLinks.website || ''}
-                      onChange={(e) => setSocialLinks(prev => ({ ...prev, website: e.target.value }))}
-                      placeholder="https://yourwebsite.com"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="twitter" className="flex items-center gap-2">
-                      <Twitter className="h-4 w-4" />
-                      Twitter
-                    </Label>
-                    <Input
-                      id="twitter"
-                      value={socialLinks.twitter || ''}
-                      onChange={(e) => setSocialLinks(prev => ({ ...prev, twitter: e.target.value }))}
-                      placeholder="https://twitter.com/yourusername"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="linkedin" className="flex items-center gap-2">
-                      <Linkedin className="h-4 w-4" />
-                      LinkedIn
-                    </Label>
-                    <Input
-                      id="linkedin"
-                      value={socialLinks.linkedin || ''}
-                      onChange={(e) => setSocialLinks(prev => ({ ...prev, linkedin: e.target.value }))}
-                      placeholder="https://linkedin.com/in/yourprofile"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="facebook" className="flex items-center gap-2">
-                      <Facebook className="h-4 w-4" />
-                      Facebook
-                    </Label>
-                    <Input
-                      id="facebook"
-                      value={socialLinks.facebook || ''}
-                      onChange={(e) => setSocialLinks(prev => ({ ...prev, facebook: e.target.value }))}
-                      placeholder="https://facebook.com/yourprofile"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="instagram" className="flex items-center gap-2">
-                      <Instagram className="h-4 w-4" />
-                      Instagram
-                    </Label>
-                    <Input
-                      id="instagram"
-                      value={socialLinks.instagram || ''}
-                      onChange={(e) => setSocialLinks(prev => ({ ...prev, instagram: e.target.value }))}
-                      placeholder="https://instagram.com/yourusername"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="youtube" className="flex items-center gap-2">
-                      <Youtube className="h-4 w-4" />
-                      YouTube
-                    </Label>
-                    <Input
-                      id="youtube"
-                      value={socialLinks.youtube || ''}
-                      onChange={(e) => setSocialLinks(prev => ({ ...prev, youtube: e.target.value }))}
-                      placeholder="https://youtube.com/c/yourchannel"
-                    />
-                  </div>
-                </div>
-
-                <Button onClick={saveSocialLinks} disabled={saving} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                  <Save className="h-4 w-4 mr-2" />
-                  {saving ? 'Saving...' : 'Save Social Links'}
-                </Button>
-              </CardContent>
-            </Card>
+            <SocialLinksManager />
           </TabsContent>
 
           {/* Notification Settings */}
