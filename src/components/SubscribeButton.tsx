@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useFollows } from '@/hooks/useFollows';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
@@ -24,36 +23,10 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
 }) => {
   const [showFollowModal, setShowFollowModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [selectedCurrency, setSelectedCurrency] = useState('INR');
   const { toast } = useToast();
   const { isFollowing, followUser } = useFollows(currentUserId);
   const { subscriptions } = useSubscriptions();
   const { plans, loading: plansLoading } = useSubscriptionPlans(targetUserId);
-
-  // Currency conversion rates
-  const currencyRates: Record<string, number> = {
-    INR: 1,
-    USD: 0.012,
-    EUR: 0.011,
-    GBP: 0.0095,
-    JPY: 1.85,
-    AUD: 0.019,
-  };
-
-  const currencySymbols: Record<string, string> = {
-    INR: '₹',
-    USD: '$',
-    EUR: '€',
-    GBP: '£',
-    JPY: '¥',
-    AUD: 'A$',
-  };
-
-  const convertPrice = (amount: number, fromCurrency: string, toCurrency: string) => {
-    if (fromCurrency === toCurrency) return amount;
-    const inINR = fromCurrency === 'INR' ? amount : amount / currencyRates[fromCurrency];
-    return Math.round(inINR * currencyRates[toCurrency]);
-  };
 
   const isSubscribed = subscriptions.some(
     sub => sub.subscribed_to_id === targetUserId && sub.status === 'active'
@@ -112,15 +85,12 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
         return;
       }
 
-      // Convert price to selected currency
-      const convertedAmount = convertPrice(selectedPlan.price_amount, selectedPlan.currency, selectedCurrency);
-
       // Call Razorpay edge function to create order
       const { data, error } = await supabase.functions.invoke('razorpay-create-order', {
         body: {
           planId: selectedPlan.id,
-          amount: convertedAmount,
-          currency: selectedCurrency,
+          amount: selectedPlan.price_amount,
+          currency: selectedPlan.currency,
           profileId: targetUserId
         }
       });
@@ -202,39 +172,21 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
     return null; // Don't show button if no plans
   }
 
-  const displayPrice = plans[0] 
-    ? `${currencySymbols[selectedCurrency]}${convertPrice(plans[0].price_amount, plans[0].currency, selectedCurrency)}`
-    : '';
-
   return (
     <>
-      <div className="flex gap-2 items-center">
-        <select
-          className="p-2 border border-gray-300 rounded-md text-sm"
-          value={selectedCurrency}
-          onChange={(e) => setSelectedCurrency(e.target.value)}
-        >
-          <option value="INR">INR (₹)</option>
-          <option value="USD">USD ($)</option>
-          <option value="EUR">EUR (€)</option>
-          <option value="GBP">GBP (£)</option>
-          <option value="JPY">JPY (¥)</option>
-          <option value="AUD">AUD (A$)</option>
-        </select>
-        <Button
-          onClick={handleSubscribeClick}
-          disabled={isProcessing || isSubscribed}
-          variant={isSubscribed ? "secondary" : "default"}
-          className={className}
-        >
-          {isProcessing ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-          ) : (
-            <Crown className="h-4 w-4 mr-2" />
-          )}
-          {isSubscribed ? 'Subscribed' : `Subscribe - ${displayPrice}`}
-        </Button>
-      </div>
+      <Button
+        onClick={handleSubscribeClick}
+        disabled={isProcessing || isSubscribed}
+        variant={isSubscribed ? "secondary" : "default"}
+        className={className}
+      >
+        {isProcessing ? (
+          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+        ) : (
+          <Crown className="h-4 w-4 mr-2" />
+        )}
+        {isSubscribed ? 'Subscribed' : `Subscribe - ₹${plans[0]?.price_amount}`}
+      </Button>
 
       <Dialog open={showFollowModal} onOpenChange={setShowFollowModal}>
         <DialogContent>

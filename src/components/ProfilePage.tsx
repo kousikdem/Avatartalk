@@ -945,33 +945,33 @@ const ProfilePage: React.FC = () => {
 
             {/* Action Buttons - Subscribe (left wider) and Follow (right) - Enhanced design */}
             <div className="px-6 pb-4">
-              <div className="flex gap-2">
-                {/* Left Side - Subscribe Button with Currency Selector */}
+              <div className="grid grid-cols-5 gap-2">
+                {/* Left Side - Subscribe Button (wider - 3 columns) */}
                 {profile?.id && profile?.id !== currentUser?.id && (
-                  <div className="flex-1">
+                  <div className="col-span-3">
                     <SubscribeButton
                       targetUserId={profile.id}
                       targetUsername={profile.username}
                       currentUserId={currentUser?.id}
-                      className="bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-3 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                      className="w-full bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-3 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
                     />
                   </div>
                 )}
                 
-                {/* Right Side - Enhanced Follow Button */}
+                {/* Right Side - Enhanced Follow Button (2 columns) */}
                 {profile?.id && profile?.id !== currentUser?.id && (
-                  <div className="w-auto">
+                  <div className="col-span-2">
                     <motion.div
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      className="h-full"
+                      className="w-full h-full"
                     >
                       <FollowButton
                         targetUserId={profile.id}
                         targetUsername={profile.username}
                         currentUserId={currentUser?.id || null}
                         variant="compact"
-                        className="h-full py-3 text-sm font-semibold bg-gradient-to-r from-gray-500 via-gray-600 to-gray-700 hover:from-gray-600 hover:via-gray-700 hover:to-gray-800 border-0 shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl px-4"
+                        className="w-full h-full py-3 text-sm font-semibold bg-gradient-to-r from-gray-500 via-gray-600 to-gray-700 hover:from-gray-600 hover:via-gray-700 hover:to-gray-800 border-0 shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl"
                       />
                     </motion.div>
                   </div>
