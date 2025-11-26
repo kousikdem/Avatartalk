@@ -993,6 +993,66 @@ export type Database = {
           },
         ]
       }
+      payment_settings: {
+        Row: {
+          allowed_currencies: Json | null
+          created_at: string | null
+          currency: string
+          default_plan_id: string | null
+          enabled: boolean | null
+          id: string
+          platform_commission_percent: number | null
+          profile_id: string
+          refund_policy: string | null
+          require_follow: boolean | null
+          taxes: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          allowed_currencies?: Json | null
+          created_at?: string | null
+          currency?: string
+          default_plan_id?: string | null
+          enabled?: boolean | null
+          id?: string
+          platform_commission_percent?: number | null
+          profile_id: string
+          refund_policy?: string | null
+          require_follow?: boolean | null
+          taxes?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          allowed_currencies?: Json | null
+          created_at?: string | null
+          currency?: string
+          default_plan_id?: string | null
+          enabled?: boolean | null
+          id?: string
+          platform_commission_percent?: number | null
+          profile_id?: string
+          refund_policy?: string | null
+          require_follow?: boolean | null
+          taxes?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_settings_default_plan_id_fkey"
+            columns: ["default_plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_settings_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       personalized_ai_training: {
         Row: {
           created_at: string
@@ -1392,38 +1452,131 @@ export type Database = {
           },
         ]
       }
+      subscription_plans: {
+        Row: {
+          active: boolean | null
+          badge: Json | null
+          benefits: Json | null
+          billing_cycle: string
+          created_at: string | null
+          currency: string
+          description: string | null
+          id: string
+          price_amount: number
+          profile_id: string
+          proration_policy: string | null
+          require_follow: boolean | null
+          title: string
+          trial_days: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          badge?: Json | null
+          benefits?: Json | null
+          billing_cycle?: string
+          created_at?: string | null
+          currency?: string
+          description?: string | null
+          id?: string
+          price_amount: number
+          profile_id: string
+          proration_policy?: string | null
+          require_follow?: boolean | null
+          title: string
+          trial_days?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          badge?: Json | null
+          benefits?: Json | null
+          billing_cycle?: string
+          created_at?: string | null
+          currency?: string
+          description?: string | null
+          id?: string
+          price_amount?: number
+          profile_id?: string
+          proration_policy?: string | null
+          require_follow?: boolean | null
+          title?: string
+          trial_days?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_plans_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
+          auto_renew: boolean | null
           created_at: string
+          ends_at: string | null
           expires_at: string | null
           id: string
+          metadata: Json | null
+          next_billing_at: string | null
+          plan_id: string | null
           price: number
+          razorpay_payment_id: string | null
+          razorpay_subscription_id: string | null
+          starts_at: string | null
           status: string
           subscribed_to_id: string | null
           subscriber_id: string
           subscription_type: string
         }
         Insert: {
+          auto_renew?: boolean | null
           created_at?: string
+          ends_at?: string | null
           expires_at?: string | null
           id?: string
+          metadata?: Json | null
+          next_billing_at?: string | null
+          plan_id?: string | null
           price?: number
+          razorpay_payment_id?: string | null
+          razorpay_subscription_id?: string | null
+          starts_at?: string | null
           status?: string
           subscribed_to_id?: string | null
           subscriber_id: string
           subscription_type?: string
         }
         Update: {
+          auto_renew?: boolean | null
           created_at?: string
+          ends_at?: string | null
           expires_at?: string | null
           id?: string
+          metadata?: Json | null
+          next_billing_at?: string | null
+          plan_id?: string | null
           price?: number
+          razorpay_payment_id?: string | null
+          razorpay_subscription_id?: string | null
+          starts_at?: string | null
           status?: string
           subscribed_to_id?: string | null
           subscriber_id?: string
           subscription_type?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "subscriptions_subscribed_to_id_fkey"
             columns: ["subscribed_to_id"]
@@ -1507,6 +1660,72 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string
+          id: string
+          metadata: Json | null
+          profile_id: string
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          razorpay_signature: string | null
+          refund_id: string | null
+          status: string
+          subscriber_id: string
+          subscription_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency: string
+          id?: string
+          metadata?: Json | null
+          profile_id: string
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          refund_id?: string | null
+          status?: string
+          subscriber_id: string
+          subscription_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          profile_id?: string
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          refund_id?: string | null
+          status?: string
+          subscriber_id?: string
+          subscription_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_analytics: {
         Row: {
