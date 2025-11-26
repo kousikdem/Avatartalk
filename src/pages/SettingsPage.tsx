@@ -24,7 +24,9 @@ import {
   Instagram,
   Youtube,
   Globe,
-  CreditCard
+  CreditCard,
+  Edit,
+  X
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,6 +46,9 @@ const SettingsPage = () => {
   const { toast } = useToast();
   const { settings: avatarSettings, updateSetting, loading: avatarLoading } = useAvatarSettings();
   const { plans, createPlan, updatePlan, deletePlan } = useSubscriptionPlans(currentUser?.id);
+  const [selectedCurrency, setSelectedCurrency] = useState('INR');
+  const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
+  const [editPlanData, setEditPlanData] = useState<any>(null);
   const [newPlan, setNewPlan] = useState({
     title: '',
     description: '',
@@ -56,6 +61,22 @@ const SettingsPage = () => {
     active: true,
     require_follow: true
   });
+
+  // Currency conversion rates (approximate)
+  const currencyRates: Record<string, number> = {
+    INR: 1,
+    USD: 0.012,
+    EUR: 0.011,
+    GBP: 0.0095,
+    JPY: 1.85,
+    AUD: 0.019,
+  };
+
+  const convertPrice = (amount: number, fromCurrency: string, toCurrency: string) => {
+    if (fromCurrency === toCurrency) return amount;
+    const inINR = fromCurrency === 'INR' ? amount : amount / currencyRates[fromCurrency];
+    return Math.round(inINR * currencyRates[toCurrency]);
+  };
 
   // Authentication check
   useEffect(() => {
@@ -578,50 +599,181 @@ const SettingsPage = () => {
             </Card>
           </TabsContent>
 
-          {/* Payment Settings */}
-          <TabsContent value="payment" className="space-y-6">
+          {/* Subscription Settings */}
+          <TabsContent value="subscription" className="space-y-6">
             <Card className="bg-white border border-slate-200">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-blue-600" />
-                  Subscription Plans
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-blue-600" />
+                    Subscription Plans
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="currency-selector" className="text-sm">Currency:</Label>
+                    <select
+                      id="currency-selector"
+                      className="p-2 border border-gray-300 rounded-md text-sm"
+                      value={selectedCurrency}
+                      onChange={(e) => setSelectedCurrency(e.target.value)}
+                    >
+                      <option value="INR">INR (₹)</option>
+                      <option value="USD">USD ($)</option>
+                      <option value="EUR">EUR (€)</option>
+                      <option value="GBP">GBP (£)</option>
+                      <option value="JPY">JPY (¥)</option>
+                      <option value="AUD">AUD (A$)</option>
+                    </select>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Existing Plans */}
                 {plans.length > 0 && (
                   <div className="space-y-4">
                     <h3 className="font-semibold">Active Plans</h3>
-                    {plans.map((plan) => (
-                      <div key={plan.id} className="border border-gray-200 rounded-lg p-4 space-y-3">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h4 className="font-semibold">{plan.title}</h4>
-                            <p className="text-sm text-gray-600">{plan.description}</p>
-                          </div>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => deletePlan(plan.id)}
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div>
-                            <span className="text-gray-600">Price:</span> {plan.currency} {plan.price_amount}
-                          </div>
-                          <div>
-                            <span className="text-gray-600">Cycle:</span> {plan.billing_cycle}
-                          </div>
-                          {plan.trial_days && plan.trial_days > 0 && (
-                            <div>
-                              <span className="text-gray-600">Trial:</span> {plan.trial_days} days
+                    {plans.map((plan) => {
+                      const isEditing = editingPlanId === plan.id;
+                      const convertedPrice = convertPrice(plan.price_amount, plan.currency, selectedCurrency);
+                      
+                      return (
+                        <div key={plan.id} className="border border-gray-200 rounded-lg p-4 space-y-3">
+                          {isEditing ? (
+                            // Edit Mode
+                            <div className="space-y-4">
+                              <div className="flex justify-between items-start">
+                                <h4 className="font-semibold text-lg">Edit Plan</h4>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setEditingPlanId(null);
+                                    setEditPlanData(null);
+                                  }}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <Label>Plan Title</Label>
+                                  <Input
+                                    value={editPlanData?.title || ''}
+                                    onChange={(e) => setEditPlanData(prev => ({ ...prev, title: e.target.value }))}
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Price ({selectedCurrency})</Label>
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    value={convertPrice(editPlanData?.price_amount || 0, editPlanData?.currency || 'INR', selectedCurrency)}
+                                    onChange={(e) => {
+                                      const newPrice = parseInt(e.target.value) || 0;
+                                      const priceInOriginal = convertPrice(newPrice, selectedCurrency, editPlanData?.currency || 'INR');
+                                      setEditPlanData(prev => ({ ...prev, price_amount: priceInOriginal, currency: selectedCurrency }));
+                                    }}
+                                  />
+                                </div>
+                                <div className="space-y-2 md:col-span-2">
+                                  <Label>Description</Label>
+                                  <Textarea
+                                    value={editPlanData?.description || ''}
+                                    onChange={(e) => setEditPlanData(prev => ({ ...prev, description: e.target.value }))}
+                                    rows={3}
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Billing Cycle</Label>
+                                  <select
+                                    className="w-full p-2 border border-gray-300 rounded-md"
+                                    value={editPlanData?.billing_cycle || 'monthly'}
+                                    onChange={(e) => setEditPlanData(prev => ({ ...prev, billing_cycle: e.target.value }))}
+                                  >
+                                    <option value="monthly">Monthly</option>
+                                    <option value="yearly">Yearly</option>
+                                    <option value="one-time">One-time</option>
+                                  </select>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Trial Days</Label>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={editPlanData?.trial_days || 0}
+                                    onChange={(e) => setEditPlanData(prev => ({ ...prev, trial_days: parseInt(e.target.value) || 0 }))}
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  onClick={async () => {
+                                    const success = await updatePlan(plan.id, editPlanData);
+                                    if (success) {
+                                      setEditingPlanId(null);
+                                      setEditPlanData(null);
+                                    }
+                                  }}
+                                >
+                                  <Save className="h-4 w-4 mr-2" />
+                                  Save Changes
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  onClick={() => {
+                                    setEditingPlanId(null);
+                                    setEditPlanData(null);
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
                             </div>
+                          ) : (
+                            // View Mode
+                            <>
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <h4 className="font-semibold">{plan.title}</h4>
+                                  <p className="text-sm text-gray-600">{plan.description}</p>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setEditingPlanId(plan.id);
+                                      setEditPlanData({ ...plan });
+                                    }}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => deletePlan(plan.id)}
+                                  >
+                                    Delete
+                                  </Button>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2 text-sm">
+                                <div>
+                                  <span className="text-gray-600">Price:</span> {selectedCurrency} {convertedPrice}
+                                </div>
+                                <div>
+                                  <span className="text-gray-600">Cycle:</span> {plan.billing_cycle}
+                                </div>
+                                {plan.trial_days && plan.trial_days > 0 && (
+                                  <div>
+                                    <span className="text-gray-600">Trial:</span> {plan.trial_days} days
+                                  </div>
+                                )}
+                              </div>
+                            </>
                           )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                     <Separator />
                   </div>
                 )}
@@ -640,13 +792,17 @@ const SettingsPage = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="plan_price">Price (INR)</Label>
+                      <Label htmlFor="plan_price">Price ({selectedCurrency})</Label>
                       <Input
                         id="plan_price"
                         type="number"
                         min="1"
-                        value={newPlan.price_amount}
-                        onChange={(e) => setNewPlan(prev => ({ ...prev, price_amount: parseInt(e.target.value) || 99 }))}
+                        value={convertPrice(newPlan.price_amount, newPlan.currency, selectedCurrency)}
+                        onChange={(e) => {
+                          const inputPrice = parseInt(e.target.value) || 99;
+                          const priceInINR = convertPrice(inputPrice, selectedCurrency, 'INR');
+                          setNewPlan(prev => ({ ...prev, price_amount: priceInINR, currency: selectedCurrency }));
+                        }}
                       />
                     </div>
                     <div className="space-y-2 md:col-span-2">
