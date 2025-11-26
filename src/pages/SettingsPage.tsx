@@ -23,11 +23,13 @@ import {
   Facebook,
   Instagram,
   Youtube,
-  Globe
+  Globe,
+  CreditCard
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAvatarSettings } from '@/hooks/useAvatarSettings';
+import { useSubscriptionPlans } from '@/hooks/useSubscriptionPlans';
 import ProfilePictureUpload from '@/components/ProfilePictureUpload';
 
 const SettingsPage = () => {
@@ -40,6 +42,19 @@ const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const { toast } = useToast();
   const { settings: avatarSettings, updateSetting, loading: avatarLoading } = useAvatarSettings();
+  const { plans, createPlan, updatePlan, deletePlan } = useSubscriptionPlans(currentUser?.id);
+  const [newPlan, setNewPlan] = useState({
+    title: '',
+    description: '',
+    price_amount: 99,
+    currency: 'INR',
+    billing_cycle: 'monthly',
+    trial_days: 0,
+    benefits: [],
+    badge: { text: 'Subscriber', color: '#6366f1' },
+    active: true,
+    require_follow: true
+  });
 
   // Authentication check
   useEffect(() => {
@@ -259,7 +274,7 @@ const SettingsPage = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 bg-white shadow-sm">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 bg-white shadow-sm">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Profile
@@ -271,6 +286,10 @@ const SettingsPage = () => {
             <TabsTrigger value="social" className="flex items-center gap-2">
               <Link className="h-4 w-4" />
               Social
+            </TabsTrigger>
+            <TabsTrigger value="payment" className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              Payment
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
@@ -629,6 +648,157 @@ const SettingsPage = () => {
                       onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, follow_notifications: checked }))}
                     />
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Payment Settings */}
+          <TabsContent value="payment" className="space-y-6">
+            <Card className="bg-white border border-slate-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-blue-600" />
+                  Subscription Plans
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Existing Plans */}
+                {plans.length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="font-semibold">Active Plans</h3>
+                    {plans.map((plan) => (
+                      <div key={plan.id} className="border border-gray-200 rounded-lg p-4 space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-semibold">{plan.title}</h4>
+                            <p className="text-sm text-gray-600">{plan.description}</p>
+                          </div>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => deletePlan(plan.id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="text-gray-600">Price:</span> {plan.currency} {plan.price_amount}
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Cycle:</span> {plan.billing_cycle}
+                          </div>
+                          {plan.trial_days && plan.trial_days > 0 && (
+                            <div>
+                              <span className="text-gray-600">Trial:</span> {plan.trial_days} days
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    <Separator />
+                  </div>
+                )}
+
+                {/* Create New Plan */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold">Create New Plan</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="plan_title">Plan Title</Label>
+                      <Input
+                        id="plan_title"
+                        value={newPlan.title}
+                        onChange={(e) => setNewPlan(prev => ({ ...prev, title: e.target.value }))}
+                        placeholder="e.g., Premium Access"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="plan_price">Price (INR)</Label>
+                      <Input
+                        id="plan_price"
+                        type="number"
+                        min="1"
+                        value={newPlan.price_amount}
+                        onChange={(e) => setNewPlan(prev => ({ ...prev, price_amount: parseInt(e.target.value) || 99 }))}
+                      />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                      <Label htmlFor="plan_description">Description</Label>
+                      <Textarea
+                        id="plan_description"
+                        value={newPlan.description}
+                        onChange={(e) => setNewPlan(prev => ({ ...prev, description: e.target.value }))}
+                        placeholder="Describe what subscribers will get"
+                        rows={3}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="billing_cycle">Billing Cycle</Label>
+                      <select
+                        id="billing_cycle"
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        value={newPlan.billing_cycle}
+                        onChange={(e) => setNewPlan(prev => ({ ...prev, billing_cycle: e.target.value }))}
+                      >
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                        <option value="one-time">One-time</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="trial_days">Trial Days</Label>
+                      <Input
+                        id="trial_days"
+                        type="number"
+                        min="0"
+                        value={newPlan.trial_days}
+                        onChange={(e) => setNewPlan(prev => ({ ...prev, trial_days: parseInt(e.target.value) || 0 }))}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between md:col-span-2">
+                      <div>
+                        <Label>Require Follow Before Subscribe</Label>
+                        <p className="text-sm text-gray-500">Users must follow you to subscribe</p>
+                      </div>
+                      <Switch
+                        checked={newPlan.require_follow}
+                        onCheckedChange={(checked) => setNewPlan(prev => ({ ...prev, require_follow: checked }))}
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    onClick={async () => {
+                      if (!newPlan.title || newPlan.price_amount < 1) {
+                        toast({
+                          title: "Validation Error",
+                          description: "Please fill in all required fields",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      const success = await createPlan(newPlan);
+                      if (success) {
+                        setNewPlan({
+                          title: '',
+                          description: '',
+                          price_amount: 99,
+                          currency: 'INR',
+                          billing_cycle: 'monthly',
+                          trial_days: 0,
+                          benefits: [],
+                          badge: { text: 'Subscriber', color: '#6366f1' },
+                          active: true,
+                          require_follow: true
+                        });
+                      }
+                    }}
+                    disabled={saving}
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Create Plan
+                  </Button>
                 </div>
               </CardContent>
             </Card>
