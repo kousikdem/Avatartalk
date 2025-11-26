@@ -44,6 +44,7 @@ const SettingsPage = () => {
   const { toast } = useToast();
   const { settings: avatarSettings, updateSetting, loading: avatarLoading } = useAvatarSettings();
   const { plans, createPlan, updatePlan, deletePlan } = useSubscriptionPlans(currentUser?.id);
+  const [selectedCurrency, setSelectedCurrency] = useState('INR');
   const [newPlan, setNewPlan] = useState({
     title: '',
     description: '',
@@ -56,6 +57,25 @@ const SettingsPage = () => {
     active: true,
     require_follow: true
   });
+
+  // Currency exchange rates (base: INR)
+  const currencyRates: Record<string, number> = {
+    'INR': 1,
+    'USD': 0.012,
+    'EUR': 0.011,
+    'GBP': 0.0095,
+    'AUD': 0.018,
+    'CAD': 0.017,
+    'SGD': 0.016,
+    'AED': 0.044,
+    'JPY': 1.85,
+    'CNY': 0.087,
+  };
+
+  const convertPrice = (amount: number, fromCurrency: string, toCurrency: string) => {
+    const inINR = amount / currencyRates[fromCurrency];
+    return Math.round(inINR * currencyRates[toCurrency]);
+  };
 
   // Authentication check
   useEffect(() => {
@@ -582,10 +602,35 @@ const SettingsPage = () => {
           <TabsContent value="payment" className="space-y-6">
             <Card className="bg-white border border-slate-200">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-blue-600" />
-                  Subscription Plans
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-blue-600" />
+                    Subscription Plans
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="currency-selector" className="text-sm">Currency:</Label>
+                    <select
+                      id="currency-selector"
+                      className="px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium"
+                      value={selectedCurrency}
+                      onChange={(e) => {
+                        setSelectedCurrency(e.target.value);
+                        setNewPlan(prev => ({ ...prev, currency: e.target.value }));
+                      }}
+                    >
+                      <option value="INR">INR - ₹</option>
+                      <option value="USD">USD - $</option>
+                      <option value="EUR">EUR - €</option>
+                      <option value="GBP">GBP - £</option>
+                      <option value="AUD">AUD - A$</option>
+                      <option value="CAD">CAD - C$</option>
+                      <option value="SGD">SGD - S$</option>
+                      <option value="AED">AED - د.إ</option>
+                      <option value="JPY">JPY - ¥</option>
+                      <option value="CNY">CNY - ¥</option>
+                    </select>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Existing Plans */}
@@ -609,7 +654,7 @@ const SettingsPage = () => {
                         </div>
                         <div className="grid grid-cols-2 gap-2 text-sm">
                           <div>
-                            <span className="text-gray-600">Price:</span> {plan.currency} {plan.price_amount}
+                            <span className="text-gray-600">Price:</span> {selectedCurrency} {convertPrice(plan.price_amount, plan.currency, selectedCurrency)}
                           </div>
                           <div>
                             <span className="text-gray-600">Cycle:</span> {plan.billing_cycle}
@@ -619,6 +664,9 @@ const SettingsPage = () => {
                               <span className="text-gray-600">Trial:</span> {plan.trial_days} days
                             </div>
                           )}
+                          <div className="text-xs text-gray-500">
+                            Original: {plan.currency} {plan.price_amount}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -640,7 +688,7 @@ const SettingsPage = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="plan_price">Price (INR)</Label>
+                      <Label htmlFor="plan_price">Price ({selectedCurrency})</Label>
                       <Input
                         id="plan_price"
                         type="number"
