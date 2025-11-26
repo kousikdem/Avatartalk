@@ -62,6 +62,14 @@ const SettingsPage = () => {
     require_follow: true
   });
 
+  const [paymentSettings, setPaymentSettings] = useState({
+    enabled: false,
+    currency: 'INR',
+    require_follow: true,
+    refund_policy: '',
+    allowed_currencies: ['INR', 'USD', 'EUR'],
+  });
+
   // Currency conversion rates (approximate)
   const currencyRates: Record<string, number> = {
     INR: 1,
@@ -184,6 +192,27 @@ const SettingsPage = () => {
         setSocialLinks(socialData);
       }
 
+      // Load payment settings
+      const { data: paymentData, error: paymentError } = await supabase
+        .from('payment_settings')
+        .select('*')
+        .eq('profile_id', userData.user.id)
+        .maybeSingle();
+
+      if (paymentError && paymentError.code !== 'PGRST116') {
+        console.error('Error fetching payment settings:', paymentError);
+      }
+
+      if (paymentData) {
+        setPaymentSettings({
+          enabled: paymentData.enabled ?? false,
+          currency: paymentData.currency ?? 'INR',
+          require_follow: paymentData.require_follow ?? true,
+          refund_policy: paymentData.refund_policy ?? '',
+          allowed_currencies: (paymentData.allowed_currencies as string[]) ?? ['INR', 'USD', 'EUR'],
+        });
+      }
+
     } catch (error) {
       console.error('Error loading user data:', error);
       toast({
@@ -224,6 +253,41 @@ const SettingsPage = () => {
       toast({
         title: "Error",
         description: "Failed to save profile settings",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const savePaymentSettings = async () => {
+    if (!currentUser?.id) return;
+    
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('payment_settings')
+        .upsert({
+          profile_id: currentUser.id,
+          enabled: paymentSettings.enabled,
+          currency: paymentSettings.currency,
+          require_follow: paymentSettings.require_follow,
+          refund_policy: paymentSettings.refund_policy,
+          allowed_currencies: paymentSettings.allowed_currencies,
+          updated_at: new Date().toISOString(),
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Payment settings saved successfully",
+      });
+    } catch (error) {
+      console.error('Error saving payment settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save payment settings",
         variant: "destructive",
       });
     } finally {
@@ -627,6 +691,67 @@ const SettingsPage = () => {
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* Payment Settings Section */}
+                <div className="space-y-4 pb-6 border-b border-gray-200">
+                  <h3 className="font-semibold text-lg">Payment Configuration</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-base">Enable Subscriptions</Label>
+                        <p className="text-sm text-gray-500">Allow users to subscribe to your profile</p>
+                      </div>
+                      <Switch
+                        checked={paymentSettings.enabled}
+                        onCheckedChange={(checked) => setPaymentSettings(prev => ({ ...prev, enabled: checked }))}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Default Currency</Label>
+                        <select
+                          className="w-full p-2 border border-gray-300 rounded-md"
+                          value={paymentSettings.currency}
+                          onChange={(e) => setPaymentSettings(prev => ({ ...prev, currency: e.target.value }))}
+                        >
+                          <option value="INR">INR (₹)</option>
+                          <option value="USD">USD ($)</option>
+                          <option value="EUR">EUR (€)</option>
+                          <option value="GBP">GBP (£)</option>
+                          <option value="JPY">JPY (¥)</option>
+                          <option value="AUD">AUD (A$)</option>
+                        </select>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Require Follow</Label>
+                          <p className="text-xs text-gray-500">Users must follow before subscribing</p>
+                        </div>
+                        <Switch
+                          checked={paymentSettings.require_follow}
+                          onCheckedChange={(checked) => setPaymentSettings(prev => ({ ...prev, require_follow: checked }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Refund Policy</Label>
+                      <Textarea
+                        value={paymentSettings.refund_policy}
+                        onChange={(e) => setPaymentSettings(prev => ({ ...prev, refund_policy: e.target.value }))}
+                        placeholder="Describe your refund policy for subscribers"
+                        rows={3}
+                      />
+                    </div>
+
+                    <Button onClick={savePaymentSettings} disabled={saving}>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Payment Settings
+                    </Button>
+                  </div>
+                </div>
+
                 {/* Existing Plans */}
                 {plans.length > 0 && (
                   <div className="space-y-4">
