@@ -225,19 +225,52 @@ serve(async (req) => {
     const data = await response.json();
     const aiResponse = data.choices[0].message.content;
 
-    // Find matching Q&A pairs for rich responses
-    let richData: any = {};
+    // Find matching Q&A pairs and web links for rich responses
+    let richData: any = {
+      buttons: [],
+      links: [],
+      documents: []
+    };
+    
+    // Match Q&A pairs and add buttons
     if (qaPairs && qaPairs.length > 0) {
-      const matchedQA = qaPairs.find(qa => 
-        userMessage.toLowerCase().includes(qa.question.toLowerCase().split(' ').slice(0, 3).join(' '))
-      );
-      
-      if (matchedQA && matchedQA.custom_link_url) {
-        richData.button = {
-          text: matchedQA.custom_link_button_name || 'Learn More',
-          url: matchedQA.custom_link_url
-        };
-      }
+      qaPairs.forEach(qa => {
+        const questionWords = qa.question.toLowerCase().split(' ').slice(0, 5).join(' ');
+        if (userMessage.toLowerCase().includes(questionWords) && qa.custom_link_url) {
+          richData.buttons.push({
+            text: qa.custom_link_button_name || 'Learn More',
+            url: qa.custom_link_url
+          });
+        }
+      });
+    }
+    
+    // Add web training data as link previews
+    if (webData && webData.length > 0) {
+      webData.forEach(web => {
+        const urlDomain = new URL(web.url).hostname;
+        if (userMessage.toLowerCase().includes(urlDomain.replace('www.', '')) || 
+            (web.scraped_content && aiResponse.toLowerCase().includes(urlDomain.replace('www.', '')))) {
+          richData.links.push({
+            url: web.url,
+            title: web.url,
+            preview: web.scraped_content ? web.scraped_content.substring(0, 150) + '...' : ''
+          });
+        }
+      });
+    }
+    
+    // Add document references
+    if (documents && documents.length > 0) {
+      documents.forEach(doc => {
+        if (aiResponse.toLowerCase().includes(doc.filename.toLowerCase().split('.')[0])) {
+          richData.documents.push({
+            filename: doc.filename,
+            type: doc.file_type,
+            preview: doc.extracted_content ? doc.extracted_content.substring(0, 100) + '...' : ''
+          });
+        }
+      });
     }
 
     // Store the conversation in behavior learning data
@@ -255,12 +288,15 @@ serve(async (req) => {
       });
     }
 
+    // Clean up empty arrays
+    const hasRichData = richData.buttons.length > 0 || richData.links.length > 0 || richData.documents.length > 0;
+    
     return new Response(
       JSON.stringify({ 
         success: true, 
         response: aiResponse,
         personality: trainingData?.personality_settings || null,
-        richData: Object.keys(richData).length > 0 ? richData : null
+        richData: hasRichData ? richData : null
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
