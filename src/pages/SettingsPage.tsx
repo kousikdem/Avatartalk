@@ -314,6 +314,10 @@ const SettingsPage = () => {
               <CreditCard className="h-4 w-4" />
               Subscription
             </TabsTrigger>
+            <TabsTrigger value="orders" className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              Orders
+            </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
               Notifications
@@ -775,6 +779,11 @@ const SettingsPage = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Orders Dashboard */}
+          <TabsContent value="orders" className="space-y-6">
+            <OrdersDashboard />
           </TabsContent>
 
           {/* Privacy Settings */}

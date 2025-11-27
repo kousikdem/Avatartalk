@@ -542,6 +542,108 @@ export type Database = {
           },
         ]
       }
+      discount_codes: {
+        Row: {
+          active: boolean | null
+          applicable_product_ids: string[] | null
+          auto_apply: boolean | null
+          code: string
+          combinable: boolean | null
+          created_at: string
+          current_uses: number | null
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          max_uses: number | null
+          max_uses_per_user: number | null
+          min_order_value: number | null
+          scope: string
+          seller_id: string
+          starts_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          applicable_product_ids?: string[] | null
+          auto_apply?: boolean | null
+          code: string
+          combinable?: boolean | null
+          created_at?: string
+          current_uses?: number | null
+          discount_type: string
+          discount_value: number
+          expires_at?: string | null
+          id?: string
+          max_uses?: number | null
+          max_uses_per_user?: number | null
+          min_order_value?: number | null
+          scope?: string
+          seller_id: string
+          starts_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          applicable_product_ids?: string[] | null
+          auto_apply?: boolean | null
+          code?: string
+          combinable?: boolean | null
+          created_at?: string
+          current_uses?: number | null
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          max_uses?: number | null
+          max_uses_per_user?: number | null
+          min_order_value?: number | null
+          scope?: string
+          seller_id?: string
+          starts_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      discount_usage: {
+        Row: {
+          discount_code_id: string
+          id: string
+          order_id: string | null
+          used_at: string
+          user_id: string
+        }
+        Insert: {
+          discount_code_id: string
+          id?: string
+          order_id?: string | null
+          used_at?: string
+          user_id: string
+        }
+        Update: {
+          discount_code_id?: string
+          id?: string
+          order_id?: string | null
+          used_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discount_usage_discount_code_id_fkey"
+            columns: ["discount_code_id"]
+            isOneToOne: false
+            referencedRelation: "discount_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discount_usage_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           attendees: Json | null
@@ -993,6 +1095,110 @@ export type Database = {
           },
         ]
       }
+      orders: {
+        Row: {
+          amount: number
+          buyer_id: string
+          completed_at: string | null
+          created_at: string
+          currency: string
+          discount_amount: number | null
+          fulfillment_status: string | null
+          id: string
+          metadata: Json | null
+          order_notes: string | null
+          order_status: string
+          payment_method: string
+          payment_status: string
+          platform_fee: number | null
+          product_id: string | null
+          quantity: number
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          razorpay_signature: string | null
+          seller_earnings: number | null
+          seller_id: string
+          shipping_address: Json | null
+          shipping_amount: number | null
+          shipping_method: string | null
+          tax_amount: number | null
+          total_amount: number
+          tracking_number: string | null
+          updated_at: string
+          variant_id: string | null
+        }
+        Insert: {
+          amount: number
+          buyer_id: string
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          discount_amount?: number | null
+          fulfillment_status?: string | null
+          id?: string
+          metadata?: Json | null
+          order_notes?: string | null
+          order_status?: string
+          payment_method?: string
+          payment_status?: string
+          platform_fee?: number | null
+          product_id?: string | null
+          quantity?: number
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          seller_earnings?: number | null
+          seller_id: string
+          shipping_address?: Json | null
+          shipping_amount?: number | null
+          shipping_method?: string | null
+          tax_amount?: number | null
+          total_amount: number
+          tracking_number?: string | null
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Update: {
+          amount?: number
+          buyer_id?: string
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          discount_amount?: number | null
+          fulfillment_status?: string | null
+          id?: string
+          metadata?: Json | null
+          order_notes?: string | null
+          order_status?: string
+          payment_method?: string
+          payment_status?: string
+          platform_fee?: number | null
+          product_id?: string | null
+          quantity?: number
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          seller_earnings?: number | null
+          seller_id?: string
+          shipping_address?: Json | null
+          shipping_amount?: number | null
+          shipping_method?: string | null
+          tax_amount?: number | null
+          total_amount?: number
+          tracking_number?: string | null
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_settings: {
         Row: {
           allowed_currencies: Json | null
@@ -1159,51 +1365,129 @@ export type Database = {
       }
       products: {
         Row: {
+          base_currency: string | null
+          brand: string | null
+          cod_enabled: boolean | null
+          compare_at_price: number | null
           created_at: string
           description: string | null
+          digital_assets: Json | null
+          download_limit: number | null
           id: string
+          inventory_quantity: number | null
           is_free: boolean | null
+          license_type: string | null
+          low_stock_threshold: number | null
           media_type: string | null
           media_url: string | null
           price: number | null
+          product_category: string | null
           product_type: string
+          seo_description: string | null
+          seo_title: string | null
+          shipping_cost: number | null
+          shipping_dimensions: Json | null
+          shipping_enabled: boolean | null
+          shipping_weight: number | null
+          shopify_product_id: string | null
+          shopify_sync_enabled: boolean | null
+          sku: string | null
+          slug: string | null
           status: string | null
+          tags: string[] | null
+          tax_class: string | null
+          taxable: boolean | null
           thumbnail_url: string | null
           title: string
+          track_inventory: boolean | null
           updated_at: string
           user_id: string
+          variants: Json | null
+          variants_enabled: boolean | null
           views_count: number | null
         }
         Insert: {
+          base_currency?: string | null
+          brand?: string | null
+          cod_enabled?: boolean | null
+          compare_at_price?: number | null
           created_at?: string
           description?: string | null
+          digital_assets?: Json | null
+          download_limit?: number | null
           id?: string
+          inventory_quantity?: number | null
           is_free?: boolean | null
+          license_type?: string | null
+          low_stock_threshold?: number | null
           media_type?: string | null
           media_url?: string | null
           price?: number | null
+          product_category?: string | null
           product_type: string
+          seo_description?: string | null
+          seo_title?: string | null
+          shipping_cost?: number | null
+          shipping_dimensions?: Json | null
+          shipping_enabled?: boolean | null
+          shipping_weight?: number | null
+          shopify_product_id?: string | null
+          shopify_sync_enabled?: boolean | null
+          sku?: string | null
+          slug?: string | null
           status?: string | null
+          tags?: string[] | null
+          tax_class?: string | null
+          taxable?: boolean | null
           thumbnail_url?: string | null
           title: string
+          track_inventory?: boolean | null
           updated_at?: string
           user_id: string
+          variants?: Json | null
+          variants_enabled?: boolean | null
           views_count?: number | null
         }
         Update: {
+          base_currency?: string | null
+          brand?: string | null
+          cod_enabled?: boolean | null
+          compare_at_price?: number | null
           created_at?: string
           description?: string | null
+          digital_assets?: Json | null
+          download_limit?: number | null
           id?: string
+          inventory_quantity?: number | null
           is_free?: boolean | null
+          license_type?: string | null
+          low_stock_threshold?: number | null
           media_type?: string | null
           media_url?: string | null
           price?: number | null
+          product_category?: string | null
           product_type?: string
+          seo_description?: string | null
+          seo_title?: string | null
+          shipping_cost?: number | null
+          shipping_dimensions?: Json | null
+          shipping_enabled?: boolean | null
+          shipping_weight?: number | null
+          shopify_product_id?: string | null
+          shopify_sync_enabled?: boolean | null
+          sku?: string | null
+          slug?: string | null
           status?: string | null
+          tags?: string[] | null
+          tax_class?: string | null
+          taxable?: boolean | null
           thumbnail_url?: string | null
           title?: string
+          track_inventory?: boolean | null
           updated_at?: string
           user_id?: string
+          variants?: Json | null
+          variants_enabled?: boolean | null
           views_count?: number | null
         }
         Relationships: []
@@ -1964,6 +2248,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      decrement_product_inventory: {
+        Args: { p_product_id: string; p_quantity: number; p_variant_id: string }
+        Returns: boolean
+      }
       get_public_profile: {
         Args: { profile_id: string }
         Returns: {

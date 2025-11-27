@@ -18,6 +18,34 @@ export interface Product {
   views_count: number;
   created_at: string;
   updated_at: string;
+  
+  // Extended fields
+  product_category?: string;
+  brand?: string;
+  base_currency?: string;
+  compare_at_price?: number;
+  sku?: string;
+  track_inventory?: boolean;
+  inventory_quantity?: number;
+  low_stock_threshold?: number;
+  variants_enabled?: boolean;
+  variants?: any[];
+  shipping_enabled?: boolean;
+  shipping_weight?: number;
+  shipping_dimensions?: any;
+  shipping_cost?: number;
+  cod_enabled?: boolean;
+  digital_assets?: any[];
+  download_limit?: number;
+  license_type?: string;
+  seo_title?: string;
+  seo_description?: string;
+  slug?: string;
+  tags?: string[];
+  tax_class?: string;
+  taxable?: boolean;
+  shopify_product_id?: string;
+  shopify_sync_enabled?: boolean;
 }
 
 export const useProducts = () => {
@@ -34,7 +62,7 @@ export const useProducts = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProducts(data || []);
+      setProducts((data || []) as Product[]);
     } catch (error) {
       console.error('Error fetching products:', error);
       toast({
@@ -57,7 +85,7 @@ export const useProducts = () => {
 
       if (error) throw error;
       
-      setProducts(prev => [data, ...prev]);
+      setProducts(prev => [data as Product, ...prev]);
       toast({
         title: "Success",
         description: "Product created successfully",
@@ -115,10 +143,10 @@ export const useProducts = () => {
             setProducts(prev => [payload.new as Product, ...prev]);
           } else if (payload.eventType === 'UPDATE') {
             setProducts(prev => prev.map(product => 
-              product.id === payload.new.id ? payload.new as Product : product
+              product.id === (payload.new as any).id ? payload.new as Product : product
             ));
           } else if (payload.eventType === 'DELETE') {
-            setProducts(prev => prev.filter(product => product.id !== payload.old.id));
+            setProducts(prev => prev.filter(product => product.id !== (payload.old as any).id));
           }
         }
       )

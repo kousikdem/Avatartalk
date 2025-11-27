@@ -26,3 +26,9 @@ verify_jwt = true
 
 [functions.razorpay-verify-payment]
 verify_jwt = true
+
+[functions.product-checkout]
+verify_jwt = true
+
+[functions.product-payment-verify]
+verify_jwt = true

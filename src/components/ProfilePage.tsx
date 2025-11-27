@@ -26,6 +26,7 @@ import SocialLinksPopup from './SocialLinksPopup';
 import EnhancedPostCard from './EnhancedPostCard';
 import EmojiPicker from './EmojiPicker';
 import MessageInput from './MessageInput';
+import { EnhancedProductCard } from './EnhancedProductCard';
 import {
   MessageCircle,
   Share2,
@@ -1285,35 +1286,25 @@ const ProfilePage: React.FC = () => {
                         {/* Products Section */}
                         {products.length > 0 && (
                           <div className="space-y-4">
-                            <h3 className="text-white font-semibold text-lg mb-3">Products</h3>
-                            {products.map((product, index) => (
-                              <motion.div
-                                key={product.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.1 }}
-                              >
-                                <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm hover:border-slate-600/50 transition-colors">
-                                  <CardContent className="p-4">
-                                    {product.thumbnail_url && (
-                                      <div className="mb-3 rounded-lg overflow-hidden">
-                                        <img src={product.thumbnail_url} alt={product.title} className="w-full h-24 object-cover" />
-                                      </div>
-                                    )}
-                                    <h4 className="font-semibold text-white mb-2 text-sm">{product.title}</h4>
-                                    <p className="text-xs text-slate-400 mb-3 line-clamp-2">{product.description}</p>
-                                    <div className="flex items-center justify-between">
-                                      <div className="text-base font-bold text-blue-400">
-                                        {product.is_free ? 'Free' : `$${product.price}`}
-                                      </div>
-                                      <Button size="sm" className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs">
-                                        Buy now
-                                      </Button>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              </motion.div>
-                            ))}
+                            <h3 className={`font-semibold text-lg mb-3 ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>Products</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {products.map((product, index) => (
+                                <motion.div
+                                  key={product.id}
+                                  initial={{ opacity: 0, y: 20 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: index * 0.1 }}
+                                >
+                                  <EnhancedProductCard
+                                    product={product as any}
+                                    sellerName={profile?.display_name}
+                                    showBuyButton={true}
+                                    currency="INR"
+                                    exchangeRate={1}
+                                  />
+                                </motion.div>
+                              ))}
+                            </div>
                           </div>
                         )}
 
