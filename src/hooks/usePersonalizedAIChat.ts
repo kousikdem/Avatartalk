@@ -8,10 +8,20 @@ interface Message {
   timestamp: Date;
   isTyping?: boolean;
   richData?: {
-    button?: {
+    buttons?: Array<{
       text: string;
       url: string;
-    };
+    }>;
+    links?: Array<{
+      url: string;
+      title: string;
+      preview: string;
+    }>;
+    documents?: Array<{
+      filename: string;
+      type: string;
+      preview: string;
+    }>;
   };
 }
 

@@ -52,7 +52,8 @@ import {
   Sun,
   Github,
   Twitch,
-  Music
+  Music,
+  FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -118,10 +119,20 @@ interface ChatMessage {
   isVoiceMessage?: boolean;
   voiceTranscript?: string;
   richData?: {
-    button?: {
+    buttons?: Array<{
       text: string;
       url: string;
-    };
+    }>;
+    links?: Array<{
+      url: string;
+      title: string;
+      preview: string;
+    }>;
+    documents?: Array<{
+      filename: string;
+      type: string;
+      preview: string;
+    }>;
   };
 }
 
@@ -1145,17 +1156,71 @@ const ProfilePage: React.FC = () => {
                                 {message.content}
                               </p>
                               
-                              {/* Rich Data: Buttons */}
-                              {message.richData?.button && message.sender === 'avatar' && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="mt-3 gap-2 w-full justify-center bg-slate-800/50 hover:bg-slate-700/50 border-slate-600"
-                                  onClick={() => window.open(message.richData!.button!.url, '_blank', 'noopener,noreferrer')}
-                                >
-                                  {message.richData.button.text}
-                                  <ChevronRight className="h-3 w-3" />
-                                </Button>
+                              {/* Rich Data: Buttons, Links, Documents */}
+                              {message.sender === 'avatar' && message.richData && (
+                                <div className="mt-3 space-y-2">
+                                  {message.richData.buttons && message.richData.buttons.length > 0 && (
+                                    <div className="flex flex-wrap gap-2">
+                                      {message.richData.buttons.map((button, idx) => (
+                                        <Button
+                                          key={idx}
+                                          variant="outline"
+                                          size="sm"
+                                          className="gap-2"
+                                          onClick={() => window.open(button.url, '_blank', 'noopener,noreferrer')}
+                                        >
+                                          {button.text}
+                                          <ChevronRight className="h-3 w-3" />
+                                        </Button>
+                                      ))}
+                                    </div>
+                                  )}
+                                  
+                                  {message.richData.links && message.richData.links.length > 0 && (
+                                    <div className="space-y-2">
+                                      {message.richData.links.map((link, idx) => (
+                                        <div
+                                          key={idx}
+                                          className="p-3 rounded-lg bg-slate-800/30 border border-slate-700/50 cursor-pointer hover:bg-slate-700/30 transition-colors"
+                                          onClick={() => window.open(link.url, '_blank', 'noopener,noreferrer')}
+                                        >
+                                          <div className="flex items-start gap-2">
+                                            <ChevronRight className="h-4 w-4 mt-1 flex-shrink-0 text-blue-400" />
+                                            <div className="flex-1 min-w-0">
+                                              <p className="text-sm font-medium truncate text-slate-200">{link.title}</p>
+                                              {link.preview && (
+                                                <p className="text-xs text-slate-400 line-clamp-2 mt-1">
+                                                  {link.preview}
+                                                </p>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                  
+                                  {message.richData.documents && message.richData.documents.length > 0 && (
+                                    <div className="space-y-2">
+                                      {message.richData.documents.map((doc, idx) => (
+                                        <div key={idx} className="p-3 rounded-lg bg-slate-800/30 border border-slate-700/50">
+                                          <div className="flex items-start gap-2">
+                                            <FileText className="h-4 w-4 mt-1 flex-shrink-0 text-green-400" />
+                                            <div className="flex-1 min-w-0">
+                                              <p className="text-sm font-medium truncate text-slate-200">{doc.filename}</p>
+                                              <p className="text-xs text-slate-400 uppercase">{doc.type}</p>
+                                              {doc.preview && (
+                                                <p className="text-xs text-slate-400 line-clamp-2 mt-1">
+                                                  {doc.preview}
+                                                </p>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
                               )}
                             </div>
                             <p className={`text-xs text-slate-500 mt-1 ${
