@@ -7,6 +7,12 @@ interface Message {
   sender: 'user' | 'ai';
   timestamp: Date;
   isTyping?: boolean;
+  richData?: {
+    button?: {
+      text: string;
+      url: string;
+    };
+  };
 }
 
 export const usePersonalizedAIChat = () => {
@@ -62,7 +68,8 @@ export const usePersonalizedAIChat = () => {
         id: (Date.now() + 1).toString(),
         text: data.response || "I'm Avatartalk personalized AI powered by Llama 3. Sorry, I couldn't process that request.",
         sender: 'ai',
-        timestamp: new Date()
+        timestamp: new Date(),
+        richData: data.richData || undefined
       };
 
       setMessages(prev => [...prev, aiResponse]);
