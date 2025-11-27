@@ -32,6 +32,7 @@ import { useAvatarSettings } from '@/hooks/useAvatarSettings';
 import { useSubscriptionPlans } from '@/hooks/useSubscriptionPlans';
 import ProfilePictureUpload from '@/components/ProfilePictureUpload';
 import SocialLinksManager from '@/components/SocialLinksManager';
+import { OrdersDashboard } from '@/components/OrdersDashboard';
 
 const SettingsPage = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
