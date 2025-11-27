@@ -76,6 +76,26 @@ serve(async (req) => {
       .order('created_at', { ascending: false })
       .limit(10);
 
+    // Get Q&A pairs
+    const { data: qaPairs } = await supabase
+      .from('qa_pairs')
+      .select('*')
+      .eq('user_id', profileId);
+
+    // Get training documents content
+    const { data: documents } = await supabase
+      .from('training_documents')
+      .select('*')
+      .eq('user_id', profileId)
+      .eq('processing_status', 'completed');
+
+    // Get web training data
+    const { data: webData } = await supabase
+      .from('web_training_data')
+      .select('*')
+      .eq('user_id', profileId)
+      .eq('scraping_status', 'completed');
+
     // Check if this is an AI-related question
     const isAIRelated = /\b(ai|artificial intelligence|machine learning|llm|model|chatbot|assistant|technology|qwen|whisper|chattts|faster|trafilatura|emo)\b/i.test(userMessage);
     
@@ -121,10 +141,44 @@ serve(async (req) => {
       });
     }
 
+    // Add Q&A pairs knowledge base
+    if (qaPairs && qaPairs.length > 0) {
+      personalityPrompt += "\n\nKnowledge Base (Q&A):";
+      qaPairs.forEach((qa) => {
+        personalityPrompt += `\nQ: ${qa.question}\nA: ${qa.answer}`;
+        if (qa.custom_link_url) {
+          personalityPrompt += `\nCustom Link: [${qa.custom_link_button_name || 'Learn More'}](${qa.custom_link_url})`;
+        }
+        if (qa.category) personalityPrompt += `\nCategory: ${qa.category}`;
+      });
+    }
+
+    // Add document knowledge
+    if (documents && documents.length > 0) {
+      personalityPrompt += "\n\nDocument Knowledge:";
+      documents.forEach((doc) => {
+        if (doc.extracted_content) {
+          personalityPrompt += `\n--- ${doc.filename} ---\n${doc.extracted_content.substring(0, 2000)}...`;
+        }
+      });
+    }
+
+    // Add web scraped data
+    if (webData && webData.length > 0) {
+      personalityPrompt += "\n\nWeb Content Knowledge:";
+      webData.forEach((web) => {
+        if (web.scraped_content) {
+          personalityPrompt += `\n--- ${web.url} ---\n${web.scraped_content.substring(0, 2000)}...`;
+        }
+      });
+    }
+
     personalityPrompt += `\n\nProfile information:
     - Name: ${profile?.display_name || profile?.username || 'User'}
     - Bio: ${profile?.bio || 'No bio available'}
     - Profession: ${profile?.profession || 'Not specified'}
+    
+    IMPORTANT: When answering questions, check if there's a matching Q&A pair or relevant document/web content. If there's a custom link associated with the answer, include it in your response by mentioning "You can learn more here: [link text]" and I will format it as a button.
     
     You are a personalized AI assistant. Respond naturally, maintaining consistency with previous conversations and the established personality.`;
 
@@ -171,6 +225,21 @@ serve(async (req) => {
     const data = await response.json();
     const aiResponse = data.choices[0].message.content;
 
+    // Find matching Q&A pairs for rich responses
+    let richData: any = {};
+    if (qaPairs && qaPairs.length > 0) {
+      const matchedQA = qaPairs.find(qa => 
+        userMessage.toLowerCase().includes(qa.question.toLowerCase().split(' ').slice(0, 3).join(' '))
+      );
+      
+      if (matchedQA && matchedQA.custom_link_url) {
+        richData.button = {
+          text: matchedQA.custom_link_button_name || 'Learn More',
+          url: matchedQA.custom_link_url
+        };
+      }
+    }
+
     // Store the conversation in behavior learning data
     if (userId) {
       await supabase.from('behavior_learning_data').insert({
@@ -180,7 +249,8 @@ serve(async (req) => {
         ai_response: aiResponse,
         context_data: { 
           timestamp: new Date().toISOString(),
-          requester_id: userId
+          requester_id: userId,
+          rich_data: richData
         }
       });
     }
@@ -189,7 +259,8 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         response: aiResponse,
-        personality: trainingData?.personality_settings || null
+        personality: trainingData?.personality_settings || null,
+        richData: Object.keys(richData).length > 0 ? richData : null
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

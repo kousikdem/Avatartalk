@@ -117,6 +117,12 @@ interface ChatMessage {
   senderAvatar?: string;
   isVoiceMessage?: boolean;
   voiceTranscript?: string;
+  richData?: {
+    button?: {
+      text: string;
+      url: string;
+    };
+  };
 }
 
 const ProfilePage: React.FC = () => {
@@ -621,7 +627,7 @@ const ProfilePage: React.FC = () => {
         throw new Error(response.error.message);
       }
 
-      const { response: aiResponse } = response.data;
+      const { response: aiResponse, richData } = response.data;
 
       // Add AI response
       const aiMessage: ChatMessage = {
@@ -631,7 +637,8 @@ const ProfilePage: React.FC = () => {
         sender: 'avatar',
         senderName: profile.display_name || profile.username || 'AI',
         senderAvatar: profile.avatar_url || profile.profile_pic_url,
-        isVoiceMessage: false
+        isVoiceMessage: false,
+        richData: richData || undefined
       };
 
       setChatMessages(prev => [...prev, aiMessage]);
@@ -1132,11 +1139,24 @@ const ProfilePage: React.FC = () => {
                                   <span className="text-xs text-purple-400 font-medium">Voice Message</span>
                                 </div>
                               )}
-                              <p className={`text-sm ${
+                             <p className={`text-sm ${
                                 message.sender === 'avatar' ? 'text-slate-200' : 'text-blue-100'
                               }`}>
                                 {message.content}
                               </p>
+                              
+                              {/* Rich Data: Buttons */}
+                              {message.richData?.button && message.sender === 'avatar' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="mt-3 gap-2 w-full justify-center bg-slate-800/50 hover:bg-slate-700/50 border-slate-600"
+                                  onClick={() => window.open(message.richData!.button!.url, '_blank', 'noopener,noreferrer')}
+                                >
+                                  {message.richData.button.text}
+                                  <ChevronRight className="h-3 w-3" />
+                                </Button>
+                              )}
                             </div>
                             <p className={`text-xs text-slate-500 mt-1 ${
                               message.sender === 'avatar' ? 'text-right' : ''
