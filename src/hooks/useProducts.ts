@@ -46,6 +46,8 @@ export interface Product {
   taxable?: boolean;
   shopify_product_id?: string;
   shopify_sync_enabled?: boolean;
+  average_rating?: number | null;
+  total_reviews?: number | null;
 }
 
 export const useProducts = () => {

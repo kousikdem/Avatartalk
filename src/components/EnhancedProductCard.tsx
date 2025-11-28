@@ -142,13 +142,17 @@ export const EnhancedProductCard = ({
             </div>
 
             {/* Rating */}
-            <div className="flex flex-col items-end gap-1">
-              <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-md">
-                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                <span className="font-semibold text-sm">4.5</span>
+            {product.average_rating && product.average_rating > 0 ? (
+              <div className="flex flex-col items-end gap-1">
+                <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-md">
+                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                  <span className="font-semibold text-sm">{product.average_rating}</span>
+                </div>
+                <span className="text-xs text-muted-foreground">({product.total_reviews} reviews)</span>
               </div>
-              <span className="text-xs text-muted-foreground">(128)</span>
-            </div>
+            ) : (
+              <div className="text-xs text-muted-foreground">No reviews yet</div>
+            )}
           </div>
         </CardHeader>
 

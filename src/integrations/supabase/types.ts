@@ -1363,8 +1363,66 @@ export type Database = {
           },
         ]
       }
+      product_reviews: {
+        Row: {
+          buyer_id: string
+          created_at: string | null
+          helpful_count: number | null
+          id: string
+          is_verified_purchase: boolean | null
+          order_id: string | null
+          product_id: string
+          rating: number
+          review_photos: Json | null
+          review_text: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          buyer_id: string
+          created_at?: string | null
+          helpful_count?: number | null
+          id?: string
+          is_verified_purchase?: boolean | null
+          order_id?: string | null
+          product_id: string
+          rating: number
+          review_photos?: Json | null
+          review_text?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          buyer_id?: string
+          created_at?: string | null
+          helpful_count?: number | null
+          id?: string
+          is_verified_purchase?: boolean | null
+          order_id?: string | null
+          product_id?: string
+          rating?: number
+          review_photos?: Json | null
+          review_text?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
+          average_rating: number | null
           base_currency: string | null
           brand: string | null
           cod_enabled: boolean | null
@@ -1399,6 +1457,7 @@ export type Database = {
           taxable: boolean | null
           thumbnail_url: string | null
           title: string
+          total_reviews: number | null
           track_inventory: boolean | null
           updated_at: string
           user_id: string
@@ -1407,6 +1466,7 @@ export type Database = {
           views_count: number | null
         }
         Insert: {
+          average_rating?: number | null
           base_currency?: string | null
           brand?: string | null
           cod_enabled?: boolean | null
@@ -1441,6 +1501,7 @@ export type Database = {
           taxable?: boolean | null
           thumbnail_url?: string | null
           title: string
+          total_reviews?: number | null
           track_inventory?: boolean | null
           updated_at?: string
           user_id: string
@@ -1449,6 +1510,7 @@ export type Database = {
           views_count?: number | null
         }
         Update: {
+          average_rating?: number | null
           base_currency?: string | null
           brand?: string | null
           cod_enabled?: boolean | null
@@ -1483,6 +1545,7 @@ export type Database = {
           taxable?: boolean | null
           thumbnail_url?: string | null
           title?: string
+          total_reviews?: number | null
           track_inventory?: boolean | null
           updated_at?: string
           user_id?: string
@@ -2251,6 +2314,14 @@ export type Database = {
       decrement_product_inventory: {
         Args: { p_product_id: string; p_quantity: number; p_variant_id: string }
         Returns: boolean
+      }
+      get_product_rating: {
+        Args: { p_product_id: string }
+        Returns: {
+          average_rating: number
+          rating_distribution: Json
+          total_reviews: number
+        }[]
       }
       get_public_profile: {
         Args: { profile_id: string }
