@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Product } from '@/hooks/useProducts';
 import { useOrders } from '@/hooks/useOrders';
-import { useToast } from '@/hooks/use-toast';
 import { Loader2, Package, CreditCard, MapPin } from 'lucide-react';
 
 declare global {
@@ -144,41 +147,95 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Checkout</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">Complete Your Purchase</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Product Summary */}
-          <div className="flex gap-4 p-4 bg-muted rounded-lg">
-            <div className="w-20 h-20 bg-background rounded flex items-center justify-center overflow-hidden">
-              {product.thumbnail_url ? (
-                <img src={product.thumbnail_url} alt={product.title} className="w-full h-full object-cover" />
-              ) : (
-                <Package className="w-8 h-8 text-muted-foreground" />
-              )}
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold">{product.title}</h3>
-              <p className="text-sm text-muted-foreground">
-                {new Intl.NumberFormat('en-IN', {
-                  style: 'currency',
-                  currency: currency,
-                  minimumFractionDigits: 0
-                }).format((product.price || 0) / 100)}
-              </p>
-              <div className="flex items-center gap-2 mt-2">
-                <Label>Quantity:</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  max={product.inventory_quantity || 999}
-                  value={quantity}
-                  onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                  className="w-20"
-                />
+          {/* Enhanced Product Details */}
+          <Card className="border-2">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm text-muted-foreground">Product Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-4">
+                <div className="w-32 h-32 bg-background rounded-lg overflow-hidden border-2">
+                  {product.thumbnail_url ? (
+                    <img src={product.thumbnail_url} alt={product.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Package className="w-12 h-12 text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 space-y-2">
+                  <h3 className="font-bold text-lg">{product.title}</h3>
+                  {product.description && (
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {product.description}
+                    </p>
+                  )}
+                  {product.product_category && (
+                    <Badge variant="secondary">{product.product_category}</Badge>
+                  )}
+                  <div className="flex items-center gap-4 pt-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Quantity</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max={product.inventory_quantity || 999}
+                        value={quantity}
+                        onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                        className="w-20"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Unit Price</Label>
+                      <p className="font-bold text-lg">
+                        {new Intl.NumberFormat('en-IN', {
+                          style: 'currency',
+                          currency: currency,
+                          minimumFractionDigits: 0
+                        }).format((product.price || 0) / 100)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+
+              {/* Product Type & Delivery Info */}
+              <Separator />
+              <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+                {isDigital ? (
+                  <>
+                    <Badge className="bg-blue-500">Digital Product</Badge>
+                    <span className="text-sm text-muted-foreground">
+                      📥 Instant delivery via download link in chat
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Badge className="bg-green-500">Physical Product</Badge>
+                    <span className="text-sm text-muted-foreground">
+                      📦 Ships within 2-5 business days
+                    </span>
+                  </>
+                )}
+              </div>
+
+              {product.description && (
+                <>
+                  <Separator />
+                  <div>
+                    <h4 className="font-semibold text-sm mb-2">Full Description</h4>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      {product.description}
+                    </p>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Shipping Address (Physical products only) */}
           {isPhysical && (

@@ -21,10 +21,12 @@ export interface Order {
   razorpay_payment_id?: string;
   shipping_address?: any;
   order_status: string;
-  fulfillment_status: string;
+  fulfillment_status?: string | null;
   platform_fee: number;
   seller_earnings: number;
   metadata?: any;
+  tracking_number?: string | null;
+  order_notes?: string | null;
   created_at: string;
   updated_at: string;
   completed_at?: string;
