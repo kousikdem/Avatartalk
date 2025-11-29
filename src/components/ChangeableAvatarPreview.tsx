@@ -93,7 +93,7 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
     fetchAvatarData();
   }, [userId]);
 
-  // Real-time subscriptions for avatar and profile updates
+  // Enhanced Real-time subscriptions for instant avatar sync
   useEffect(() => {
     const setupSubscriptions = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -103,7 +103,7 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
 
       // Subscribe to avatar_configurations changes with real-time sync
       const avatarChannel = supabase
-        .channel(`avatar-realtime-${targetUserId}`)
+        .channel(`avatar-sync-${targetUserId}-${Date.now()}`)
         .on(
           'postgres_changes',
           {
@@ -113,26 +113,31 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
             filter: `user_id=eq.${targetUserId}`
           },
           (payload) => {
-            console.log('Avatar config changed:', payload);
+            console.log('🔄 Avatar config changed in real-time:', payload);
+            // Instant refresh on any avatar change
             fetchAvatarData();
           }
         )
         .on(
           'postgres_changes',
           {
-            event: 'UPDATE',
+            event: '*',
             schema: 'public',
             table: 'profiles',
             filter: `id=eq.${targetUserId}`
           },
           (payload) => {
-            console.log('Profile updated:', payload);
+            console.log('🔄 Profile updated in real-time:', payload);
+            // Instant refresh on profile change
             fetchAvatarData();
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log('🔌 Real-time subscription status:', status);
+        });
 
       return () => {
+        console.log('🔌 Cleaning up real-time subscriptions');
         supabase.removeChannel(avatarChannel);
       };
     };
