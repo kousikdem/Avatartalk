@@ -254,7 +254,7 @@ const ManualAvatarCreator: React.FC<ManualAvatarCreatorProps> = ({
         )}
 
         <Card className="h-[600px] overflow-hidden">
-          <Canvas camera={{ position: [0, 1, 8], fov: 50 }}>
+          <Canvas camera={{ position: [0, 0, 9], fov: 45 }}>
             <ambientLight intensity={0.6} />
             <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
             <spotLight position={[-10, -10, -5]} intensity={0.3} />
@@ -264,8 +264,8 @@ const ManualAvatarCreator: React.FC<ManualAvatarCreatorProps> = ({
             
             <OrbitControls 
               enablePan={false} 
-              minDistance={4} 
-              maxDistance={15}
+              minDistance={7} 
+              maxDistance={12}
               maxPolarAngle={Math.PI / 1.6}
             />
             <Environment preset="studio" />

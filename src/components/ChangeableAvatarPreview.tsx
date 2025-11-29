@@ -217,7 +217,7 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
           ) : shouldRenderConfiguredAvatar() ? (
             // Render the actual configured 3D avatar from dashboard
             <div className="relative h-full">
-              <Canvas camera={{ position: [0, 0.5, 4], fov: 50 }}>
+              <Canvas camera={{ position: [0, 0, 9], fov: 45 }}>
                 <ambientLight intensity={0.6} />
                 <directionalLight position={[10, 10, 5]} intensity={1} />
                 <spotLight position={[-10, -10, -5]} intensity={0.3} />
@@ -229,14 +229,14 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
                 <OrbitControls 
                   enablePan={false}
                   enableZoom={false}
-                  minDistance={3}
-                  maxDistance={6}
+                  minDistance={7}
+                  maxDistance={12}
                   maxPolarAngle={Math.PI / 1.8}
                   autoRotate={!isTalking}
                   autoRotateSpeed={0.5}
                 />
                 <Environment preset="studio" />
-                <ContactShadows position={[0, -1.5, 0]} scale={4} blur={2} far={2} />
+                <ContactShadows position={[0, -2.5, 0]} scale={8} blur={3} far={3} />
               </Canvas>
               {isTalking && (
                 <div className="absolute inset-0 border-4 border-blue-400/60 rounded-2xl animate-pulse pointer-events-none"></div>
