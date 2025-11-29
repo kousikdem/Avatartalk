@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Camera, MessageSquare } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
+import AdvancedAvatarPreview from './AdvancedAvatarPreview';
 import FuturisticAvatar3D from './FuturisticAvatar3D';
 import { useAvatarSettings } from '@/hooks/useAvatarSettings';
 
@@ -149,7 +152,6 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
   }, [userId]);
 
   const getAvatarDisplay = () => {
-    // ONLY show 3D avatar sources, NEVER profile_pic_url (profile picture is separate)
     // Priority order for 3D avatar display:
     // 1. Custom uploaded model from avatar configuration (highest priority for custom uploads)
     if (avatarData?.model_url) return avatarData.model_url;
@@ -157,8 +159,13 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
     if (avatarData?.thumbnail_url) return avatarData.thumbnail_url;
     // 3. Profile avatar_url (fallback for direct uploads)
     if (profileData?.avatar_url) return profileData.avatar_url;
-    // 4. No 3D avatar exists - show default built avatar (FuturisticAvatar3D)
+    // 4. No uploaded image - will render configured 3D avatar instead
     return null;
+  };
+
+  const shouldRenderConfiguredAvatar = () => {
+    // Render configured avatar if we have avatar configuration data but no uploaded images
+    return avatarData && !avatarData.model_url && !avatarData.thumbnail_url && !profileData?.avatar_url;
   };
 
   const handleAvatarClick = () => {
@@ -191,7 +198,7 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
             <div className="absolute bottom-1/4 right-1/4 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl animate-pulse" style={{animationDelay: '1s'}}></div>
           </div>
           
-          {/* Show uploaded avatar image if available, otherwise show 3D avatar */}
+          {/* Show uploaded avatar image if available */}
           {hasUploadedAvatar ? (
             <div className="relative h-full flex items-center justify-center p-6">
               <img 
@@ -207,7 +214,36 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
                 <div className="absolute inset-0 border-4 border-blue-400/60 rounded-2xl animate-pulse"></div>
               )}
             </div>
+          ) : shouldRenderConfiguredAvatar() ? (
+            // Render the actual configured 3D avatar from dashboard
+            <div className="relative h-full">
+              <Canvas camera={{ position: [0, 0.5, 4], fov: 50 }}>
+                <ambientLight intensity={0.6} />
+                <directionalLight position={[10, 10, 5]} intensity={1} />
+                <spotLight position={[-10, -10, -5]} intensity={0.3} />
+                
+                <Suspense fallback={null}>
+                  <AdvancedAvatarPreview config={avatarData} />
+                </Suspense>
+                
+                <OrbitControls 
+                  enablePan={false}
+                  enableZoom={false}
+                  minDistance={3}
+                  maxDistance={6}
+                  maxPolarAngle={Math.PI / 1.8}
+                  autoRotate={!isTalking}
+                  autoRotateSpeed={0.5}
+                />
+                <Environment preset="studio" />
+                <ContactShadows position={[0, -1.5, 0]} scale={4} blur={2} far={2} />
+              </Canvas>
+              {isTalking && (
+                <div className="absolute inset-0 border-4 border-blue-400/60 rounded-2xl animate-pulse pointer-events-none"></div>
+              )}
+            </div>
           ) : (
+            // Fallback to default futuristic avatar if no configuration exists
             <div className="relative animate-[float_6s_ease-in-out_infinite]">
               <FuturisticAvatar3D
                 isLarge={isLarge}
