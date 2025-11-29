@@ -284,14 +284,14 @@ export const useAvatarConfigurations = () => {
       // Link avatar with profile and all previews
       const avatarId = result.data.id;
       
-      // Deactivate all other avatars for this user
+      // Deactivate all other avatars for this user (atomic operation)
       await supabase
         .from('avatar_configurations')
         .update({ is_active: false })
         .eq('user_id', user.id)
         .neq('id', avatarId);
       
-      // Activate this avatar
+      // Activate this avatar (triggers real-time update)
       await supabase
         .from('avatar_configurations')
         .update({ is_active: true })
@@ -303,6 +303,7 @@ export const useAvatarConfigurations = () => {
       const avatarUrl = config.model_url || result.data.model_url || config.thumbnail_url || result.data.thumbnail_url || null;
       
       // Update profile with avatar link - ONLY update avatar_url, NOT profile_pic_url
+      // This triggers real-time sync to all avatar previews
       // avatar_url = 3D avatar model/preview (.glb format)
       // profile_pic_url = 2D profile picture (managed separately by ProfilePictureUpload)
       const { error: profileError } = await supabase
@@ -321,7 +322,8 @@ export const useAvatarConfigurations = () => {
       // Reload configurations to reflect changes
       await loadConfigurations();
       
-      toast.success('Avatar saved and linked with all previews!');
+      console.log('✅ Avatar saved and synced across all previews in real-time!');
+      toast.success('Avatar saved and synced to profile!');
 
     } catch (error) {
       console.error('Error in saveConfiguration:', error);
