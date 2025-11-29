@@ -16,6 +16,7 @@ import ComprehensiveClothingControls from './ComprehensiveClothingControls';
 import PoseAndExpressionLibrary from './PoseAndExpressionLibrary';
 import { useAvatarConfigurations } from '@/hooks/useAvatarConfigurations';
 import { useCustomAvatarUpload } from '@/hooks/useCustomAvatarUpload';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ManualAvatarCreatorProps {
   initialConfig?: any;
@@ -98,9 +99,47 @@ const ManualAvatarCreator: React.FC<ManualAvatarCreatorProps> = ({
   const handleSave = async () => {
     setSaving(true);
     try {
-      await saveConfiguration(avatarConfig);
-      toast.success('Avatar saved successfully!');
+      // Capture thumbnail from canvas if no custom avatar uploaded
+      let thumbnailUrl = avatarConfig.thumbnail_url;
+      
+      if (!customAvatarUploaded) {
+        const canvas = document.querySelector('canvas');
+        if (canvas) {
+          // Capture canvas as blob
+          const blob = await new Promise<Blob>((resolve) => {
+            canvas.toBlob((blob) => resolve(blob!), 'image/png', 0.95);
+          });
+          
+          // Upload thumbnail to storage
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const fileName = `avatar_${Date.now()}.png`;
+            const { data, error } = await supabase.storage
+              .from('thumbnails')
+              .upload(`${user.id}/${fileName}`, blob, {
+                contentType: 'image/png',
+                upsert: true
+              });
+            
+            if (!error && data) {
+              const { data: { publicUrl } } = supabase.storage
+                .from('thumbnails')
+                .getPublicUrl(data.path);
+              thumbnailUrl = publicUrl;
+            }
+          }
+        }
+      }
+      
+      // Save configuration with thumbnail
+      await saveConfiguration({
+        ...avatarConfig,
+        thumbnail_url: thumbnailUrl
+      });
+      
+      toast.success('Avatar saved and synced to profile!');
     } catch (error) {
+      console.error('Save error:', error);
       toast.error('Failed to save avatar');
     } finally {
       setSaving(false);
