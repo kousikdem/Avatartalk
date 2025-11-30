@@ -26,7 +26,7 @@ import SocialLinksPopup from './SocialLinksPopup';
 import EnhancedPostCard from './EnhancedPostCard';
 import EmojiPicker from './EmojiPicker';
 import MessageInput from './MessageInput';
-import { CompactProductCard } from './CompactProductCard';
+import { EnhancedProductCard } from './EnhancedProductCard';
 import {
   MessageCircle,
   Share2,
@@ -1289,7 +1289,7 @@ const ProfilePage: React.FC = () => {
                         {products.length > 0 && (
                           <div className="space-y-4">
                             <h3 className={`font-semibold text-lg mb-3 ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>Products</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               {products.map((product, index) => (
                                 <motion.div
                                   key={product.id}
@@ -1297,7 +1297,7 @@ const ProfilePage: React.FC = () => {
                                   animate={{ opacity: 1, y: 0 }}
                                   transition={{ delay: index * 0.1 }}
                                 >
-                                  <CompactProductCard
+                                  <EnhancedProductCard
                                     product={product as any}
                                     sellerName={profile?.display_name}
                                     showBuyButton={true}
