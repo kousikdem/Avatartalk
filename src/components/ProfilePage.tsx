@@ -161,6 +161,7 @@ const ProfilePage: React.FC = () => {
   const [visitorProfile, setVisitorProfile] = useState<any>(null);
   const [postsTabMessage, setPostsTabMessage] = useState('');
   const [productsTabMessage, setProductsTabMessage] = useState('');
+  const [activeTab, setActiveTab] = useState('chat');
   const { toast } = useToast();
 
   const {
@@ -959,6 +960,7 @@ const ProfilePage: React.FC = () => {
                 isInteractive={true}
                 isTalking={isTalking}
                 onAvatarClick={currentUser?.id === profile?.id ? () => window.location.href = '/avatar' : undefined}
+                onTalkClick={() => setActiveTab('chat')}
               />
             </div>
 
@@ -1024,7 +1026,7 @@ const ProfilePage: React.FC = () => {
 
             {/* Content Tabs - Flexible to take remaining space */}
             <div className="px-6 pb-2 flex-1 flex flex-col overflow-hidden">
-              <Tabs defaultValue="chat" className="space-y-4 flex-1 flex flex-col overflow-hidden">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 flex-1 flex flex-col overflow-hidden">
                 <TabsList className={`grid w-full grid-cols-3 bg-transparent border-b rounded-none p-0 h-auto flex-shrink-0 ${isDarkTheme ? 'border-slate-700/30' : 'border-gray-300'}`}>
                   <TabsTrigger 
                     value="posts" 
