@@ -64,18 +64,6 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
     setIsProcessing(true);
 
     try {
-      // Get current session
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        toast({
-          title: "Error",
-          description: "Please sign in to continue",
-          variant: "destructive",
-        });
-        return;
-      }
-
       // Create checkout session
       const checkoutData = await createCheckout({
         productId: product.id,
@@ -84,10 +72,6 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
         discountCode: discountCode || undefined,
         currency
       });
-
-      if (!checkoutData) {
-        throw new Error('Failed to create checkout session');
-      }
 
       // Load Razorpay script if not already loaded
       if (!window.Razorpay) {
