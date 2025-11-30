@@ -47,6 +47,17 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
   const isDigital = product.product_type === 'digital';
 
   const handleCheckout = async () => {
+    // Check authentication first
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to complete your purchase",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Validate shipping address for physical products
     if (isPhysical) {
       if (!shippingAddress.full_name || !shippingAddress.phone || 
@@ -131,11 +142,27 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
         });
       });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Checkout error:', error);
+      
+      let errorMessage = "Failed to initiate checkout";
+      
+      // Provide specific error messages
+      if (error.message?.includes('Unauthorized')) {
+        errorMessage = "Please sign in to complete your purchase";
+      } else if (error.message?.includes('Product not found')) {
+        errorMessage = "This product is no longer available";
+      } else if (error.message?.includes('Insufficient inventory')) {
+        errorMessage = "Not enough items in stock";
+      } else if (error.message?.includes('Razorpay credentials')) {
+        errorMessage = "Payment system not configured. Please contact the seller.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
-        title: "Error",
-        description: "Failed to initiate checkout",
+        title: "Checkout Error",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

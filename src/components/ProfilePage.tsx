@@ -26,7 +26,7 @@ import SocialLinksPopup from './SocialLinksPopup';
 import EnhancedPostCard from './EnhancedPostCard';
 import EmojiPicker from './EmojiPicker';
 import MessageInput from './MessageInput';
-import { EnhancedProductCard } from './EnhancedProductCard';
+import { CompactProductCard } from './CompactProductCard';
 import {
   MessageCircle,
   Share2,
@@ -1050,7 +1050,7 @@ const ProfilePage: React.FC = () => {
 
                 {/* Posts Tab - Scrollable content */}
                 <TabsContent value="posts" className="mt-6 flex-1 overflow-hidden flex flex-col">
-                  <div className="overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
+                  <div className="overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent max-h-[400px]">
                     <AnimatePresence>
                     {postsLoading ? (
                       <motion.div
@@ -1103,7 +1103,7 @@ const ProfilePage: React.FC = () => {
 
                 {/* Chat Tab */}
                 <TabsContent value="chat" className="mt-6 flex-1 flex flex-col overflow-hidden">
-                  <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
+                  <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent max-h-[400px]">
                     <div className="space-y-4">
                      {chatMessages.filter(message => 
                        // Show only messages from the current user or messages sent to/from the profile owner
@@ -1280,7 +1280,7 @@ const ProfilePage: React.FC = () => {
 
                 {/* Products & Events Tab */}
                 <TabsContent value="products" className="mt-6 flex-1 flex flex-col overflow-hidden">
-                  <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
+                  <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent max-h-[400px]">
                     <div className="space-y-4">
                       <AnimatePresence>
                     {(products.length > 0 || events.length > 0) ? (
@@ -1297,7 +1297,7 @@ const ProfilePage: React.FC = () => {
                                   animate={{ opacity: 1, y: 0 }}
                                   transition={{ delay: index * 0.1 }}
                                 >
-                                  <EnhancedProductCard
+                                  <CompactProductCard
                                     product={product as any}
                                     sellerName={profile?.display_name}
                                     showBuyButton={true}
