@@ -4,59 +4,152 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Plus, Grid3X3, List, Eye, Edit, Trash2, TrendingUp, 
-  ShoppingBag, DollarSign, Package, Download, Store
+  ShoppingBag, DollarSign, Package, Download, Store, Search,
+  Filter, BarChart3, CreditCard, TrendingDown, Percent
 } from 'lucide-react';
 import ProductForm from '@/components/ProductForm';
 import ProductCard from '@/components/ProductCard';
-import ProductUpdatesFeed from '@/components/ProductUpdatesFeed';
+import { OrdersDashboard } from '@/components/OrdersDashboard';
 import { useProducts } from '@/hooks/useProducts';
+import { useOrders } from '@/hooks/useOrders';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 type ViewMode = 'grid' | 'list';
+type Currency = 'INR' | 'USD' | 'EUR' | 'GBP';
+
+const EXCHANGE_RATES: Record<Currency, number> = {
+  INR: 1,
+  USD: 0.012,
+  EUR: 0.011,
+  GBP: 0.0095
+};
 
 const ProductsPageEnhanced = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [selectedCurrency, setSelectedCurrency] = useState<Currency>('INR');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterType, setFilterType] = useState('all');
   const { products, isLoading } = useProducts();
+  const { orders } = useOrders();
+  const { toast } = useToast();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    fetchUser();
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'published': return 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-200';
-      case 'draft': return 'bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-800 border-yellow-200';
-      case 'hidden': return 'bg-gradient-to-r from-gray-100 to-slate-100 text-gray-800 border-gray-200';
-      default: return 'bg-gradient-to-r from-gray-100 to-slate-100 text-gray-800 border-gray-200';
+      case 'published': return 'bg-green-100 text-green-800 border-green-200';
+      case 'draft': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'hidden': return 'bg-gray-100 text-gray-800 border-gray-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  const digitalProducts = products.filter(p => p.product_type === 'digital');
-  const physicalProducts = products.filter(p => p.product_type === 'physical');
-  const totalRevenue = products.reduce((sum, p) => sum + ((p.price || 0) * (p.views_count || 0)), 0);
+  // Calculate statistics
+  const myProducts = products.filter(p => p.user_id === currentUserId);
+  const digitalProducts = myProducts.filter(p => p.product_type === 'digital');
+  const physicalProducts = myProducts.filter(p => p.product_type === 'physical');
+  
+  const sellerOrders = orders.filter(o => o.seller_id === currentUserId && o.payment_status === 'captured');
+  const totalEarnings = sellerOrders.reduce((sum, o) => sum + o.amount, 0);
+  const platformFees = sellerOrders.reduce((sum, o) => sum + (o.platform_fee || 0), 0);
+  const netEarnings = totalEarnings - platformFees;
+  
+  const physicalSales = sellerOrders.filter(o => {
+    const product = products.find(p => p.id === o.product_id);
+    return product?.product_type === 'physical';
+  });
+  const digitalSales = sellerOrders.filter(o => {
+    const product = products.find(p => p.id === o.product_id);
+    return product?.product_type === 'digital';
+  });
+
+  const physicalSalesCount = physicalSales.length;
+  const physicalSalesRevenue = physicalSales.reduce((sum, o) => sum + o.amount, 0);
+  const digitalSalesCount = digitalSales.length;
+  const digitalSalesRevenue = digitalSales.reduce((sum, o) => sum + o.amount, 0);
+
+  // Filter products
+  const filteredProducts = myProducts.filter(product => {
+    const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         product.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = filterStatus === 'all' || product.status === filterStatus;
+    const matchesType = filterType === 'all' || product.product_type === filterType;
+    return matchesSearch && matchesStatus && matchesType;
+  });
 
   const handleEditProduct = (productId: string) => {
-    console.log('Edit product:', productId);
+    toast({
+      title: "Edit Product",
+      description: "Edit functionality coming soon",
+    });
   };
 
-  const handleDeleteProduct = (productId: string) => {
-    console.log('Delete product:', productId);
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Product deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete product",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleViewStats = (productId: string) => {
-    console.log('View stats for product:', productId);
+    toast({
+      title: "Product Analytics",
+      description: "Analytics view coming soon",
+    });
   };
 
   const handleShopifyConnect = () => {
-    console.log('Connect Shopify');
-    // TODO: Implement Shopify OAuth flow
+    toast({
+      title: "Coming Soon",
+      description: "Shopify integration will be available soon. Request early access!",
+    });
+  };
+
+  const formatCurrency = (amount: number, currency: Currency) => {
+    const converted = amount * EXCHANGE_RATES[currency];
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 0
+    }).format(converted / 100);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-muted/50 p-4 sm:p-6">
+    <div className="min-h-screen bg-background p-4 sm:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold text-foreground">
               Product Management
             </h1>
             <p className="text-muted-foreground mt-1">
@@ -65,17 +158,30 @@ const ProductsPageEnhanced = () => {
           </div>
           
           <div className="flex gap-2">
+            <Select value={selectedCurrency} onValueChange={(v) => setSelectedCurrency(v as Currency)}>
+              <SelectTrigger className="w-[100px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="INR">₹ INR</SelectItem>
+                <SelectItem value="USD">$ USD</SelectItem>
+                <SelectItem value="EUR">€ EUR</SelectItem>
+                <SelectItem value="GBP">£ GBP</SelectItem>
+              </SelectContent>
+            </Select>
+            
             <Button 
               variant="outline"
               onClick={handleShopifyConnect}
-              className="border-2 border-green-500/50 hover:bg-green-500/10"
+              className="border-2"
             >
               <Store className="w-4 h-4 mr-2" />
-              Connect Shopify
+              Shopify
+              <Badge variant="secondary" className="ml-2">Soon</Badge>
             </Button>
             <Button 
               onClick={() => setIsAddModalOpen(true)}
-              className="bg-gradient-to-r from-primary to-primary/80 shadow-lg"
+              className="bg-primary"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Product
@@ -83,119 +189,169 @@ const ProductsPageEnhanced = () => {
           </div>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/50 border-blue-200">
+        {/* KPI Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="border-2">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">Total Products</p>
-                  <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">{products.length}</p>
-                </div>
-                <ShoppingBag className="w-8 h-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/50 dark:to-green-900/50 border-green-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-green-700 dark:text-green-300 font-medium">Physical</p>
-                  <p className="text-3xl font-bold text-green-900 dark:text-green-100">{physicalProducts.length}</p>
-                </div>
-                <Package className="w-8 h-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/50 dark:to-purple-900/50 border-purple-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-purple-700 dark:text-purple-300 font-medium">Digital</p>
-                  <p className="text-3xl font-bold text-purple-900 dark:text-purple-100">{digitalProducts.length}</p>
-                </div>
-                <Download className="w-8 h-8 text-purple-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/50 dark:to-orange-900/50 border-orange-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-orange-700 dark:text-orange-300 font-medium">Est. Revenue</p>
-                  <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
-                    ₹{(totalRevenue / 100).toLocaleString()}
+                  <p className="text-sm text-muted-foreground font-medium">Total Earnings</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {formatCurrency(totalEarnings, selectedCurrency)}
                   </p>
                 </div>
-                <DollarSign className="w-8 h-8 text-orange-500" />
+                <DollarSign className="w-8 h-8 text-primary" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground font-medium">Net Earnings</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {formatCurrency(netEarnings, selectedCurrency)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Platform Fee: {formatCurrency(platformFees, selectedCurrency)}
+                  </p>
+                </div>
+                <TrendingUp className="w-8 h-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground font-medium">Physical Sales</p>
+                  <p className="text-2xl font-bold text-foreground">{physicalSalesCount}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {formatCurrency(physicalSalesRevenue, selectedCurrency)}
+                  </p>
+                </div>
+                <Package className="w-8 h-8 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground font-medium">Digital Sales</p>
+                  <p className="text-2xl font-bold text-foreground">{digitalSalesCount}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {formatCurrency(digitalSalesRevenue, selectedCurrency)}
+                  </p>
+                </div>
+                <Download className="w-8 h-8 text-purple-500" />
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Shopify Integration Notice */}
-        <Alert className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-          <Store className="w-4 h-4 text-green-600" />
-          <AlertDescription className="text-green-800">
-            Connect your Shopify store to sync products and manage inventory seamlessly. Both Razorpay and Shopify payments supported.
+        <Alert className="border-2">
+          <Store className="w-4 h-4" />
+          <AlertDescription>
+            <strong>Shopify Integration Coming Soon!</strong> Connect your store to sync products and manage inventory. 
+            Accept payments via Razorpay for all products.
           </AlertDescription>
         </Alert>
 
         {/* Main Content */}
         <Tabs defaultValue="products" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-muted/60">
-            <TabsTrigger value="products">Products</TabsTrigger>
-            <TabsTrigger value="updates">Recent Updates</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="products">My Products</TabsTrigger>
+            <TabsTrigger value="sales">Sales Orders</TabsTrigger>
+            <TabsTrigger value="purchases">My Purchases</TabsTrigger>
           </TabsList>
 
           <TabsContent value="products" className="space-y-6 mt-6">
-            {/* View Controls */}
-            <Card className="bg-card/60 backdrop-blur-sm">
+            {/* Filters & Search */}
+            <Card>
               <CardContent className="p-4">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm font-medium">View:</span>
-                    <div className="flex bg-muted rounded-lg p-1">
-                      <Button
-                        variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setViewMode('grid')}
-                        className="h-8 px-3"
-                      >
-                        <Grid3X3 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant={viewMode === 'list' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setViewMode('list')}
-                        className="h-8 px-3"
-                      >
-                        <List className="w-4 h-4" />
-                      </Button>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search products..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10"
+                      />
                     </div>
                   </div>
+                  
+                  <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="published">Published</SelectItem>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="hidden">Hidden</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span className="font-medium">{products.length}</span>
-                    <span>products total</span>
+                  <Select value={filterType} onValueChange={setFilterType}>
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="digital">Digital</SelectItem>
+                      <SelectItem value="physical">Physical</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <div className="flex bg-muted rounded-lg p-1">
+                    <Button
+                      variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewMode('grid')}
+                      className="h-8 px-3"
+                    >
+                      <Grid3X3 className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant={viewMode === 'list' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewMode('list')}
+                      className="h-8 px-3"
+                    >
+                      <List className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Products Grid/List */}
+            {/* Products Display */}
             {isLoading ? (
-              <div className="text-center py-8">
+              <div className="text-center py-12">
                 <div className="text-muted-foreground">Loading products...</div>
               </div>
-            ) : products.length === 0 ? (
-              <Card className="bg-card/60 backdrop-blur-sm">
-                <CardContent className="p-8 text-center">
-                  <div className="text-muted-foreground mb-2">No products found</div>
-                  <p className="text-sm text-muted-foreground">Create your first product to get started</p>
+            ) : filteredProducts.length === 0 ? (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <ShoppingBag className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No products found</h3>
+                  <p className="text-muted-foreground mb-4">
+                    {searchQuery || filterStatus !== 'all' || filterType !== 'all' 
+                      ? 'Try adjusting your filters'
+                      : 'Create your first product to get started'
+                    }
+                  </p>
+                  <Button onClick={() => setIsAddModalOpen(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Product
+                  </Button>
                 </CardContent>
               </Card>
             ) : (
@@ -203,21 +359,10 @@ const ProductsPageEnhanced = () => {
                 ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' 
                 : 'space-y-4'
               }>
-                {products.map((product) => (
+                {filteredProducts.map((product) => (
                   <ProductCard
                     key={product.id}
-                    product={{
-                      id: product.id,
-                      title: product.title,
-                      product_type: product.product_type,
-                      description: product.description,
-                      price: product.price,
-                      is_free: product.is_free,
-                      status: product.status,
-                      thumbnail_url: product.thumbnail_url,
-                      created_at: product.created_at,
-                      views_count: product.views_count
-                    }}
+                    product={product}
                     viewMode={viewMode}
                     onEdit={handleEditProduct}
                     onDelete={handleDeleteProduct}
@@ -229,8 +374,12 @@ const ProductsPageEnhanced = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="updates" className="mt-6">
-            <ProductUpdatesFeed />
+          <TabsContent value="sales" className="mt-6">
+            <OrdersDashboard type="seller" />
+          </TabsContent>
+
+          <TabsContent value="purchases" className="mt-6">
+            <OrdersDashboard type="buyer" />
           </TabsContent>
         </Tabs>
 
@@ -238,10 +387,7 @@ const ProductsPageEnhanced = () => {
         <ProductForm
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}
-          onSave={(productData) => {
-            console.log('Save product:', productData);
-            setIsAddModalOpen(false);
-          }}
+          onSave={() => setIsAddModalOpen(false)}
         />
       </div>
     </div>

@@ -784,7 +784,7 @@ const SettingsPage = () => {
 
           {/* Orders Dashboard */}
           <TabsContent value="orders" className="space-y-6">
-            <OrdersDashboard />
+            <OrdersDashboard type="buyer" />
           </TabsContent>
 
           {/* Privacy Settings */}
