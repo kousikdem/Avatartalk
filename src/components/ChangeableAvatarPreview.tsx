@@ -20,6 +20,7 @@ interface ChangeableAvatarPreviewProps {
   isTalking?: boolean;
   className?: string;
   onAvatarClick?: () => void;
+  onTalkClick?: () => void;
 }
 
 const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
@@ -30,7 +31,8 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
   isInteractive = true,
   isTalking = false,
   className = '',
-  onAvatarClick
+  onAvatarClick,
+  onTalkClick
 }) => {
   const [avatarData, setAvatarData] = useState<any>(null);
   const [profileData, setProfileData] = useState<any>(null);
@@ -265,8 +267,11 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
             className="rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg px-6 flex items-center gap-2"
             onClick={(e) => {
               e.stopPropagation();
-              // This can be customized based on your needs
-              toast.success('Voice interaction coming soon!');
+              if (onTalkClick) {
+                onTalkClick();
+              } else {
+                toast.success('Opening chat...');
+              }
             }}
           >
             <MessageSquare className="w-4 h-4" />

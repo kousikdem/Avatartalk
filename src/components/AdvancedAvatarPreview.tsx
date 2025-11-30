@@ -483,6 +483,67 @@ const AdvancedAvatarPreview: React.FC<AdvancedAvatarPreviewProps> = ({ config })
     );
   };
 
+  // Enhanced ear rendering
+  const renderEars = () => {
+    const earScale = 1 + (config.earSize - 50) * 0.003;
+    const earPositionOffset = (config.earPosition - 50) * 0.002;
+    
+    switch (config.earShape) {
+      case 'large':
+        return (
+          <>
+            <mesh position={[-0.55, 2.2 + earPositionOffset, 0]}>
+              <sphereGeometry args={[0.08 * earScale, 8, 8]} />
+              <meshStandardMaterial {...getSkinMaterial()} />
+            </mesh>
+            <mesh position={[0.55, 2.2 + earPositionOffset, 0]}>
+              <sphereGeometry args={[0.08 * earScale, 8, 8]} />
+              <meshStandardMaterial {...getSkinMaterial()} />
+            </mesh>
+          </>
+        );
+      case 'small':
+        return (
+          <>
+            <mesh position={[-0.55, 2.2 + earPositionOffset, 0]}>
+              <sphereGeometry args={[0.05 * earScale, 8, 8]} />
+              <meshStandardMaterial {...getSkinMaterial()} />
+            </mesh>
+            <mesh position={[0.55, 2.2 + earPositionOffset, 0]}>
+              <sphereGeometry args={[0.05 * earScale, 8, 8]} />
+              <meshStandardMaterial {...getSkinMaterial()} />
+            </mesh>
+          </>
+        );
+      case 'pointed':
+        return (
+          <>
+            <mesh position={[-0.55, 2.2 + earPositionOffset, 0]}>
+              <coneGeometry args={[0.06 * earScale, 0.12, 6]} />
+              <meshStandardMaterial {...getSkinMaterial()} />
+            </mesh>
+            <mesh position={[0.55, 2.2 + earPositionOffset, 0]}>
+              <coneGeometry args={[0.06 * earScale, 0.12, 6]} />
+              <meshStandardMaterial {...getSkinMaterial()} />
+            </mesh>
+          </>
+        );
+      default: // normal
+        return (
+          <>
+            <mesh position={[-0.55, 2.2 + earPositionOffset, 0]}>
+              <sphereGeometry args={[0.06 * earScale, 8, 8]} />
+              <meshStandardMaterial {...getSkinMaterial()} />
+            </mesh>
+            <mesh position={[0.55, 2.2 + earPositionOffset, 0]}>
+              <sphereGeometry args={[0.06 * earScale, 8, 8]} />
+              <meshStandardMaterial {...getSkinMaterial()} />
+            </mesh>
+          </>
+        );
+    }
+  };
+
   const poseTransform = getPoseTransformation();
   const armPositions = getArmPositions();
 
@@ -571,6 +632,7 @@ const AdvancedAvatarPreview: React.FC<AdvancedAvatarPreviewProps> = ({ config })
       {renderEyes()}
       {renderNose()}
       {renderMouth()}
+      {renderEars()}
 
       {/* Enhanced Hands */}
       <mesh position={[-1.15, 0.1, 0]}>
