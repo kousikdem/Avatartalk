@@ -47,6 +47,17 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
   const isDigital = product.product_type === 'digital';
 
   const handleCheckout = async () => {
+    // Check authentication first
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to complete your purchase",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Validate shipping address for physical products
     if (isPhysical) {
       if (!shippingAddress.full_name || !shippingAddress.phone || 
@@ -64,6 +75,8 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
     setIsProcessing(true);
 
     try {
+      console.log('Creating checkout for product:', product.id);
+      
       // Create checkout session
       const checkoutData = await createCheckout({
         productId: product.id,
@@ -72,6 +85,12 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
         discountCode: discountCode || undefined,
         currency
       });
+
+      console.log('Checkout data received:', checkoutData);
+
+      if (!checkoutData || !checkoutData.razorpay_order_id) {
+        throw new Error('Invalid checkout data received from server');
+      }
 
       // Load Razorpay script if not already loaded
       if (!window.Razorpay) {
