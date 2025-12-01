@@ -17,6 +17,7 @@ import { CheckoutModal } from '@/components/CheckoutModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { getTaxLabel, calculateTax } from '@/utils/taxCalculation';
 
 interface CompactProductCardProps {
   product: Product;
@@ -240,9 +241,16 @@ export const CompactProductCard = ({
 
                   {/* Additional Pricing Info */}
                   {product.taxable && (
-                    <p className="text-xs text-muted-foreground">
-                      + Taxes as applicable (GST 18%)
-                    </p>
+                    <div className="text-xs text-muted-foreground flex justify-between">
+                      <span>+ Tax ({getTaxLabel(product.tax_class)})</span>
+                      <span className="font-medium">
+                        {new Intl.NumberFormat('en-IN', {
+                          style: 'currency',
+                          currency: currency,
+                          minimumFractionDigits: 0
+                        }).format(calculateTax(displayPrice, product.tax_class, product.taxable) / 100)}
+                      </span>
+                    </div>
                   )}
 
                   {/* Buy Button */}

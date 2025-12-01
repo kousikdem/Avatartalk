@@ -357,15 +357,17 @@ const ProductForm: React.FC<ProductFormProps> = ({ isOpen, onClose, onSave, edit
                         </Select>
                       </div>
                       <div>
-                        <Label htmlFor="tax_class">Tax Class</Label>
+                        <Label htmlFor="tax_class">Tax Class (GST)</Label>
                         <Select value={formData.tax_class} onValueChange={(v) => setFormData(prev => ({ ...prev, tax_class: v }))}>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="standard">Standard (18%)</SelectItem>
-                            <SelectItem value="reduced">Reduced (5%)</SelectItem>
-                            <SelectItem value="zero">Zero Rated</SelectItem>
+                            <SelectItem value="zero">0% (Exempt)</SelectItem>
+                            <SelectItem value="reduced">5% GST</SelectItem>
+                            <SelectItem value="standard-12">12% GST</SelectItem>
+                            <SelectItem value="standard">18% GST</SelectItem>
+                            <SelectItem value="luxury">28% GST</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

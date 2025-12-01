@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Product } from '@/hooks/useProducts';
 import { CheckoutModal } from '@/components/CheckoutModal';
+import { getTaxRate, getTaxLabel, calculateTax } from '@/utils/taxCalculation';
 
 interface EnhancedProductCardProps {
   product: Product;
@@ -273,9 +274,18 @@ export const EnhancedProductCard = ({
             )}
 
             {product.taxable && (
-              <p className="text-xs text-muted-foreground">
-                + Taxes as applicable (GST 18%)
-              </p>
+              <div className="text-xs text-muted-foreground space-y-1">
+                <div className="flex justify-between">
+                  <span>+ Tax ({getTaxLabel(product.tax_class)})</span>
+                  <span className="font-medium">
+                    {new Intl.NumberFormat('en-IN', {
+                      style: 'currency',
+                      currency: currency,
+                      minimumFractionDigits: 0
+                    }).format(calculateTax(displayPrice, product.tax_class, product.taxable) / 100)}
+                  </span>
+                </div>
+              </div>
             )}
           </div>
 
