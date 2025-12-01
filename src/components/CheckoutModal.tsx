@@ -31,6 +31,12 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
   const [isProcessing, setIsProcessing] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [discountCode, setDiscountCode] = useState('');
+  const [promoValidation, setPromoValidation] = useState<{
+    valid: boolean;
+    message: string;
+    discount?: number;
+  } | null>(null);
+  const [isValidatingPromo, setIsValidatingPromo] = useState(false);
 
   const [shippingAddress, setShippingAddress] = useState({
     full_name: '',
@@ -45,6 +51,79 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
 
   const isPhysical = product.product_type === 'physical';
   const isDigital = product.product_type === 'digital';
+
+  const validatePromoCode = async () => {
+    if (!discountCode || discountCode.length < 3) {
+      setPromoValidation(null);
+      return;
+    }
+
+    setIsValidatingPromo(true);
+    try {
+      const { data: promo, error } = await supabase
+        .from('discount_codes')
+        .select('*')
+        .eq('code', discountCode.toUpperCase())
+        .eq('active', true)
+        .single();
+
+      if (error || !promo) {
+        setPromoValidation({
+          valid: false,
+          message: 'Invalid promo code'
+        });
+        return;
+      }
+
+      // Check date validity
+      const now = new Date();
+      if (promo.starts_at && new Date(promo.starts_at) > now) {
+        setPromoValidation({
+          valid: false,
+          message: 'Promo has not started yet'
+        });
+        return;
+      }
+
+      if (promo.expires_at && new Date(promo.expires_at) < now) {
+        setPromoValidation({
+          valid: false,
+          message: 'Promo has expired'
+        });
+        return;
+      }
+
+      // Calculate discount
+      const subtotal = (product.price || 0) * quantity;
+      let discount = 0;
+      
+      if (promo.discount_type === 'percent') {
+        discount = Math.round((subtotal * promo.discount_value) / 100);
+      } else if (promo.discount_type === 'fixed') {
+        discount = Math.min(promo.discount_value, subtotal);
+      }
+
+      setPromoValidation({
+        valid: true,
+        message: promo.discount_type === 'free_shipping' 
+          ? 'Free shipping applied!' 
+          : `Save ₹${(discount / 100).toFixed(2)}`,
+        discount
+      });
+    } catch (error) {
+      console.error('Error validating promo:', error);
+      setPromoValidation(null);
+    } finally {
+      setIsValidatingPromo(false);
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      validatePromoCode();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [discountCode]);
 
   const handleCheckout = async () => {
     // Check authentication first
@@ -355,12 +434,22 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
           <div className="space-y-2">
             <Label htmlFor="discount">Discount Code</Label>
             <div className="flex gap-2">
-              <Input
-                id="discount"
-                value={discountCode}
-                onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
-                placeholder="Enter promo code"
-              />
+              <div className="flex-1 space-y-2">
+                <Input
+                  id="discount"
+                  value={discountCode}
+                  onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+                  placeholder="Enter promo code"
+                />
+                {promoValidation && (
+                  <p className={`text-xs ${promoValidation.valid ? 'text-green-600' : 'text-destructive'}`}>
+                    {promoValidation.message}
+                  </p>
+                )}
+                {isValidatingPromo && (
+                  <p className="text-xs text-muted-foreground">Validating...</p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -376,6 +465,16 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
                 minimumFractionDigits: 0
               }).format(((product.price || 0) * quantity) / 100)}</span>
             </div>
+            {promoValidation?.valid && promoValidation.discount && (
+              <div className="flex justify-between text-green-600">
+                <span>Discount ({discountCode})</span>
+                <span>-{new Intl.NumberFormat('en-IN', {
+                  style: 'currency',
+                  currency: currency,
+                  minimumFractionDigits: 0
+                }).format((promoValidation.discount || 0) / 100)}</span>
+              </div>
+            )}
             {isPhysical && product.shipping_cost && (
               <div className="flex justify-between">
                 <span>Shipping</span>
@@ -399,7 +498,7 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
                 style: 'currency',
                 currency: currency,
                 minimumFractionDigits: 0
-              }).format(((product.price || 0) * quantity + (isPhysical && product.shipping_cost ? product.shipping_cost : 0)) / 100)}</span>
+              }).format(((product.price || 0) * quantity - (promoValidation?.discount || 0) + (isPhysical && product.shipping_cost ? product.shipping_cost : 0)) / 100)}</span>
             </div>
           </div>
 

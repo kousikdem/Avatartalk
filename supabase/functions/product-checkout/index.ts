@@ -80,30 +80,93 @@ serve(async (req) => {
         const isValid = (!discount.starts_at || new Date(discount.starts_at) <= now) &&
                        (!discount.expires_at || new Date(discount.expires_at) >= now);
 
-        if (isValid) {
-          // Check usage limits
-          const { data: usageData } = await supabaseClient
-            .from('discount_usage')
-            .select('id')
-            .eq('discount_code_id', discount.id)
-            .eq('user_id', user.id);
+        if (!isValid) {
+          throw new Error('Promo code has expired or not yet active');
+        }
 
-          const userUsageCount = usageData?.length || 0;
+        // Check usage limits
+        const { data: usageData } = await supabaseClient
+          .from('discount_usage')
+          .select('id')
+          .eq('discount_code_id', discount.id)
+          .eq('user_id', user.id);
 
-          if ((discount.max_uses === null || discount.current_uses < discount.max_uses) &&
-              (discount.max_uses_per_user === null || userUsageCount < discount.max_uses_per_user) &&
-              itemAmount >= (discount.min_order_value || 0)) {
+        const userUsageCount = usageData?.length || 0;
+
+        // Check global usage limit
+        if (discount.max_uses !== null && discount.current_uses >= discount.max_uses) {
+          throw new Error('Promo code has reached maximum uses');
+        }
+
+        // Check per-user usage limit
+        if (discount.max_uses_per_user !== null && userUsageCount >= discount.max_uses_per_user) {
+          throw new Error('You have reached the usage limit for this promo');
+        }
+
+        // Check minimum order value
+        if (discount.min_order_value !== null && itemAmount < discount.min_order_value) {
+          throw new Error(`Minimum order value is ₹${discount.min_order_value / 100}`);
+        }
+
+        // Check minimum quantity
+        if (discount.min_quantity && quantity < discount.min_quantity) {
+          throw new Error(`Minimum quantity required: ${discount.min_quantity}`);
+        }
+
+        // Check product type targeting
+        if (discount.target_product_type && discount.target_product_type !== 'all' && 
+            discount.target_product_type !== product.product_type) {
+          throw new Error(`Promo only valid for ${discount.target_product_type} products`);
+        }
+
+        // Check buyer targeting (followers/subscribers)
+        if (discount.target_buyer_type && discount.target_buyer_type !== 'all') {
+          if (discount.target_buyer_type === 'followers') {
+            const { data: followData } = await supabaseClient
+              .from('follows')
+              .select('id')
+              .eq('follower_id', user.id)
+              .eq('following_id', product.user_id)
+              .single();
             
-            // Calculate discount
-            if (discount.discount_type === 'percent') {
-              discountAmount = Math.round((itemAmount * discount.discount_value) / 100);
-            } else if (discount.discount_type === 'fixed') {
-              discountAmount = Math.min(discount.discount_value, itemAmount);
+            if (!followData) {
+              throw new Error('This promo is only for followers');
             }
+          }
+
+          if (discount.target_buyer_type === 'subscribers') {
+            const { data: subData } = await supabaseClient
+              .from('subscriptions')
+              .select('id')
+              .eq('subscriber_id', user.id)
+              .eq('subscribed_to_id', product.user_id)
+              .eq('status', 'active')
+              .single();
             
-            appliedDiscountId = discount.id;
+            if (!subData) {
+              throw new Error('This promo is only for subscribers');
+            }
           }
         }
+
+        // Calculate discount
+        if (discount.discount_type === 'percent') {
+          discountAmount = Math.round((itemAmount * discount.discount_value) / 100);
+        } else if (discount.discount_type === 'fixed') {
+          discountAmount = Math.min(discount.discount_value, itemAmount);
+        } else if (discount.discount_type === 'free_shipping') {
+          // Free shipping will be handled separately
+          discountAmount = 0;
+        }
+        
+        appliedDiscountId = discount.id;
+        
+        // Apply free shipping if applicable
+        if (discount.free_shipping || discount.discount_type === 'free_shipping') {
+          // Note: shippingAmount will be overridden below
+        }
+      } else if (discountError) {
+        throw new Error('Invalid promo code');
       }
     }
 
@@ -113,9 +176,24 @@ serve(async (req) => {
     const taxAmount = product.taxable ? Math.round(subtotal * 0.18) : 0;
 
     // Calculate shipping (shipping_cost is already in smallest unit - paise)
-    const shippingAmount = product.product_type === 'physical' && product.shipping_enabled 
-      ? (product.shipping_cost || 0)
-      : 0;
+    // Check if free shipping promo is applied
+    let shippingAmount = 0;
+    if (product.product_type === 'physical' && product.shipping_enabled) {
+      const freeShippingApplied = appliedDiscountId && (
+        (await supabaseClient
+          .from('discount_codes')
+          .select('free_shipping, discount_type')
+          .eq('id', appliedDiscountId)
+          .single()).data?.free_shipping === true ||
+        (await supabaseClient
+          .from('discount_codes')
+          .select('free_shipping, discount_type')
+          .eq('id', appliedDiscountId)
+          .single()).data?.discount_type === 'free_shipping'
+      );
+      
+      shippingAmount = freeShippingApplied ? 0 : (product.shipping_cost || 0);
+    }
 
     // Calculate platform fee (5%)
     const platformFeePercent = 5;
@@ -205,27 +283,83 @@ serve(async (req) => {
       .update({ razorpay_order_id: razorpayOrder.id })
       .eq('id', order.id);
 
-    // Record discount usage if applicable
+    // Record discount usage if applicable with analytics
     if (appliedDiscountId) {
+      // Determine buyer type
+      let buyerType = 'unknown';
+      const { data: previousOrders } = await supabaseClient
+        .from('orders')
+        .select('id')
+        .eq('buyer_id', user.id)
+        .eq('payment_status', 'captured');
+      
+      if (!previousOrders || previousOrders.length === 0) {
+        buyerType = 'new';
+      } else {
+        buyerType = 'returning';
+      }
+
+      const { data: followData } = await supabaseClient
+        .from('follows')
+        .select('id')
+        .eq('follower_id', user.id)
+        .eq('following_id', product.user_id)
+        .single();
+      
+      if (followData) {
+        buyerType = 'follower';
+      }
+
+      const { data: subData } = await supabaseClient
+        .from('subscriptions')
+        .select('id')
+        .eq('subscriber_id', user.id)
+        .eq('subscribed_to_id', product.user_id)
+        .eq('status', 'active')
+        .single();
+      
+      if (subData) {
+        buyerType = 'subscriber';
+      }
+
+      // Record usage with analytics
       await supabaseClient
         .from('discount_usage')
         .insert({
           discount_code_id: appliedDiscountId,
           user_id: user.id,
-          order_id: order.id
+          order_id: order.id,
+          discount_amount: discountAmount,
+          order_amount: totalAmount,
+          buyer_type: buyerType
         });
 
-      // Increment usage count
+      // Increment usage count and update analytics
       const { data: currentDiscount } = await supabaseClient
         .from('discount_codes')
-        .select('current_uses')
+        .select('current_uses, analytics_data')
         .eq('id', appliedDiscountId)
         .single();
       
       if (currentDiscount) {
+        const analyticsData = currentDiscount.analytics_data || {
+          redemptions: 0,
+          revenue_generated: 0,
+          revenue_lost: 0,
+          conversion_rate: 0
+        };
+
         await supabaseClient
           .from('discount_codes')
-          .update({ current_uses: (currentDiscount.current_uses || 0) + 1 })
+          .update({
+            current_uses: (currentDiscount.current_uses || 0) + 1,
+            analytics_data: {
+              redemptions: analyticsData.redemptions + 1,
+              revenue_generated: analyticsData.revenue_generated + totalAmount,
+              revenue_lost: analyticsData.revenue_lost + discountAmount,
+              conversion_rate: analyticsData.conversion_rate
+            }
+          })
           .eq('id', appliedDiscountId);
       }
     }
