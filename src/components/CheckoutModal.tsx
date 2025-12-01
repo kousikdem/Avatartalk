@@ -58,6 +58,17 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
       return;
     }
 
+    // Validate minimum order amount (₹1 minimum)
+    const calculatedTotal = (product.price || 0) * quantity + (isPhysical && product.shipping_cost ? product.shipping_cost : 0);
+    if (calculatedTotal < 100) {
+      toast({
+        title: "Invalid Order Amount",
+        description: "Order total must be at least ₹1. Please check the product pricing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Validate shipping address for physical products
     if (isPhysical) {
       if (!shippingAddress.full_name || !shippingAddress.phone || 
@@ -156,6 +167,8 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
         errorMessage = "Not enough items in stock";
       } else if (error.message?.includes('Razorpay credentials')) {
         errorMessage = "Payment system not configured. Please contact the seller.";
+      } else if (error.message?.includes('minimum') || error.message?.includes('₹1')) {
+        errorMessage = error.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
