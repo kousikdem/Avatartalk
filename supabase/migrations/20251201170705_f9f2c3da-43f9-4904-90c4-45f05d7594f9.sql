@@ -1,0 +1,1 @@
+ALTER TABLE products ADD COLUMN free_for_subscribers boolean DEFAULT false;
