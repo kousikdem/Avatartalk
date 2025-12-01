@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Product } from '@/hooks/useProducts';
 import { useOrders } from '@/hooks/useOrders';
 import { Loader2, Package, CreditCard, MapPin } from 'lucide-react';
+import { getTaxLabel, calculateTax } from '@/utils/taxCalculation';
 
 declare global {
   interface Window {
@@ -486,9 +487,13 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
               </div>
             )}
             {product.taxable && (
-              <div className="flex justify-between text-muted-foreground text-sm">
-                <span>Tax (GST 18%)</span>
-                <span>Calculated at payment</span>
+              <div className="flex justify-between text-sm">
+                <span>Tax ({getTaxLabel(product.tax_class)})</span>
+                <span>{new Intl.NumberFormat('en-IN', {
+                  style: 'currency',
+                  currency: currency,
+                  minimumFractionDigits: 0
+                }).format(calculateTax((product.price || 0) * quantity - (promoValidation?.discount || 0), product.tax_class, product.taxable) / 100)}</span>
               </div>
             )}
             <Separator />
@@ -498,7 +503,12 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
                 style: 'currency',
                 currency: currency,
                 minimumFractionDigits: 0
-              }).format(((product.price || 0) * quantity - (promoValidation?.discount || 0) + (isPhysical && product.shipping_cost ? product.shipping_cost : 0)) / 100)}</span>
+              }).format((
+                (product.price || 0) * quantity 
+                - (promoValidation?.discount || 0) 
+                + (isPhysical && product.shipping_cost ? product.shipping_cost : 0)
+                + calculateTax((product.price || 0) * quantity - (promoValidation?.discount || 0), product.tax_class, product.taxable)
+              ) / 100)}</span>
             </div>
           </div>
 
