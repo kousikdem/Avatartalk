@@ -28,15 +28,16 @@ export interface PromoCode {
   recurring_schedule: any | null;
   created_by_type: string;
   analytics_data: {
-    redemptions: number;
-    revenue_generated: number;
-    revenue_lost: number;
-    conversion_rate: number;
-  };
-  fraud_flags: any[];
+    redemptions?: number;
+    revenue_generated?: number;
+    revenue_lost?: number;
+    conversion_rate?: number;
+  } | null;
+  fraud_flags: any[] | null;
   targeting_rules: any;
   created_at: string;
   updated_at: string;
+  description?: string | null;
 }
 
 export interface CreatePromoData {

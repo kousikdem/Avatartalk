@@ -11,6 +11,7 @@ export interface Product {
   description?: string;
   price?: number;
   is_free: boolean;
+  free_for_subscribers?: boolean;
   status: string;
   thumbnail_url?: string;
   media_url?: string;

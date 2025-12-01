@@ -1476,6 +1476,7 @@ export type Database = {
           description: string | null
           digital_assets: Json | null
           download_limit: number | null
+          free_for_subscribers: boolean | null
           id: string
           inventory_quantity: number | null
           is_free: boolean | null
@@ -1520,6 +1521,7 @@ export type Database = {
           description?: string | null
           digital_assets?: Json | null
           download_limit?: number | null
+          free_for_subscribers?: boolean | null
           id?: string
           inventory_quantity?: number | null
           is_free?: boolean | null
@@ -1564,6 +1566,7 @@ export type Database = {
           description?: string | null
           digital_assets?: Json | null
           download_limit?: number | null
+          free_for_subscribers?: boolean | null
           id?: string
           inventory_quantity?: number | null
           is_free?: boolean | null
