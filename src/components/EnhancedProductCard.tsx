@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { Product } from '@/hooks/useProducts';
 import { CheckoutModal } from '@/components/CheckoutModal';
-import { getTaxRate, getTaxLabel, calculateTax } from '@/utils/taxCalculation';
+import { getTaxRate, getTaxLabel, calculateTax, getShortTaxLabel } from '@/utils/taxCalculation';
 
 interface EnhancedProductCardProps {
   product: Product;
@@ -276,7 +276,7 @@ export const EnhancedProductCard = ({
             {product.taxable && (
               <div className="text-xs text-muted-foreground space-y-1">
                 <div className="flex justify-between">
-                  <span>+ Tax ({getTaxLabel(product.tax_class)})</span>
+                  <span>+ Tax ({getShortTaxLabel(product.tax_class)})</span>
                   <span className="font-medium">
                     {new Intl.NumberFormat('en-IN', {
                       style: 'currency',
