@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,12 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { 
   Plus, Grid3X3, List, Eye, Edit, Trash2, TrendingUp, 
   ShoppingBag, DollarSign, Package, Download, Store, Search,
-  Filter, BarChart3, CreditCard, TrendingDown, Percent
+  Filter, BarChart3, CreditCard, TrendingDown, Percent, RefreshCw
 } from 'lucide-react';
 import ProductForm from '@/components/ProductForm';
 import ProductCard from '@/components/ProductCard';
+import ProductAnalyticsModal from '@/components/ProductAnalyticsModal';
+import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
 import { OrdersDashboard } from '@/components/OrdersDashboard';
-import { useProducts } from '@/hooks/useProducts';
+import { useProducts, Product } from '@/hooks/useProducts';
 import { useOrders } from '@/hooks/useOrders';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -31,17 +33,22 @@ const EXCHANGE_RATES: Record<Currency, number> = {
 
 const ProductsPageEnhanced = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [selectedCurrency, setSelectedCurrency] = useState<Currency>('INR');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterType, setFilterType] = useState('all');
-  const { products, isLoading } = useProducts();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { products, isLoading, deleteProduct, fetchProducts } = useProducts();
   const { orders } = useOrders();
   const { toast } = useToast();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUserId(user?.id || null);
@@ -62,6 +69,7 @@ const ProductsPageEnhanced = () => {
   const myProducts = products.filter(p => p.user_id === currentUserId);
   const digitalProducts = myProducts.filter(p => p.product_type === 'digital');
   const physicalProducts = myProducts.filter(p => p.product_type === 'physical');
+  const totalViews = myProducts.reduce((sum, p) => sum + (p.views_count || 0), 0);
   
   const sellerOrders = orders.filter(o => o.seller_id === currentUserId && o.payment_status === 'captured');
   const totalEarnings = sellerOrders.reduce((sum, o) => sum + o.amount, 0);
@@ -92,39 +100,42 @@ const ProductsPageEnhanced = () => {
   });
 
   const handleEditProduct = (productId: string) => {
-    toast({
-      title: "Edit Product",
-      description: "Edit functionality coming soon",
-    });
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      setSelectedProduct(product);
+      setIsEditModalOpen(true);
+    }
   };
 
-  const handleDeleteProduct = async (productId: string) => {
+  const handleDeleteProduct = (productId: string) => {
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      setSelectedProduct(product);
+      setIsDeleteDialogOpen(true);
+    }
+  };
+
+  const confirmDeleteProduct = async () => {
+    if (!selectedProduct) return;
+    
+    setIsDeleting(true);
     try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', productId);
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Product deleted successfully",
-      });
+      await deleteProduct(selectedProduct.id);
+      setIsDeleteDialogOpen(false);
+      setSelectedProduct(null);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete product",
-        variant: "destructive",
-      });
+      console.error('Error deleting product:', error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   const handleViewStats = (productId: string) => {
-    toast({
-      title: "Product Analytics",
-      description: "Analytics view coming soon",
-    });
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      setSelectedProduct(product);
+      setIsAnalyticsModalOpen(true);
+    }
   };
 
   const handleShopifyConnect = () => {
@@ -157,7 +168,17 @@ const ProductsPageEnhanced = () => {
             </p>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => fetchProducts()}
+              className="h-10 w-10"
+              title="Refresh"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+            
             <Select value={selectedCurrency} onValueChange={(v) => setSelectedCurrency(v as Currency)}>
               <SelectTrigger className="w-[100px]">
                 <SelectValue />
@@ -199,7 +220,21 @@ const ProductsPageEnhanced = () => {
         </div>
 
         {/* KPI Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <Card className="border-2">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground font-medium">Total Views</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {totalViews.toLocaleString()}
+                  </p>
+                </div>
+                <Eye className="w-8 h-8 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="border-2">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -223,7 +258,7 @@ const ProductsPageEnhanced = () => {
                     {formatCurrency(netEarnings, selectedCurrency)}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Platform Fee: {formatCurrency(platformFees, selectedCurrency)}
+                    Fee: {formatCurrency(platformFees, selectedCurrency)}
                   </p>
                 </div>
                 <TrendingUp className="w-8 h-8 text-green-500" />
@@ -274,7 +309,7 @@ const ProductsPageEnhanced = () => {
         {/* Main Content */}
         <Tabs defaultValue="products" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="products">My Products</TabsTrigger>
+            <TabsTrigger value="products">My Products ({myProducts.length})</TabsTrigger>
             <TabsTrigger value="sales">Sales Orders</TabsTrigger>
             <TabsTrigger value="purchases">My Purchases</TabsTrigger>
           </TabsList>
@@ -344,6 +379,7 @@ const ProductsPageEnhanced = () => {
             {/* Products Display */}
             {isLoading ? (
               <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
                 <div className="text-muted-foreground">Loading products...</div>
               </div>
             ) : filteredProducts.length === 0 ? (
@@ -397,6 +433,43 @@ const ProductsPageEnhanced = () => {
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}
           onSave={() => setIsAddModalOpen(false)}
+        />
+
+        {/* Edit Product Modal */}
+        <ProductForm
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setSelectedProduct(null);
+          }}
+          onSave={() => {
+            setIsEditModalOpen(false);
+            setSelectedProduct(null);
+          }}
+          editProduct={selectedProduct}
+        />
+
+        {/* Product Analytics Modal */}
+        <ProductAnalyticsModal
+          isOpen={isAnalyticsModalOpen}
+          onClose={() => {
+            setIsAnalyticsModalOpen(false);
+            setSelectedProduct(null);
+          }}
+          product={selectedProduct}
+        />
+
+        {/* Delete Confirmation Dialog */}
+        <DeleteConfirmationDialog
+          isOpen={isDeleteDialogOpen}
+          onClose={() => {
+            setIsDeleteDialogOpen(false);
+            setSelectedProduct(null);
+          }}
+          onConfirm={confirmDeleteProduct}
+          title="Delete Product"
+          description={`Are you sure you want to delete "${selectedProduct?.title}"? This action cannot be undone.`}
+          isLoading={isDeleting}
         />
       </div>
     </div>

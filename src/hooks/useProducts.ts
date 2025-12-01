@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -56,7 +56,7 @@ export const useProducts = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -76,7 +76,7 @@ export const useProducts = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   const createProduct = async (productData: Omit<Product, 'id' | 'created_at' | 'updated_at' | 'views_count'>) => {
     try {
@@ -88,7 +88,6 @@ export const useProducts = () => {
 
       if (error) throw error;
       
-      setProducts(prev => [data as Product, ...prev]);
       toast({
         title: "Success",
         description: "Product created successfully",
@@ -103,6 +102,75 @@ export const useProducts = () => {
         variant: "destructive",
       });
       throw error;
+    }
+  };
+
+  const updateProduct = async (productId: string, productData: Partial<Product>) => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .update({ ...productData, updated_at: new Date().toISOString() })
+        .eq('id', productId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Product updated successfully",
+      });
+      
+      return data;
+    } catch (error) {
+      console.error('Error updating product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update product",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const deleteProduct = async (productId: string) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId);
+
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Product deleted successfully",
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete product",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const incrementViewCount = async (productId: string) => {
+    try {
+      // Manual increment since RPC doesn't exist
+      const product = products.find(p => p.id === productId);
+      if (product) {
+        await supabase
+          .from('products')
+          .update({ views_count: (product.views_count || 0) + 1 })
+          .eq('id', productId);
+      }
+    } catch (error) {
+      console.error('Error incrementing view count:', error);
     }
   };
 
@@ -128,12 +196,16 @@ export const useProducts = () => {
     }
   };
 
+  const getProductById = useCallback((productId: string) => {
+    return products.find(p => p.id === productId) || null;
+  }, [products]);
+
   useEffect(() => {
     fetchProducts();
 
-    // Set up realtime subscription for products
+    // Set up realtime subscription for products with REPLICA IDENTITY FULL
     const channel = supabase
-      .channel('products-changes')
+      .channel('products-realtime-changes')
       .on(
         'postgres_changes',
         {
@@ -143,7 +215,11 @@ export const useProducts = () => {
         },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            setProducts(prev => [payload.new as Product, ...prev]);
+            setProducts(prev => {
+              // Avoid duplicates
+              if (prev.some(p => p.id === (payload.new as any).id)) return prev;
+              return [payload.new as Product, ...prev];
+            });
           } else if (payload.eventType === 'UPDATE') {
             setProducts(prev => prev.map(product => 
               product.id === (payload.new as any).id ? payload.new as Product : product
@@ -158,13 +234,17 @@ export const useProducts = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [fetchProducts]);
 
   return {
     products,
     isLoading,
     fetchProducts,
     createProduct,
+    updateProduct,
+    deleteProduct,
+    incrementViewCount,
     uploadThumbnail,
+    getProductById,
   };
 };
