@@ -76,13 +76,23 @@ export const useOrders = (userId?: string, role: 'buyer' | 'seller' = 'buyer') =
         body: checkoutData
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Checkout invoke error:', error);
+        throw error;
+      }
+      
+      if (data?.error) {
+        console.error('Checkout response error:', data);
+        throw new Error(data.error);
+      }
+      
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Checkout error:', error);
+      const errorMessage = error?.message || 'Failed to create checkout';
       toast({
-        title: "Error",
-        description: "Failed to create checkout",
+        title: "Checkout Error",
+        description: errorMessage,
         variant: "destructive",
       });
       throw error;

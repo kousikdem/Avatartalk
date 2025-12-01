@@ -112,9 +112,9 @@ serve(async (req) => {
     // Calculate tax (simple 18% GST example)
     const taxAmount = product.taxable ? Math.round(subtotal * 0.18) : 0;
 
-    // Calculate shipping
+    // Calculate shipping (shipping_cost is already in smallest unit - paise)
     const shippingAmount = product.product_type === 'physical' && product.shipping_enabled 
-      ? (product.shipping_cost || 0) * 100 // Convert to smallest unit
+      ? (product.shipping_cost || 0)
       : 0;
 
     // Calculate platform fee (5%)
@@ -210,10 +210,18 @@ serve(async (req) => {
         });
 
       // Increment usage count
-      await supabaseClient
+      const { data: currentDiscount } = await supabaseClient
         .from('discount_codes')
-        .update({ current_uses: supabaseClient.sql`current_uses + 1` })
-        .eq('id', appliedDiscountId);
+        .select('current_uses')
+        .eq('id', appliedDiscountId)
+        .single();
+      
+      if (currentDiscount) {
+        await supabaseClient
+          .from('discount_codes')
+          .update({ current_uses: (currentDiscount.current_uses || 0) + 1 })
+          .eq('id', appliedDiscountId);
+      }
     }
 
     return new Response(
@@ -236,13 +244,21 @@ serve(async (req) => {
         status: 200,
       }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error('Checkout error:', error);
+    const errorMessage = error?.message || 'Unknown error occurred';
+    const statusCode = errorMessage === 'Unauthorized' ? 401 : 
+                       errorMessage.includes('not found') ? 404 : 400;
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: errorMessage,
+        details: error?.details || null,
+        hint: error?.hint || null
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
+        status: statusCode,
       }
     );
   }
