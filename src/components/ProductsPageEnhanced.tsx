@@ -172,6 +172,15 @@ const ProductsPageEnhanced = () => {
             
             <Button 
               variant="outline"
+              onClick={() => window.location.href = '/settings/promo'}
+              className="border-2"
+            >
+              <Percent className="w-4 h-4 mr-2" />
+              Promo Settings
+            </Button>
+            
+            <Button 
+              variant="outline"
               onClick={handleShopifyConnect}
               className="border-2"
             >

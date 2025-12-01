@@ -21,6 +21,7 @@ import ProfilePage from "./components/ProfilePage";
 import UsernameRedirect from "./components/UsernameRedirect";
 import FollowersPage from "./pages/FollowersPage";
 import AITrainingDashboard from "./components/AITrainingDashboard";
+import PromoSettingsPage from "./pages/PromoSettingsPage";
 import { supabase } from "@/integrations/supabase/client";
 
 const queryClient = new QueryClient();
@@ -95,6 +96,7 @@ const App = () => {
                       <Route path="/settings/avatar" element={<AvatarPage />} />
                       <Route path="/settings/calendar" element={<CalendarPage />} />
                       <Route path="/settings/products" element={<ProductsPage />} />
+                      <Route path="/settings/promo" element={<PromoSettingsPage />} />
                       <Route path="/settings/account" element={<SettingsPage />} />
                       <Route path="/settings/social-links" element={<SocialLinksPage />} />
                       <Route path="/settings/feed" element={<FeedPage />} />

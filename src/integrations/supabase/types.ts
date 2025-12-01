@@ -545,84 +545,126 @@ export type Database = {
       discount_codes: {
         Row: {
           active: boolean | null
+          analytics_data: Json | null
           applicable_product_ids: string[] | null
           auto_apply: boolean | null
           code: string
           combinable: boolean | null
           created_at: string
+          created_by_type: string | null
           current_uses: number | null
           discount_type: string
           discount_value: number
           expires_at: string | null
+          flash_sale: boolean | null
+          fraud_flags: Json | null
+          free_shipping: boolean | null
           id: string
           max_uses: number | null
           max_uses_per_user: number | null
           min_order_value: number | null
+          min_quantity: number | null
+          priority: number | null
+          recurring_schedule: Json | null
           scope: string
           seller_id: string
           starts_at: string | null
+          target_buyer_type: string | null
+          target_product_type: string | null
+          targeting_rules: Json | null
           updated_at: string
         }
         Insert: {
           active?: boolean | null
+          analytics_data?: Json | null
           applicable_product_ids?: string[] | null
           auto_apply?: boolean | null
           code: string
           combinable?: boolean | null
           created_at?: string
+          created_by_type?: string | null
           current_uses?: number | null
           discount_type: string
           discount_value: number
           expires_at?: string | null
+          flash_sale?: boolean | null
+          fraud_flags?: Json | null
+          free_shipping?: boolean | null
           id?: string
           max_uses?: number | null
           max_uses_per_user?: number | null
           min_order_value?: number | null
+          min_quantity?: number | null
+          priority?: number | null
+          recurring_schedule?: Json | null
           scope?: string
           seller_id: string
           starts_at?: string | null
+          target_buyer_type?: string | null
+          target_product_type?: string | null
+          targeting_rules?: Json | null
           updated_at?: string
         }
         Update: {
           active?: boolean | null
+          analytics_data?: Json | null
           applicable_product_ids?: string[] | null
           auto_apply?: boolean | null
           code?: string
           combinable?: boolean | null
           created_at?: string
+          created_by_type?: string | null
           current_uses?: number | null
           discount_type?: string
           discount_value?: number
           expires_at?: string | null
+          flash_sale?: boolean | null
+          fraud_flags?: Json | null
+          free_shipping?: boolean | null
           id?: string
           max_uses?: number | null
           max_uses_per_user?: number | null
           min_order_value?: number | null
+          min_quantity?: number | null
+          priority?: number | null
+          recurring_schedule?: Json | null
           scope?: string
           seller_id?: string
           starts_at?: string | null
+          target_buyer_type?: string | null
+          target_product_type?: string | null
+          targeting_rules?: Json | null
           updated_at?: string
         }
         Relationships: []
       }
       discount_usage: {
         Row: {
+          buyer_type: string | null
+          discount_amount: number | null
           discount_code_id: string
           id: string
+          order_amount: number | null
           order_id: string | null
           used_at: string
           user_id: string
         }
         Insert: {
+          buyer_type?: string | null
+          discount_amount?: number | null
           discount_code_id: string
           id?: string
+          order_amount?: number | null
           order_id?: string | null
           used_at?: string
           user_id: string
         }
         Update: {
+          buyer_type?: string | null
+          discount_amount?: number | null
           discount_code_id?: string
           id?: string
+          order_amount?: number | null
           order_id?: string | null
           used_at?: string
           user_id?: string
