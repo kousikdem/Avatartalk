@@ -120,6 +120,12 @@ serve(async (req) => {
     // Calculate platform fee (5%)
     const platformFeePercent = 5;
     const totalAmount = subtotal + taxAmount + shippingAmount;
+    
+    // Validate minimum order amount (Razorpay requires minimum ₹1 = 100 paise)
+    if (totalAmount < 100) {
+      throw new Error('Order amount must be at least ₹1. Please check the product pricing.');
+    }
+    
     const platformFee = Math.round(totalAmount * (platformFeePercent / 100));
     const sellerEarnings = totalAmount - platformFee;
 
