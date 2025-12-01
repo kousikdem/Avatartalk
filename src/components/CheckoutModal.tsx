@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Product } from '@/hooks/useProducts';
 import { useOrders } from '@/hooks/useOrders';
 import { Loader2, Package, CreditCard, MapPin } from 'lucide-react';
-import { getTaxLabel, calculateTax } from '@/utils/taxCalculation';
+import { getShortTaxLabel, calculateTax, getTaxLabel } from '@/utils/taxCalculation';
 
 declare global {
   interface Window {
@@ -488,7 +488,7 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
             )}
             {product.taxable && (
               <div className="flex justify-between text-sm">
-                <span>Tax ({getTaxLabel(product.tax_class)})</span>
+                <span>Tax ({getShortTaxLabel(product.tax_class)})</span>
                 <span>{new Intl.NumberFormat('en-IN', {
                   style: 'currency',
                   currency: currency,

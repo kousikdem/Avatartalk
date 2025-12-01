@@ -21,37 +21,44 @@ interface ProductFormProps {
   editProduct?: Product | null;
 }
 
-const getInitialFormData = (product?: Product | null) => ({
-  title: product?.title || '',
-  description: product?.description || '',
-  product_category: product?.product_category || '',
-  brand: product?.brand || '',
-  tags: product?.tags || [],
-  product_type: (product?.product_type || 'physical') as 'physical' | 'digital',
-  base_currency: product?.base_currency || 'INR',
-  price: product?.price ? product.price / 100 : 1,
-  compare_at_price: product?.compare_at_price ? product.compare_at_price / 100 : 0,
-  is_free: product?.is_free || false,
-  free_for_subscribers: product?.free_for_subscribers || false,
-  taxable: product?.taxable ?? true,
-  tax_class: product?.tax_class || 'standard',
-  track_inventory: product?.track_inventory ?? true,
-  inventory_quantity: product?.inventory_quantity || 0,
-  low_stock_threshold: product?.low_stock_threshold || 5,
-  sku: product?.sku || '',
-  shipping_enabled: product?.shipping_enabled ?? true,
-  shipping_weight: product?.shipping_weight || 0,
-  shipping_cost: product?.shipping_cost ? product.shipping_cost / 100 : 0,
-  cod_enabled: product?.cod_enabled || false,
-  download_limit: product?.download_limit || 3,
-  license_type: product?.license_type || 'single-use',
-  status: product?.status || 'draft',
-  seo_title: product?.seo_title || '',
-  seo_description: product?.seo_description || '',
-  thumbnail: null as File | null,
-  media: null as File | null,
-  thumbnail_url: product?.thumbnail_url || ''
-});
+import { parseTaxClass, formatTaxClass, getCountryList, getTaxRatesForCountry, getTaxTypeForCountry } from '@/utils/taxCalculation';
+
+const getInitialFormData = (product?: Product | null) => {
+  const { countryCode, rateKey } = parseTaxClass(product?.tax_class);
+  
+  return {
+    title: product?.title || '',
+    description: product?.description || '',
+    product_category: product?.product_category || '',
+    brand: product?.brand || '',
+    tags: product?.tags || [],
+    product_type: (product?.product_type || 'physical') as 'physical' | 'digital',
+    base_currency: product?.base_currency || 'INR',
+    price: product?.price ? product.price / 100 : 1,
+    compare_at_price: product?.compare_at_price ? product.compare_at_price / 100 : 0,
+    is_free: product?.is_free || false,
+    free_for_subscribers: product?.free_for_subscribers || false,
+    taxable: product?.taxable ?? true,
+    tax_country: countryCode,
+    tax_rate_key: rateKey,
+    track_inventory: product?.track_inventory ?? true,
+    inventory_quantity: product?.inventory_quantity || 0,
+    low_stock_threshold: product?.low_stock_threshold || 5,
+    sku: product?.sku || '',
+    shipping_enabled: product?.shipping_enabled ?? true,
+    shipping_weight: product?.shipping_weight || 0,
+    shipping_cost: product?.shipping_cost ? product.shipping_cost / 100 : 0,
+    cod_enabled: product?.cod_enabled || false,
+    download_limit: product?.download_limit || 3,
+    license_type: product?.license_type || 'single-use',
+    status: product?.status || 'draft',
+    seo_title: product?.seo_title || '',
+    seo_description: product?.seo_description || '',
+    thumbnail: null as File | null,
+    media: null as File | null,
+    thumbnail_url: product?.thumbnail_url || ''
+  };
+};
 
 const ProductForm: React.FC<ProductFormProps> = ({ isOpen, onClose, onSave, editProduct }) => {
   const [formData, setFormData] = useState(getInitialFormData());
@@ -101,7 +108,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ isOpen, onClose, onSave, edit
         is_free: formData.is_free,
         free_for_subscribers: formData.free_for_subscribers,
         taxable: formData.taxable,
-        tax_class: formData.tax_class,
+        tax_class: formatTaxClass(formData.tax_country, formData.tax_rate_key),
         track_inventory: formData.product_type === 'physical' ? formData.track_inventory : false,
         inventory_quantity: formData.product_type === 'physical' ? formData.inventory_quantity : null,
         low_stock_threshold: formData.product_type === 'physical' ? formData.low_stock_threshold : null,
@@ -357,20 +364,49 @@ const ProductForm: React.FC<ProductFormProps> = ({ isOpen, onClose, onSave, edit
                         </Select>
                       </div>
                       <div>
-                        <Label htmlFor="tax_class">Tax Class (GST)</Label>
-                        <Select value={formData.tax_class} onValueChange={(v) => setFormData(prev => ({ ...prev, tax_class: v }))}>
+                        <Label htmlFor="tax_country">Tax Country</Label>
+                        <Select 
+                          value={formData.tax_country} 
+                          onValueChange={(v) => {
+                            const rates = getTaxRatesForCountry(v);
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              tax_country: v,
+                              tax_rate_key: rates[0]?.key || 'zero'
+                            }));
+                          }}
+                        >
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="zero">0% (Exempt)</SelectItem>
-                            <SelectItem value="reduced">5% GST</SelectItem>
-                            <SelectItem value="standard-12">12% GST</SelectItem>
-                            <SelectItem value="standard">18% GST</SelectItem>
-                            <SelectItem value="luxury">28% GST</SelectItem>
+                          <SelectContent className="max-h-60">
+                            {getCountryList().map(country => (
+                              <SelectItem key={country.code} value={country.code}>
+                                {country.name} ({country.taxType})
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="tax_rate">Tax Rate ({getTaxTypeForCountry(formData.tax_country)})</Label>
+                      <Select 
+                        value={formData.tax_rate_key} 
+                        onValueChange={(v) => setFormData(prev => ({ ...prev, tax_rate_key: v }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getTaxRatesForCountry(formData.tax_country).map(rate => (
+                            <SelectItem key={rate.key} value={rate.key}>
+                              {rate.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div className="flex items-center justify-between">
