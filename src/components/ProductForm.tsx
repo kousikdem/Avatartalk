@@ -34,9 +34,10 @@ const ProductForm: React.FC<ProductFormProps> = ({ isOpen, onClose, onSave }) =>
     
     // Pricing
     base_currency: 'INR',
-    price: 0,
+    price: 1,
     compare_at_price: 0,
     is_free: false,
+    free_for_subscribers: false,
     taxable: true,
     tax_class: 'standard',
     
@@ -103,6 +104,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ isOpen, onClose, onSave }) =>
         price: formData.is_free ? null : Math.round(formData.price * 100),
         compare_at_price: formData.compare_at_price ? Math.round(formData.compare_at_price * 100) : null,
         is_free: formData.is_free,
+        free_for_subscribers: formData.free_for_subscribers,
         taxable: formData.taxable,
         tax_class: formData.tax_class,
         
@@ -143,9 +145,10 @@ const ProductForm: React.FC<ProductFormProps> = ({ isOpen, onClose, onSave }) =>
         tags: [],
         product_type: 'physical',
         base_currency: 'INR',
-        price: 0,
+        price: 1,
         compare_at_price: 0,
         is_free: false,
+        free_for_subscribers: false,
         taxable: true,
         tax_class: 'standard',
         track_inventory: true,
@@ -325,6 +328,17 @@ const ProductForm: React.FC<ProductFormProps> = ({ isOpen, onClose, onSave }) =>
                   />
                 </div>
 
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Free for Subscribers</Label>
+                    <p className="text-xs text-muted-foreground">Subscribers get this product for free</p>
+                  </div>
+                  <Switch
+                    checked={formData.free_for_subscribers}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, free_for_subscribers: checked }))}
+                  />
+                </div>
+
                 {!formData.is_free && (
                   <>
                     <div className="grid grid-cols-2 gap-4">
@@ -333,10 +347,10 @@ const ProductForm: React.FC<ProductFormProps> = ({ isOpen, onClose, onSave }) =>
                         <Input
                           id="price"
                           type="number"
-                          min="0"
+                          min="1"
                           step="0.01"
                           value={formData.price}
-                          onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                          onChange={(e) => setFormData(prev => ({ ...prev, price: Math.max(1, parseFloat(e.target.value) || 1) }))}
                         />
                       </div>
                       <div>
