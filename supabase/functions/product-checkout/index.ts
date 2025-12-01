@@ -176,7 +176,7 @@ serve(async (req) => {
       body: JSON.stringify({
         amount: totalAmount,
         currency: currency,
-        receipt: `order_${order.id}`,
+        receipt: order.id.substring(0, 40), // Razorpay receipt max 40 chars
         notes: {
           order_id: order.id,
           product_id: productId,
