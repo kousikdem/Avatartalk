@@ -553,6 +553,7 @@ export type Database = {
           created_at: string
           created_by_type: string | null
           current_uses: number | null
+          description: string | null
           discount_type: string
           discount_value: number
           expires_at: string | null
@@ -584,6 +585,7 @@ export type Database = {
           created_at?: string
           created_by_type?: string | null
           current_uses?: number | null
+          description?: string | null
           discount_type: string
           discount_value: number
           expires_at?: string | null
@@ -615,6 +617,7 @@ export type Database = {
           created_at?: string
           created_by_type?: string | null
           current_uses?: number | null
+          description?: string | null
           discount_type?: string
           discount_value?: number
           expires_at?: string | null
