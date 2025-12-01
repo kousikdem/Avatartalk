@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Upload, X, Image, Tag, Package, Download, Truck, CreditCard, Percent } from 'lucide-react';
-import { useProducts } from '@/hooks/useProducts';
+import { Upload, X, Tag, Package, Download } from 'lucide-react';
+import { useProducts, Product } from '@/hooks/useProducts';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -18,59 +18,55 @@ interface ProductFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (productData: any) => void;
+  editProduct?: Product | null;
 }
 
-const ProductForm: React.FC<ProductFormProps> = ({ isOpen, onClose, onSave }) => {
-  const [formData, setFormData] = useState({
-    // Basic
-    title: '',
-    description: '',
-    product_category: '',
-    brand: '',
-    tags: [] as string[],
-    
-    // Type
-    product_type: 'physical' as 'physical' | 'digital',
-    
-    // Pricing
-    base_currency: 'INR',
-    price: 1,
-    compare_at_price: 0,
-    is_free: false,
-    free_for_subscribers: false,
-    taxable: true,
-    tax_class: 'standard',
-    
-    // Inventory (Physical)
-    track_inventory: true,
-    inventory_quantity: 0,
-    low_stock_threshold: 5,
-    sku: '',
-    
-    // Shipping (Physical)
-    shipping_enabled: true,
-    shipping_weight: 0,
-    shipping_cost: 0,
-    cod_enabled: false,
-    
-    // Digital
-    download_limit: 3,
-    license_type: 'single-use',
-    
-    // Advanced
-    status: 'draft',
-    seo_title: '',
-    seo_description: '',
-    
-    // Media
-    thumbnail: null as File | null,
-    media: null as File | null
-  });
-  
+const getInitialFormData = (product?: Product | null) => ({
+  title: product?.title || '',
+  description: product?.description || '',
+  product_category: product?.product_category || '',
+  brand: product?.brand || '',
+  tags: product?.tags || [],
+  product_type: (product?.product_type || 'physical') as 'physical' | 'digital',
+  base_currency: product?.base_currency || 'INR',
+  price: product?.price ? product.price / 100 : 1,
+  compare_at_price: product?.compare_at_price ? product.compare_at_price / 100 : 0,
+  is_free: product?.is_free || false,
+  free_for_subscribers: product?.free_for_subscribers || false,
+  taxable: product?.taxable ?? true,
+  tax_class: product?.tax_class || 'standard',
+  track_inventory: product?.track_inventory ?? true,
+  inventory_quantity: product?.inventory_quantity || 0,
+  low_stock_threshold: product?.low_stock_threshold || 5,
+  sku: product?.sku || '',
+  shipping_enabled: product?.shipping_enabled ?? true,
+  shipping_weight: product?.shipping_weight || 0,
+  shipping_cost: product?.shipping_cost ? product.shipping_cost / 100 : 0,
+  cod_enabled: product?.cod_enabled || false,
+  download_limit: product?.download_limit || 3,
+  license_type: product?.license_type || 'single-use',
+  status: product?.status || 'draft',
+  seo_title: product?.seo_title || '',
+  seo_description: product?.seo_description || '',
+  thumbnail: null as File | null,
+  media: null as File | null,
+  thumbnail_url: product?.thumbnail_url || ''
+});
+
+const ProductForm: React.FC<ProductFormProps> = ({ isOpen, onClose, onSave, editProduct }) => {
+  const [formData, setFormData] = useState(getInitialFormData());
   const [tagInput, setTagInput] = useState('');
   const [isUploading, setIsUploading] = useState(false);
-  const { createProduct, uploadThumbnail } = useProducts();
+  const { createProduct, updateProduct, uploadThumbnail } = useProducts();
   const { toast } = useToast();
+
+  const isEditMode = !!editProduct;
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(getInitialFormData(editProduct));
+    }
+  }, [isOpen, editProduct]);
 
   const handleSubmit = async (action: 'draft' | 'publish') => {
     try {
@@ -80,13 +76,13 @@ const ProductForm: React.FC<ProductFormProps> = ({ isOpen, onClose, onSave }) =>
       if (!user) {
         toast({
           title: "Error",
-          description: "You must be logged in to create products",
+          description: "You must be logged in to manage products",
           variant: "destructive",
         });
         return;
       }
 
-      let thumbnailUrl = '';
+      let thumbnailUrl = formData.thumbnail_url;
       if (formData.thumbnail) {
         thumbnailUrl = await uploadThumbnail(formData.thumbnail, user.id);
       }
@@ -99,7 +95,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ isOpen, onClose, onSave }) =>
         product_category: formData.product_category,
         brand: formData.brand,
         tags: formData.tags,
-        
         base_currency: formData.base_currency,
         price: formData.is_free ? null : Math.round(formData.price * 100),
         compare_at_price: formData.compare_at_price ? Math.round(formData.compare_at_price * 100) : null,
@@ -107,68 +102,40 @@ const ProductForm: React.FC<ProductFormProps> = ({ isOpen, onClose, onSave }) =>
         free_for_subscribers: formData.free_for_subscribers,
         taxable: formData.taxable,
         tax_class: formData.tax_class,
-        
         track_inventory: formData.product_type === 'physical' ? formData.track_inventory : false,
         inventory_quantity: formData.product_type === 'physical' ? formData.inventory_quantity : null,
         low_stock_threshold: formData.product_type === 'physical' ? formData.low_stock_threshold : null,
         sku: formData.sku || null,
-        
         shipping_enabled: formData.product_type === 'physical' ? formData.shipping_enabled : false,
         shipping_weight: formData.product_type === 'physical' ? formData.shipping_weight : null,
         shipping_cost: formData.product_type === 'physical' && formData.shipping_cost ? Math.round(formData.shipping_cost * 100) : null,
         cod_enabled: formData.product_type === 'physical' ? formData.cod_enabled : false,
-        
         download_limit: formData.product_type === 'digital' ? formData.download_limit : null,
         license_type: formData.product_type === 'digital' ? formData.license_type : null,
-        
         status: action === 'draft' ? 'draft' : 'published',
         seo_title: formData.seo_title || formData.title,
         seo_description: formData.seo_description || formData.description,
         thumbnail_url: thumbnailUrl
       };
 
-      await createProduct(productData);
+      if (isEditMode && editProduct) {
+        await updateProduct(editProduct.id, productData);
+      } else {
+        await createProduct(productData);
+      }
+      
       onSave(productData);
       onClose();
       
       toast({
         title: "Success",
-        description: `Product ${action === 'draft' ? 'saved as draft' : 'published'} successfully`,
+        description: `Product ${isEditMode ? 'updated' : (action === 'draft' ? 'saved as draft' : 'published')} successfully`,
       });
       
       // Reset form
-      setFormData({
-        title: '',
-        description: '',
-        product_category: '',
-        brand: '',
-        tags: [],
-        product_type: 'physical',
-        base_currency: 'INR',
-        price: 1,
-        compare_at_price: 0,
-        is_free: false,
-        free_for_subscribers: false,
-        taxable: true,
-        tax_class: 'standard',
-        track_inventory: true,
-        inventory_quantity: 0,
-        low_stock_threshold: 5,
-        sku: '',
-        shipping_enabled: true,
-        shipping_weight: 0,
-        shipping_cost: 0,
-        cod_enabled: false,
-        download_limit: 3,
-        license_type: 'single-use',
-        status: 'draft',
-        seo_title: '',
-        seo_description: '',
-        thumbnail: null,
-        media: null
-      });
+      setFormData(getInitialFormData());
     } catch (error) {
-      console.error('Error creating product:', error);
+      console.error('Error saving product:', error);
     } finally {
       setIsUploading(false);
     }
@@ -189,7 +156,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ isOpen, onClose, onSave }) =>
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Add New Product</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">
+            {isEditMode ? 'Edit Product' : 'Add New Product'}
+          </DialogTitle>
         </DialogHeader>
 
         <Tabs defaultValue="basic" className="w-full">
@@ -310,6 +279,12 @@ const ProductForm: React.FC<ProductFormProps> = ({ isOpen, onClose, onSave }) =>
                   </label>
                   {formData.thumbnail && (
                     <p className="text-sm mt-2 text-muted-foreground">{formData.thumbnail.name}</p>
+                  )}
+                  {!formData.thumbnail && formData.thumbnail_url && (
+                    <div className="mt-2">
+                      <img src={formData.thumbnail_url} alt="Current thumbnail" className="w-20 h-20 object-cover mx-auto rounded" />
+                      <p className="text-xs text-muted-foreground mt-1">Current thumbnail</p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -631,18 +606,20 @@ const ProductForm: React.FC<ProductFormProps> = ({ isOpen, onClose, onSave }) =>
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button
-            variant="secondary"
-            onClick={() => handleSubmit('draft')}
-            disabled={isUploading}
-          >
-            Save Draft
-          </Button>
+          {!isEditMode && (
+            <Button
+              variant="secondary"
+              onClick={() => handleSubmit('draft')}
+              disabled={isUploading}
+            >
+              Save Draft
+            </Button>
+          )}
           <Button
             onClick={() => handleSubmit('publish')}
             disabled={isUploading}
           >
-            Publish Product
+            {isUploading ? 'Saving...' : isEditMode ? 'Update Product' : 'Publish Product'}
           </Button>
         </div>
       </DialogContent>
