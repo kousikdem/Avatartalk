@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { 
   Plus, Grid3X3, List, Eye, Edit, Trash2, TrendingUp, 
   ShoppingBag, DollarSign, Package, Download, Store, Search,
-  Filter, BarChart3, CreditCard, TrendingDown, Percent, RefreshCw
+  Filter, BarChart3, CreditCard, TrendingDown, Percent, RefreshCw, ShoppingCart
 } from 'lucide-react';
 import ProductForm from '@/components/ProductForm';
 import ProductCard from '@/components/ProductCard';
@@ -113,24 +113,26 @@ const ProductsPageEnhanced = () => {
   const physicalProducts = myProducts.filter(p => p.product_type === 'physical');
   const totalViews = myProducts.reduce((sum, p) => sum + (p.views_count || 0), 0);
   
+  // Seller stats
   const sellerOrders = orders.filter(o => o.seller_id === currentUserId && o.payment_status === 'captured');
   const totalEarnings = sellerOrders.reduce((sum, o) => sum + o.amount, 0);
   const platformFees = sellerOrders.reduce((sum, o) => sum + (o.platform_fee || 0), 0);
-  const netEarnings = totalEarnings - platformFees;
+  const netEarnings = sellerOrders.reduce((sum, o) => sum + (o.seller_earnings || 0), 0);
   
-  const physicalSales = sellerOrders.filter(o => {
-    const product = products.find(p => p.id === o.product_id);
-    return product?.product_type === 'physical';
-  });
-  const digitalSales = sellerOrders.filter(o => {
-    const product = products.find(p => p.id === o.product_id);
-    return product?.product_type === 'digital';
-  });
+  // Buyer stats  
+  const buyerOrders = orders.filter(o => o.buyer_id === currentUserId && o.payment_status === 'captured');
+  const totalPurchases = buyerOrders.length;
+  const totalSpent = buyerOrders.reduce((sum, o) => sum + o.total_amount, 0);
+  
+  const physicalSales = sellerOrders.filter(o => o.metadata?.product_type === 'physical');
+  const digitalSales = sellerOrders.filter(o => o.metadata?.product_type === 'digital');
 
   const physicalSalesCount = physicalSales.length;
   const physicalSalesRevenue = physicalSales.reduce((sum, o) => sum + o.amount, 0);
+  const physicalPlatformFees = physicalSales.reduce((sum, o) => sum + (o.platform_fee || 0), 0);
   const digitalSalesCount = digitalSales.length;
   const digitalSalesRevenue = digitalSales.reduce((sum, o) => sum + o.amount, 0);
+  const digitalPlatformFees = digitalSales.reduce((sum, o) => sum + (o.platform_fee || 0), 0);
 
   // Filter products
   const filteredProducts = myProducts.filter(product => {
@@ -262,7 +264,7 @@ const ProductsPageEnhanced = () => {
         </div>
 
         {/* KPI Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
           <Card className="border-2">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -281,7 +283,7 @@ const ProductsPageEnhanced = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground font-medium">Total Earnings</p>
+                  <p className="text-sm text-muted-foreground font-medium">Total Revenue</p>
                   <p className="text-2xl font-bold text-foreground">
                     {formatCurrency(totalEarnings, selectedCurrency)}
                   </p>
@@ -295,12 +297,26 @@ const ProductsPageEnhanced = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
+                  <p className="text-sm text-muted-foreground font-medium">Platform Fees</p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {formatCurrency(platformFees, selectedCurrency)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Physical: {formatCurrency(physicalPlatformFees, selectedCurrency)} | Digital: {formatCurrency(digitalPlatformFees, selectedCurrency)}
+                  </p>
+                </div>
+                <Percent className="w-8 h-8 text-red-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
                   <p className="text-sm text-muted-foreground font-medium">Net Earnings</p>
                   <p className="text-2xl font-bold text-green-600">
                     {formatCurrency(netEarnings, selectedCurrency)}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Fee: {formatCurrency(platformFees, selectedCurrency)}
                   </p>
                 </div>
                 <TrendingUp className="w-8 h-8 text-green-500" />
@@ -315,7 +331,7 @@ const ProductsPageEnhanced = () => {
                   <p className="text-sm text-muted-foreground font-medium">Physical Sales</p>
                   <p className="text-2xl font-bold text-foreground">{physicalSalesCount}</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {formatCurrency(physicalSalesRevenue, selectedCurrency)}
+                    {formatCurrency(physicalSalesRevenue, selectedCurrency)} (5% fee)
                   </p>
                 </div>
                 <Package className="w-8 h-8 text-blue-500" />
@@ -330,10 +346,25 @@ const ProductsPageEnhanced = () => {
                   <p className="text-sm text-muted-foreground font-medium">Digital Sales</p>
                   <p className="text-2xl font-bold text-foreground">{digitalSalesCount}</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {formatCurrency(digitalSalesRevenue, selectedCurrency)}
+                    {formatCurrency(digitalSalesRevenue, selectedCurrency)} (10% fee)
                   </p>
                 </div>
                 <Download className="w-8 h-8 text-purple-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground font-medium">Purchases</p>
+                  <p className="text-2xl font-bold text-foreground">{totalPurchases}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Spent: {formatCurrency(totalSpent, selectedCurrency)}
+                  </p>
+                </div>
+                <ShoppingBag className="w-8 h-8 text-orange-500" />
               </div>
             </CardContent>
           </Card>
