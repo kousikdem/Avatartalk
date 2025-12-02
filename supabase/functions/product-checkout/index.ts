@@ -195,8 +195,9 @@ serve(async (req) => {
       shippingAmount = freeShippingApplied ? 0 : (product.shipping_cost || 0);
     }
 
-    // Calculate platform fee (5%)
-    const platformFeePercent = 5;
+    // Calculate platform fee based on product type
+    // Physical products: 5%, Digital products: 10%
+    const platformFeePercent = product.product_type === 'physical' ? 5 : 10;
     const totalAmount = subtotal + taxAmount + shippingAmount;
     
     // Validate minimum order amount (Razorpay requires minimum ₹1 = 100 paise)

@@ -5,6 +5,7 @@ import { useOrders } from '@/hooks/useOrders';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { formatDistanceToNow } from 'date-fns';
 import { DeliveryTracker } from '@/components/DeliveryTracker';
+import { InvoiceGenerator } from '@/components/InvoiceGenerator';
 import { useState } from 'react';
 
 interface OrdersDashboardProps {
@@ -117,9 +118,17 @@ export const OrdersDashboard = ({ type }: OrdersDashboardProps) => {
 
       {/* Orders List */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">
-          {type === 'buyer' ? 'My Purchases' : 'Sales Orders'}
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">
+            {type === 'buyer' ? 'My Purchases' : 'Sales Orders'}
+          </h3>
+          {type === 'seller' && (
+            <InvoiceGenerator 
+              orders={orders} 
+              sellerName={profileData?.display_name || profileData?.username || 'Seller'} 
+            />
+          )}
+        </div>
 
         {orders.length === 0 ? (
           <Card>
