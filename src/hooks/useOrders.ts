@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -37,7 +37,7 @@ export const useOrders = (userId?: string, role: 'buyer' | 'seller' = 'buyer') =
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     if (!userId) return;
     
     setIsLoading(true);
@@ -61,7 +61,7 @@ export const useOrders = (userId?: string, role: 'buyer' | 'seller' = 'buyer') =
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userId, role, toast]);
 
   const createCheckout = async (checkoutData: {
     productId: string;

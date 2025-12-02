@@ -144,7 +144,19 @@ serve(async (req) => {
       console.log('Subscription created:', newSub.id);
     }
 
-    // Create transaction record
+    // Calculate platform fee for subscriptions (50%)
+    const platformFeePercent = 50;
+    const platformFee = Math.round(plan.price_amount * (platformFeePercent / 100));
+    const sellerEarnings = plan.price_amount - platformFee;
+
+    console.log('Platform fee calculation:', { 
+      amount: plan.price_amount, 
+      platformFeePercent, 
+      platformFee, 
+      sellerEarnings 
+    });
+
+    // Create transaction record with platform fee tracking
     const { error: txError } = await supabase
       .from('transactions')
       .insert({
@@ -155,7 +167,13 @@ serve(async (req) => {
         razorpay_payment_id: razorpay_payment_id,
         razorpay_order_id: razorpay_order_id,
         razorpay_signature: razorpay_signature,
-        status: 'completed'
+        status: 'completed',
+        metadata: {
+          platform_fee: platformFee,
+          seller_earnings: sellerEarnings,
+          platform_fee_percent: platformFeePercent,
+          billing_cycle: effectiveBillingCycle
+        }
       });
 
     if (txError) {

@@ -56,6 +56,48 @@ const ProductsPageEnhanced = () => {
     fetchUser();
   }, []);
 
+  // Real-time subscription for orders and products
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    // Subscribe to orders changes for real-time stats
+    const ordersChannel = supabase
+      .channel('dashboard-orders-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+        },
+        () => {
+          // Trigger refetch of orders (handled by useOrders hook)
+        }
+      )
+      .subscribe();
+
+    // Subscribe to products changes for real-time stats
+    const productsChannel = supabase
+      .channel('dashboard-products-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'products',
+        },
+        () => {
+          fetchProducts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ordersChannel);
+      supabase.removeChannel(productsChannel);
+    };
+  }, [currentUserId, fetchProducts]);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'published': return 'bg-green-100 text-green-800 border-green-200';
