@@ -15,11 +15,13 @@ import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { useCoquiTTS } from '@/hooks/useCoquiTTS';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
 import { useDefaultAvatar } from '@/hooks/useDefaultAvatar';
+import { useActiveSubscription } from '@/hooks/useActiveSubscription';
 import FuturisticAvatar3D from './FuturisticAvatar3D';
 import ChangeableAvatarPreview from './ChangeableAvatarPreview';
 import SocialFeed from './SocialFeed';
 import FollowButton from './FollowButton';
 import SubscribeButton from './SubscribeButton';
+import SubscriberBadge from './SubscriberBadge';
 import EnhancedShareModal from './EnhancedShareModal';
 import SocialLinksMenu from './SocialLinksMenu';
 import SocialLinksPopup from './SocialLinksPopup';
@@ -176,6 +178,9 @@ const ProfilePage: React.FC = () => {
 
   const { trainings, currentTraining } = usePersonalizedAI();
   const { posts: userPosts, isLoading: postsLoading, fetchPosts } = usePosts(profile?.id);
+  
+  // Check if current user is subscribed to this profile
+  const { isActiveSubscriber, badgeConfig } = useActiveSubscription(currentUser?.id, profile?.id);
   const { 
     defaultConfig, 
     saveAsDefault, 
@@ -897,6 +902,16 @@ const ProfilePage: React.FC = () => {
                     </div>
                   </div>
                   <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 shadow-sm" />
+                  {/* Subscriber Badge - shown when current user is subscribed to this profile */}
+                  {isActiveSubscriber && (
+                    <div className="absolute -top-1 -left-1">
+                      <SubscriberBadge 
+                        text={badgeConfig.text} 
+                        color={badgeConfig.color}
+                        size="sm"
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h2 className={`text-xl font-bold ${textPrimaryClass} leading-tight mb-0.5 truncate`}>

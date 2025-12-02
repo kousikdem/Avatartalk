@@ -745,6 +745,61 @@ const SettingsPage = () => {
                         onCheckedChange={(checked) => setNewPlan(prev => ({ ...prev, require_follow: checked }))}
                       />
                     </div>
+                    
+                    {/* Badge Configuration */}
+                    <div className="md:col-span-2 border-t pt-4 mt-2">
+                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                        <span className="text-indigo-600">🏷️</span> Subscriber Badge Settings
+                      </h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="badge_text">Badge Text</Label>
+                          <Input
+                            id="badge_text"
+                            value={newPlan.badge?.text || 'Subscriber'}
+                            onChange={(e) => setNewPlan(prev => ({ 
+                              ...prev, 
+                              badge: { ...prev.badge, text: e.target.value } 
+                            }))}
+                            placeholder="e.g., Subscriber, VIP, Premium"
+                            maxLength={20}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="badge_color">Badge Color</Label>
+                          <div className="flex gap-2 items-center">
+                            <Input
+                              id="badge_color"
+                              type="color"
+                              value={newPlan.badge?.color || '#6366f1'}
+                              onChange={(e) => setNewPlan(prev => ({ 
+                                ...prev, 
+                                badge: { ...prev.badge, color: e.target.value } 
+                              }))}
+                              className="w-12 h-10 p-1 cursor-pointer"
+                            />
+                            <Input
+                              value={newPlan.badge?.color || '#6366f1'}
+                              onChange={(e) => setNewPlan(prev => ({ 
+                                ...prev, 
+                                badge: { ...prev.badge, color: e.target.value } 
+                              }))}
+                              placeholder="#6366f1"
+                              className="flex-1"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex items-center gap-2">
+                        <span className="text-sm text-gray-500">Preview:</span>
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-white"
+                          style={{ backgroundColor: newPlan.badge?.color || '#6366f1' }}
+                        >
+                          👑 {newPlan.badge?.text || 'Subscriber'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                   <Button
                     onClick={async () => {

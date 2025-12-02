@@ -113,7 +113,7 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
           order_id: data.order_id,
           handler: async (response: any) => {
             // Verify payment
-            const { error: verifyError } = await supabase.functions.invoke('razorpay-verify-payment', {
+            const { data, error: verifyError } = await supabase.functions.invoke('razorpay-verify-payment', {
               body: {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
@@ -124,9 +124,10 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
             });
 
             if (verifyError) {
+              console.error('Payment verification error:', verifyError);
               toast({
                 title: "Payment Verification Failed",
-                description: "Please contact support",
+                description: verifyError.message || "Please contact support",
                 variant: "destructive",
               });
             } else {
@@ -134,6 +135,8 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
                 title: "Subscription Active!",
                 description: `You are now subscribed to ${targetUsername}`,
               });
+              // Force page reload to update subscription status
+              window.location.reload();
             }
           },
           prefill: {
