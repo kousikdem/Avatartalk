@@ -16,6 +16,8 @@ import { useCoquiTTS } from '@/hooks/useCoquiTTS';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
 import { useDefaultAvatar } from '@/hooks/useDefaultAvatar';
 import { useActiveSubscription } from '@/hooks/useActiveSubscription';
+import { useAIChatHistory } from '@/hooks/useAIChatHistory';
+import { useProfileEngagement } from '@/hooks/useProfileEngagement';
 import FuturisticAvatar3D from './FuturisticAvatar3D';
 import ChangeableAvatarPreview from './ChangeableAvatarPreview';
 import SocialFeed from './SocialFeed';
@@ -56,7 +58,8 @@ import {
   Github,
   Twitch,
   Music,
-  FileText
+  FileText,
+  BadgeCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -210,27 +213,51 @@ const ProfilePage: React.FC = () => {
     stopAudio
   } = useVoiceChat();
 
-  // Initialize and load chat messages from localStorage
+  // Chat history persistence
+  const { 
+    chatHistory, 
+    loading: chatHistoryLoading, 
+    saveMessage: saveChatMessage,
+    sessionId 
+  } = useAIChatHistory(profile?.id || null, currentUser?.id || null);
+
+  // Profile engagement stats (real-time)
+  const { 
+    engagement, 
+    loading: engagementLoading 
+  } = useProfileEngagement(profile?.id || null);
+
+  // Initialize and load chat messages from database
   useEffect(() => {
-    if (profile) {
-      // No longer using localStorage for chat history
-      // Initialize with welcome message
-      const initialMessages: ChatMessage[] = [
-        {
-          id: '1',
-          content: `Hi there! I'm ${profile.display_name || profile.username}. How can I help you today?`,
-          timestamp: new Date().toISOString(),
-          sender: 'avatar',
-          senderName: profile.display_name || profile.username,
-          senderAvatar: profile.profile_pic_url || profile.avatar_url
-        }
-      ];
-      setChatMessages(initialMessages);
+    if (profile && !chatHistoryLoading) {
+      if (chatHistory.length > 0) {
+        // Load previous chat history with profile info
+        const messagesWithProfile: ChatMessage[] = chatHistory.map(msg => ({
+          ...msg,
+          senderName: msg.sender === 'avatar' 
+            ? (profile.display_name || profile.username) 
+            : (currentUser?.email?.split('@')[0] || 'Guest'),
+          senderAvatar: msg.sender === 'avatar' 
+            ? (profile.profile_pic_url || profile.avatar_url)
+            : currentUser?.user_metadata?.avatar_url
+        }));
+        setChatMessages(messagesWithProfile);
+      } else {
+        // Initialize with welcome message for new conversations
+        const initialMessages: ChatMessage[] = [
+          {
+            id: '1',
+            content: `Hi there! I'm ${profile.display_name || profile.username}. How can I help you today?`,
+            timestamp: new Date().toISOString(),
+            sender: 'avatar',
+            senderName: profile.display_name || profile.username,
+            senderAvatar: profile.profile_pic_url || profile.avatar_url
+          }
+        ];
+        setChatMessages(initialMessages);
+      }
     }
-  }, [profile]);
-  
-  // Remove the localStorage save effect - chat messages should not be persisted
-  // useEffect removed
+  }, [profile, chatHistory, chatHistoryLoading, currentUser]);
 
   const profileData = useMemo(() => ({
     displayName: profile?.display_name || profile?.username || 'Unknown User',
@@ -631,6 +658,9 @@ const ProfilePage: React.FC = () => {
     setChatMessage('');
     setIsTyping(true);
     
+    // Save user message to database
+    await saveChatMessage(messageContent, 'user');
+    
     try {
       // Generate personalized AI response
       const response = await supabase.functions.invoke('personalized-ai-response', {
@@ -660,6 +690,9 @@ const ProfilePage: React.FC = () => {
       };
 
       setChatMessages(prev => [...prev, aiMessage]);
+      
+      // Save AI response to database
+      await saveChatMessage(aiResponse, 'avatar', richData);
       
       // Play voice response using Web Speech API
       if (aiResponse) {
@@ -1015,24 +1048,30 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Stats - Three Column Layout - Smaller size with minimal spacing */}
+            {/* Stats - Three Column Layout with New User Badge */}
             <div className="px-6 pb-4">
               <div className="grid grid-cols-3 gap-2">
-                <div className={`text-center rounded-xl py-2 backdrop-blur-sm border ${isDarkTheme ? 'bg-slate-800/30 border-slate-700/20' : 'bg-gradient-to-br from-blue-50 to-purple-50 border-gray-200'}`}>
+                <div className={`text-center rounded-xl py-2 backdrop-blur-sm border relative ${isDarkTheme ? 'bg-slate-800/30 border-slate-700/20' : 'bg-gradient-to-br from-blue-50 to-purple-50 border-gray-200'}`}>
                   <div className={`text-lg font-bold mb-0.5 ${textPrimaryClass}`}>
-                    {userStats?.total_conversations || 0}
+                    {engagement.totalConversations}
                   </div>
                   <div className={`text-xs font-medium ${textSecondaryClass}`}>Conversations</div>
                 </div>
-                <div className={`text-center rounded-xl py-2 backdrop-blur-sm border ${isDarkTheme ? 'bg-slate-800/30 border-slate-700/20' : 'bg-gradient-to-br from-blue-50 to-purple-50 border-gray-200'}`}>
+                <div className={`text-center rounded-xl py-2 backdrop-blur-sm border relative ${isDarkTheme ? 'bg-slate-800/30 border-slate-700/20' : 'bg-gradient-to-br from-blue-50 to-purple-50 border-gray-200'}`}>
                   <div className={`text-lg font-bold mb-0.5 ${textPrimaryClass}`}>
-                    {(profile?.followers_count || 0) >= 1000 ? `${((profile?.followers_count || 0)/1000).toFixed(1)}K` : (profile?.followers_count || 0)}
+                    {engagement.followersCount >= 1000 ? `${(engagement.followersCount/1000).toFixed(1)}K` : engagement.followersCount}
                   </div>
                   <div className={`text-xs font-medium ${textSecondaryClass}`}>Followers</div>
+                  {engagement.isNewUser && (
+                    <div className="absolute -top-1 -right-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-semibold flex items-center gap-0.5">
+                      <BadgeCheck className="w-2.5 h-2.5" />
+                      NEW
+                    </div>
+                  )}
                 </div>
                 <div className={`text-center rounded-xl py-2 backdrop-blur-sm border ${isDarkTheme ? 'bg-slate-800/30 border-slate-700/20' : 'bg-gradient-to-br from-blue-50 to-purple-50 border-gray-200'}`}>
                   <div className={`text-lg font-bold mb-0.5 ${textPrimaryClass}`}>
-                    {Math.round(userStats?.engagement_score || 0)}%
+                    {Math.round(engagement.engagementScore)}
                   </div>
                   <div className={`text-xs font-medium ${textSecondaryClass}`}>Engagement</div>
                 </div>

@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_chat_history: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          profile_id: string
+          rich_data: Json | null
+          sender: string
+          visitor_id: string | null
+          visitor_session_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          profile_id: string
+          rich_data?: Json | null
+          sender: string
+          visitor_id?: string | null
+          visitor_session_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          profile_id?: string
+          rich_data?: Json | null
+          sender?: string
+          visitor_id?: string | null
+          visitor_session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_chat_history_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_chat_history_visitor_id_fkey"
+            columns: ["visitor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_training_data: {
         Row: {
           api_endpoint: string
@@ -2173,39 +2221,51 @@ export type Database = {
         Row: {
           created_at: string | null
           engagement_score: number | null
+          first_visit_at: string | null
           followers_count: number | null
           following_count: number | null
           id: string
+          is_new_user: boolean | null
           profile_views: number | null
           total_chats_received: number | null
           total_chats_sent: number | null
           total_conversations: number | null
+          total_products_sold: number | null
+          total_revenue: number | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
           created_at?: string | null
           engagement_score?: number | null
+          first_visit_at?: string | null
           followers_count?: number | null
           following_count?: number | null
           id?: string
+          is_new_user?: boolean | null
           profile_views?: number | null
           total_chats_received?: number | null
           total_chats_sent?: number | null
           total_conversations?: number | null
+          total_products_sold?: number | null
+          total_revenue?: number | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
           created_at?: string | null
           engagement_score?: number | null
+          first_visit_at?: string | null
           followers_count?: number | null
           following_count?: number | null
           id?: string
+          is_new_user?: boolean | null
           profile_views?: number | null
           total_chats_received?: number | null
           total_chats_sent?: number | null
           total_conversations?: number | null
+          total_products_sold?: number | null
+          total_revenue?: number | null
           updated_at?: string | null
           user_id?: string
         }
@@ -2359,6 +2419,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_user_engagement_score: {
+        Args: { p_user_id: string }
+        Returns: number
+      }
       decrement_product_inventory: {
         Args: { p_product_id: string; p_quantity: number; p_variant_id: string }
         Returns: boolean
