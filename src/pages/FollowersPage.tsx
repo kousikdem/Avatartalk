@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, UserPlus, UserMinus, Search, Eye, MessageSquare, Trash2, Filter, Clock, SortAsc, CircleDot } from 'lucide-react';
+import { Users, UserPlus, UserMinus, Search, Eye, MessageSquare, Trash2, Filter, Clock, SortAsc, CircleDot, Crown, IndianRupee } from 'lucide-react';
 import { useFollows } from '@/hooks/useFollows';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +14,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import FollowButton from '@/components/FollowButton';
+
+interface FollowerStats {
+  followersCount: number;
+  subscribersCount: number;
+  totalSubscriberEarnings: number;
+  visitorsCount: number;
+}
 
 interface User {
   id: string;
@@ -40,17 +47,78 @@ const FollowersPage = () => {
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [stats, setStats] = useState<FollowerStats>({
+    followersCount: 0,
+    subscribersCount: 0,
+    totalSubscriberEarnings: 0,
+    visitorsCount: 0
+  });
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Get current user ID
+  // Fetch stats in real-time
+  const fetchStats = useCallback(async (userId: string) => {
+    try {
+      // Fetch followers count
+      const { count: followersCount } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', userId);
+
+      // Fetch active subscribers and their payments
+      const { data: subscriptions } = await supabase
+        .from('subscriptions')
+        .select('price, status')
+        .eq('subscribed_to_id', userId)
+        .eq('status', 'active');
+
+      const subscribersCount = subscriptions?.length || 0;
+      const totalSubscriberEarnings = subscriptions?.reduce((sum, sub) => sum + (Number(sub.price) || 0), 0) || 0;
+
+      // Fetch visitors count
+      const { count: visitorsCount } = await supabase
+        .from('profile_visitors')
+        .select('*', { count: 'exact', head: true })
+        .eq('visited_profile_id', userId);
+
+      setStats({
+        followersCount: followersCount || 0,
+        subscribersCount,
+        totalSubscriberEarnings,
+        visitorsCount: visitorsCount || 0
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  }, []);
+
+  // Get current user ID and fetch initial stats
   useEffect(() => {
     const getCurrentUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUserId(user?.id || null);
+      if (user?.id) {
+        fetchStats(user.id);
+      }
     };
     getCurrentUser();
-  }, []);
+  }, [fetchStats]);
+
+  // Real-time stats updates
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    const statsChannel = supabase
+      .channel('follower-page-stats')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'follows' }, () => fetchStats(currentUserId))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'subscriptions' }, () => fetchStats(currentUserId))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profile_visitors' }, () => fetchStats(currentUserId))
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(statsChannel);
+    };
+  }, [currentUserId, fetchStats]);
 
   // Fetch visitors from profile_visitors table with real-time updates
   useEffect(() => {
@@ -389,6 +457,89 @@ const FollowersPage = () => {
                   </p>
                 </div>
               </div>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <Card className="bg-background/60 border-primary/10 hover:border-primary/30 transition-colors">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <Users className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-foreground">{stats.followersCount.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">Followers</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Card className="bg-background/60 border-primary/10 hover:border-primary/30 transition-colors">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-yellow-500/10">
+                        <Crown className="h-5 w-5 text-yellow-500" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-foreground">{stats.subscribersCount.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">Subscribers</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Card className="bg-background/60 border-primary/10 hover:border-primary/30 transition-colors">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-green-500/10">
+                        <IndianRupee className="h-5 w-5 text-green-500" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-foreground">₹{stats.totalSubscriberEarnings.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">Subscriber Earnings</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <Card className="bg-background/60 border-primary/10 hover:border-primary/30 transition-colors">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-blue-500/10">
+                        <Eye className="h-5 w-5 text-blue-500" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-foreground">{stats.visitorsCount.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">Profile Visitors</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
             </div>
 
             {/* Search and Controls */}
