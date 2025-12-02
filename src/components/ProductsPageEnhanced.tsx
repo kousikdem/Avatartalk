@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { 
   Plus, Grid3X3, List, Eye, Edit, Trash2, TrendingUp, 
   ShoppingBag, DollarSign, Package, Download, Store, Search,
-  Filter, BarChart3, CreditCard, TrendingDown, Percent, RefreshCw, ShoppingCart
+  Filter, BarChart3, CreditCard, TrendingDown, Percent, RefreshCw, ShoppingCart,
+  Users, UserCheck, Crown, Globe
 } from 'lucide-react';
 import ProductForm from '@/components/ProductForm';
 import ProductCard from '@/components/ProductCard';
@@ -47,16 +48,58 @@ const ProductsPageEnhanced = () => {
   const { orders } = useOrders();
   const { toast } = useToast();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [subscribersCount, setSubscribersCount] = useState(0);
+  const [subscriptionEarnings, setSubscriptionEarnings] = useState(0);
+  const [visitorsCount, setVisitorsCount] = useState(0);
+
+  const fetchUserStats = useCallback(async (userId: string) => {
+    // Fetch followers count
+    const { count: followers } = await supabase
+      .from('follows')
+      .select('*', { count: 'exact', head: true })
+      .eq('following_id', userId);
+    setFollowersCount(followers || 0);
+
+    // Fetch subscribers count
+    const { count: subscribers } = await supabase
+      .from('subscriptions')
+      .select('*', { count: 'exact', head: true })
+      .eq('subscribed_to_id', userId)
+      .eq('status', 'active');
+    setSubscribersCount(subscribers || 0);
+
+    // Fetch subscription earnings from transactions
+    const { data: transactions } = await supabase
+      .from('transactions')
+      .select('amount')
+      .eq('profile_id', userId)
+      .eq('status', 'captured');
+    const totalSubEarnings = transactions?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+    // Apply 50% platform fee to show net earnings
+    setSubscriptionEarnings(totalSubEarnings * 0.5);
+
+    // Fetch visitors count
+    const { data: visitors } = await supabase
+      .from('profile_visitors')
+      .select('visit_count')
+      .eq('visited_profile_id', userId);
+    const totalVisits = visitors?.reduce((sum, v) => sum + (v.visit_count || 0), 0) || 0;
+    setVisitorsCount(totalVisits);
+  }, []);
 
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUserId(user?.id || null);
+      if (user?.id) {
+        fetchUserStats(user.id);
+      }
     };
     fetchUser();
-  }, []);
+  }, [fetchUserStats]);
 
-  // Real-time subscription for orders and products
+  // Real-time subscription for orders, products, and user stats
   useEffect(() => {
     if (!currentUserId) return;
 
@@ -92,11 +135,79 @@ const ProductsPageEnhanced = () => {
       )
       .subscribe();
 
+    // Subscribe to follows changes for real-time follower count
+    const followsChannel = supabase
+      .channel('dashboard-follows-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'follows',
+        },
+        () => {
+          fetchUserStats(currentUserId);
+        }
+      )
+      .subscribe();
+
+    // Subscribe to subscriptions changes for real-time subscriber count
+    const subscriptionsChannel = supabase
+      .channel('dashboard-subscriptions-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'subscriptions',
+        },
+        () => {
+          fetchUserStats(currentUserId);
+        }
+      )
+      .subscribe();
+
+    // Subscribe to transactions for real-time subscription earnings
+    const transactionsChannel = supabase
+      .channel('dashboard-transactions-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'transactions',
+        },
+        () => {
+          fetchUserStats(currentUserId);
+        }
+      )
+      .subscribe();
+
+    // Subscribe to profile_visitors for real-time visitor count
+    const visitorsChannel = supabase
+      .channel('dashboard-visitors-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profile_visitors',
+        },
+        () => {
+          fetchUserStats(currentUserId);
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(ordersChannel);
       supabase.removeChannel(productsChannel);
+      supabase.removeChannel(followsChannel);
+      supabase.removeChannel(subscriptionsChannel);
+      supabase.removeChannel(transactionsChannel);
+      supabase.removeChannel(visitorsChannel);
     };
-  }, [currentUserId, fetchProducts]);
+  }, [currentUserId, fetchProducts, fetchUserStats]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -263,13 +374,73 @@ const ProductsPageEnhanced = () => {
           </div>
         </div>
 
+        {/* User Stats Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="border-2 bg-gradient-to-br from-blue-500/10 to-blue-600/5">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground font-medium">Followers</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {followersCount.toLocaleString()}
+                  </p>
+                </div>
+                <Users className="w-8 h-8 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 bg-gradient-to-br from-purple-500/10 to-purple-600/5">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground font-medium">Subscribers</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {subscribersCount.toLocaleString()}
+                  </p>
+                </div>
+                <Crown className="w-8 h-8 text-purple-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 bg-gradient-to-br from-green-500/10 to-green-600/5">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground font-medium">Subscription Earnings</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {formatCurrency(subscriptionEarnings, selectedCurrency)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">Net (after 50% fee)</p>
+                </div>
+                <UserCheck className="w-8 h-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 bg-gradient-to-br from-orange-500/10 to-orange-600/5">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground font-medium">Profile Visitors</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {visitorsCount.toLocaleString()}
+                  </p>
+                </div>
+                <Globe className="w-8 h-8 text-orange-500" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* KPI Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
           <Card className="border-2">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground font-medium">Total Views</p>
+                  <p className="text-sm text-muted-foreground font-medium">Product Views</p>
                   <p className="text-2xl font-bold text-foreground">
                     {totalViews.toLocaleString()}
                   </p>
