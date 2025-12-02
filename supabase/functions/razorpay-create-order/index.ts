@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { planId, amount, currency, profileId } = await req.json();
+    const { planId, amount, currency, profileId, billingCycle } = await req.json();
 
     const RAZORPAY_KEY_ID = Deno.env.get('RAZORPAY_KEY_ID');
     const RAZORPAY_KEY_SECRET = Deno.env.get('RAZORPAY_KEY_SECRET');
@@ -33,7 +33,8 @@ serve(async (req) => {
         receipt: `order_${Date.now()}`,
         notes: {
           planId,
-          profileId
+          profileId,
+          billingCycle: billingCycle || 'monthly'
         }
       })
     });

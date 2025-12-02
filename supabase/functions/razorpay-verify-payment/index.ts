@@ -13,9 +13,9 @@ serve(async (req) => {
   }
 
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, planId, profileId } = await req.json();
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, planId, profileId, billingCycle } = await req.json();
 
-    console.log('Payment verification started:', { razorpay_order_id, razorpay_payment_id, planId, profileId });
+    console.log('Payment verification started:', { razorpay_order_id, razorpay_payment_id, planId, profileId, billingCycle });
 
     const RAZORPAY_KEY_SECRET = Deno.env.get('RAZORPAY_KEY_SECRET');
     
@@ -77,11 +77,12 @@ serve(async (req) => {
 
     console.log('Plan found:', plan.title, plan.price_amount);
 
-    // Calculate expiry date based on billing cycle
+    // Calculate expiry date based on billing cycle (use frontend billingCycle if provided)
+    const effectiveBillingCycle = billingCycle || plan.billing_cycle;
     let expiresAt = new Date();
-    if (plan.billing_cycle === 'monthly') {
+    if (effectiveBillingCycle === 'monthly') {
       expiresAt.setMonth(expiresAt.getMonth() + 1);
-    } else if (plan.billing_cycle === 'yearly') {
+    } else if (effectiveBillingCycle === 'yearly') {
       expiresAt.setFullYear(expiresAt.getFullYear() + 1);
     } else {
       // One-time or other - set 30 days default
@@ -104,7 +105,7 @@ serve(async (req) => {
         .update({
           plan_id: planId,
           price: plan.price_amount,
-          subscription_type: plan.billing_cycle,
+          subscription_type: effectiveBillingCycle,
           expires_at: expiresAt.toISOString(),
           razorpay_payment_id: razorpay_payment_id,
           updated_at: new Date().toISOString()
@@ -127,7 +128,7 @@ serve(async (req) => {
           plan_id: planId,
           price: plan.price_amount,
           status: 'active',
-          subscription_type: plan.billing_cycle,
+          subscription_type: effectiveBillingCycle,
           expires_at: expiresAt.toISOString(),
           razorpay_payment_id: razorpay_payment_id,
           starts_at: new Date().toISOString()
