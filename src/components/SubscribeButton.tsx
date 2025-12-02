@@ -3,10 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useFollows } from '@/hooks/useFollows';
-import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useSubscriptionPlans } from '@/hooks/useSubscriptionPlans';
+import { useActiveSubscription } from '@/hooks/useActiveSubscription';
 import { supabase } from '@/integrations/supabase/client';
-import { Crown, Loader2 } from 'lucide-react';
+import { Crown, Loader2, Check } from 'lucide-react';
 
 interface SubscribeButtonProps {
   targetUserId: string;
@@ -22,15 +22,17 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
   className = ''
 }) => {
   const [showFollowModal, setShowFollowModal] = useState(false);
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [selectedBillingCycle, setSelectedBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const { isFollowing, followUser } = useFollows(currentUserId);
-  const { subscriptions } = useSubscriptions();
   const { plans, loading: plansLoading } = useSubscriptionPlans(targetUserId);
+  const { isActiveSubscriber, loading: subscriptionLoading } = useActiveSubscription(currentUserId, targetUserId);
 
-  const isSubscribed = subscriptions.some(
-    sub => sub.subscribed_to_id === targetUserId && sub.status === 'active'
-  );
+  const monthlyPlan = plans.find(p => p.billing_cycle === 'monthly') || plans[0];
+  const monthlyPrice = monthlyPlan?.price_amount || 0;
+  const yearlyPrice = Math.round(monthlyPrice * 12 * 0.8); // 20% discount for yearly
 
   const handleSubscribeClick = async () => {
     if (!currentUserId) {
@@ -42,14 +44,12 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
       return;
     }
 
-    // Check if user is following
     if (!isFollowing(targetUserId)) {
       setShowFollowModal(true);
       return;
     }
 
-    // Proceed with subscription
-    await initiateSubscription();
+    setShowPlanModal(true);
   };
 
   const handleFollowAndContinue = async () => {
@@ -57,7 +57,7 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
     try {
       await followUser(targetUserId);
       setShowFollowModal(false);
-      await initiateSubscription();
+      setShowPlanModal(true);
     } catch (error) {
       console.error('Error following user:', error);
       toast({
@@ -72,11 +72,10 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
 
   const initiateSubscription = async () => {
     setIsProcessing(true);
+    setShowPlanModal(false);
+    
     try {
-      // Get the first active plan (or let user choose if multiple)
-      const selectedPlan = plans[0];
-      
-      if (!selectedPlan) {
+      if (!monthlyPlan) {
         toast({
           title: "No Plans Available",
           description: "This user hasn't set up any subscription plans yet",
@@ -85,19 +84,21 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
         return;
       }
 
-      // Call Razorpay edge function to create order
+      const amount = selectedBillingCycle === 'yearly' ? yearlyPrice : monthlyPrice;
+      const billingCycle = selectedBillingCycle;
+
       const { data, error } = await supabase.functions.invoke('razorpay-create-order', {
         body: {
-          planId: selectedPlan.id,
-          amount: selectedPlan.price_amount,
-          currency: selectedPlan.currency,
-          profileId: targetUserId
+          planId: monthlyPlan.id,
+          amount: amount,
+          currency: monthlyPlan.currency,
+          profileId: targetUserId,
+          billingCycle: billingCycle
         }
       });
 
       if (error) throw error;
 
-      // Load Razorpay script
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
       script.async = true;
@@ -109,17 +110,17 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
           amount: data.amount,
           currency: data.currency,
           name: 'AvatarTalk Subscription',
-          description: `Subscribe to ${targetUsername}`,
+          description: `${billingCycle === 'yearly' ? 'Yearly' : 'Monthly'} subscription to ${targetUsername}`,
           order_id: data.order_id,
           handler: async (response: any) => {
-            // Verify payment
-            const { data, error: verifyError } = await supabase.functions.invoke('razorpay-verify-payment', {
+            const { error: verifyError } = await supabase.functions.invoke('razorpay-verify-payment', {
               body: {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
-                planId: selectedPlan.id,
-                profileId: targetUserId
+                planId: monthlyPlan.id,
+                profileId: targetUserId,
+                billingCycle: billingCycle
               }
             });
 
@@ -135,7 +136,6 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
                 title: "Subscription Active!",
                 description: `You are now subscribed to ${targetUsername}`,
               });
-              // Force page reload to update subscription status
               window.location.reload();
             }
           },
@@ -163,7 +163,7 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
     }
   };
 
-  if (plansLoading) {
+  if (plansLoading || subscriptionLoading) {
     return (
       <Button disabled className={className}>
         <Loader2 className="h-4 w-4 animate-spin" />
@@ -172,15 +172,27 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
   }
 
   if (plans.length === 0) {
-    return null; // Don't show button if no plans
+    return null;
+  }
+
+  if (isActiveSubscriber) {
+    return (
+      <Button
+        disabled
+        variant="secondary"
+        className={className}
+      >
+        <Check className="h-4 w-4 mr-2" />
+        Subscribed
+      </Button>
+    );
   }
 
   return (
     <>
       <Button
         onClick={handleSubscribeClick}
-        disabled={isProcessing || isSubscribed}
-        variant={isSubscribed ? "secondary" : "default"}
+        disabled={isProcessing}
         className={className}
       >
         {isProcessing ? (
@@ -188,9 +200,10 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
         ) : (
           <Crown className="h-4 w-4 mr-2" />
         )}
-        {isSubscribed ? 'Subscribed' : `Subscribe - ₹${plans[0]?.price_amount}`}
+        Subscribe - ₹{monthlyPrice}/mo
       </Button>
 
+      {/* Follow Required Modal */}
       <Dialog open={showFollowModal} onOpenChange={setShowFollowModal}>
         <DialogContent>
           <DialogHeader>
@@ -204,10 +217,80 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
               Cancel
             </Button>
             <Button onClick={handleFollowAndContinue} disabled={isProcessing}>
-              {isProcessing ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : null}
+              {isProcessing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Follow & Continue
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Plan Selection Modal */}
+      <Dialog open={showPlanModal} onOpenChange={setShowPlanModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Choose Your Plan</DialogTitle>
+            <DialogDescription>
+              Subscribe to {targetUsername}'s exclusive content
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-3 py-4">
+            {/* Monthly Option */}
+            <div
+              onClick={() => setSelectedBillingCycle('monthly')}
+              className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                selectedBillingCycle === 'monthly'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-primary/50'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-semibold">Monthly</h4>
+                  <p className="text-sm text-muted-foreground">Billed monthly</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-2xl font-bold">₹{monthlyPrice}</span>
+                  <span className="text-muted-foreground">/mo</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Yearly Option */}
+            <div
+              onClick={() => setSelectedBillingCycle('yearly')}
+              className={`p-4 rounded-lg border-2 cursor-pointer transition-all relative ${
+                selectedBillingCycle === 'yearly'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-primary/50'
+              }`}
+            >
+              <div className="absolute -top-2 right-3 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
+                Save 20%
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-semibold">Yearly</h4>
+                  <p className="text-sm text-muted-foreground">Billed annually</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-2xl font-bold">₹{yearlyPrice}</span>
+                  <span className="text-muted-foreground">/yr</span>
+                  <p className="text-xs text-muted-foreground">
+                    ₹{Math.round(yearlyPrice / 12)}/mo
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-3 justify-end">
+            <Button variant="outline" onClick={() => setShowPlanModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={initiateSubscription} disabled={isProcessing}>
+              {isProcessing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Continue - ₹{selectedBillingCycle === 'yearly' ? yearlyPrice : monthlyPrice}
             </Button>
           </div>
         </DialogContent>
