@@ -95,60 +95,68 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           disabled={disabled}
         />
         
+        {/* Emoji Button with Gradient */}
         <Button 
           size="sm" 
           variant="ghost" 
           type="button"
           onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
-          className="h-8 w-8 p-0 hover:bg-slate-700 dark:hover:bg-slate-700 hover:bg-blue-100 rounded-full flex-shrink-0 bg-gradient-to-r from-yellow-400/20 to-orange-400/20"
+          className="h-8 w-8 p-0 rounded-full flex-shrink-0 bg-gradient-to-br from-yellow-400 via-orange-400 to-pink-400 hover:from-yellow-500 hover:via-orange-500 hover:to-pink-500 shadow-lg hover:shadow-orange-500/30 transition-all duration-300"
         >
-          <Smile className="w-4 h-4 text-slate-400 dark:text-slate-400 text-gray-700" />
+          <Smile className="w-4 h-4 text-white" />
         </Button>
         
+        {/* Voice Input Button with Gradient */}
         {voiceInputSupported && (
           <Button 
             size="sm" 
             variant="ghost" 
             type="button"
             onClick={handleVoiceInput}
-            className={`h-8 w-8 p-0 hover:bg-slate-700 dark:hover:bg-slate-700 hover:bg-blue-100 rounded-full flex-shrink-0 bg-gradient-to-r from-red-400/20 to-pink-400/20 ${
-              isListening ? 'bg-red-600/20 text-red-400' : ''
+            className={`h-8 w-8 p-0 rounded-full flex-shrink-0 shadow-lg transition-all duration-300 ${
+              isListening 
+                ? 'bg-gradient-to-br from-red-500 via-red-600 to-rose-600 animate-pulse shadow-red-500/50' 
+                : 'bg-gradient-to-br from-red-400 via-pink-500 to-rose-500 hover:from-red-500 hover:via-pink-600 hover:to-rose-600 hover:shadow-pink-500/30'
             }`}
             disabled={isTTSLoading || disabled}
           >
-            {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4 text-slate-400 dark:text-slate-400 text-gray-700" />}
+            {isListening ? <MicOff className="w-4 h-4 text-white" /> : <Mic className="w-4 h-4 text-white" />}
           </Button>
         )}
         
+        {/* Voice Output Button with Gradient */}
         {voiceOutputSupported && lastAIMessage && (
           <Button 
             size="sm" 
             variant="ghost" 
             type="button"
             onClick={handleVoiceOutput}
-            className={`h-8 w-8 p-0 hover:bg-slate-700 dark:hover:bg-slate-700 hover:bg-blue-100 rounded-full flex-shrink-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 ${
-              isTTSPlaying ? 'text-blue-400' : 'text-slate-400 dark:text-slate-400 text-gray-700'
+            className={`h-8 w-8 p-0 rounded-full flex-shrink-0 shadow-lg transition-all duration-300 ${
+              isTTSPlaying 
+                ? 'bg-gradient-to-br from-blue-500 via-purple-500 to-violet-600 animate-pulse shadow-purple-500/50' 
+                : 'bg-gradient-to-br from-blue-400 via-purple-500 to-indigo-500 hover:from-blue-500 hover:via-purple-600 hover:to-indigo-600 hover:shadow-purple-500/30'
             }`}
             disabled={isTTSLoading || disabled}
           >
             {isTTSLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-4 h-4 text-white animate-spin" />
             ) : isTTSPlaying ? (
-              <VolumeX className="w-4 h-4" />
+              <VolumeX className="w-4 h-4 text-white" />
             ) : (
-              <Volume2 className="w-4 h-4" />
+              <Volume2 className="w-4 h-4 text-white" />
             )}
           </Button>
         )}
         
+        {/* Send Button with Gradient */}
         <Button 
           size="sm" 
           variant="ghost" 
           type="submit"
-          className="h-8 w-8 p-0 hover:bg-slate-700 dark:hover:bg-slate-700 hover:bg-blue-100 rounded-full flex-shrink-0"
+          className="h-8 w-8 p-0 rounded-full flex-shrink-0 bg-gradient-to-br from-emerald-400 via-cyan-500 to-blue-500 hover:from-emerald-500 hover:via-cyan-600 hover:to-blue-600 shadow-lg hover:shadow-cyan-500/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={!message.trim() || disabled}
         >
-          <Send className="w-4 h-4 text-slate-400 dark:text-slate-400 text-gray-700" />
+          <Send className="w-4 h-4 text-white" />
         </Button>
       </div>
 
