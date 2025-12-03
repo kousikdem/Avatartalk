@@ -224,8 +224,13 @@ const ProfilePage: React.FC = () => {
   // Profile engagement stats (real-time)
   const { 
     engagement, 
-    loading: engagementLoading 
+    loading: engagementLoading,
+    incrementConversation 
   } = useProfileEngagement(profile?.id || null);
+
+  // Voice model state - preload on profile load
+  const [voiceModelReady, setVoiceModelReady] = useState(false);
+  const [hasPlayedWelcome, setHasPlayedWelcome] = useState(false);
 
   // Initialize and load chat messages from database
   useEffect(() => {
@@ -244,10 +249,11 @@ const ProfilePage: React.FC = () => {
         setChatMessages(messagesWithProfile);
       } else {
         // Initialize with welcome message for new conversations
+        const welcomeMessage = `Hi there! I'm ${profile.display_name || profile.username}. How can I help you today?`;
         const initialMessages: ChatMessage[] = [
           {
             id: '1',
-            content: `Hi there! I'm ${profile.display_name || profile.username}. How can I help you today?`,
+            content: welcomeMessage,
             timestamp: new Date().toISOString(),
             sender: 'avatar',
             senderName: profile.display_name || profile.username,
@@ -258,6 +264,33 @@ const ProfilePage: React.FC = () => {
       }
     }
   }, [profile, chatHistory, chatHistoryLoading, currentUser]);
+
+  // Preload voice model and speak welcome message on profile load
+  useEffect(() => {
+    if (profile && !loading && !hasPlayedWelcome && chatMessages.length > 0) {
+      const welcomeMsg = chatMessages.find(m => m.sender === 'avatar');
+      if (welcomeMsg && activeTab === 'chat') {
+        // Set voice model ready and play welcome message with slight delay
+        setVoiceModelReady(true);
+        const timer = setTimeout(async () => {
+          try {
+            setIsTalking(true);
+            await synthesizeSpeech(welcomeMsg.content, {
+              voice: 'neural',
+              speed: 1.0,
+              language: 'en-US'
+            });
+            setHasPlayedWelcome(true);
+          } catch (error) {
+            console.error('Welcome voice error:', error);
+          } finally {
+            setIsTalking(false);
+          }
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [profile, loading, hasPlayedWelcome, chatMessages, activeTab, synthesizeSpeech]);
 
   const profileData = useMemo(() => ({
     displayName: profile?.display_name || profile?.username || 'Unknown User',
@@ -694,9 +727,13 @@ const ProfilePage: React.FC = () => {
       // Save AI response to database
       await saveChatMessage(aiResponse, 'avatar', richData);
       
-      // Play voice response using Web Speech API
+      // Increment engagement count for real-time update
+      incrementConversation();
+      
+      // Play voice response using Web Speech API (voice + text simultaneously)
       if (aiResponse) {
         try {
+          setIsTalking(true);
           await synthesizeSpeech(aiResponse, {
             voice: 'neural',
             speed: 1.0,
@@ -704,6 +741,8 @@ const ProfilePage: React.FC = () => {
           });
         } catch (voiceError) {
           console.error('Voice synthesis error:', voiceError);
+        } finally {
+          setIsTalking(false);
         }
       }
 
@@ -730,7 +769,6 @@ const ProfilePage: React.FC = () => {
       });
     } finally {
       setIsTyping(false);
-      setIsTalking(false);
     }
   };
 
