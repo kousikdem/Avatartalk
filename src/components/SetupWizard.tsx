@@ -269,7 +269,7 @@ const SetupWizard = () => {
                       <Label className="text-gray-300">Your Avatar URL</Label>
                       <div className="flex mt-2">
                         <Input 
-                          value="avatartalk.bio/your-username" 
+                          value="avatartalk.co/your-username" 
                           readOnly 
                           className="bg-gray-700 border-gray-600 text-white"
                         />

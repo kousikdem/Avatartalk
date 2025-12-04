@@ -225,7 +225,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
       <DialogContent className="sm:max-w-md bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200/50 backdrop-blur-xl">
         <DialogHeader>
           <DialogTitle className="text-center text-gray-800 text-2xl mb-2">
-            Welcome to AvatarTalk.bio
+            Welcome to AvatarTalk.Co
           </DialogTitle>
           <p className="text-center text-gray-600 text-sm">
             Create your AI avatar and start engaging with your audience

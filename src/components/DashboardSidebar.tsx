@@ -78,7 +78,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
             <Logo size="md" className="flex-shrink-0 shadow-md" />
             {!isCollapsed && (
               <div className="min-w-0 flex-1">
-                <h2 className="font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate text-base">AvatarTalk.bio</h2>
+                <h2 className="font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate text-base">AvatarTalk.Co</h2>
                 <p className="text-xs text-gray-600 truncate">Dashboard</p>
               </div>
             )}

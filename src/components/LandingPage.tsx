@@ -189,7 +189,7 @@ const LandingPage = () => {
 
   const testimonials = [
     {
-      quote: "AvatarTalk.bio transformed how I engage with my audience. My AI avatar handles visitor questions 24/7!",
+      quote: "AvatarTalk.Co transformed how I engage with my audience. My AI avatar handles visitor questions 24/7!",
       author: "Sarah Chen",
       role: "Content Creator",
       avatar: "👩‍💼"
@@ -1158,7 +1158,7 @@ const LandingPage = () => {
                   <Bot className="w-5 h-5 text-white" strokeWidth={2.5} />
                   <Sparkles className="absolute -top-0.5 -right-0.5 w-2 h-2 text-yellow-300" fill="currentColor" />
                 </div>
-                <span className="text-xl font-bold">AvatarTalk.bio</span>
+                <span className="text-xl font-bold">AvatarTalk.Co</span>
               </div>
               <p className="text-gray-400 text-sm">
                 Create AI avatars that represent you and engage with your audience 24/7.
@@ -1199,7 +1199,7 @@ const LandingPage = () => {
           
           <div className="border-t border-gray-800 pt-8 text-center">
             <p className="text-gray-400 text-sm">
-              © 2024 All rights reserved by AvatarTalk.bio
+              © 2024 All rights reserved by AvatarTalk.Co
             </p>
           </div>
         </div>

@@ -45,17 +45,25 @@ export const useCoquiTTS = () => {
   }, []);
 
   const synthesizeSpeech = useCallback(async (text: string, options: CoquiTTSOptions = {}) => {
-    if (!text.trim()) return;
+    if (!text.trim()) {
+      console.log('TTS: Empty text, skipping');
+      return;
+    }
 
     setIsLoading(true);
     
     try {
       if (!('speechSynthesis' in window)) {
-        throw new Error('Speech synthesis not supported');
+        console.warn('Speech synthesis not supported in this browser');
+        setIsLoading(false);
+        return;
       }
 
       // Cancel any ongoing speech first
       speechSynthesis.cancel();
+      
+      // Small delay to ensure cancel completes
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Wait for voices to be available
       let voices = speechSynthesis.getVoices();
@@ -105,15 +113,12 @@ export const useCoquiTTS = () => {
       };
       
       utterance.onerror = (event) => {
-        console.error('Speech synthesis error:', event);
+        console.error('Speech synthesis error:', event.error);
         setIsPlaying(false);
         setIsLoading(false);
-        // Only show toast for actual errors, not interruptions
-        if (event.error !== 'interrupted' && event.error !== 'canceled') {
-          toast({
-            title: "Voice Error",
-            description: "Voice playback unavailable. Text response shown.",
-          });
+        // Only show toast for actual critical errors, not interruptions or common issues
+        if (event.error !== 'interrupted' && event.error !== 'canceled' && event.error !== 'not-allowed') {
+          console.log('TTS error type:', event.error);
         }
       };
 

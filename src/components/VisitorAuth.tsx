@@ -312,7 +312,7 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
       <DialogContent className="sm:max-w-md bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 border border-blue-500/30 backdrop-blur-xl text-white">
         <DialogHeader>
           <DialogTitle className="text-center text-white text-2xl mb-2">
-            {showGuestForm ? 'Create Guest Account' : 'AvatarTalk.bio'}
+            {showGuestForm ? 'Create Guest Account' : 'AvatarTalk.Co'}
           </DialogTitle>
           <p className="text-center text-blue-200 text-sm">
             {showGuestForm ? 'Sign up to access all features' : 'Create your AI avatar and start engaging'}

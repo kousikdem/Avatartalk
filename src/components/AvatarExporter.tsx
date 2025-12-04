@@ -152,7 +152,7 @@ const AvatarExporter: React.FC<AvatarExporterProps> = ({ config, onSave, canvasR
         <CardContent className="p-4">
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              Save your avatar to your AvatarTalk.bio profile for real-time 3D display and sharing.
+              Save your avatar to your AvatarTalk.Co profile for real-time 3D display and sharing.
             </p>
             <Button 
               onClick={handleSaveToProfile}

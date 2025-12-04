@@ -191,7 +191,7 @@ const MainAuth: React.FC<MainAuthProps> = ({ isOpen, onClose, defaultTab = 'sign
       <DialogContent className="sm:max-w-md bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 border border-blue-500/30 backdrop-blur-xl text-white">
         <DialogHeader>
           <DialogTitle className="text-center text-white text-2xl mb-2">
-            AvatarTalk.bio
+            AvatarTalk.Co
           </DialogTitle>
           <p className="text-center text-blue-200 text-sm">
             Create your AI avatar and start engaging

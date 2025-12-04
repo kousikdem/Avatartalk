@@ -27,7 +27,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, profileUrl, us
   };
 
   const shareToSocial = (platform: string) => {
-    const text = `Check out my AI avatar profile on AvatarTalk.bio!`;
+    const text = `Check out my AI avatar profile on AvatarTalk.Co!`;
     const encodedUrl = encodeURIComponent(profileUrl);
     const encodedText = encodeURIComponent(text);
     
