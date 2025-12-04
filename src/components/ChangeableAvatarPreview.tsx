@@ -154,34 +154,21 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
   }, [userId]);
 
   const getAvatarDisplay = () => {
-    // Priority order for avatar display:
-    // 1. Custom uploaded model from avatar configuration
+    // Priority order for 3D avatar display:
+    // 1. Custom uploaded model from avatar configuration (highest priority for custom uploads)
     if (avatarData?.model_url) return avatarData.model_url;
     // 2. Custom uploaded thumbnail from avatar configuration
     if (avatarData?.thumbnail_url) return avatarData.thumbnail_url;
-    // 3. Profile pic URL
-    if (profileData?.profile_pic_url) return profileData.profile_pic_url;
-    // 4. Profile avatar_url (fallback for direct uploads)
+    // 3. Profile avatar_url (fallback for direct uploads)
     if (profileData?.avatar_url) return profileData.avatar_url;
-    // 5. No uploaded image - will render configured 3D avatar instead
+    // 4. No uploaded image - will render configured 3D avatar instead
     return null;
   };
 
   const shouldRenderConfiguredAvatar = () => {
-    // Render the configured 3D avatar when:
-    // 1. We have avatar configuration data from the dashboard
-    // 2. AND no custom uploaded model/thumbnail/profile images exist
-    const hasUploadedImages = avatarData?.model_url || avatarData?.thumbnail_url || profileData?.profile_pic_url || profileData?.avatar_url;
-    return avatarData && !hasUploadedImages;
+    // Render configured avatar if we have avatar configuration data but no uploaded images
+    return avatarData && !avatarData.model_url && !avatarData.thumbnail_url && !profileData?.avatar_url;
   };
-  
-  // Check if we have avatar configuration data (from dashboard)
-  const hasAvatarConfig = avatarData && (
-    avatarData.skin_tone || 
-    avatarData.hair_style || 
-    avatarData.eye_color ||
-    avatarData.gender
-  );
 
   const handleAvatarClick = () => {
     if (onAvatarClick) {
@@ -201,7 +188,7 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
   }
 
   const avatarImageUrl = getAvatarDisplay();
-  const hasUploadedAvatar = avatarData?.thumbnail_url || avatarData?.model_url || profileData?.profile_pic_url || profileData?.avatar_url;
+  const hasUploadedAvatar = avatarData?.thumbnail_url || avatarData?.model_url || profileData?.avatar_url;
 
   return (
     <>
@@ -229,7 +216,7 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
                 <div className="absolute inset-0 border-4 border-blue-400/60 rounded-2xl animate-pulse"></div>
               )}
             </div>
-          ) : shouldRenderConfiguredAvatar() || hasAvatarConfig ? (
+          ) : shouldRenderConfiguredAvatar() ? (
             // Render the actual configured 3D avatar from dashboard
             <div className="relative h-full">
               <Canvas camera={{ position: [0, 0, 9], fov: 45 }}>
@@ -238,44 +225,7 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
                 <spotLight position={[-10, -10, -5]} intensity={0.3} />
                 
                 <Suspense fallback={null}>
-                  <AdvancedAvatarPreview config={{
-                    gender: avatarData?.gender || 'male',
-                    age: avatarData?.age_category === 'young' ? 25 : avatarData?.age_category === 'middle' ? 40 : 60,
-                    ethnicity: avatarData?.skin_tone || 'caucasian',
-                    height: avatarData?.height || 170,
-                    weight: avatarData?.weight || 70,
-                    muscle: avatarData?.muscle_definition || 50,
-                    fat: avatarData?.body_fat || 20,
-                    headSize: avatarData?.head_size || 50,
-                    headShape: avatarData?.head_shape || 'oval',
-                    faceWidth: avatarData?.face_width || 50,
-                    jawline: avatarData?.jawline || 50,
-                    cheekbones: avatarData?.cheekbones || 50,
-                    eyeSize: avatarData?.eye_size || 50,
-                    eyeDistance: avatarData?.eye_distance || 50,
-                    eyeShape: avatarData?.eye_shape || 'almond',
-                    eyeColor: avatarData?.eye_color || '#4a4a4a',
-                    noseSize: avatarData?.nose_size || 50,
-                    noseWidth: avatarData?.nose_width || 50,
-                    noseShape: avatarData?.nose_shape || 'straight',
-                    mouthWidth: avatarData?.mouth_width || 50,
-                    lipThickness: avatarData?.lip_thickness || 50,
-                    lipShape: avatarData?.lip_shape || 'natural',
-                    earSize: avatarData?.ear_size || 50,
-                    earPosition: avatarData?.ear_position || 50,
-                    earShape: avatarData?.ear_shape || 'normal',
-                    skinTone: avatarData?.skin_tone || '#E8BEAC',
-                    skinTexture: avatarData?.skin_texture || 'smooth',
-                    hairStyle: avatarData?.hair_style || 'short',
-                    hairColor: avatarData?.hair_color || '#2C1810',
-                    hairLength: avatarData?.hair_length || 50,
-                    clothingTop: avatarData?.clothing_top || 't-shirt',
-                    clothingBottom: avatarData?.clothing_bottom || 'jeans',
-                    shoes: avatarData?.shoes || 'sneakers',
-                    accessories: avatarData?.accessories || [],
-                    currentExpression: avatarData?.current_expression || 'neutral',
-                    currentPose: avatarData?.current_pose || 'standing'
-                  }} />
+                  <AdvancedAvatarPreview config={avatarData} />
                 </Suspense>
                 
                 <OrbitControls 

@@ -231,7 +231,6 @@ const ProfilePage: React.FC = () => {
   // Voice model state - preload on profile load
   const [voiceModelReady, setVoiceModelReady] = useState(false);
   const [hasPlayedWelcome, setHasPlayedWelcome] = useState(false);
-  const welcomePlayedRef = React.useRef(false);
 
   // Initialize and load chat messages from database
   useEffect(() => {
@@ -266,61 +265,32 @@ const ProfilePage: React.FC = () => {
     }
   }, [profile, chatHistory, chatHistoryLoading, currentUser]);
 
-  // Preload voice model on profile load (without speaking immediately)
+  // Preload voice model and speak welcome message on profile load
   useEffect(() => {
-    if ('speechSynthesis' in window) {
-      // Warm up speech synthesis engine
-      const warmUp = new SpeechSynthesisUtterance('');
-      warmUp.volume = 0;
-      speechSynthesis.speak(warmUp);
-      speechSynthesis.cancel();
-      
-      // Load voices
-      const loadVoices = () => {
-        const voices = speechSynthesis.getVoices();
-        if (voices.length > 0) {
-          setVoiceModelReady(true);
-          console.log('🔊 Voice model ready with', voices.length, 'voices');
-        }
-      };
-      
-      loadVoices();
-      speechSynthesis.onvoiceschanged = loadVoices;
-      
-      return () => {
-        speechSynthesis.onvoiceschanged = null;
-      };
-    }
-  }, []);
-
-  // Speak welcome message when switching to chat tab (only once)
-  useEffect(() => {
-    if (profile && !loading && voiceModelReady && !welcomePlayedRef.current && chatMessages.length > 0 && activeTab === 'chat') {
+    if (profile && !loading && !hasPlayedWelcome && chatMessages.length > 0) {
       const welcomeMsg = chatMessages.find(m => m.sender === 'avatar');
-      if (welcomeMsg) {
-        welcomePlayedRef.current = true;
-        setHasPlayedWelcome(true);
-        
-        // Play welcome message with slight delay for smooth UX
+      if (welcomeMsg && activeTab === 'chat') {
+        // Set voice model ready and play welcome message with slight delay
+        setVoiceModelReady(true);
         const timer = setTimeout(async () => {
           try {
             setIsTalking(true);
             await synthesizeSpeech(welcomeMsg.content, {
-              voice: 'natural',
+              voice: 'neural',
               speed: 1.0,
               language: 'en-US'
             });
+            setHasPlayedWelcome(true);
           } catch (error) {
-            console.warn('Welcome voice playback issue:', error);
+            console.error('Welcome voice error:', error);
           } finally {
             setIsTalking(false);
           }
-        }, 800);
-        
+        }, 1000);
         return () => clearTimeout(timer);
       }
     }
-  }, [profile, loading, voiceModelReady, chatMessages, activeTab, synthesizeSpeech]);
+  }, [profile, loading, hasPlayedWelcome, chatMessages, activeTab, synthesizeSpeech]);
 
   const profileData = useMemo(() => ({
     displayName: profile?.display_name || profile?.username || 'Unknown User',

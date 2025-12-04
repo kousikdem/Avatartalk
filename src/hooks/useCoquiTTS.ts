@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -19,125 +19,63 @@ export const useCoquiTTS = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-  const [voicesLoaded, setVoicesLoaded] = useState(false);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const { toast } = useToast();
-
-  // Preload voices on mount
-  useEffect(() => {
-    if ('speechSynthesis' in window) {
-      const loadVoices = () => {
-        const voices = speechSynthesis.getVoices();
-        if (voices.length > 0) {
-          setVoicesLoaded(true);
-          console.log('🔊 TTS voices loaded:', voices.length);
-        }
-      };
-
-      loadVoices();
-      speechSynthesis.onvoiceschanged = loadVoices;
-
-      // Warm up speech synthesis
-      const warmUp = new SpeechSynthesisUtterance('');
-      warmUp.volume = 0;
-      speechSynthesis.speak(warmUp);
-      speechSynthesis.cancel();
-
-      return () => {
-        speechSynthesis.onvoiceschanged = null;
-      };
-    }
-  }, []);
 
   const synthesizeSpeech = useCallback(async (text: string, options: CoquiTTSOptions = {}) => {
     if (!text.trim()) return;
 
-    // Check for speech synthesis support
-    if (!('speechSynthesis' in window)) {
-      console.warn('Speech synthesis not supported');
-      return;
-    }
-
     setIsLoading(true);
     
-    return new Promise<void>((resolve, reject) => {
-      try {
-        // Cancel any ongoing speech
-        speechSynthesis.cancel();
-        
+    try {
+      // Using Web Speech API as Coqui TTS implementation
+      // For production Coqui TTS, you would need server-side setup
+      if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(text);
-        utteranceRef.current = utterance;
-        
         utterance.rate = options.speed || 1;
         utterance.lang = options.language || 'en-US';
-        utterance.volume = 1;
-        utterance.pitch = 1;
         
         // Set voice if specified
-        const voices = speechSynthesis.getVoices();
-        if (voices.length > 0) {
-          if (options.voice) {
-            const selectedVoice = voices.find(voice => 
-              voice.name.toLowerCase().includes(options.voice!.toLowerCase()) ||
-              voice.name.toLowerCase().includes('neural') ||
-              voice.name.toLowerCase().includes('natural')
-            );
-            if (selectedVoice) {
-              utterance.voice = selectedVoice;
-            }
-          } else {
-            // Try to find a natural sounding voice
-            const preferredVoice = voices.find(voice => 
-              voice.name.toLowerCase().includes('neural') ||
-              voice.name.toLowerCase().includes('natural') ||
-              voice.name.toLowerCase().includes('premium') ||
-              voice.lang.startsWith('en')
-            );
-            if (preferredVoice) {
-              utterance.voice = preferredVoice;
-            }
+        if (options.voice) {
+          const voices = speechSynthesis.getVoices();
+          const selectedVoice = voices.find(voice => voice.name.includes(options.voice!));
+          if (selectedVoice) {
+            utterance.voice = selectedVoice;
           }
         }
         
         utterance.onstart = () => {
-          console.log('🔊 TTS started speaking');
           setIsPlaying(true);
-          setIsLoading(false);
         };
         
         utterance.onend = () => {
-          console.log('🔊 TTS finished speaking');
           setIsPlaying(false);
           setIsLoading(false);
-          resolve();
         };
         
         utterance.onerror = (event) => {
-          console.error('Speech synthesis error:', event.error);
+          console.error('Speech synthesis error:', event);
           setIsPlaying(false);
           setIsLoading(false);
-          
-          // Only show toast for non-canceled errors
-          if (event.error !== 'canceled' && event.error !== 'interrupted') {
-            // Don't show toast for common non-critical errors
-            console.warn('TTS playback issue:', event.error);
-          }
-          resolve(); // Resolve anyway to not block the flow
+          toast({
+            title: "TTS Error",
+            description: "Failed to synthesize speech",
+            variant: "destructive",
+          });
         };
 
-        // Start speaking with a small delay to ensure proper initialization
-        setTimeout(() => {
-          speechSynthesis.speak(utterance);
-        }, 50);
-
-      } catch (error) {
-        setIsLoading(false);
-        setIsPlaying(false);
-        console.error('TTS initialization error:', error);
-        resolve(); // Resolve anyway to not block the flow
+        speechSynthesis.speak(utterance);
+      } else {
+        throw new Error('Speech synthesis not supported');
       }
-    });
-  }, []);
+    } catch (error) {
+      setIsLoading(false);
+      toast({
+        title: "TTS Error",
+        description: "Text-to-speech is not available",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
 
   const startRecording = useCallback(async (options: CoquiSTTOptions = {}) => {
     try {
@@ -170,7 +108,7 @@ export const useCoquiTTS = () => {
             
             if (error) throw error;
             
-            console.log('STT result:', data);
+            console.log('Coqui STT result:', data);
             
             toast({
               title: "Speech Recognition",
@@ -219,7 +157,6 @@ export const useCoquiTTS = () => {
     if ('speechSynthesis' in window) {
       speechSynthesis.cancel();
       setIsPlaying(false);
-      setIsLoading(false);
     }
   }, []);
 
@@ -239,7 +176,6 @@ export const useCoquiTTS = () => {
     isLoading,
     isPlaying,
     isRecording,
-    voicesLoaded,
     isSupported: 'speechSynthesis' in window && 'MediaRecorder' in window
   };
 };
