@@ -40,51 +40,88 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
   const [isChangeModalOpen, setIsChangeModalOpen] = useState(false);
   const { settings } = useAvatarSettings();
 
-  // Fetch avatar configuration and profile data
+  // Fetch avatar configuration and profile data - works for ALL visitors
   const fetchAvatarData = async () => {
     try {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      const targetUserId = userId || user?.id;
+      
+      // Use the provided userId prop directly (this is the profile owner's ID)
+      // Don't rely on auth for viewing - anyone should see the avatar
+      const targetUserId = userId;
 
       if (!targetUserId) {
+        console.log('No userId provided to ChangeableAvatarPreview');
         setLoading(false);
         return;
       }
 
-      // Fetch profile data
-      const { data: profile, error: profileError } = await supabase
+      console.log('🎭 Fetching avatar for user:', targetUserId);
+
+      // Fetch profile data using RPC for public access
+      const { data: profileArray, error: profileError } = await supabase
+        .rpc('get_public_profile', { profile_id: targetUserId });
+
+      if (profileError) {
+        console.error('Profile fetch error:', profileError);
+        // Fallback to direct query
+        const { data: directProfile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', targetUserId)
+          .maybeSingle();
+        if (directProfile) setProfileData(directProfile);
+      } else if (profileArray && profileArray.length > 0) {
+        setProfileData(profileArray[0]);
+      }
+
+      // Also fetch the full profile to get avatar_id
+      const { data: fullProfile } = await supabase
         .from('profiles')
-        .select('*')
+        .select('avatar_id')
         .eq('id', targetUserId)
-        .single();
+        .maybeSingle();
 
-      if (profileError) throw profileError;
-      setProfileData(profile);
-
-      // Fetch active avatar configuration
+      // Fetch active avatar configuration - this should be publicly viewable
       // First try to get by avatar_id if it exists in profile
-      if (profile?.avatar_id) {
+      if (fullProfile?.avatar_id) {
         const { data: avatarConfig, error: avatarError } = await supabase
           .from('avatar_configurations')
           .select('*')
-          .eq('id', profile.avatar_id)
-          .single();
+          .eq('id', fullProfile.avatar_id)
+          .maybeSingle();
 
         if (!avatarError && avatarConfig) {
+          console.log('🎭 Found avatar by avatar_id:', avatarConfig.avatar_name);
           setAvatarData(avatarConfig);
+          setLoading(false);
+          return;
         }
+      }
+      
+      // Otherwise, get the active avatar configuration for this user
+      const { data: activeAvatar, error: activeAvatarError } = await supabase
+        .from('avatar_configurations')
+        .select('*')
+        .eq('user_id', targetUserId)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (!activeAvatarError && activeAvatar) {
+        console.log('🎭 Found active avatar:', activeAvatar.avatar_name);
+        setAvatarData(activeAvatar);
       } else {
-        // Otherwise, get the active avatar configuration for this user
-        const { data: activeAvatar, error: activeAvatarError } = await supabase
+        // Try to get any avatar for this user
+        const { data: anyAvatar } = await supabase
           .from('avatar_configurations')
           .select('*')
           .eq('user_id', targetUserId)
-          .eq('is_active', true)
+          .order('updated_at', { ascending: false })
+          .limit(1)
           .maybeSingle();
-
-        if (!activeAvatarError && activeAvatar) {
-          setAvatarData(activeAvatar);
+          
+        if (anyAvatar) {
+          console.log('🎭 Found fallback avatar:', anyAvatar.avatar_name);
+          setAvatarData(anyAvatar);
         }
       }
     } catch (error) {

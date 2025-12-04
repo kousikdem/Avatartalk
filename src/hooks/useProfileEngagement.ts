@@ -32,49 +32,68 @@ export const useProfileEngagement = (profileId: string | null) => {
         .eq('user_id', profileId)
         .maybeSingle();
 
-      if (statsError) throw statsError;
+      if (statsError && statsError.code !== 'PGRST116') {
+        console.error('Stats error:', statsError);
+      }
 
-      // Count unique conversations (distinct visitor sessions)
-      const { count: conversationCount } = await supabase
+      // Count ALL chat messages from users (total conversations = all user messages)
+      const { count: totalUserMessages } = await supabase
         .from('ai_chat_history')
-        .select('visitor_id, visitor_session_id', { count: 'exact', head: true })
+        .select('*', { count: 'exact', head: true })
         .eq('profile_id', profileId)
         .eq('sender', 'user');
+
+      // Count total chat messages (both user and avatar)
+      const { count: totalMessages } = await supabase
+        .from('ai_chat_history')
+        .select('*', { count: 'exact', head: true })
+        .eq('profile_id', profileId);
 
       // Get followers count from profiles table
       const { data: profileData } = await supabase
         .from('profiles')
         .select('followers_count')
         .eq('id', profileId)
-        .single();
+        .maybeSingle();
 
-      // Count total chat messages for engagement calculation
-      const { count: totalMessages } = await supabase
-        .from('ai_chat_history')
+      // Count completed orders for this seller
+      const { count: productsSoldCount } = await supabase
+        .from('orders')
         .select('*', { count: 'exact', head: true })
-        .eq('profile_id', profileId);
+        .eq('seller_id', profileId)
+        .eq('payment_status', 'completed');
 
-      // Calculate dynamic engagement score
+      // Count profile visits
+      const { count: profileViewsCount } = await supabase
+        .from('profile_visitors')
+        .select('*', { count: 'exact', head: true })
+        .eq('visited_profile_id', profileId);
+
+      // Calculate engagement metrics
       const followers = profileData?.followers_count || stats?.followers_count || 0;
-      const conversations = conversationCount || stats?.total_chats_received || 0;
+      const conversations = totalUserMessages || 0; // All user messages = conversations
       const messages = totalMessages || 0;
-      const productsSold = stats?.total_products_sold || 0;
+      const productsSold = productsSoldCount || stats?.total_products_sold || 0;
+      const profileViews = profileViewsCount || stats?.profile_views || 0;
       
-      // Engagement formula: weighted combination of metrics
+      // Engagement formula: weighted combination of ALL interactions
       const dynamicEngagement = Math.round(
-        (followers * 2) + 
+        (followers * 3) + 
         (conversations * 5) + 
-        (messages * 1) + 
-        (productsSold * 10) +
-        (stats?.profile_views || 0) * 0.5
+        (messages * 2) + 
+        (productsSold * 15) +
+        (profileViews * 1)
       );
+
+      // Check if user is new (created within last 7 days or has low engagement)
+      const isNew = dynamicEngagement < 50 || (stats?.is_new_user ?? conversations < 5);
 
       setEngagement({
         totalConversations: conversations,
         followersCount: followers,
-        engagementScore: dynamicEngagement || stats?.engagement_score || 0,
-        isNewUser: stats?.is_new_user ?? true,
-        profileViews: stats?.profile_views || 0,
+        engagementScore: dynamicEngagement,
+        isNewUser: isNew,
+        profileViews: profileViews,
         totalProductsSold: productsSold,
       });
     } catch (error) {
