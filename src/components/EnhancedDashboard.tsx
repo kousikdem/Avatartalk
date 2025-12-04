@@ -403,7 +403,7 @@ const EnhancedDashboard = () => {
                         <Label htmlFor="username" className="text-gray-700">Custom URL</Label>
                         <div className="flex">
                           <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-slate-300/60 bg-slate-50/60 text-slate-600 text-sm">
-                            avatartalk.bio/
+                            avatartalk.co/
                           </span>
                           <Input 
                             id="username" 

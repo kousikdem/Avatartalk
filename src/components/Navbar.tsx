@@ -56,7 +56,7 @@ const Navbar: React.FC<NavbarProps> = ({ showAuth = false }) => {
             <div className="flex items-center space-x-3">
               <Logo size="sm" />
               <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                AvatarTalk.bio
+                AvatarTalk.Co
               </span>
             </div>
             

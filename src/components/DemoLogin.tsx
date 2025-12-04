@@ -51,7 +51,7 @@ const DemoLogin: React.FC<DemoLoginProps> = ({ isOpen, onClose }) => {
             Try Demo Mode
           </DialogTitle>
           <p className="text-center text-gray-400 text-sm">
-            Experience AvatarTalk.bio features without creating an account
+            Experience AvatarTalk.Co features without creating an account
           </p>
         </DialogHeader>
 

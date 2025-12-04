@@ -1589,16 +1589,16 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* AvatarTalk.Bio Branding - Sticky to bottom */}
+            {/* AvatarTalk.Co Branding - Sticky to bottom */}
             <div className="px-6 py-1 border-t border-slate-700/30 flex-shrink-0 bg-slate-900/50">
               <div className="text-center">
                 <a 
-                  href="https://avatartalk.bio" 
+                  href="https://avatartalk.co" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-xs text-slate-500 hover:text-slate-400 transition-colors duration-200 font-medium inline-block"
                 >
-                  Powered by <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent font-bold">AvatarTalk.Bio</span>
+                  Powered by <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent font-bold">AvatarTalk.Co</span>
                 </a>
               </div>
             </div>
