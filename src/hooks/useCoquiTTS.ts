@@ -1,5 +1,4 @@
-
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -18,8 +17,32 @@ export const useCoquiTTS = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [voicesLoaded, setVoicesLoaded] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const { toast } = useToast();
+
+  // Preload voices on mount
+  useEffect(() => {
+    if ('speechSynthesis' in window) {
+      const loadVoices = () => {
+        const voices = speechSynthesis.getVoices();
+        if (voices.length > 0) {
+          setVoicesLoaded(true);
+          console.log('🔊 TTS Voices loaded:', voices.length);
+        }
+      };
+      
+      // Load voices immediately if already available
+      loadVoices();
+      
+      // Also listen for voiceschanged event (Chrome loads voices async)
+      speechSynthesis.addEventListener('voiceschanged', loadVoices);
+      
+      return () => {
+        speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+      };
+    }
+  }, []);
 
   const synthesizeSpeech = useCallback(async (text: string, options: CoquiTTSOptions = {}) => {
     if (!text.trim()) return;
@@ -27,53 +50,79 @@ export const useCoquiTTS = () => {
     setIsLoading(true);
     
     try {
-      // Using Web Speech API as Coqui TTS implementation
-      // For production Coqui TTS, you would need server-side setup
-      if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = options.speed || 1;
-        utterance.lang = options.language || 'en-US';
-        
-        // Set voice if specified
-        if (options.voice) {
-          const voices = speechSynthesis.getVoices();
-          const selectedVoice = voices.find(voice => voice.name.includes(options.voice!));
-          if (selectedVoice) {
-            utterance.voice = selectedVoice;
-          }
-        }
-        
-        utterance.onstart = () => {
-          setIsPlaying(true);
-        };
-        
-        utterance.onend = () => {
-          setIsPlaying(false);
-          setIsLoading(false);
-        };
-        
-        utterance.onerror = (event) => {
-          console.error('Speech synthesis error:', event);
-          setIsPlaying(false);
-          setIsLoading(false);
-          toast({
-            title: "TTS Error",
-            description: "Failed to synthesize speech",
-            variant: "destructive",
-          });
-        };
-
-        speechSynthesis.speak(utterance);
-      } else {
+      if (!('speechSynthesis' in window)) {
         throw new Error('Speech synthesis not supported');
       }
+
+      // Cancel any ongoing speech first
+      speechSynthesis.cancel();
+
+      // Wait for voices to be available
+      let voices = speechSynthesis.getVoices();
+      if (voices.length === 0) {
+        // Wait up to 1 second for voices to load
+        await new Promise<void>((resolve) => {
+          const checkVoices = () => {
+            voices = speechSynthesis.getVoices();
+            if (voices.length > 0) {
+              resolve();
+            }
+          };
+          speechSynthesis.addEventListener('voiceschanged', checkVoices, { once: true });
+          setTimeout(() => resolve(), 1000);
+        });
+        voices = speechSynthesis.getVoices();
+      }
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = options.speed || 1;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+      utterance.lang = options.language || 'en-US';
+      
+      // Set voice - prioritize English voices
+      if (voices.length > 0) {
+        const englishVoices = voices.filter(v => v.lang.startsWith('en'));
+        const selectedVoice = englishVoices.find(v => 
+          v.name.toLowerCase().includes('female') || 
+          v.name.toLowerCase().includes('samantha') ||
+          v.name.toLowerCase().includes('google')
+        ) || englishVoices[0] || voices[0];
+        
+        if (selectedVoice) {
+          utterance.voice = selectedVoice;
+        }
+      }
+      
+      utterance.onstart = () => {
+        setIsPlaying(true);
+        setIsLoading(false);
+      };
+      
+      utterance.onend = () => {
+        setIsPlaying(false);
+        setIsLoading(false);
+      };
+      
+      utterance.onerror = (event) => {
+        console.error('Speech synthesis error:', event);
+        setIsPlaying(false);
+        setIsLoading(false);
+        // Only show toast for actual errors, not interruptions
+        if (event.error !== 'interrupted' && event.error !== 'canceled') {
+          toast({
+            title: "Voice Error",
+            description: "Voice playback unavailable. Text response shown.",
+          });
+        }
+      };
+
+      speechSynthesis.speak(utterance);
+      
     } catch (error) {
+      console.error('TTS error:', error);
       setIsLoading(false);
-      toast({
-        title: "TTS Error",
-        description: "Text-to-speech is not available",
-        variant: "destructive",
-      });
+      setIsPlaying(false);
     }
   }, [toast]);
 
