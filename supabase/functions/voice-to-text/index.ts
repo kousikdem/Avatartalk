@@ -6,6 +6,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Error codes for generic responses
+const ERROR_CODES = {
+  INVALID_INPUT: 'ERR_INVALID_INPUT',
+  PROCESSING_ERROR: 'ERR_PROCESSING'
+};
+
 // Input validation schema
 const audioSchema = z.object({
   audio: z.string()
@@ -29,7 +35,7 @@ const audioSchema = z.object({
         const maxSize = 10 * 1024 * 1024; // 10MB
         return sizeInBytes <= maxSize;
       },
-      'Audio data exceeds 10MB limit'
+      'Audio data exceeds size limit'
     )
 });
 
@@ -63,7 +69,7 @@ function processBase64Chunks(base64String: string, chunkSize = 32768) {
   return result;
 }
 
-// Convert audio to WAV format for Coqui STT
+// Convert audio to WAV format for STT
 function convertToWav(audioData: Uint8Array, sampleRate = 16000): Uint8Array {
   const length = audioData.length;
   const arrayBuffer = new ArrayBuffer(44 + length * 2);
@@ -113,12 +119,9 @@ function detectSpeech(audioData: Uint8Array): boolean {
   return average > threshold;
 }
 
-// Coqui STT implementation using Web Speech API fallback
-async function transcribeWithCoquiSTT(audioData: Uint8Array): Promise<string> {
+// STT implementation
+async function transcribeAudio(audioData: Uint8Array): Promise<string> {
   try {
-    // For now, using a simplified approach since Coqui STT requires model hosting
-    // In production, you would use the actual Coqui STT model
-    
     // Convert to WAV format
     const wavData = convertToWav(audioData);
     
@@ -127,23 +130,13 @@ async function transcribeWithCoquiSTT(audioData: Uint8Array): Promise<string> {
       return "";
     }
     
-    // Simulate Coqui STT processing
-    // In a real implementation, you would:
-    // 1. Load the Coqui STT model
-    // 2. Process the audio through the model
-    // 3. Return the transcription
-    
-    // For now, return a placeholder indicating successful processing
-    // You would replace this with actual Coqui STT inference
-    
     // Simulated transcription result
-    // In production, this would be the actual Coqui STT output
-    return "Coqui STT transcription would appear here";
+    // In production, this would be the actual STT output
+    return "STT transcription would appear here";
     
   } catch (error) {
-    console.error('Coqui STT error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    throw new Error(`Coqui STT processing failed: ${errorMessage}`);
+    console.error('STT error:', error);
+    throw new Error('Speech processing failed');
   }
 }
 
@@ -154,14 +147,28 @@ serve(async (req) => {
 
   try {
     // Parse and validate input
-    const body = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(JSON.stringify({ 
+        success: false,
+        error_code: ERROR_CODES.INVALID_INPUT,
+        message: 'Invalid request format'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const validationResult = audioSchema.safeParse(body);
     
     if (!validationResult.success) {
-      console.error('❌ Validation failed:', validationResult.error.errors);
+      console.error('Validation failed:', validationResult.error.errors);
       return new Response(JSON.stringify({ 
-        error: 'Invalid input',
-        details: validationResult.error.errors.map(e => e.message).join(', ')
+        success: false,
+        error_code: ERROR_CODES.INVALID_INPUT,
+        message: 'Please check your input and try again'
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -170,20 +177,20 @@ serve(async (req) => {
     
     const { audio } = validationResult.data;
 
-    console.log('Processing audio with Coqui STT...');
+    console.log('Processing audio for transcription...');
 
     // Process audio in chunks
     const binaryAudio = processBase64Chunks(audio);
     
-    // Use Coqui STT for transcription
-    const transcription = await transcribeWithCoquiSTT(binaryAudio);
+    // Use STT for transcription
+    const transcription = await transcribeAudio(binaryAudio);
 
-    console.log('Coqui STT transcription completed:', transcription);
+    console.log('Transcription completed');
 
     return new Response(
       JSON.stringify({ 
+        success: true,
         text: transcription,
-        engine: 'coqui-stt',
         timestamp: new Date().toISOString()
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -191,11 +198,11 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Voice-to-text error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(
       JSON.stringify({ 
-        error: errorMessage,
-        engine: 'coqui-stt'
+        success: false,
+        error_code: ERROR_CODES.PROCESSING_ERROR,
+        message: 'Unable to process audio. Please try again.'
       }),
       {
         status: 500,

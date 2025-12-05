@@ -1,11 +1,33 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.1';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Error codes for generic responses
+const ERROR_CODES = {
+  INVALID_INPUT: 'ERR_INVALID_INPUT',
+  RATE_LIMITED: 'ERR_RATE_LIMITED',
+  SERVICE_UNAVAILABLE: 'ERR_SERVICE_UNAVAILABLE',
+  PROCESSING_ERROR: 'ERR_PROCESSING'
+};
+
+// Input validation schema
+const voiceChatSchema = z.object({
+  audio: z.string()
+    .max(15 * 1024 * 1024, 'Audio data too large') // ~15MB base64
+    .optional(),
+  profileId: z.string().uuid('Invalid profile ID'),
+  userId: z.string().uuid('Invalid user ID').optional(),
+  conversationHistory: z.array(z.object({
+    content: z.string().max(2000),
+    sender: z.enum(['user', 'avatar'])
+  })).max(20).optional()
+});
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -17,26 +39,51 @@ serve(async (req) => {
   }
 
   try {
-    const { audio, profileId, userId, conversationHistory } = await req.json();
+    // Parse and validate input
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(JSON.stringify({ 
+        success: false,
+        error_code: ERROR_CODES.INVALID_INPUT,
+        message: 'Invalid request format'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const validationResult = voiceChatSchema.safeParse(body);
     
-    console.log('🎙️ Processing voice chat request for profile:', profileId);
+    if (!validationResult.success) {
+      console.error('Validation failed:', validationResult.error.errors);
+      return new Response(JSON.stringify({ 
+        success: false,
+        error_code: ERROR_CODES.INVALID_INPUT,
+        message: 'Please check your input and try again'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { audio, profileId, userId, conversationHistory } = validationResult.data;
+    
+    console.log('Processing voice chat request for profile:', profileId);
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     let transcribedText = '';
     
-    // Step 1: Transcribe audio using Faster-Whisper simulation
+    // Step 1: Transcribe audio using STT simulation
     if (audio) {
-      console.log('🎤 Transcribing audio with Faster-Whisper...');
+      console.log('Transcribing audio...');
       
-      // Simulate Faster-Whisper STT processing
-      // In production, this would call actual Faster-Whisper API
       const audioBuffer = Uint8Array.from(atob(audio), c => c.charCodeAt(0));
+      transcribedText = await simulateSTT(audioBuffer);
       
-      // Simulated transcription - would be replaced with actual API call
-      transcribedText = await simulateFasterWhisperSTT(audioBuffer);
-      
-      console.log('✅ Transcription complete:', transcribedText);
+      console.log('Transcription complete');
     }
 
     // Step 2: Get profile and training data
@@ -69,7 +116,7 @@ serve(async (req) => {
     // Add conversation history for context
     if (conversationHistory && conversationHistory.length > 0) {
       contextPrompt += '\n\nRecent conversation:';
-      conversationHistory.slice(-5).forEach((msg: any) => {
+      conversationHistory.slice(-5).forEach((msg) => {
         if (msg.sender === 'user') {
           contextPrompt += `\nUser: ${msg.content}`;
         } else {
@@ -78,14 +125,14 @@ serve(async (req) => {
       });
     }
 
-    // Step 4: Generate response using Lovable AI Gateway
-    console.log('🤖 Generating response with AI...');
+    // Step 4: Generate response using AI
+    console.log('Generating AI response...');
     const aiResponse = await generateAIResponse(transcribedText, contextPrompt);
     
-    console.log('✅ AI Response generated:', aiResponse);
+    console.log('AI Response generated');
 
     // Step 5: Generate voice with TTS
-    console.log('🔊 Synthesizing voice with TTS...');
+    console.log('Synthesizing voice...');
     const audioResponse = await synthesizeTTS(aiResponse);
     
     // Step 6: Store interaction
@@ -117,11 +164,12 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('❌ Error in voice-chat-stream:', error);
+    console.error('Error in voice-chat-stream:', error);
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error_code: ERROR_CODES.PROCESSING_ERROR,
+        message: 'Unable to process your request. Please try again.',
         textResponse: "I'm having trouble processing your request right now. Please try again."
       }),
       {
@@ -133,9 +181,8 @@ serve(async (req) => {
 });
 
 // Simulate STT (Speech-to-Text)
-async function simulateFasterWhisperSTT(audioBuffer: Uint8Array): Promise<string> {
-  // In production, this would call actual STT service
-  console.log('📊 Audio buffer size:', audioBuffer.length);
+async function simulateSTT(audioBuffer: Uint8Array): Promise<string> {
+  console.log('Audio buffer size:', audioBuffer.length);
   
   // Simulate processing delay
   await new Promise(resolve => setTimeout(resolve, 300));
@@ -147,10 +194,9 @@ async function simulateFasterWhisperSTT(audioBuffer: Uint8Array): Promise<string
 // Generate AI response using Lovable AI Gateway
 async function generateAIResponse(userInput: string, context: string): Promise<string> {
   if (!lovableApiKey) {
-    throw new Error('LOVABLE_API_KEY is not configured');
+    console.error('LOVABLE_API_KEY is not configured');
+    return "I'm temporarily unavailable. Please try again later.";
   }
-  
-  console.log('🧠 Processing with Lovable AI...');
   
   try {
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -171,16 +217,15 @@ async function generateAIResponse(userInput: string, context: string): Promise<s
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('AI Gateway error:', response.status, errorText);
+      console.error('AI Gateway error:', response.status);
       
       if (response.status === 429) {
         return "I'm receiving too many requests right now. Please try again in a moment.";
       }
       if (response.status === 402) {
-        return "The AI service is temporarily unavailable. Please try again later.";
+        return "The service is temporarily unavailable. Please try again later.";
       }
-      throw new Error('Failed to generate response');
+      return "I'm having trouble generating a response. Please try again.";
     }
 
     const data = await response.json();
@@ -194,8 +239,7 @@ async function generateAIResponse(userInput: string, context: string): Promise<s
 
 // Synthesize voice with TTS
 async function synthesizeTTS(text: string): Promise<string> {
-  // In production, this would call actual TTS service
-  console.log('🎵 Synthesizing with TTS...');
+  console.log('Synthesizing TTS...');
   
   // Simulate TTS processing
   await new Promise(resolve => setTimeout(resolve, 400));

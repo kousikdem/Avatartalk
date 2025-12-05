@@ -1,11 +1,11 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Play, User } from 'lucide-react';
+import { Play, User, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DemoLoginProps {
   isOpen: boolean;
@@ -14,11 +14,14 @@ interface DemoLoginProps {
 
 const DemoLogin: React.FC<DemoLoginProps> = ({ isOpen, onClose }) => {
   const [demoName, setDemoName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleDemoLogin = (e: React.FormEvent) => {
+  const handleDemoLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!demoName.trim()) {
+    
+    const trimmedName = demoName.trim();
+    if (!trimmedName) {
       toast({
         title: "Error",
         description: "Please enter your name for the demo",
@@ -27,20 +30,50 @@ const DemoLogin: React.FC<DemoLoginProps> = ({ isOpen, onClose }) => {
       return;
     }
 
-    // Simulate demo login
-    toast({
-      title: "Demo Mode Activated",
-      description: `Welcome ${demoName}! You're now in demo mode.`,
-    });
-    
-    // Store demo user data in localStorage
-    localStorage.setItem('demoUser', JSON.stringify({
-      name: demoName,
-      isDemo: true,
-      loginTime: new Date().toISOString()
-    }));
-    
-    onClose();
+    // Validate name length
+    if (trimmedName.length > 50) {
+      toast({
+        title: "Error",
+        description: "Name must be 50 characters or less",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Use Supabase anonymous authentication instead of localStorage
+      const { data, error } = await supabase.auth.signInAnonymously({
+        options: {
+          data: {
+            display_name: trimmedName,
+            is_demo: true,
+            demo_started_at: new Date().toISOString()
+          }
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Demo Mode Activated",
+        description: `Welcome ${trimmedName}! You're now in demo mode.`,
+      });
+      
+      onClose();
+    } catch (error) {
+      console.error('Demo login error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start demo mode. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -82,6 +115,8 @@ const DemoLogin: React.FC<DemoLoginProps> = ({ isOpen, onClose }) => {
                 onChange={(e) => setDemoName(e.target.value)}
                 className="pl-10 bg-gray-800/50 border-gray-600 text-white focus:border-blue-500"
                 required
+                maxLength={50}
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -89,9 +124,19 @@ const DemoLogin: React.FC<DemoLoginProps> = ({ isOpen, onClose }) => {
           <Button 
             type="submit" 
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+            disabled={isLoading}
           >
-            <Play className="w-4 h-4 mr-2" />
-            Start Demo Experience
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Starting Demo...
+              </>
+            ) : (
+              <>
+                <Play className="w-4 h-4 mr-2" />
+                Start Demo Experience
+              </>
+            )}
           </Button>
         </form>
 

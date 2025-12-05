@@ -8,6 +8,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Error codes for generic responses
+const ERROR_CODES = {
+  INVALID_INPUT: 'ERR_INVALID_INPUT',
+  RATE_LIMITED: 'ERR_RATE_LIMITED',
+  SERVICE_UNAVAILABLE: 'ERR_SERVICE_UNAVAILABLE',
+  PROCESSING_ERROR: 'ERR_PROCESSING',
+  AUTH_ERROR: 'ERR_AUTH'
+};
+
 // Input validation schema
 const messageSchema = z.object({
   userMessage: z.string()
@@ -30,14 +39,28 @@ serve(async (req) => {
 
   try {
     // Parse and validate input
-    const body = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(JSON.stringify({ 
+        success: false,
+        error_code: ERROR_CODES.INVALID_INPUT,
+        message: 'Invalid request format'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const validationResult = messageSchema.safeParse(body);
     
     if (!validationResult.success) {
-      console.error('❌ Validation failed:', validationResult.error.errors);
+      console.error('Validation failed:', validationResult.error.errors);
       return new Response(JSON.stringify({ 
-        error: 'Invalid input',
-        details: validationResult.error.errors.map(e => e.message).join(', ')
+        success: false,
+        error_code: ERROR_CODES.INVALID_INPUT,
+        message: 'Please check your input and try again'
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -46,7 +69,7 @@ serve(async (req) => {
 
     const { userMessage, profileId, userId } = validationResult.data;
 
-    console.log('Generating personalized AI response for profile:', profileId);
+    console.log('Processing AI request for profile:', profileId);
 
     // Create Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -134,7 +157,7 @@ serve(async (req) => {
     // Add context from behavior learning data
     if (behaviorData && behaviorData.length > 0) {
       personalityPrompt += "\n\nRecent conversation context:";
-      behaviorData.reverse().forEach((data, index) => {
+      behaviorData.reverse().forEach((data) => {
         if (data.user_input && data.ai_response) {
           personalityPrompt += `\nUser: ${data.user_input}\nYou: ${data.ai_response}`;
         }
@@ -183,7 +206,16 @@ serve(async (req) => {
     You are a personalized AI assistant. Respond naturally, maintaining consistency with previous conversations and the established personality.`;
 
     if (!lovableApiKey) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+      console.error('LOVABLE_API_KEY is not configured');
+      return new Response(JSON.stringify({ 
+        success: false,
+        error_code: ERROR_CODES.SERVICE_UNAVAILABLE,
+        message: 'Service temporarily unavailable. Please try again later.',
+        response: "I'm having trouble generating a response right now. Please try again in a moment."
+      }), {
+        status: 503,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -210,23 +242,51 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Lovable AI Gateway error:', response.status, errorText);
+      console.error('AI Gateway error:', response.status);
       
       if (response.status === 429) {
-        throw new Error('Rate limit exceeded. Please try again in a moment.');
+        return new Response(JSON.stringify({ 
+          success: false,
+          error_code: ERROR_CODES.RATE_LIMITED,
+          message: 'Service is busy. Please try again in a moment.',
+          response: "I'm receiving too many requests. Please try again in a moment."
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
       if (response.status === 402) {
-        throw new Error('AI service credits depleted. Please contact support.');
+        return new Response(JSON.stringify({ 
+          success: false,
+          error_code: ERROR_CODES.SERVICE_UNAVAILABLE,
+          message: 'Service temporarily unavailable.',
+          response: "I'm temporarily unavailable. Please try again later."
+        }), {
+          status: 503,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
-      throw new Error('Failed to generate AI response');
+      
+      return new Response(JSON.stringify({ 
+        success: false,
+        error_code: ERROR_CODES.PROCESSING_ERROR,
+        message: 'Unable to process your request.',
+        response: "I'm having trouble generating a response. Please try again."
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const data = await response.json();
     const aiResponse = data.choices[0].message.content;
 
     // Find matching Q&A pairs and web links for rich responses
-    let richData: any = {
+    const richData: {
+      buttons: Array<{ text: string; url: string }>;
+      links: Array<{ url: string; title: string; preview: string }>;
+      documents: Array<{ filename: string; type: string; preview: string }>;
+    } = {
       buttons: [],
       links: [],
       documents: []
@@ -304,12 +364,12 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in personalized-ai-response function:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('Error in personalized-ai-response:', error);
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: errorMessage,
+        error_code: ERROR_CODES.PROCESSING_ERROR,
+        message: 'Unable to process your request. Please try again.',
         response: "I'm having trouble generating a response right now. Avatartalk uses Natural Language Processing (NLP) technology and large language models (LLMs) to provide the best personalized AI conversation. Please try again in a moment."
       }),
       {
