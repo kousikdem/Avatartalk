@@ -1,7 +1,7 @@
 project_id = "hnxnvdzrwbtmcohdptfq"
 
 [functions.voice-to-text]
-verify_jwt = false
+verify_jwt = true
 
 [functions.avatar-file-compress]
 verify_jwt = true
@@ -10,7 +10,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.personalized-ai-response]
-verify_jwt = false
+verify_jwt = true
 
 [functions.personalized-ai-training]
 verify_jwt = true
@@ -19,7 +19,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.voice-chat-stream]
-verify_jwt = false
+verify_jwt = true
 
 [functions.razorpay-create-order]
 verify_jwt = true
