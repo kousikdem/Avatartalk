@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Upload, Brain, Mic, FileText, Globe, Bot, Loader2, Plus, Trash2, 
-  CheckCircle, AlertCircle, Link as LinkIcon, Play, Download
+  CheckCircle, AlertCircle, Link as LinkIcon, Play, Download, MessageCircle,
+  BookOpen, HelpCircle, Sparkles, ExternalLink
 } from "lucide-react";
 
 import { usePersonalizedAI } from "@/hooks/usePersonalizedAI";
@@ -18,6 +19,11 @@ import { useTrainingDocuments } from "@/hooks/useTrainingDocuments";
 import { useQAPairs } from "@/hooks/useQAPairs";
 import { useVoiceRecordings } from "@/hooks/useVoiceRecordings";
 import { useWebTraining } from "@/hooks/useWebTraining";
+import { useAITrainingSettings } from "@/hooks/useAITrainingSettings";
+import { WelcomeMessageSettingsComponent } from "@/components/ai-training/WelcomeMessageSettings";
+import { TopicRulesPanel } from "@/components/ai-training/TopicRulesPanel";
+import { FollowUpQuestionsPanel } from "@/components/ai-training/FollowUpQuestionsPanel";
+import { AIResponsePerspective } from "@/components/ai-training/AIResponsePerspective";
 
 const AITrainingDashboard = () => {
   const { toast } = useToast();
@@ -65,6 +71,21 @@ const AITrainingDashboard = () => {
     scrapeUrl,
     deleteWebData
   } = useWebTraining();
+
+  const {
+    settings: aiSettings,
+    topics,
+    followUps,
+    isLoading: isSettingsLoading,
+    isSaving: isSettingsSaving,
+    saveSettings,
+    addTopic,
+    updateTopic,
+    deleteTopic,
+    addFollowUp,
+    updateFollowUp,
+    deleteFollowUp
+  } = useAITrainingSettings();
 
   // Local state
   const [trainingName, setTrainingName] = useState('');
@@ -302,8 +323,24 @@ const AITrainingDashboard = () => {
         </Card>
 
         {/* Training Data Tabs */}
-        <Tabs defaultValue="qa" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+        <Tabs defaultValue="perspective" className="w-full">
+          <TabsList className="grid w-full grid-cols-7">
+            <TabsTrigger value="perspective">
+              <Sparkles className="w-4 h-4 mr-2" />
+              Perspective
+            </TabsTrigger>
+            <TabsTrigger value="welcome">
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Welcome
+            </TabsTrigger>
+            <TabsTrigger value="topics">
+              <BookOpen className="w-4 h-4 mr-2" />
+              Topics
+            </TabsTrigger>
+            <TabsTrigger value="followups">
+              <HelpCircle className="w-4 h-4 mr-2" />
+              Follow-ups
+            </TabsTrigger>
             <TabsTrigger value="qa">
               <FileText className="w-4 h-4 mr-2" />
               Q&A
@@ -314,13 +351,54 @@ const AITrainingDashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="web">
               <Globe className="w-4 h-4 mr-2" />
-              Web Scraper
-            </TabsTrigger>
-            <TabsTrigger value="voice">
-              <Mic className="w-4 h-4 mr-2" />
-              Voice
+              Web
             </TabsTrigger>
           </TabsList>
+
+          {/* AI Response Perspective Tab */}
+          <TabsContent value="perspective" className="space-y-4">
+            {aiSettings && (
+              <AIResponsePerspective
+                settings={aiSettings}
+                onSave={saveSettings}
+                isSaving={isSettingsSaving}
+              />
+            )}
+          </TabsContent>
+
+          {/* Welcome Message Tab */}
+          <TabsContent value="welcome" className="space-y-4">
+            {aiSettings && (
+              <WelcomeMessageSettingsComponent
+                settings={aiSettings.welcomeMessage}
+                onSave={(welcomeMessage) => saveSettings({ welcomeMessage })}
+                isSaving={isSettingsSaving}
+              />
+            )}
+          </TabsContent>
+
+          {/* Topics Tab */}
+          <TabsContent value="topics" className="space-y-4">
+            <TopicRulesPanel
+              topics={topics}
+              onAdd={addTopic}
+              onUpdate={updateTopic}
+              onDelete={deleteTopic}
+              isLoading={isSettingsLoading}
+            />
+          </TabsContent>
+
+          {/* Follow-ups Tab */}
+          <TabsContent value="followups" className="space-y-4">
+            <FollowUpQuestionsPanel
+              followUps={followUps}
+              topics={topics}
+              onAdd={addFollowUp}
+              onUpdate={updateFollowUp}
+              onDelete={deleteFollowUp}
+              isLoading={isSettingsLoading}
+            />
+          </TabsContent>
 
           {/* Q&A Tab */}
           <TabsContent value="qa" className="space-y-4">
@@ -400,13 +478,13 @@ const AITrainingDashboard = () => {
                           )}
                           {qa.custom_link_url && (
                             <Button
-                              variant="link"
+                              variant="outline"
                               size="sm"
-                              className="mt-2 p-0 h-auto"
-                              onClick={() => window.open(qa.custom_link_url!, '_blank')}
+                              className="mt-2 gap-2"
+                              onClick={() => window.open(qa.custom_link_url!, '_blank', 'noopener,noreferrer')}
                             >
-                              <LinkIcon className="w-3 h-3 mr-1" />
                               {qa.custom_link_button_name || 'View Link'}
+                              <ExternalLink className="w-3 h-3" />
                             </Button>
                           )}
                         </div>
