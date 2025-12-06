@@ -62,6 +62,244 @@ export type Database = {
           },
         ]
       }
+      ai_chat_memory: {
+        Row: {
+          created_at: string
+          engagement_score: number | null
+          first_visit_at: string | null
+          follow_ups_completed: number | null
+          follow_ups_shown: number | null
+          id: string
+          last_topics: Json | null
+          last_visit_at: string | null
+          preferences: Json | null
+          profile_id: string
+          session_count: number | null
+          total_messages: number | null
+          updated_at: string
+          visitor_email: string | null
+          visitor_id: string
+          visitor_metadata: Json | null
+          visitor_name: string | null
+          welcome_shown: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          engagement_score?: number | null
+          first_visit_at?: string | null
+          follow_ups_completed?: number | null
+          follow_ups_shown?: number | null
+          id?: string
+          last_topics?: Json | null
+          last_visit_at?: string | null
+          preferences?: Json | null
+          profile_id: string
+          session_count?: number | null
+          total_messages?: number | null
+          updated_at?: string
+          visitor_email?: string | null
+          visitor_id: string
+          visitor_metadata?: Json | null
+          visitor_name?: string | null
+          welcome_shown?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          engagement_score?: number | null
+          first_visit_at?: string | null
+          follow_ups_completed?: number | null
+          follow_ups_shown?: number | null
+          id?: string
+          last_topics?: Json | null
+          last_visit_at?: string | null
+          preferences?: Json | null
+          profile_id?: string
+          session_count?: number | null
+          total_messages?: number | null
+          updated_at?: string
+          visitor_email?: string | null
+          visitor_id?: string
+          visitor_metadata?: Json | null
+          visitor_name?: string | null
+          welcome_shown?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_chat_memory_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_follow_ups: {
+        Row: {
+          always_ask: boolean | null
+          analytics_description: string | null
+          analytics_id: string | null
+          choices: Json | null
+          conditions: Json | null
+          cooldown_seconds: number | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          max_per_session: number | null
+          presentation: string | null
+          probability_pct: number | null
+          question_text: string
+          question_type: string | null
+          topic_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          always_ask?: boolean | null
+          analytics_description?: string | null
+          analytics_id?: string | null
+          choices?: Json | null
+          conditions?: Json | null
+          cooldown_seconds?: number | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          max_per_session?: number | null
+          presentation?: string | null
+          probability_pct?: number | null
+          question_text: string
+          question_type?: string | null
+          topic_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          always_ask?: boolean | null
+          analytics_description?: string | null
+          analytics_id?: string | null
+          choices?: Json | null
+          conditions?: Json | null
+          cooldown_seconds?: number | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          max_per_session?: number | null
+          presentation?: string | null
+          probability_pct?: number | null
+          question_text?: string
+          question_type?: string | null
+          topic_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_follow_ups_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "ai_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_topics: {
+        Row: {
+          authority: string | null
+          avoid_rules: Json | null
+          created_at: string
+          describe_history: Json | null
+          describe_priority: boolean | null
+          describe_text: string | null
+          do_rules: Json | null
+          id: string
+          is_active: boolean | null
+          keywords: Json | null
+          sample_prompts: Json | null
+          topic_name: string
+          topic_priority: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          authority?: string | null
+          avoid_rules?: Json | null
+          created_at?: string
+          describe_history?: Json | null
+          describe_priority?: boolean | null
+          describe_text?: string | null
+          do_rules?: Json | null
+          id?: string
+          is_active?: boolean | null
+          keywords?: Json | null
+          sample_prompts?: Json | null
+          topic_name: string
+          topic_priority?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          authority?: string | null
+          avoid_rules?: Json | null
+          created_at?: string
+          describe_history?: Json | null
+          describe_priority?: boolean | null
+          describe_text?: string | null
+          do_rules?: Json | null
+          id?: string
+          is_active?: boolean | null
+          keywords?: Json | null
+          sample_prompts?: Json | null
+          topic_name?: string
+          topic_priority?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_training_settings: {
+        Row: {
+          created_at: string
+          custom_variables: Json | null
+          engagement_score_weight: Json | null
+          global_describe_priority: boolean | null
+          global_describe_text: string | null
+          id: string
+          updated_at: string
+          user_id: string
+          welcome_message_enabled: boolean | null
+          welcome_message_language: string | null
+          welcome_message_text: string | null
+          welcome_message_trigger: string | null
+        }
+        Insert: {
+          created_at?: string
+          custom_variables?: Json | null
+          engagement_score_weight?: Json | null
+          global_describe_priority?: boolean | null
+          global_describe_text?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+          welcome_message_enabled?: boolean | null
+          welcome_message_language?: string | null
+          welcome_message_text?: string | null
+          welcome_message_trigger?: string | null
+        }
+        Update: {
+          created_at?: string
+          custom_variables?: Json | null
+          engagement_score_weight?: Json | null
+          global_describe_priority?: boolean | null
+          global_describe_text?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+          welcome_message_enabled?: boolean | null
+          welcome_message_language?: string | null
+          welcome_message_text?: string | null
+          welcome_message_trigger?: string | null
+        }
+        Relationships: []
+      }
       api_training_data: {
         Row: {
           api_endpoint: string
