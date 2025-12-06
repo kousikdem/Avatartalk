@@ -188,7 +188,7 @@ const MainAuth: React.FC<MainAuthProps> = ({ isOpen, onClose, defaultTab = 'sign
 
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
-      <DialogContent className="sm:max-w-md bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 border border-blue-500/30 backdrop-blur-xl text-white">
+      <DialogContent className="sm:max-w-md bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 border-0 backdrop-blur-xl text-white shadow-2xl outline-none ring-0">
         <DialogHeader>
           <DialogTitle className="text-center text-white text-2xl mb-2">
             AvatarTalk.Co
