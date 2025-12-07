@@ -315,8 +315,8 @@ const EnhancedDashboard = () => {
                     <div className="text-sm text-green-500">Followers</div>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200">
-                    <div className="text-2xl font-bold text-purple-600">{Math.round(profileData?.analytics.engagement_score || 0)}%</div>
-                    <div className="text-sm text-purple-500">Engagement</div>
+                    <div className="text-2xl font-bold text-purple-600">{Math.min(100, Math.round(profileData?.analytics.engagement_score || 0))}</div>
+                    <div className="text-sm text-purple-500">Loyalty</div>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200">
                     <div className="text-2xl font-bold text-orange-600">{profileData?.analytics.profile_views || 0}</div>
