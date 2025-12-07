@@ -1145,10 +1145,10 @@ const ProfilePage: React.FC = () => {
                   )}
                 </div>
                 <div className={`text-center rounded-xl py-2 backdrop-blur-sm border relative ${isDarkTheme ? 'bg-slate-800/30 border-slate-700/20' : 'bg-gradient-to-br from-blue-50 to-purple-50 border-gray-200'}`}>
-                  <div className={`text-lg font-bold mb-0.5 flex items-center justify-center gap-1 ${textPrimaryClass}`}>
-                    <LoyaltyBadge score={engagement.loyaltyScore} size="md" showScore={true} />
+                  <div className="flex items-center justify-center">
+                    <LoyaltyBadge score={engagement.loyaltyScore} size="md" showScore={true} showTierName={true} />
                   </div>
-                  <div className={`text-xs font-medium ${textSecondaryClass}`}>Loyalty</div>
+                  <div className={`text-xs font-medium mt-1 ${textSecondaryClass}`}>Loyalty</div>
                 </div>
               </div>
             </div>

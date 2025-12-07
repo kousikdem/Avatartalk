@@ -1,6 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+// Fixed loyalty score weights - same as in AIResponsePerspective
+const LOYALTY_WEIGHTS = {
+  chatMessage: 2,
+  profileVisit: 1, // once per day
+  responseTime: 1,
+  followUpCompletion: 2
+};
+
 interface ProfileEngagement {
   totalConversations: number;
   followersCount: number;
@@ -63,11 +71,19 @@ export const useProfileEngagement = (profileId: string | null) => {
         .eq('seller_id', profileId)
         .eq('payment_status', 'completed');
 
-      // Count profile visits
+      // Count profile visits (unique daily visits)
       const { count: profileViewsCount } = await supabase
         .from('profile_visitors')
         .select('*', { count: 'exact', head: true })
         .eq('visited_profile_id', profileId);
+
+      // Get follow-up completions from ai_chat_memory
+      const { data: memoryData } = await supabase
+        .from('ai_chat_memory')
+        .select('follow_ups_completed')
+        .eq('profile_id', profileId);
+
+      const totalFollowUpsCompleted = memoryData?.reduce((sum, m) => sum + (m.follow_ups_completed || 0), 0) || 0;
 
       // Calculate engagement metrics
       const followers = profileData?.followers_count || stats?.followers_count || 0;
@@ -76,18 +92,19 @@ export const useProfileEngagement = (profileId: string | null) => {
       const productsSold = productsSoldCount || stats?.total_products_sold || 0;
       const profileViews = profileViewsCount || stats?.profile_views || 0;
       
-      // Loyalty score formula: weighted combination capped at 100
+      // Loyalty score formula using fixed weights
+      // Chat Messages * 2 + Profile Visits * 1 + Response Time Bonus * 1 + Follow-up Completion * 2
       const rawScore = (
-        (followers * 3) + 
-        (conversations * 5) + 
-        (messages * 2) + 
-        (productsSold * 15) +
-        (profileViews * 1)
+        (messages * LOYALTY_WEIGHTS.chatMessage) + 
+        (profileViews * LOYALTY_WEIGHTS.profileVisit) + 
+        (followers * LOYALTY_WEIGHTS.responseTime) + // Using followers as proxy for response engagement
+        (totalFollowUpsCompleted * LOYALTY_WEIGHTS.followUpCompletion) +
+        (productsSold * 5) // Bonus for purchases
       );
       
       // Normalize to 1-100 scale using logarithmic scaling
       const loyaltyScore = Math.min(100, Math.max(1, Math.round(
-        rawScore > 0 ? Math.log10(rawScore + 1) * 25 : 1
+        rawScore > 0 ? Math.log10(rawScore + 1) * 30 : 1
       )));
 
       // Check if user is new (created within last 7 days or has low loyalty)
@@ -168,6 +185,19 @@ export const useProfileEngagement = (profileId: string | null) => {
         },
         () => {
           console.log('👤 Profile updated - refreshing engagement');
+          fetchEngagement();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profile_visitors',
+          filter: `visited_profile_id=eq.${profileId}`
+        },
+        () => {
+          console.log('👁️ Profile visit - refreshing engagement');
           fetchEngagement();
         }
       )

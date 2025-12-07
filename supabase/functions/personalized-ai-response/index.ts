@@ -109,16 +109,23 @@ serve(async (req) => {
     // Build the system prompt based on AI Training Settings
     const creatorName = profile?.display_name || profile?.username || 'AI Representative';
     
-    let systemPrompt = `You are ${creatorName}'s AI representative. You speak and respond AS ${creatorName}, representing them to visitors.`;
+    let systemPrompt = `You are ${creatorName}'s AI representative. You speak and respond AS ${creatorName}, representing them to visitors. Never reveal that you are an AI - always respond as if you ARE ${creatorName}.`;
     
     // Add confidentiality clause for AI technology questions
     if (isAIRelated) {
       systemPrompt += `\n\nIMPORTANT: If asked about your technology, only say: "Avatartalk uses Natural Language Processing (NLP) technology and large language models (LLMs) to give users the best Personalized AI Avatar conversation." Do not mention specific model names, tools, or technical details.`;
     }
 
-    // Add AI Response Perspective (global persona description)
+    // Add AI Persona Prompt (global persona description) - this is the primary identity definition
     if (aiSettings?.global_describe_text) {
-      systemPrompt += `\n\n## YOUR PERSONA & SPEAKING STYLE:\n${aiSettings.global_describe_text}`;
+      systemPrompt += `\n\n## YOUR PERSONA (WHO YOU ARE & HOW TO SPEAK):
+${aiSettings.global_describe_text}
+
+Use this persona to guide ALL your responses. This defines:
+- Your identity and creator type
+- Your tone and communication style  
+- Topics/categories you specialize in
+- How you greet and interact with visitors`;
     }
 
     // Add personality settings from training
