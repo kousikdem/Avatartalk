@@ -24,6 +24,7 @@ import SocialFeed from './SocialFeed';
 import FollowButton from './FollowButton';
 import SubscribeButton from './SubscribeButton';
 import SubscriberBadge from './SubscriberBadge';
+import LoyaltyBadge from './LoyaltyBadge';
 import EnhancedShareModal from './EnhancedShareModal';
 import SocialLinksMenu from './SocialLinksMenu';
 import SocialLinksPopup from './SocialLinksPopup';
@@ -167,6 +168,7 @@ const ProfilePage: React.FC = () => {
   const [postsTabMessage, setPostsTabMessage] = useState('');
   const [productsTabMessage, setProductsTabMessage] = useState('');
   const [activeTab, setActiveTab] = useState('chat');
+  const [aiTrainingSettings, setAiTrainingSettings] = useState<any>(null);
   const { toast } = useToast();
 
   const {
@@ -232,11 +234,57 @@ const ProfilePage: React.FC = () => {
   const [voiceModelReady, setVoiceModelReady] = useState(false);
   const [hasPlayedWelcome, setHasPlayedWelcome] = useState(false);
 
+  // Fetch AI training settings for welcome message
+  useEffect(() => {
+    const fetchAISettings = async () => {
+      if (!profile?.id) return;
+      
+      try {
+        const { data } = await supabase
+          .from('ai_training_settings')
+          .select('*')
+          .eq('user_id', profile.id)
+          .maybeSingle();
+        
+        if (data) {
+          setAiTrainingSettings(data);
+        }
+      } catch (error) {
+        console.error('Error fetching AI settings:', error);
+      }
+    };
+    
+    fetchAISettings();
+  }, [profile?.id]);
+
   // Initialize and load chat messages from database
   useEffect(() => {
     if (profile && !chatHistoryLoading) {
+      // Build welcome message from AI settings or default
+      const getWelcomeMessage = () => {
+        if (aiTrainingSettings?.welcome_message_enabled && aiTrainingSettings?.welcome_message_text) {
+          // Replace variables in welcome message
+          let welcomeText = aiTrainingSettings.welcome_message_text;
+          welcomeText = welcomeText.replace(/{visitor_name}/gi, currentUser?.email?.split('@')[0] || 'there');
+          welcomeText = welcomeText.replace(/{username}/gi, profile.username || '');
+          welcomeText = welcomeText.replace(/{display_name}/gi, profile.display_name || profile.username || '');
+          return welcomeText;
+        }
+        return `Hi there! I'm ${profile.display_name || profile.username}. How can I help you today?`;
+      };
+      
+      // Always prepend welcome message first, then chat history
+      const welcomeMessage: ChatMessage = {
+        id: 'welcome-' + Date.now(),
+        content: getWelcomeMessage(),
+        timestamp: new Date().toISOString(),
+        sender: 'avatar',
+        senderName: profile.display_name || profile.username,
+        senderAvatar: profile.profile_pic_url || profile.avatar_url
+      };
+      
       if (chatHistory.length > 0) {
-        // Load previous chat history with profile info
+        // Load previous chat history with profile info, prepend welcome
         const messagesWithProfile: ChatMessage[] = chatHistory.map(msg => ({
           ...msg,
           senderName: msg.sender === 'avatar' 
@@ -246,24 +294,13 @@ const ProfilePage: React.FC = () => {
             ? (profile.profile_pic_url || profile.avatar_url)
             : currentUser?.user_metadata?.avatar_url
         }));
-        setChatMessages(messagesWithProfile);
+        setChatMessages([welcomeMessage, ...messagesWithProfile]);
       } else {
-        // Initialize with welcome message for new conversations
-        const welcomeMessage = `Hi there! I'm ${profile.display_name || profile.username}. How can I help you today?`;
-        const initialMessages: ChatMessage[] = [
-          {
-            id: '1',
-            content: welcomeMessage,
-            timestamp: new Date().toISOString(),
-            sender: 'avatar',
-            senderName: profile.display_name || profile.username,
-            senderAvatar: profile.profile_pic_url || profile.avatar_url
-          }
-        ];
-        setChatMessages(initialMessages);
+        // Just welcome message for new conversations
+        setChatMessages([welcomeMessage]);
       }
     }
-  }, [profile, chatHistory, chatHistoryLoading, currentUser]);
+  }, [profile, chatHistory, chatHistoryLoading, currentUser, aiTrainingSettings]);
 
   // Preload voice model and speak welcome message on profile load
   useEffect(() => {
@@ -1107,11 +1144,11 @@ const ProfilePage: React.FC = () => {
                     </div>
                   )}
                 </div>
-                <div className={`text-center rounded-xl py-2 backdrop-blur-sm border ${isDarkTheme ? 'bg-slate-800/30 border-slate-700/20' : 'bg-gradient-to-br from-blue-50 to-purple-50 border-gray-200'}`}>
-                  <div className={`text-lg font-bold mb-0.5 ${textPrimaryClass}`}>
-                    {Math.round(engagement.engagementScore)}
+                <div className={`text-center rounded-xl py-2 backdrop-blur-sm border relative ${isDarkTheme ? 'bg-slate-800/30 border-slate-700/20' : 'bg-gradient-to-br from-blue-50 to-purple-50 border-gray-200'}`}>
+                  <div className={`text-lg font-bold mb-0.5 flex items-center justify-center gap-1 ${textPrimaryClass}`}>
+                    <LoyaltyBadge score={engagement.loyaltyScore} size="md" showScore={true} />
                   </div>
-                  <div className={`text-xs font-medium ${textSecondaryClass}`}>Engagement</div>
+                  <div className={`text-xs font-medium ${textSecondaryClass}`}>Loyalty</div>
                 </div>
               </div>
             </div>

@@ -412,8 +412,8 @@ const LandingPage = () => {
                   <div className="text-xs text-slate-400 font-medium">Followers</div>
                 </div>
                 <div className="text-center bg-slate-800/30 rounded-xl py-2 backdrop-blur-sm border border-slate-700/20">
-                  <div className="text-lg font-bold text-white mb-0.5">94%</div>
-                  <div className="text-xs text-slate-400 font-medium">Engagement</div>
+                  <div className="text-lg font-bold text-white mb-0.5">94</div>
+                  <div className="text-xs text-slate-400 font-medium">Loyalty</div>
                 </div>
               </div>
             </div>

@@ -8,7 +8,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Error codes for generic responses
 const ERROR_CODES = {
   INVALID_INPUT: 'ERR_INVALID_INPUT',
   RATE_LIMITED: 'ERR_RATE_LIMITED',
@@ -17,14 +16,14 @@ const ERROR_CODES = {
   AUTH_ERROR: 'ERR_AUTH'
 };
 
-// Input validation schema
 const messageSchema = z.object({
   userMessage: z.string()
     .min(1, 'Message cannot be empty')
     .max(2000, 'Message must be 2000 characters or less')
     .trim(),
   profileId: z.string().uuid('Invalid profile ID format'),
-  userId: z.string().uuid('Invalid user ID format').optional()
+  userId: z.string().uuid('Invalid user ID format').optional(),
+  visitorName: z.string().optional()
 });
 
 const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
@@ -32,13 +31,11 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Parse and validate input
     let body;
     try {
       body = await req.json();
@@ -67,150 +64,180 @@ serve(async (req) => {
       });
     }
 
-    const { userMessage, profileId, userId } = validationResult.data;
+    const { userMessage, profileId, userId, visitorName } = validationResult.data;
 
     console.log('Processing AI request for profile:', profileId);
 
-    // Create Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get user's personalized AI training data
-    const { data: trainingData } = await supabase
-      .from('personalized_ai_training')
-      .select('*')
-      .eq('user_id', profileId)
-      .eq('model_status', 'completed')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+    // Fetch all training data in parallel
+    const [
+      trainingDataRes,
+      profileRes,
+      aiSettingsRes,
+      topicsRes,
+      followUpsRes,
+      qaPairsRes,
+      documentsRes,
+      webDataRes,
+      behaviorDataRes
+    ] = await Promise.all([
+      supabase.from('personalized_ai_training').select('*').eq('user_id', profileId).eq('model_status', 'completed').order('created_at', { ascending: false }).limit(1).maybeSingle(),
+      supabase.from('profiles').select('*').eq('id', profileId).single(),
+      supabase.from('ai_training_settings').select('*').eq('user_id', profileId).maybeSingle(),
+      supabase.from('ai_topics').select('*').eq('user_id', profileId).eq('is_active', true).order('topic_priority', { ascending: false }),
+      supabase.from('ai_follow_ups').select('*').eq('user_id', profileId).eq('is_active', true),
+      supabase.from('qa_pairs').select('*').eq('user_id', profileId),
+      supabase.from('training_documents').select('*').eq('user_id', profileId).eq('processing_status', 'completed'),
+      supabase.from('web_training_data').select('*').eq('user_id', profileId).eq('scraping_status', 'completed'),
+      supabase.from('behavior_learning_data').select('*').eq('user_id', profileId).order('created_at', { ascending: false }).limit(10)
+    ]);
 
-    // Get user profile information
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', profileId)
-      .single();
-
-    // Get user's behavior learning data for context
-    const { data: behaviorData } = await supabase
-      .from('behavior_learning_data')
-      .select('*')
-      .eq('user_id', profileId)
-      .order('created_at', { ascending: false })
-      .limit(10);
-
-    // Get Q&A pairs
-    const { data: qaPairs } = await supabase
-      .from('qa_pairs')
-      .select('*')
-      .eq('user_id', profileId);
-
-    // Get training documents content
-    const { data: documents } = await supabase
-      .from('training_documents')
-      .select('*')
-      .eq('user_id', profileId)
-      .eq('processing_status', 'completed');
-
-    // Get web training data
-    const { data: webData } = await supabase
-      .from('web_training_data')
-      .select('*')
-      .eq('user_id', profileId)
-      .eq('scraping_status', 'completed');
+    const trainingData = trainingDataRes.data;
+    const profile = profileRes.data;
+    const aiSettings = aiSettingsRes.data;
+    const topics = topicsRes.data || [];
+    const followUps = followUpsRes.data || [];
+    const qaPairs = qaPairsRes.data || [];
+    const documents = documentsRes.data || [];
+    const webData = webDataRes.data || [];
+    const behaviorData = behaviorDataRes.data || [];
 
     // Check if this is an AI-related question
     const isAIRelated = /\b(ai|artificial intelligence|machine learning|llm|model|chatbot|assistant|technology|qwen|whisper|chattts|faster|trafilatura|emo)\b/i.test(userMessage);
     
-    // Generate personalized response using NLP and LLM technology
-    let personalityPrompt = `You are ${profile?.display_name || profile?.username || 'AI Assistant'}, a personalized AI assistant.`;
+    // Build the system prompt based on AI Training Settings
+    const creatorName = profile?.display_name || profile?.username || 'AI Representative';
     
+    let systemPrompt = `You are ${creatorName}'s AI representative. You speak and respond AS ${creatorName}, representing them to visitors.`;
+    
+    // Add confidentiality clause for AI technology questions
     if (isAIRelated) {
-      personalityPrompt += `\n\nIMPORTANT: If asked about your technology, only say: "Avatartalk uses Natural Language Processing (NLP) technology and large language models (LLMs) to give users the best Personalized AI Avatar conversation." Do not mention specific model names, tools, or technical details. Keep it confidential.`;
+      systemPrompt += `\n\nIMPORTANT: If asked about your technology, only say: "Avatartalk uses Natural Language Processing (NLP) technology and large language models (LLMs) to give users the best Personalized AI Avatar conversation." Do not mention specific model names, tools, or technical details.`;
     }
-    
+
+    // Add AI Response Perspective (global persona description)
+    if (aiSettings?.global_describe_text) {
+      systemPrompt += `\n\n## YOUR PERSONA & SPEAKING STYLE:\n${aiSettings.global_describe_text}`;
+    }
+
+    // Add personality settings from training
     if (trainingData?.personality_settings) {
       const settings = trainingData.personality_settings;
-      personalityPrompt += `\n\nPersonality traits:
-      - Formality level: ${settings.formality || 50}/100
-      - Verbosity: ${settings.verbosity || 70}/100  
-      - Friendliness: ${settings.friendliness || 80}/100
-      - Mode: ${settings.mode || 'adaptive'}`;
-      
+      systemPrompt += `\n\n## PERSONALITY TRAITS:`;
       if (settings.formality > 70) {
-        personalityPrompt += "\nUse a formal, professional tone.";
+        systemPrompt += "\n- Use a formal, professional tone.";
       } else if (settings.formality < 30) {
-        personalityPrompt += "\nUse a casual, relaxed tone.";
+        systemPrompt += "\n- Use a casual, relaxed tone.";
       }
-      
       if (settings.verbosity > 70) {
-        personalityPrompt += "\nProvide detailed, comprehensive responses.";
+        systemPrompt += "\n- Provide detailed, comprehensive responses.";
       } else if (settings.verbosity < 30) {
-        personalityPrompt += "\nKeep responses concise and to the point.";
+        systemPrompt += "\n- Keep responses concise and to the point.";
       }
-      
       if (settings.friendliness > 70) {
-        personalityPrompt += "\nBe warm, encouraging, and empathetic in your responses.";
+        systemPrompt += "\n- Be warm, encouraging, and empathetic.";
       }
     }
 
-    // Add context from behavior learning data
-    if (behaviorData && behaviorData.length > 0) {
-      personalityPrompt += "\n\nRecent conversation context:";
-      behaviorData.reverse().forEach((data) => {
-        if (data.user_input && data.ai_response) {
-          personalityPrompt += `\nUser: ${data.user_input}\nYou: ${data.ai_response}`;
+    // Add Topic Rules
+    if (topics.length > 0) {
+      systemPrompt += `\n\n## TOPIC-SPECIFIC RULES:`;
+      topics.forEach((topic: any) => {
+        systemPrompt += `\n\n### Topic: ${topic.topic_name} (Priority: ${topic.topic_priority || 5})`;
+        if (topic.authority) systemPrompt += `\nAuthority level: ${topic.authority}`;
+        if (topic.describe_text) systemPrompt += `\nGuidance: ${topic.describe_text}`;
+        if (topic.do_rules && Array.isArray(topic.do_rules) && topic.do_rules.length > 0) {
+          systemPrompt += `\nDO: ${topic.do_rules.join(', ')}`;
+        }
+        if (topic.avoid_rules && Array.isArray(topic.avoid_rules) && topic.avoid_rules.length > 0) {
+          systemPrompt += `\nAVOID: ${topic.avoid_rules.join(', ')}`;
+        }
+        if (topic.keywords && Array.isArray(topic.keywords) && topic.keywords.length > 0) {
+          systemPrompt += `\nKeywords: ${topic.keywords.join(', ')}`;
         }
       });
     }
 
-    // Add Q&A pairs knowledge base
-    if (qaPairs && qaPairs.length > 0) {
-      personalityPrompt += "\n\nKnowledge Base (Q&A):";
-      qaPairs.forEach((qa) => {
-        personalityPrompt += `\nQ: ${qa.question}\nA: ${qa.answer}`;
+    // Add Q&A Knowledge Base
+    if (qaPairs.length > 0) {
+      systemPrompt += `\n\n## KNOWLEDGE BASE (Q&A PAIRS):`;
+      qaPairs.forEach((qa: any) => {
+        systemPrompt += `\n\nQ: ${qa.question}\nA: ${qa.answer}`;
         if (qa.custom_link_url) {
-          personalityPrompt += `\nCustom Link: [${qa.custom_link_button_name || 'Learn More'}](${qa.custom_link_url})`;
+          systemPrompt += `\n[LINK BUTTON: "${qa.custom_link_button_name || 'Learn More'}" -> ${qa.custom_link_url}]`;
         }
-        if (qa.category) personalityPrompt += `\nCategory: ${qa.category}`;
+        if (qa.category) systemPrompt += ` (Category: ${qa.category})`;
       });
+      systemPrompt += `\n\nWhen a Q&A matches the user's question, use that answer and include the link button if available.`;
     }
 
-    // Add document knowledge
-    if (documents && documents.length > 0) {
-      personalityPrompt += "\n\nDocument Knowledge:";
-      documents.forEach((doc) => {
+    // Add Document Knowledge
+    if (documents.length > 0) {
+      systemPrompt += `\n\n## DOCUMENT KNOWLEDGE:`;
+      documents.forEach((doc: any) => {
         if (doc.extracted_content) {
-          personalityPrompt += `\n--- ${doc.filename} ---\n${doc.extracted_content.substring(0, 2000)}...`;
+          systemPrompt += `\n--- ${doc.filename} ---\n${doc.extracted_content.substring(0, 1500)}...`;
         }
       });
     }
 
-    // Add web scraped data
-    if (webData && webData.length > 0) {
-      personalityPrompt += "\n\nWeb Content Knowledge:";
-      webData.forEach((web) => {
+    // Add Web Scraped Data
+    if (webData.length > 0) {
+      systemPrompt += `\n\n## WEB CONTENT KNOWLEDGE:`;
+      webData.forEach((web: any) => {
         if (web.scraped_content) {
-          personalityPrompt += `\n--- ${web.url} ---\n${web.scraped_content.substring(0, 2000)}...`;
+          systemPrompt += `\n--- ${web.url} ---\n${web.scraped_content.substring(0, 1500)}...`;
         }
       });
     }
 
-    personalityPrompt += `\n\nProfile information:
-    - Name: ${profile?.display_name || profile?.username || 'User'}
-    - Bio: ${profile?.bio || 'No bio available'}
-    - Profession: ${profile?.profession || 'Not specified'}
-    
-    IMPORTANT: When answering questions, check if there's a matching Q&A pair or relevant document/web content. If there's a custom link associated with the answer, include it in your response by mentioning "You can learn more here: [link text]" and I will format it as a button.
-    
-    You are a personalized AI assistant. Respond naturally, maintaining consistency with previous conversations and the established personality.`;
+    // Add conversation history context
+    if (behaviorData.length > 0) {
+      systemPrompt += `\n\n## RECENT CONVERSATION CONTEXT:`;
+      behaviorData.reverse().slice(0, 5).forEach((data: any) => {
+        if (data.user_input && data.ai_response) {
+          systemPrompt += `\nVisitor: ${data.user_input}\nYou: ${data.ai_response}`;
+        }
+      });
+    }
+
+    // Add profile info
+    systemPrompt += `\n\n## ABOUT ${creatorName}:
+- Bio: ${profile?.bio || 'Not specified'}
+- Profession: ${profile?.profession || 'Not specified'}
+
+## RESPONSE GUIDELINES:
+1. Always respond AS ${creatorName}, not as an AI assistant.
+2. Use the knowledge from Q&A pairs, documents, and web content when relevant.
+3. If there's a matching Q&A with a custom link, mention it naturally.
+4. Keep responses helpful, on-brand, and consistent with the persona.`;
+
+    // Determine if a follow-up question should be asked
+    let selectedFollowUp: any = null;
+    if (followUps.length > 0) {
+      // Find matching follow-up based on conditions and probability
+      const eligibleFollowUps = followUps.filter((fu: any) => {
+        if (fu.probability_pct && Math.random() * 100 > fu.probability_pct) return false;
+        return true;
+      });
+      if (eligibleFollowUps.length > 0) {
+        selectedFollowUp = eligibleFollowUps[Math.floor(Math.random() * eligibleFollowUps.length)];
+      }
+    }
+
+    if (selectedFollowUp) {
+      systemPrompt += `\n\n## FOLLOW-UP QUESTION TO ASK:
+After your response, ask this follow-up question: "${selectedFollowUp.question_text}"
+${selectedFollowUp.choices && selectedFollowUp.choices.length > 0 ? `Offer these options: ${JSON.stringify(selectedFollowUp.choices)}` : ''}`;
+    }
 
     if (!lovableApiKey) {
       console.error('LOVABLE_API_KEY is not configured');
       return new Response(JSON.stringify({ 
         success: false,
         error_code: ERROR_CODES.SERVICE_UNAVAILABLE,
-        message: 'Service temporarily unavailable. Please try again later.',
+        message: 'Service temporarily unavailable.',
         response: "I'm having trouble generating a response right now. Please try again in a moment."
       }), {
         status: 503,
@@ -227,16 +254,10 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: [
-          { 
-            role: 'system', 
-            content: personalityPrompt
-          },
-          { 
-            role: 'user', 
-            content: userMessage 
-          }
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage }
         ],
-        max_tokens: 300,
+        max_tokens: 400,
         temperature: 0.8,
       }),
     });
@@ -281,11 +302,12 @@ serve(async (req) => {
     const data = await response.json();
     const aiResponse = data.choices[0].message.content;
 
-    // Find matching Q&A pairs and web links for rich responses
+    // Build rich data from Q&A pairs and web links
     const richData: {
       buttons: Array<{ text: string; url: string }>;
       links: Array<{ url: string; title: string; preview: string }>;
       documents: Array<{ filename: string; type: string; preview: string }>;
+      followUp?: { id: string; question: string; choices: string[] };
     } = {
       buttons: [],
       links: [],
@@ -293,8 +315,8 @@ serve(async (req) => {
     };
     
     // Match Q&A pairs and add buttons
-    if (qaPairs && qaPairs.length > 0) {
-      qaPairs.forEach(qa => {
+    if (qaPairs.length > 0) {
+      qaPairs.forEach((qa: any) => {
         const questionWords = qa.question.toLowerCase().split(' ').slice(0, 5).join(' ');
         if (userMessage.toLowerCase().includes(questionWords) && qa.custom_link_url) {
           richData.buttons.push({
@@ -306,23 +328,25 @@ serve(async (req) => {
     }
     
     // Add web training data as link previews
-    if (webData && webData.length > 0) {
-      webData.forEach(web => {
-        const urlDomain = new URL(web.url).hostname;
-        if (userMessage.toLowerCase().includes(urlDomain.replace('www.', '')) || 
-            (web.scraped_content && aiResponse.toLowerCase().includes(urlDomain.replace('www.', '')))) {
-          richData.links.push({
-            url: web.url,
-            title: web.url,
-            preview: web.scraped_content ? web.scraped_content.substring(0, 150) + '...' : ''
-          });
-        }
+    if (webData.length > 0) {
+      webData.forEach((web: any) => {
+        try {
+          const urlDomain = new URL(web.url).hostname;
+          if (userMessage.toLowerCase().includes(urlDomain.replace('www.', '')) || 
+              (web.scraped_content && aiResponse.toLowerCase().includes(urlDomain.replace('www.', '')))) {
+            richData.links.push({
+              url: web.url,
+              title: web.url,
+              preview: web.scraped_content ? web.scraped_content.substring(0, 150) + '...' : ''
+            });
+          }
+        } catch {}
       });
     }
     
     // Add document references
-    if (documents && documents.length > 0) {
-      documents.forEach(doc => {
+    if (documents.length > 0) {
+      documents.forEach((doc: any) => {
         if (aiResponse.toLowerCase().includes(doc.filename.toLowerCase().split('.')[0])) {
           richData.documents.push({
             filename: doc.filename,
@@ -333,7 +357,16 @@ serve(async (req) => {
       });
     }
 
-    // Store the conversation in behavior learning data
+    // Add follow-up question to rich data
+    if (selectedFollowUp) {
+      richData.followUp = {
+        id: selectedFollowUp.id,
+        question: selectedFollowUp.question_text,
+        choices: selectedFollowUp.choices || []
+      };
+    }
+
+    // Store the conversation
     if (userId) {
       await supabase.from('behavior_learning_data').insert({
         user_id: profileId,
@@ -343,13 +376,13 @@ serve(async (req) => {
         context_data: { 
           timestamp: new Date().toISOString(),
           requester_id: userId,
-          rich_data: richData
+          rich_data: richData,
+          visitor_name: visitorName
         }
       });
     }
 
-    // Clean up empty arrays
-    const hasRichData = richData.buttons.length > 0 || richData.links.length > 0 || richData.documents.length > 0;
+    const hasRichData = richData.buttons.length > 0 || richData.links.length > 0 || richData.documents.length > 0 || richData.followUp;
     
     return new Response(
       JSON.stringify({ 

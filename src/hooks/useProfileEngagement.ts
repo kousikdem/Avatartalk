@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface ProfileEngagement {
   totalConversations: number;
   followersCount: number;
-  engagementScore: number;
+  loyaltyScore: number;
   isNewUser: boolean;
   profileViews: number;
   totalProductsSold: number;
@@ -14,7 +14,7 @@ export const useProfileEngagement = (profileId: string | null) => {
   const [engagement, setEngagement] = useState<ProfileEngagement>({
     totalConversations: 0,
     followersCount: 0,
-    engagementScore: 0,
+    loyaltyScore: 0,
     isNewUser: false,
     profileViews: 0,
     totalProductsSold: 0,
@@ -76,22 +76,27 @@ export const useProfileEngagement = (profileId: string | null) => {
       const productsSold = productsSoldCount || stats?.total_products_sold || 0;
       const profileViews = profileViewsCount || stats?.profile_views || 0;
       
-      // Engagement formula: weighted combination of ALL interactions
-      const dynamicEngagement = Math.round(
+      // Loyalty score formula: weighted combination capped at 100
+      const rawScore = (
         (followers * 3) + 
         (conversations * 5) + 
         (messages * 2) + 
         (productsSold * 15) +
         (profileViews * 1)
       );
+      
+      // Normalize to 1-100 scale using logarithmic scaling
+      const loyaltyScore = Math.min(100, Math.max(1, Math.round(
+        rawScore > 0 ? Math.log10(rawScore + 1) * 25 : 1
+      )));
 
-      // Check if user is new (created within last 7 days or has low engagement)
-      const isNew = dynamicEngagement < 50 || (stats?.is_new_user ?? conversations < 5);
+      // Check if user is new (created within last 7 days or has low loyalty)
+      const isNew = loyaltyScore < 20 || (stats?.is_new_user ?? conversations < 5);
 
       setEngagement({
         totalConversations: conversations,
         followersCount: followers,
-        engagementScore: dynamicEngagement,
+        loyaltyScore: loyaltyScore,
         isNewUser: isNew,
         profileViews: profileViews,
         totalProductsSold: productsSold,
@@ -181,7 +186,7 @@ export const useProfileEngagement = (profileId: string | null) => {
     setEngagement(prev => ({
       ...prev,
       totalConversations: prev.totalConversations + 1,
-      engagementScore: prev.engagementScore + 5
+      loyaltyScore: Math.min(100, prev.loyaltyScore + 1)
     }));
   }, [profileId]);
 
