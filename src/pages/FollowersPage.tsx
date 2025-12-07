@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, UserPlus, UserMinus, Search, Eye, MessageSquare, Trash2, Filter, Clock, SortAsc, CircleDot, Crown, IndianRupee } from 'lucide-react';
+import { Users, UserPlus, UserMinus, Search, Eye, MessageSquare, Trash2, Filter, Clock, SortAsc, CircleDot, Crown, IndianRupee, Gem, Star } from 'lucide-react';
 import { useFollows } from '@/hooks/useFollows';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +14,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import FollowButton from '@/components/FollowButton';
+import LoyaltyBadge from '@/components/LoyaltyBadge';
+import { useLoyalUsers } from '@/hooks/useLoyalUsers';
 
 interface FollowerStats {
   followersCount: number;
@@ -38,6 +40,7 @@ interface User {
 
 type SortOption = 'recent' | 'alphabetical' | 'online' | 'interactions';
 type FilterOption = 'all' | 'creators' | 'users' | 'business' | 'ai';
+type LoyalFilterOption = 10 | 100 | 1000;
 
 const FollowersPage = () => {
   const { followers, following, loading, followUser, unfollowUser, isFollowing, refetch } = useFollows();
@@ -47,6 +50,7 @@ const FollowersPage = () => {
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [loyalUsersLimit, setLoyalUsersLimit] = useState<LoyalFilterOption>(10);
   const [stats, setStats] = useState<FollowerStats>({
     followersCount: 0,
     subscribersCount: 0,
@@ -55,6 +59,9 @@ const FollowersPage = () => {
   });
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // Fetch loyal users with the current limit
+  const { loyalUsers, loading: loyalUsersLoading, refetch: refetchLoyalUsers } = useLoyalUsers(currentUserId, loyalUsersLimit);
 
   // Fetch stats in real-time
   const fetchStats = useCallback(async (userId: string) => {
@@ -589,7 +596,7 @@ const FollowersPage = () => {
 
         <CardContent className="p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-8 p-1 h-auto bg-muted/50 rounded-xl">
+            <TabsList className="grid w-full grid-cols-4 mb-8 p-1 h-auto bg-muted/50 rounded-xl">
               <TabsTrigger 
                 value="followers" 
                 className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-md rounded-lg py-3 transition-all"
@@ -618,6 +625,16 @@ const FollowersPage = () => {
                 <span className="font-semibold">Visitors</span>
                 <Badge variant="secondary" className="ml-1 bg-primary/20 text-primary border-0">
                   {visitors.length}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="loyal" 
+                className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-md rounded-lg py-3 transition-all"
+              >
+                <Gem className="h-4 w-4" />
+                <span className="font-semibold">Loyal Users</span>
+                <Badge variant="secondary" className="ml-1 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-600 border-0">
+                  {loyalUsers.length}
                 </Badge>
               </TabsTrigger>
             </TabsList>
@@ -725,6 +742,151 @@ const FollowersPage = () => {
                         user={visitor}
                         type="visitor"
                       />
+                    ))}
+                  </div>
+                </AnimatePresence>
+              )}
+            </TabsContent>
+
+            {/* Loyal Users Tab */}
+            <TabsContent value="loyal" className="mt-0">
+              <div className="flex items-center justify-between mb-6 p-4 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-lg border border-cyan-500/20">
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Gem className="h-4 w-4 text-cyan-500" />
+                  Your most engaged users based on loyalty scores
+                </p>
+                <Select 
+                  value={loyalUsersLimit.toString()} 
+                  onValueChange={(value) => setLoyalUsersLimit(Number(value) as LoyalFilterOption)}
+                >
+                  <SelectTrigger className="w-[120px] border-cyan-500/30">
+                    <Star className="h-4 w-4 mr-2 text-cyan-500" />
+                    <SelectValue placeholder="Top 10" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">Top 10</SelectItem>
+                    <SelectItem value="100">Top 100</SelectItem>
+                    <SelectItem value="1000">Top 1000</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {loyalUsersLoading ? (
+                <div className="flex flex-col justify-center items-center py-16">
+                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-cyan-500/20 border-t-cyan-500 mb-4"></div>
+                  <p className="text-muted-foreground">Loading loyal users...</p>
+                </div>
+              ) : loyalUsers.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="p-6 rounded-full bg-gradient-to-br from-cyan-500/20 to-blue-500/20 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+                    <Gem className="h-12 w-12 text-cyan-500" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-foreground mb-2">No Loyal Users Yet</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    When visitors engage with your AI chat, they'll appear here ranked by loyalty score
+                  </p>
+                </div>
+              ) : (
+                <AnimatePresence mode="popLayout">
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+                    {loyalUsers.map((loyalUser, index) => (
+                      <motion.div
+                        key={loyalUser.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                        className="group"
+                      >
+                        <Card className="hover:shadow-xl transition-all duration-300 border hover:border-cyan-500/40 bg-card relative overflow-hidden">
+                          {/* Rank Badge */}
+                          <div className="absolute top-3 right-3">
+                            <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
+                              index === 0 ? 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white' :
+                              index === 1 ? 'bg-gradient-to-br from-slate-300 to-gray-400 text-white' :
+                              index === 2 ? 'bg-gradient-to-br from-orange-400 to-amber-600 text-white' :
+                              'bg-muted text-muted-foreground'
+                            }`}>
+                              #{index + 1}
+                            </div>
+                          </div>
+
+                          <CardContent className="p-6">
+                            <div className="flex items-start gap-4">
+                              {/* Avatar */}
+                              <div className="relative">
+                                <Avatar className="h-16 w-16 border-2 border-cyan-500/30 ring-2 ring-background group-hover:border-cyan-500 transition-colors">
+                                  <AvatarImage src={loyalUser.avatarUrl} alt={loyalUser.displayName} />
+                                  <AvatarFallback className="bg-gradient-to-br from-cyan-500/20 to-blue-500/20 text-cyan-600 font-bold text-lg">
+                                    {loyalUser.displayName.charAt(0).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                              </div>
+
+                              <div className="flex-1 min-w-0">
+                                {/* User Info */}
+                                <div className="space-y-1">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="flex-1 min-w-0">
+                                      <h3 className="font-bold text-lg text-foreground truncate group-hover:text-cyan-500 transition-colors">
+                                        {loyalUser.displayName}
+                                      </h3>
+                                      {loyalUser.username && (
+                                        <p className="text-sm text-muted-foreground">
+                                          @{loyalUser.username}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Loyalty Badge */}
+                                  <div className="pt-2">
+                                    <LoyaltyBadge 
+                                      score={loyalUser.loyaltyScore} 
+                                      size="md" 
+                                      showScore={true} 
+                                      showTierName={true} 
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* Engagement Stats */}
+                                <div className="flex gap-4 mt-3 text-xs text-muted-foreground">
+                                  <span className="flex items-center gap-1 hover:text-foreground transition-colors">
+                                    <MessageSquare className="h-3.5 w-3.5" />
+                                    <span className="font-medium">{loyalUser.totalMessages}</span> messages
+                                  </span>
+                                  <span className="flex items-center gap-1 hover:text-foreground transition-colors">
+                                    <Eye className="h-3.5 w-3.5" />
+                                    <span className="font-medium">{loyalUser.totalVisits}</span> visits
+                                  </span>
+                                </div>
+
+                                {/* Last Interaction */}
+                                <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                                  <Clock className="h-3.5 w-3.5" />
+                                  <span>Last active {formatDistanceToNow(new Date(loyalUser.lastInteractionAt), { addSuffix: true })}</span>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex gap-2 mt-4">
+                                  {loyalUser.username && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => navigate(`/${loyalUser.username}`)}
+                                      className="flex-1 group-hover:border-cyan-500/50 transition-colors"
+                                    >
+                                      <MessageSquare className="h-4 w-4 mr-2" />
+                                      View Profile
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
                     ))}
                   </div>
                 </AnimatePresence>

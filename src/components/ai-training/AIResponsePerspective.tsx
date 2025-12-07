@@ -1,20 +1,27 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, UserCircle, Mic2, Target, Sparkles } from "lucide-react";
+import { Loader2, UserCircle, Target, Sparkles, MessageSquare, Eye, Clock, CheckCircle, Shield } from "lucide-react";
 import { AITrainingSettings } from "@/hooks/useAITrainingSettings";
+import LoyaltyBadge, { getLoyaltyTier } from "@/components/LoyaltyBadge";
 
 interface AIResponsePerspectiveProps {
   settings: AITrainingSettings;
   onSave: (updates: Partial<AITrainingSettings>) => void;
   isSaving: boolean;
 }
+
+// Fixed loyalty score weights - not editable
+const FIXED_LOYALTY_WEIGHTS = {
+  chatCount: 2,
+  visitCount: 1,
+  responseTime: 1,
+  followUpCompletion: 2
+};
 
 export const AIResponsePerspective: React.FC<AIResponsePerspectiveProps> = ({
   settings,
@@ -23,48 +30,63 @@ export const AIResponsePerspective: React.FC<AIResponsePerspectiveProps> = ({
 }) => {
   const [globalDescribeText, setGlobalDescribeText] = useState(settings.globalDescribeText);
   const [globalDescribePriority, setGlobalDescribePriority] = useState(settings.globalDescribePriority);
-  const [engagementWeight, setEngagementWeight] = useState(settings.engagementScoreWeight);
 
   const handleSave = () => {
     onSave({
       globalDescribeText,
       globalDescribePriority,
-      engagementScoreWeight: engagementWeight
+      engagementScoreWeight: FIXED_LOYALTY_WEIGHTS
     });
   };
+
+  // Preview scores for different tiers
+  const tierPreviews = [
+    { score: 10, label: 'New User' },
+    { score: 30, label: 'Regular' },
+    { score: 50, label: 'Engaged' },
+    { score: 70, label: 'Loyal' },
+    { score: 90, label: 'Super Fan' }
+  ];
 
   return (
     <Card className="border-2 border-primary/20">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-primary" />
-          AI Response Perspective
+          AI Persona & Response Style
         </CardTitle>
         <CardDescription>
-          Define how the AI should interact with visitors across all topics
+          Define your AI's personality, tone, and how it represents you to visitors
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Global Perspective Text */}
+        {/* AI Persona Prompt */}
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
             <UserCircle className="w-4 h-4" />
-            AI Persona Description
+            AI Persona Prompt
           </Label>
           <Textarea
             value={globalDescribeText}
             onChange={(e) => setGlobalDescribeText(e.target.value)}
-            placeholder="Describe how your AI should talk to visitors. Example: 'I am a friendly and professional assistant who helps visitors learn about our products and services. I speak in a warm, approachable tone and always aim to provide helpful information.'"
-            rows={6}
+            placeholder={`Define your AI persona. Include:
+• Who you are (Creator type: Artist, Coach, Educator, etc.)
+• How to talk to visitors (Friendly, Professional, Casual, etc.)
+• Topics/categories you specialize in
+• Your communication tone and style
+• Any specific phrases or greetings to use
+
+Example: "I am Sarah, a fitness coach and nutrition expert. I speak in an encouraging, supportive tone and help visitors with workout plans, diet tips, and healthy lifestyle advice. I'm enthusiastic about fitness and always motivate people to stay consistent."`}
+            rows={8}
             className="font-mono text-sm"
           />
           <p className="text-xs text-muted-foreground">
-            This description tells the AI how to behave and respond to all visitor queries.
+            This persona prompt shapes how your AI responds to all visitor interactions. Be specific about your identity, expertise, and communication style.
           </p>
         </div>
 
         {/* Priority Toggle */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
           <div>
             <Label>Prioritize Persona Over Topic Rules</Label>
             <p className="text-sm text-muted-foreground">
@@ -77,83 +99,85 @@ export const AIResponsePerspective: React.FC<AIResponsePerspectiveProps> = ({
           />
         </div>
 
-        {/* Engagement Score Weights */}
+        {/* Loyalty Score Weights - Read Only */}
         <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-          <Label className="flex items-center gap-2">
-            <Target className="w-4 h-4" />
-            Engagement Score Weights
-          </Label>
+          <div className="flex items-center justify-between">
+            <Label className="flex items-center gap-2">
+              <Target className="w-4 h-4" />
+              Loyalty Score Weights
+            </Label>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Shield className="w-3 h-3" />
+              Fixed System Values
+            </div>
+          </div>
           <p className="text-xs text-muted-foreground">
-            Adjust how different interactions contribute to the engagement score (1-100)
+            These weights determine how user interactions contribute to their loyalty score (1-100)
           </p>
 
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <div className="flex justify-between mb-2">
-                <Label className="text-sm">Chat Messages</Label>
-                <span className="text-sm font-medium">{engagementWeight.chatCount}</span>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center justify-between p-3 bg-background rounded-lg border">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-primary" />
+                <span className="text-sm">Chat Messages</span>
               </div>
-              <Slider
-                value={[engagementWeight.chatCount]}
-                onValueChange={([value]) => setEngagementWeight(prev => ({ ...prev, chatCount: value }))}
-                min={1}
-                max={10}
-                step={1}
-              />
+              <span className="text-lg font-bold text-primary">{FIXED_LOYALTY_WEIGHTS.chatCount}</span>
             </div>
 
-            <div>
-              <div className="flex justify-between mb-2">
-                <Label className="text-sm">Profile Visits</Label>
-                <span className="text-sm font-medium">{engagementWeight.visitCount}</span>
+            <div className="flex items-center justify-between p-3 bg-background rounded-lg border">
+              <div className="flex items-center gap-2">
+                <Eye className="w-4 h-4 text-blue-500" />
+                <span className="text-sm">Profile Visits</span>
               </div>
-              <Slider
-                value={[engagementWeight.visitCount]}
-                onValueChange={([value]) => setEngagementWeight(prev => ({ ...prev, visitCount: value }))}
-                min={1}
-                max={10}
-                step={1}
-              />
+              <span className="text-lg font-bold text-blue-500">{FIXED_LOYALTY_WEIGHTS.visitCount}</span>
             </div>
 
-            <div>
-              <div className="flex justify-between mb-2">
-                <Label className="text-sm">Response Time Bonus</Label>
-                <span className="text-sm font-medium">{engagementWeight.responseTime}</span>
+            <div className="flex items-center justify-between p-3 bg-background rounded-lg border">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-green-500" />
+                <span className="text-sm">Response Time</span>
               </div>
-              <Slider
-                value={[engagementWeight.responseTime]}
-                onValueChange={([value]) => setEngagementWeight(prev => ({ ...prev, responseTime: value }))}
-                min={1}
-                max={10}
-                step={1}
-              />
+              <span className="text-lg font-bold text-green-500">{FIXED_LOYALTY_WEIGHTS.responseTime}</span>
             </div>
 
-            <div>
-              <div className="flex justify-between mb-2">
-                <Label className="text-sm">Follow-up Completion</Label>
-                <span className="text-sm font-medium">{engagementWeight.followUpCompletion}</span>
+            <div className="flex items-center justify-between p-3 bg-background rounded-lg border">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-purple-500" />
+                <span className="text-sm">Follow-up Done</span>
               </div>
-              <Slider
-                value={[engagementWeight.followUpCompletion]}
-                onValueChange={([value]) => setEngagementWeight(prev => ({ ...prev, followUpCompletion: value }))}
-                min={1}
-                max={10}
-                step={1}
-              />
+              <span className="text-lg font-bold text-purple-500">{FIXED_LOYALTY_WEIGHTS.followUpCompletion}</span>
             </div>
+          </div>
+
+          <p className="text-xs text-muted-foreground italic">
+            Profile visits count once per day per user.
+          </p>
+        </div>
+
+        {/* Loyalty Badge Tier Preview */}
+        <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
+          <Label>Loyalty Badge Tiers</Label>
+          <p className="text-xs text-muted-foreground mb-3">
+            Users earn different badges based on their loyalty score
+          </p>
+          <div className="flex flex-wrap gap-3 justify-center">
+            {tierPreviews.map((preview) => (
+              <div key={preview.score} className="flex flex-col items-center gap-1">
+                <LoyaltyBadge score={preview.score} size="md" showScore={true} showTierName={true} />
+                <span className="text-[10px] text-muted-foreground">{preview.label}</span>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Example Preview */}
         <div className="space-y-2">
-          <Label>Preview</Label>
+          <Label>Persona Preview</Label>
           <div className="p-4 bg-muted rounded-lg space-y-2">
-            <p className="text-sm font-medium">Sample AI Response Style:</p>
+            <p className="text-sm font-medium">How your AI will introduce itself:</p>
             <p className="text-sm text-muted-foreground italic">
               {globalDescribeText ? 
-                `"${globalDescribeText.substring(0, 150)}${globalDescribeText.length > 150 ? '...' : ''}"` :
+                `"${globalDescribeText.substring(0, 200)}${globalDescribeText.length > 200 ? '...' : ''}"` :
                 '"Hi there! How can I help you today?"'
               }
             </p>
@@ -167,7 +191,7 @@ export const AIResponsePerspective: React.FC<AIResponsePerspectiveProps> = ({
               Saving...
             </>
           ) : (
-            'Save AI Perspective Settings'
+            'Save AI Persona Settings'
           )}
         </Button>
       </CardContent>
