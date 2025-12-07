@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Mic, MicOff, Volume2, VolumeX, Send, Smile, Loader2 } from 'lucide-react';
@@ -28,11 +28,9 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   // Voice input hook
   const {
     isListening,
-    transcript,
     interimTranscript,
     startListening,
     stopListening,
-    resetTranscript,
     isSupported: voiceInputSupported
   } = useVoiceInput();
 
@@ -45,19 +43,28 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     isSupported: voiceOutputSupported
   } = useCoquiTTS();
 
-  // Update message when voice transcript changes
-  useEffect(() => {
-    if (transcript) {
-      setMessage(message + transcript);
-      resetTranscript();
+  // Handle auto-submit when voice recognition completes
+  const handleVoiceComplete = useCallback((finalTranscript: string) => {
+    if (finalTranscript.trim()) {
+      setMessage(finalTranscript);
+      // Auto-submit after a brief delay to show the message
+      setTimeout(() => {
+        onSend();
+      }, 300);
     }
-  }, [transcript, message, setMessage, resetTranscript]);
+  }, [setMessage, onSend]);
 
   const handleVoiceInput = () => {
     if (isListening) {
       stopListening();
     } else {
-      startListening({ continuous: false, interimResults: true });
+      // Clear current message and start fresh voice input
+      setMessage('');
+      startListening({ 
+        continuous: false, 
+        interimResults: true,
+        onFinalTranscript: handleVoiceComplete 
+      });
     }
   };
 
@@ -84,15 +91,27 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     }
   };
 
+  // Display text while listening
+  const displayValue = isListening 
+    ? (interimTranscript || 'Listening...') 
+    : message;
+
   return (
     <form onSubmit={handleSubmit} className="relative">
-      <div className="bg-slate-800/60 rounded-2xl border border-slate-600/50 px-4 py-3 flex items-center gap-3 backdrop-blur-sm">
+      <div className={`bg-slate-800/60 rounded-2xl border px-4 py-3 flex items-center gap-3 backdrop-blur-sm transition-all duration-300 ${
+        isListening 
+          ? 'border-red-500/70 shadow-lg shadow-red-500/20' 
+          : 'border-slate-600/50'
+      }`}>
         <Input
-          value={message + (isListening ? ` ${interimTranscript}` : '')}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder={placeholder}
-          className="border-0 bg-transparent text-white placeholder:text-slate-400 flex-1 focus-visible:ring-0 p-0"
-          disabled={disabled}
+          value={displayValue}
+          onChange={(e) => !isListening && setMessage(e.target.value)}
+          placeholder={isListening ? 'Listening...' : placeholder}
+          className={`border-0 bg-transparent text-white placeholder:text-slate-400 flex-1 focus-visible:ring-0 p-0 ${
+            isListening ? 'text-red-300 italic animate-pulse' : ''
+          }`}
+          disabled={disabled || isListening}
+          readOnly={isListening}
         />
         
         {/* Emoji Button - Yellow/Orange Gradient */}
