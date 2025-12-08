@@ -92,7 +92,7 @@ export const useProfileEngagement = (profileId: string | null) => {
       const productsSold = productsSoldCount || stats?.total_products_sold || 0;
       const profileViews = profileViewsCount || stats?.profile_views || 0;
       
-      // Loyalty score formula using fixed weights
+      // Loyalty score formula using fixed weights (raw score, no normalization)
       // Chat Messages * 2 + Profile Visits * 1 + Response Time Bonus * 1 + Follow-up Completion * 2
       const rawScore = (
         (messages * LOYALTY_WEIGHTS.chatMessage) + 
@@ -101,19 +101,14 @@ export const useProfileEngagement = (profileId: string | null) => {
         (totalFollowUpsCompleted * LOYALTY_WEIGHTS.followUpCompletion) +
         (productsSold * 5) // Bonus for purchases
       );
-      
-      // Normalize to 1-100 scale using logarithmic scaling
-      const loyaltyScore = Math.min(100, Math.max(1, Math.round(
-        rawScore > 0 ? Math.log10(rawScore + 1) * 30 : 1
-      )));
 
-      // Check if user is new (created within last 7 days or has low loyalty)
-      const isNew = loyaltyScore < 20 || (stats?.is_new_user ?? conversations < 5);
+      // Check if user is new (has low engagement or few conversations)
+      const isNew = rawScore < 100 || (stats?.is_new_user ?? conversations < 5);
 
       setEngagement({
         totalConversations: conversations,
         followersCount: followers,
-        loyaltyScore: loyaltyScore,
+        loyaltyScore: rawScore, // Raw score for new badge thresholds
         isNewUser: isNew,
         profileViews: profileViews,
         totalProductsSold: productsSold,
@@ -212,11 +207,11 @@ export const useProfileEngagement = (profileId: string | null) => {
   const incrementConversation = useCallback(async () => {
     if (!profileId) return;
     
-    // Optimistically update local state
+    // Optimistically update local state with raw score increment
     setEngagement(prev => ({
       ...prev,
       totalConversations: prev.totalConversations + 1,
-      loyaltyScore: Math.min(100, prev.loyaltyScore + 1)
+      loyaltyScore: prev.loyaltyScore + LOYALTY_WEIGHTS.chatMessage
     }));
   }, [profileId]);
 
