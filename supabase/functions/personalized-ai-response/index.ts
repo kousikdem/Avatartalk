@@ -217,8 +217,22 @@ Use this persona to guide ALL your responses. This defines:
 ## RESPONSE GUIDELINES:
 1. Always respond AS ${creatorName}, not as an AI assistant.
 2. Use the knowledge from Q&A pairs, documents, and web content when relevant.
-3. If there's a matching Q&A with a custom link, mention it naturally.
-4. Keep responses helpful, on-brand, and consistent with the persona.`;
+3. If there's a matching Q&A with a custom link, mention it naturally and the system will add a button.
+4. Keep responses helpful, on-brand, and consistent with the persona.
+5. Format responses professionally:
+   - Use bullet points for lists (start with - or •)
+   - Use numbered lists for steps (1. 2. 3.)
+   - Keep paragraphs short and scannable
+   - Use clear headings when organizing multiple topics
+6. If relevant Q&A topics exist, briefly mention them so they can be suggested.`;
+    
+    // Add Q&A topics for related questions
+    if (qaPairs.length > 0) {
+      systemPrompt += `\n\n## AVAILABLE Q&A TOPICS (mention relevant ones briefly):`;
+      qaPairs.slice(0, 10).forEach((qa: any) => {
+        systemPrompt += `\n- ${qa.question}`;
+      });
+    }
 
     // Determine if a follow-up question should be asked
     let selectedFollowUp: any = null;
@@ -315,23 +329,47 @@ ${selectedFollowUp.choices && selectedFollowUp.choices.length > 0 ? `Offer these
       links: Array<{ url: string; title: string; preview: string }>;
       documents: Array<{ filename: string; type: string; preview: string }>;
       followUp?: { id: string; question: string; choices: string[] };
+      relatedQuestions: Array<{ question: string }>;
+      lists: Array<{ title: string; items: string[] }>;
+      cards: Array<{ title: string; description: string; action?: { text: string; url: string } }>;
     } = {
       buttons: [],
       links: [],
-      documents: []
+      documents: [],
+      relatedQuestions: [],
+      lists: [],
+      cards: []
     };
     
-    // Match Q&A pairs and add buttons
+    // Match Q&A pairs and add buttons + related questions
     if (qaPairs.length > 0) {
+      const userMessageLower = userMessage.toLowerCase();
+      const responseMessageLower = aiResponse.toLowerCase();
+      
       qaPairs.forEach((qa: any) => {
-        const questionWords = qa.question.toLowerCase().split(' ').slice(0, 5).join(' ');
-        if (userMessage.toLowerCase().includes(questionWords) && qa.custom_link_url) {
+        const questionWords = qa.question.toLowerCase().split(' ').filter((w: string) => w.length > 3);
+        const matchScore = questionWords.filter((word: string) => 
+          userMessageLower.includes(word) || responseMessageLower.includes(word)
+        ).length;
+        
+        // Add button if there's a link and good match
+        if (matchScore >= 2 && qa.custom_link_url) {
           richData.buttons.push({
             text: qa.custom_link_button_name || 'Learn More',
             url: qa.custom_link_url
           });
         }
+        
+        // Add as related question if partial match
+        if (matchScore >= 1 && !userMessageLower.includes(qa.question.toLowerCase().substring(0, 20))) {
+          richData.relatedQuestions.push({
+            question: qa.question.length > 50 ? qa.question.substring(0, 50) + '...' : qa.question
+          });
+        }
       });
+      
+      // Limit related questions to top 3
+      richData.relatedQuestions = richData.relatedQuestions.slice(0, 3);
     }
     
     // Add web training data as link previews
@@ -351,18 +389,28 @@ ${selectedFollowUp.choices && selectedFollowUp.choices.length > 0 ? `Offer these
       });
     }
     
-    // Add document references
+    // Add document references and convert to cards
     if (documents.length > 0) {
       documents.forEach((doc: any) => {
-        if (aiResponse.toLowerCase().includes(doc.filename.toLowerCase().split('.')[0])) {
+        const docNameLower = doc.filename.toLowerCase().split('.')[0];
+        if (aiResponse.toLowerCase().includes(docNameLower)) {
           richData.documents.push({
             filename: doc.filename,
             type: doc.file_type,
             preview: doc.extracted_content ? doc.extracted_content.substring(0, 100) + '...' : ''
           });
+          
+          // Also create a card for document reference
+          richData.cards.push({
+            title: doc.filename,
+            description: doc.extracted_content ? doc.extracted_content.substring(0, 80) + '...' : 'Reference document'
+          });
         }
       });
     }
+    
+    // Limit cards to 4
+    richData.cards = richData.cards.slice(0, 4);
 
     // Add follow-up question to rich data
     if (selectedFollowUp) {
@@ -389,7 +437,7 @@ ${selectedFollowUp.choices && selectedFollowUp.choices.length > 0 ? `Offer these
       });
     }
 
-    const hasRichData = richData.buttons.length > 0 || richData.links.length > 0 || richData.documents.length > 0 || richData.followUp;
+    const hasRichData = richData.buttons.length > 0 || richData.links.length > 0 || richData.documents.length > 0 || richData.followUp || richData.relatedQuestions.length > 0 || richData.cards.length > 0;
     
     return new Response(
       JSON.stringify({ 
