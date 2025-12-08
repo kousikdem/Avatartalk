@@ -3,7 +3,7 @@ import { Crown, Star, Shield, Award, Heart, Gem } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface LoyaltyBadgeProps {
-  score: number; // 1-100
+  score: number; // Raw score - Bronze < 100, Silver 100-499, Gold 500-999, Platinum 1000-9999, Diamond 10000+
   size?: 'sm' | 'md' | 'lg';
   className?: string;
   showScore?: boolean;
@@ -11,7 +11,7 @@ interface LoyaltyBadgeProps {
 }
 
 export const getLoyaltyTier = (score: number) => {
-  if (score >= 80) return { 
+  if (score >= 100000) return { 
     name: 'Diamond', 
     color: 'from-cyan-400 to-blue-500', 
     bgColor: 'bg-gradient-to-r from-cyan-400/20 to-blue-500/20',
@@ -19,7 +19,7 @@ export const getLoyaltyTier = (score: number) => {
     icon: Gem, 
     textColor: 'text-cyan-400' 
   };
-  if (score >= 60) return { 
+  if (score >= 10000) return { 
     name: 'Platinum', 
     color: 'from-violet-400 to-purple-500', 
     bgColor: 'bg-gradient-to-r from-violet-400/20 to-purple-500/20',
@@ -27,7 +27,7 @@ export const getLoyaltyTier = (score: number) => {
     icon: Crown, 
     textColor: 'text-violet-400' 
   };
-  if (score >= 40) return { 
+  if (score >= 1000) return { 
     name: 'Gold', 
     color: 'from-yellow-400 to-amber-500', 
     bgColor: 'bg-gradient-to-r from-yellow-400/20 to-amber-500/20',
@@ -35,7 +35,7 @@ export const getLoyaltyTier = (score: number) => {
     icon: Award, 
     textColor: 'text-yellow-400' 
   };
-  if (score >= 20) return { 
+  if (score >= 500) return { 
     name: 'Silver', 
     color: 'from-slate-300 to-gray-400', 
     bgColor: 'bg-gradient-to-r from-slate-300/20 to-gray-400/20',

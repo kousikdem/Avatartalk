@@ -159,19 +159,22 @@ const FollowersPage = () => {
         if (error) throw error;
 
         // Transform visitors data with profile information
-        const formattedVisitors: User[] = visitorsData?.map(visitor => ({
-          id: visitor.visitor_id || `anonymous_${visitor.visited_at}`,
-          username: visitor.profiles?.username,
-          full_name: visitor.profiles?.display_name || visitor.profiles?.username || 'Anonymous Visitor',
-          email: '',
-          avatar_url: visitor.profiles?.profile_pic_url || visitor.profiles?.avatar_url,
-          bio: visitor.profiles?.bio || (visitor.visitor_id ? 'Registered user' : 'Anonymous visitor'),
-          followers_count: visitor.profiles?.followers_count || 0,
-          following_count: visitor.profiles?.following_count || 0,
-          last_seen: visitor.visited_at,
-          visit_count: visitor.visit_count || 1,
-          is_online: false
-        })) || [];
+        const formattedVisitors: User[] = visitorsData?.map(visitor => {
+          const isAnonymous = !visitor.visitor_id || visitor.is_anonymous;
+          return {
+            id: visitor.visitor_id || `anonymous_${visitor.visited_at}`,
+            username: isAnonymous ? undefined : visitor.profiles?.username,
+            full_name: isAnonymous ? 'Anonymous Visitor' : (visitor.profiles?.display_name || visitor.profiles?.username || 'Unknown User'),
+            email: '',
+            avatar_url: isAnonymous ? undefined : (visitor.profiles?.profile_pic_url || visitor.profiles?.avatar_url),
+            bio: isAnonymous ? 'Anonymous visitor browsing your profile' : (visitor.profiles?.bio || 'Registered user'),
+            followers_count: isAnonymous ? 0 : (visitor.profiles?.followers_count || 0),
+            following_count: isAnonymous ? 0 : (visitor.profiles?.following_count || 0),
+            last_seen: visitor.visited_at,
+            visit_count: visitor.visit_count || 1,
+            is_online: false
+          };
+        }) || [];
 
         setVisitors(formattedVisitors);
       } catch (error) {
@@ -708,19 +711,8 @@ const FollowersPage = () => {
               <div className="flex items-center justify-between mb-6 p-4 bg-muted/30 rounded-lg border border-border/50">
                 <p className="text-sm text-muted-foreground flex items-center gap-2">
                   <Eye className="h-4 w-4" />
-                  Track who's viewing your profile and their engagement
+                  Real-time profile visitors • Unregistered visitors shown as Anonymous
                 </p>
-                {visitors.length > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={clearVisitorHistory}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Clear History
-                  </Button>
-                )}
               </div>
 
               {filteredVisitors.length === 0 ? (
@@ -839,14 +831,17 @@ const FollowersPage = () => {
                                     </div>
                                   </div>
 
-                                  {/* Loyalty Badge */}
-                                  <div className="pt-2">
+                                  {/* Loyalty Badge with Ranking */}
+                                  <div className="pt-2 flex items-center gap-2">
                                     <LoyaltyBadge 
                                       score={loyalUser.loyaltyScore} 
                                       size="md" 
                                       showScore={true} 
                                       showTierName={true} 
                                     />
+                                    <span className="text-xs text-muted-foreground">
+                                      Rank #{loyalUser.rank}
+                                    </span>
                                   </div>
                                 </div>
 
