@@ -39,13 +39,13 @@ export const AIResponsePerspective: React.FC<AIResponsePerspectiveProps> = ({
     });
   };
 
-  // Preview scores for different tiers
-  const tierPreviews = [
-    { score: 10, label: 'New User' },
-    { score: 30, label: 'Regular' },
-    { score: 50, label: 'Engaged' },
-    { score: 70, label: 'Loyal' },
-    { score: 90, label: 'Super Fan' }
+  // All loyalty tiers with actual thresholds
+  const allTiers = [
+    { score: 50, label: 'Bronze', description: 'Score < 100' },
+    { score: 300, label: 'Silver', description: 'Score 100-499' },
+    { score: 750, label: 'Gold', description: 'Score 500-999' },
+    { score: 5000, label: 'Platinum', description: 'Score 1,000-9,999' },
+    { score: 100000, label: 'Diamond', description: 'Score 100,000+' }
   ];
 
   return (
@@ -154,17 +154,19 @@ Example: "I am Sarah, a fitness coach and nutrition expert. I speak in an encour
           </p>
         </div>
 
-        {/* Loyalty Badge Tier Preview */}
-        <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
-          <Label>Loyalty Badge Tiers</Label>
-          <p className="text-xs text-muted-foreground mb-3">
-            Users earn different badges based on their loyalty score
-          </p>
-          <div className="flex flex-wrap gap-3 justify-center">
-            {tierPreviews.map((preview) => (
-              <div key={preview.score} className="flex flex-col items-center gap-1">
-                <LoyaltyBadge score={preview.score} size="md" showScore={true} showTierName={true} />
-                <span className="text-[10px] text-muted-foreground">{preview.label}</span>
+        {/* All Loyalty Badge Tiers with Scores */}
+        <div className="space-y-4 p-4 bg-gradient-to-br from-muted/30 to-muted/50 rounded-lg border">
+          <div>
+            <Label className="text-base font-semibold">All Loyalty Badge Tiers</Label>
+            <p className="text-xs text-muted-foreground mt-1">
+              Users earn badges based on their loyalty score from interactions
+            </p>
+          </div>
+          <div className="grid grid-cols-5 gap-3">
+            {allTiers.map((tier) => (
+              <div key={tier.label} className="flex flex-col items-center gap-2 p-3 bg-background rounded-lg border shadow-sm">
+                <LoyaltyBadge score={tier.score} size="lg" showScore={true} showTierName={true} />
+                <span className="text-[10px] text-muted-foreground text-center">{tier.description}</span>
               </div>
             ))}
           </div>

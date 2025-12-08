@@ -230,18 +230,63 @@ export const WelcomeMessageSettingsComponent: React.FC<WelcomeMessageSettingsPro
               </Button>
             </div>
 
-            {/* Preview */}
-            <div className="space-y-2">
-              <Label>Preview</Label>
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-sm">
-                  {localSettings.text
-                    .replace('{visitor_name}', 'John')
-                    .replace('{username}', 'creator')
-                    .replace('{time_of_day}', 'afternoon')
-                    .replace('{visit_count}', '1')
-                  }
-                </p>
+            {/* Live Chat Preview */}
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
+                <MessageCircle className="w-4 h-4 text-primary" />
+                AI Introduction Preview
+              </Label>
+              <div className="border rounded-lg overflow-hidden">
+                <div className="p-3 bg-muted/30 border-b">
+                  <span className="text-xs font-medium text-muted-foreground">Chat Preview</span>
+                </div>
+                <div className="p-4 space-y-3">
+                  {/* AI Welcome Message */}
+                  <div className="flex gap-3">
+                    <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-bold text-primary">AI</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="bg-muted rounded-2xl px-4 py-2 inline-block">
+                        <p className="text-sm">
+                          {localSettings.text
+                            .replace('{visitor_name}', 'John')
+                            .replace('{username}', 'creator')
+                            .replace('{time_of_day}', 'afternoon')
+                            .replace('{visit_count}', '1')
+                          }
+                        </p>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">Just now</p>
+                    </div>
+                  </div>
+                  
+                  {/* Sample User Reply */}
+                  <div className="flex gap-3 flex-row-reverse">
+                    <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-bold text-primary-foreground">J</span>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <div className="bg-primary text-primary-foreground rounded-2xl px-4 py-2 inline-block">
+                        <p className="text-sm">Hi! Nice to meet you 👋</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">Just now</p>
+                    </div>
+                  </div>
+                  
+                  {/* AI Response */}
+                  <div className="flex gap-3">
+                    <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-bold text-primary">AI</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="bg-muted rounded-2xl px-4 py-2 inline-block">
+                        <p className="text-sm">Great to connect with you, John! How can I help you today?</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">Just now</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </>
