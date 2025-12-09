@@ -21,16 +21,15 @@ const FollowButton: React.FC<FollowButtonProps> = ({
   className = ''
 }) => {
   const { toast } = useToast();
-  const [isProcessing, setIsProcessing] = React.useState(false);
+  const [optimisticFollowing, setOptimisticFollowing] = React.useState<boolean | null>(null);
   
   // Only initialize useFollows if user is authenticated
   const followsHook = useFollows(currentUserId);
-  const { isFollowing, followUser, unfollowUser, loading, refetch } = currentUserId ? followsHook : {
+  const { isFollowing, followUserOptimistic, unfollowUserOptimistic, loading } = currentUserId ? followsHook : {
     isFollowing: () => false,
-    followUser: async () => {},
-    unfollowUser: async () => {},
-    loading: false,
-    refetch: async () => {}
+    followUserOptimistic: async () => {},
+    unfollowUserOptimistic: async () => {},
+    loading: false
   };
 
   // Don't show follow button for own profile
@@ -45,7 +44,6 @@ const FollowButton: React.FC<FollowButtonProps> = ({
         variant="outline"
         className={`${variant === 'compact' ? 'py-2 text-sm' : 'py-4 text-base'} rounded-2xl font-semibold bg-gradient-to-r from-gray-500 via-gray-600 to-gray-700 hover:from-gray-600 hover:via-gray-700 hover:to-gray-800 text-white border-0 shadow-lg hover:shadow-gray-500/30 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${className}`}
         onClick={() => {
-          // Trigger visitor auth popup
           window.dispatchEvent(new CustomEvent('show-visitor-auth'));
         }}
       >
@@ -56,49 +54,51 @@ const FollowButton: React.FC<FollowButtonProps> = ({
   }
 
   const handleFollowClick = async () => {
-    // Debounce: Prevent rapid clicks
-    if (isProcessing || loading) return;
-    
     if (!currentUserId) {
       window.dispatchEvent(new CustomEvent('show-visitor-auth'));
       return;
     }
     
-    setIsProcessing(true);
-    const wasFollowing = isFollowing(targetUserId);
+    const wasFollowing = optimisticFollowing ?? isFollowing(targetUserId);
+    
+    // Instant optimistic update
+    setOptimisticFollowing(!wasFollowing);
     
     try {
       if (wasFollowing) {
-        await unfollowUser(targetUserId);
+        await unfollowUserOptimistic(targetUserId);
         toast({
           title: "Unfollowed",
           description: `You unfollowed ${targetUsername || 'user'}`,
         });
       } else {
-        await followUser(targetUserId);
+        await followUserOptimistic(targetUserId);
         toast({
           title: "Following",
           description: `You are now following ${targetUsername || 'user'}`,
         });
       }
-      
-      // Refetch to update button state - counts are updated automatically by database trigger
-      await refetch();
     } catch (error: any) {
+      // Revert optimistic update on error
+      setOptimisticFollowing(wasFollowing);
       console.error('Error toggling follow:', error);
-      await refetch();
       toast({
         title: "Error",
-        description: error?.message || "Failed to update follow status. Please try again.",
+        description: error?.message || "Failed to update follow status.",
         variant: "destructive",
       });
-    } finally {
-      // Reset processing state after 500ms
-      setTimeout(() => setIsProcessing(false), 500);
     }
   };
 
-  const isUserFollowing = isFollowing(targetUserId);
+  // Use optimistic state if set, otherwise use actual state
+  const isUserFollowing = optimisticFollowing ?? isFollowing(targetUserId);
+  
+  // Reset optimistic state when actual state catches up
+  React.useEffect(() => {
+    if (optimisticFollowing !== null && isFollowing(targetUserId) === optimisticFollowing) {
+      setOptimisticFollowing(null);
+    }
+  }, [isFollowing, targetUserId, optimisticFollowing]);
 
   if (variant === 'compact') {
       return (
@@ -106,7 +106,7 @@ const FollowButton: React.FC<FollowButtonProps> = ({
           variant={isUserFollowing ? "default" : "outline"}
           size="sm"
           onClick={handleFollowClick}
-          disabled={loading || isProcessing}
+          disabled={loading}
           className={`${
             isUserFollowing 
               ? 'bg-gradient-to-r from-green-500 via-green-600 to-green-700 hover:from-green-600 hover:via-green-700 hover:to-green-800 text-white border-0 shadow-lg hover:shadow-green-500/30' 
@@ -136,7 +136,7 @@ const FollowButton: React.FC<FollowButtonProps> = ({
           : 'bg-gradient-to-r from-primary via-primary/90 to-primary/80 hover:from-primary/90 hover:via-primary/80 hover:to-primary/70 border-0 text-white shadow-lg hover:shadow-primary/30'
       } ${className}`}
       onClick={handleFollowClick}
-      disabled={loading || isProcessing}
+      disabled={loading}
     >
       {loading ? (
         <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />

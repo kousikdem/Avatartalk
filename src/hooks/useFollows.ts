@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 interface Follow {
   id: string;
@@ -29,6 +28,8 @@ interface UseFollowsReturn {
   loading: boolean;
   followUser: (followingId: string) => Promise<void>;
   unfollowUser: (followingId: string) => Promise<void>;
+  followUserOptimistic: (followingId: string) => Promise<void>;
+  unfollowUserOptimistic: (followingId: string) => Promise<void>;
   isFollowing: (userId: string) => boolean;
   refetch: () => Promise<void>;
 }
@@ -36,179 +37,153 @@ interface UseFollowsReturn {
 export const useFollows = (userId?: string): UseFollowsReturn => {
   const [followers, setFollowers] = useState<Follow[]>([]);
   const [following, setFollowing] = useState<Follow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const cachedUserIdRef = useRef<string | null>(null);
+  const initialFetchDone = useRef(false);
 
-  const fetchFollows = async (targetUserId?: string) => {
+  const fetchFollows = useCallback(async (targetUserId?: string, skipLoading = false) => {
     try {
-      const currentUser = await supabase.auth.getUser();
-      const queryUserId = targetUserId || currentUser.data.user?.id;
+      const queryUserId = targetUserId || cachedUserIdRef.current;
       
-      if (!queryUserId) return;
+      if (!queryUserId) {
+        const { data: currentUser } = await supabase.auth.getUser();
+        if (currentUser.user?.id) {
+          cachedUserIdRef.current = currentUser.user.id;
+        } else {
+          setLoading(false);
+          return;
+        }
+      }
 
-      // Fetch followers
-      const { data: followersData, error: followersError } = await supabase
-        .from('follows')
-        .select(`
-          *,
-          follower:profiles!follows_follower_id_fkey(
-            id,
-            username,
-            display_name,
-            avatar_url,
-            profile_pic_url
-          )
-        `)
-        .eq('following_id', queryUserId);
+      const uid = queryUserId || cachedUserIdRef.current;
+      if (!uid) return;
 
-      if (followersError) throw followersError;
+      if (!skipLoading && !initialFetchDone.current) {
+        setLoading(true);
+      }
 
-      // Fetch following
-      const { data: followingData, error: followingError } = await supabase
-        .from('follows')
-        .select(`
-          *,
-          following:profiles!follows_following_id_fkey(
-            id,
-            username,
-            display_name,
-            avatar_url,
-            profile_pic_url
-          )
-        `)
-        .eq('follower_id', queryUserId);
+      // Parallel fetch for speed
+      const [followersResponse, followingResponse] = await Promise.all([
+        supabase
+          .from('follows')
+          .select(`*, follower:profiles!follows_follower_id_fkey(id, username, display_name, avatar_url, profile_pic_url)`)
+          .eq('following_id', uid),
+        supabase
+          .from('follows')
+          .select(`*, following:profiles!follows_following_id_fkey(id, username, display_name, avatar_url, profile_pic_url)`)
+          .eq('follower_id', uid)
+      ]);
 
-      if (followingError) throw followingError;
-
-      setFollowers(followersData || []);
-      setFollowing(followingData || []);
+      if (!followersResponse.error) setFollowers(followersResponse.data || []);
+      if (!followingResponse.error) setFollowing(followingResponse.data || []);
+      
+      initialFetchDone.current = true;
     } catch (error) {
       console.error('Error fetching follows:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load follow data",
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const followUser = async (followingId: string) => {
-    try {
-      const { data: currentUser } = await supabase.auth.getUser();
-      if (!currentUser.user) {
-        throw new Error("You must be logged in to follow users");
-      }
+  // Optimistic follow - instant UI update
+  const followUserOptimistic = useCallback(async (followingId: string) => {
+    const { data: currentUser } = await supabase.auth.getUser();
+    if (!currentUser.user) throw new Error("You must be logged in");
+    if (currentUser.user.id === followingId) throw new Error("You cannot follow yourself");
 
-      // Prevent following yourself
-      if (currentUser.user.id === followingId) {
-        throw new Error("You cannot follow yourself");
-      }
+    // Optimistic update
+    const optimisticFollow: Follow = {
+      id: `temp-${Date.now()}`,
+      follower_id: currentUser.user.id,
+      following_id: followingId,
+      created_at: new Date().toISOString()
+    };
+    setFollowing(prev => [...prev, optimisticFollow]);
 
-      // Check if already following
-      if (isFollowing(followingId)) {
-        return; // Already following, silently return
-      }
+    // Background insert
+    const { error } = await supabase
+      .from('follows')
+      .insert([{ follower_id: currentUser.user.id, following_id: followingId }]);
 
-      const { error } = await supabase
-        .from('follows')
-        .insert([
-          {
-            follower_id: currentUser.user.id,
-            following_id: followingId,
-          },
-        ]);
-
-      if (error) {
-        // Handle duplicate follow error
-        if (error.code === '23505') {
-          return; // Already following, silently return
-        }
-        throw error;
-      }
-
-      await fetchFollows();
-    } catch (error: any) {
-      console.error('Error following user:', error);
+    if (error && error.code !== '23505') {
+      // Revert on error
+      setFollowing(prev => prev.filter(f => f.id !== optimisticFollow.id));
       throw error;
     }
-  };
+    
+    // Silent background refresh
+    fetchFollows(userId, true);
+  }, [userId, fetchFollows]);
 
-  const unfollowUser = async (followingId: string) => {
-    try {
-      const { data: currentUser } = await supabase.auth.getUser();
-      if (!currentUser.user) {
-        throw new Error("You must be logged in to unfollow users");
-      }
+  // Optimistic unfollow - instant UI update
+  const unfollowUserOptimistic = useCallback(async (followingId: string) => {
+    const { data: currentUser } = await supabase.auth.getUser();
+    if (!currentUser.user) throw new Error("You must be logged in");
 
-      // Check if not following
-      if (!isFollowing(followingId)) {
-        return; // Not following, silently return
-      }
+    // Store for potential revert
+    const previousFollowing = [...following];
+    
+    // Optimistic update
+    setFollowing(prev => prev.filter(f => f.following_id !== followingId));
 
-      const { error } = await supabase
-        .from('follows')
-        .delete()
-        .eq('follower_id', currentUser.user.id)
-        .eq('following_id', followingId);
+    // Background delete
+    const { error } = await supabase
+      .from('follows')
+      .delete()
+      .eq('follower_id', currentUser.user.id)
+      .eq('following_id', followingId);
 
-      if (error) throw error;
-
-      await fetchFollows();
-    } catch (error: any) {
-      console.error('Error unfollowing user:', error);
+    if (error) {
+      // Revert on error
+      setFollowing(previousFollowing);
       throw error;
     }
-  };
+    
+    // Silent background refresh
+    fetchFollows(userId, true);
+  }, [userId, following, fetchFollows]);
 
-  const isFollowing = (targetUserId: string): boolean => {
+  // Legacy methods (kept for compatibility)
+  const followUser = useCallback(async (followingId: string) => {
+    await followUserOptimistic(followingId);
+  }, [followUserOptimistic]);
+
+  const unfollowUser = useCallback(async (followingId: string) => {
+    await unfollowUserOptimistic(followingId);
+  }, [unfollowUserOptimistic]);
+
+  const isFollowing = useCallback((targetUserId: string): boolean => {
     return following.some(follow => follow.following_id === targetUserId);
-  };
+  }, [following]);
 
-  const refetch = async () => {
-    setLoading(true);
-    await fetchFollows(userId);
-  };
+  const refetch = useCallback(async () => {
+    await fetchFollows(userId, true);
+  }, [userId, fetchFollows]);
 
   useEffect(() => {
+    if (userId) {
+      cachedUserIdRef.current = userId;
+    }
     fetchFollows(userId);
 
-    // Set up realtime subscription for follows
-    const currentUserId = userId || supabase.auth.getUser().then(u => u.data.user?.id);
-    
-    Promise.resolve(currentUserId).then(uid => {
+    // Realtime subscription
+    const setupSubscription = async () => {
+      const uid = userId || (await supabase.auth.getUser()).data.user?.id;
       if (!uid) return;
 
       const channel = supabase
-        .channel('follows-changes')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'follows',
-            filter: `follower_id=eq.${uid}`
-          },
-          () => fetchFollows(userId)
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'follows',
-            filter: `following_id=eq.${uid}`
-          },
-          () => fetchFollows(userId)
-        )
+        .channel(`follows-${uid}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'follows', filter: `follower_id=eq.${uid}` }, 
+          () => fetchFollows(userId, true))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'follows', filter: `following_id=eq.${uid}` }, 
+          () => fetchFollows(userId, true))
         .subscribe();
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    });
-  }, [userId]);
+      return () => { supabase.removeChannel(channel); };
+    };
+
+    setupSubscription();
+  }, [userId, fetchFollows]);
 
   return {
     followers,
@@ -216,6 +191,8 @@ export const useFollows = (userId?: string): UseFollowsReturn => {
     loading,
     followUser,
     unfollowUser,
+    followUserOptimistic,
+    unfollowUserOptimistic,
     isFollowing,
     refetch,
   };
