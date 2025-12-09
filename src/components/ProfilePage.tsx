@@ -513,62 +513,52 @@ const ProfilePage: React.FC = () => {
 
   const fetchProfile = async () => {
     try {
-      // First get the profile ID by username
-      const { data: profileIdData, error: idError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('username', username)
-        .maybeSingle();
-        
-      if (idError) throw idError;
-      if (!profileIdData) {
-        throw new Error('Profile not found');
-      }
-      
-      // Then use the secure function to get public profile data
-      const { data: profileDataArray, error: profileError } = await supabase
-        .rpc('get_public_profile', { profile_id: profileIdData.id });
-        
-      if (profileError) throw profileError;
-      if (!profileDataArray || profileDataArray.length === 0) {
-        throw new Error('Profile not found');
-      }
-      
-      const profileData = profileDataArray[0];
-
-      setProfile(profileData);
-
-      // Now fetch related data using the profile ID
-      const [statsResponse, productsResponse, eventsResponse, avatarResponse, socialLinksResponse] = await Promise.all([
-        supabase.from('user_stats').select('*').eq('user_id', profileData.id).maybeSingle(),
-        supabase.from('products').select('*').eq('user_id', profileData.id).eq('status', 'published').order('created_at', { ascending: false }).limit(6),
-        supabase.from('events').select('*').eq('user_id', profileData.id).order('created_at', { ascending: false }).limit(6),
-        supabase.from('avatar_configurations').select('*').eq('user_id', profileData.id).eq('is_active', true).maybeSingle(),
-        supabase.from('social_links').select('*').eq('user_id', profileData.id).maybeSingle()
+      // Parallel fetch: get profile ID and current user simultaneously
+      const [profileIdResult, userResult] = await Promise.all([
+        supabase.from('profiles').select('id').eq('username', username).maybeSingle(),
+        supabase.auth.getUser()
       ]);
+        
+      if (profileIdResult.error) throw profileIdResult.error;
+      if (!profileIdResult.data) throw new Error('Profile not found');
+      
+      const profileId = profileIdResult.data.id;
+      
+      // Parallel fetch: profile data and all related data at once
+      const [profileResult, statsResult, productsResult, eventsResult, avatarResult, socialLinksResult] = await Promise.all([
+        supabase.rpc('get_public_profile', { profile_id: profileId }),
+        supabase.from('user_stats').select('*').eq('user_id', profileId).maybeSingle(),
+        supabase.from('products').select('*').eq('user_id', profileId).eq('status', 'published').order('created_at', { ascending: false }).limit(6),
+        supabase.from('events').select('*').eq('user_id', profileId).order('created_at', { ascending: false }).limit(6),
+        supabase.from('avatar_configurations').select('*').eq('user_id', profileId).eq('is_active', true).maybeSingle(),
+        supabase.from('social_links').select('*').eq('user_id', profileId).maybeSingle()
+      ]);
+        
+      if (profileResult.error) throw profileResult.error;
+      if (!profileResult.data || profileResult.data.length === 0) throw new Error('Profile not found');
+      
+      const profileData = profileResult.data[0];
 
-      setUserStats(statsResponse.data);
-      setProducts(productsResponse.data || []);
-      setEvents(eventsResponse.data || []);
-      setAvatarConfig(avatarResponse.data);
-      setSocialLinks(socialLinksResponse.data);
+      // Set all state at once to minimize re-renders
+      setProfile(profileData);
+      setUserStats(statsResult.data);
+      setProducts(productsResult.data || []);
+      setEvents(eventsResult.data || []);
+      setAvatarConfig(avatarResult.data);
+      setSocialLinks(socialLinksResult.data);
+      setLoading(false);
 
-      // Track profile visit (fire and forget)
-      if (profileData.id !== currentUser?.id) {
+      // Track profile visit (fire and forget - don't await)
+      const currentUserId = userResult.data.user?.id;
+      if (profileData.id !== currentUserId) {
         supabase.from('profile_visitors').insert({
-          visitor_id: currentUser?.id || null,
+          visitor_id: currentUserId || null,
           visited_profile_id: profileData.id,
         });
       }
 
     } catch (error) {
       console.error('Error fetching profile:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load profile",
-        variant: "destructive",
-      });
-    } finally {
       setLoading(false);
     }
   };
@@ -579,22 +569,17 @@ const ProfilePage: React.FC = () => {
     try {
       if (isFollowing(profile.id)) {
         await unfollowUser(profile.id);
-        // Refetch profile to update follower counts
-        await fetchProfile();
         toast({
           title: "Unfollowed",
           description: `You unfollowed ${profile.display_name || profile.username}`,
         });
       } else {
         await followUser(profile.id);
-        // Refetch profile to update follower counts
-        await fetchProfile();
         toast({
           title: "Following",
           description: `You are now following ${profile.display_name || profile.username}`,
         });
       }
-      await refetchFollows();
     } catch (error) {
       console.error('Error following user:', error);
       toast({
