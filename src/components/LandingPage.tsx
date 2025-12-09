@@ -50,6 +50,7 @@ import {
 } from 'lucide-react';
 import MainAuth from './MainAuth';
 import VisitorAuth from './VisitorAuth';
+import RealisticDemoAvatar3D from './RealisticDemoAvatar3D';
 
 const LandingPage = () => {
   const [isMainAuthOpen, setIsMainAuthOpen] = useState(false);
@@ -331,41 +332,15 @@ const LandingPage = () => {
             {/* 3D Avatar Preview - Realistic Avatar */}
             <div className="px-6 pb-6">
               <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-800/40 via-blue-900/20 to-slate-800/40 border border-slate-600/30 shadow-inner">
-                <div className="w-full h-80 bg-gradient-to-br from-blue-950/50 via-purple-950/30 to-slate-950/50 flex items-center justify-center relative">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent_50%)]"></div>
-                  
-                  {/* Realistic 3D Avatar Representation with Enhanced 3D Moving Animation */}
-                  <div className="relative animate-[float_4s_ease-in-out_infinite,wiggle_3s_ease-in-out_infinite]">
-                    {/* Head */}
-                    <div className="w-24 h-28 bg-gradient-to-b from-amber-200 to-amber-300 rounded-full relative shadow-2xl animate-[tilt_2s_ease-in-out_infinite]">
-                      {/* Eyes */}
-                      <div className="absolute top-10 left-6 w-3 h-3 bg-slate-800 rounded-full">
-                        <div className="absolute top-0.5 right-0.5 w-1 h-1 bg-white rounded-full"></div>
-                      </div>
-                      <div className="absolute top-10 right-6 w-3 h-3 bg-slate-800 rounded-full">
-                        <div className="absolute top-0.5 right-0.5 w-1 h-1 bg-white rounded-full"></div>
-                      </div>
-                      {/* Nose */}
-                      <div className="absolute top-14 left-1/2 transform -translate-x-1/2 w-2 h-3 bg-amber-400/50 rounded-full"></div>
-                      {/* Talking Mouth */}
-                      <div className="absolute top-18 left-1/2 transform -translate-x-1/2 w-8 h-2 border-b-2 border-slate-800 rounded-b-full animate-talk-mouth origin-top"></div>
-                      {/* Hair */}
-                      <div className="absolute -top-2 left-2 right-2 h-8 bg-gradient-to-br from-slate-700 to-slate-900 rounded-t-full shadow-lg"></div>
-                    </div>
-                    
-                    {/* Body */}
-                    <div className="w-32 h-24 bg-gradient-to-b from-blue-500 to-blue-600 rounded-t-3xl mx-auto -mt-2 shadow-xl">
-                      {/* Arms with public speaking gestures */}
-                      <div className="absolute -left-4 top-2 w-6 h-20 bg-gradient-to-b from-amber-200 to-amber-300 rounded-full shadow-lg animate-speak-hand-left origin-top-right"></div>
-                      <div className="absolute -right-4 top-2 w-6 h-20 bg-gradient-to-b from-amber-200 to-amber-300 rounded-full shadow-lg animate-speak-hand-right origin-top-left"></div>
-                    </div>
-                  </div>
-                  
-                  {/* 3D Animated Rings */}
-                  <div className="absolute inset-0 rounded-3xl border-2 border-blue-400/30 pointer-events-none animate-pulse"></div>
-                  <div className="absolute inset-2 rounded-3xl border border-purple-400/20 pointer-events-none animate-pulse" style={{animationDelay: '0.5s'}}></div>
-                  <div className="absolute -inset-1 rounded-3xl border border-cyan-400/20 pointer-events-none animate-pulse" style={{animationDelay: '1s'}}></div>
-                </div>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent_50%)]"></div>
+                
+                {/* Realistic 3D Avatar with React Three Fiber */}
+                <RealisticDemoAvatar3D isTalking={true} />
+                
+                {/* 3D Animated Rings */}
+                <div className="absolute inset-0 rounded-3xl border-2 border-blue-400/30 pointer-events-none animate-pulse"></div>
+                <div className="absolute inset-2 rounded-3xl border border-purple-400/20 pointer-events-none animate-pulse" style={{animationDelay: '0.5s'}}></div>
+                <div className="absolute -inset-1 rounded-3xl border border-cyan-400/20 pointer-events-none animate-pulse" style={{animationDelay: '1s'}}></div>
                 
                 {/* Floating Talk Button */}
                 <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2">
