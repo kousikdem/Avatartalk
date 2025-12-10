@@ -215,12 +215,14 @@ const ProfilePage: React.FC = () => {
     stopAudio
   } = useVoiceChat();
 
-  // Chat history persistence
+  // Chat history persistence with welcome eligibility
   const { 
     chatHistory, 
     loading: chatHistoryLoading, 
     saveMessage: saveChatMessage,
-    sessionId 
+    sessionId,
+    shouldShowWelcome,
+    lastVisitAt
   } = useAIChatHistory(profile?.id || null, currentUser?.id || null);
 
   // Profile engagement stats (real-time)
@@ -257,55 +259,85 @@ const ProfilePage: React.FC = () => {
     fetchAISettings();
   }, [profile?.id]);
 
+  // Get visitor's display name for personalization
+  const getVisitorDisplayName = () => {
+    if (visitorProfile?.display_name) return visitorProfile.display_name;
+    if (currentUser?.user_metadata?.full_name) return currentUser.user_metadata.full_name;
+    if (currentUser?.user_metadata?.name) return currentUser.user_metadata.name;
+    if (currentUser?.email) return currentUser.email.split('@')[0];
+    return 'there';
+  };
+
   // Initialize and load chat messages from database
   useEffect(() => {
     if (profile && !chatHistoryLoading) {
       // Build welcome message from AI settings or default
       const getWelcomeMessage = () => {
+        const visitorName = getVisitorDisplayName();
+        
         if (aiTrainingSettings?.welcome_message_enabled && aiTrainingSettings?.welcome_message_text) {
-          // Replace variables in welcome message
+          // Replace variables in welcome message with actual user data
           let welcomeText = aiTrainingSettings.welcome_message_text;
-          welcomeText = welcomeText.replace(/{visitor_name}/gi, currentUser?.email?.split('@')[0] || 'there');
+          welcomeText = welcomeText.replace(/{visitor_name}/gi, visitorName);
           welcomeText = welcomeText.replace(/{username}/gi, profile.username || '');
           welcomeText = welcomeText.replace(/{display_name}/gi, profile.display_name || profile.username || '');
+          welcomeText = welcomeText.replace(/{profile_name}/gi, profile.display_name || profile.username || '');
+          welcomeText = welcomeText.replace(/{bio}/gi, profile.bio || '');
+          welcomeText = welcomeText.replace(/{profession}/gi, profile.profession || '');
           return welcomeText;
         }
-        return `Hi there! I'm ${profile.display_name || profile.username}. How can I help you today?`;
+        
+        // Default welcome with visitor's name
+        return `Hi ${visitorName}! I'm ${profile.display_name || profile.username}. How can I help you today?`;
       };
       
-      // Always prepend welcome message first, then chat history
-      const welcomeMessage: ChatMessage = {
-        id: 'welcome-' + Date.now(),
-        content: getWelcomeMessage(),
-        timestamp: new Date().toISOString(),
-        sender: 'avatar',
-        senderName: profile.display_name || profile.username,
-        senderAvatar: profile.profile_pic_url || profile.avatar_url
-      };
-      
-      if (chatHistory.length > 0) {
-        // Load previous chat history with profile info, prepend welcome
+      // Only show welcome message if shouldShowWelcome is true (29+ minutes since last visit or first visit)
+      if (shouldShowWelcome) {
+        const welcomeMessage: ChatMessage = {
+          id: 'welcome-' + Date.now(),
+          content: getWelcomeMessage(),
+          timestamp: new Date().toISOString(),
+          sender: 'avatar',
+          senderName: profile.display_name || profile.username,
+          senderAvatar: profile.profile_pic_url || profile.avatar_url
+        };
+        
+        if (chatHistory.length > 0) {
+          // Load previous chat history with profile info, prepend welcome
+          const messagesWithProfile: ChatMessage[] = chatHistory.map(msg => ({
+            ...msg,
+            senderName: msg.sender === 'avatar' 
+              ? (profile.display_name || profile.username) 
+              : getVisitorDisplayName(),
+            senderAvatar: msg.sender === 'avatar' 
+              ? (profile.profile_pic_url || profile.avatar_url)
+              : (visitorProfile?.avatar_url || currentUser?.user_metadata?.avatar_url)
+          }));
+          setChatMessages([welcomeMessage, ...messagesWithProfile]);
+        } else {
+          // Just welcome message for new conversations
+          setChatMessages([welcomeMessage]);
+        }
+      } else if (chatHistory.length > 0) {
+        // Don't show welcome (visited within 29 min), just load chat history
         const messagesWithProfile: ChatMessage[] = chatHistory.map(msg => ({
           ...msg,
           senderName: msg.sender === 'avatar' 
             ? (profile.display_name || profile.username) 
-            : (currentUser?.email?.split('@')[0] || 'Guest'),
+            : getVisitorDisplayName(),
           senderAvatar: msg.sender === 'avatar' 
             ? (profile.profile_pic_url || profile.avatar_url)
-            : currentUser?.user_metadata?.avatar_url
+            : (visitorProfile?.avatar_url || currentUser?.user_metadata?.avatar_url)
         }));
-        setChatMessages([welcomeMessage, ...messagesWithProfile]);
-      } else {
-        // Just welcome message for new conversations
-        setChatMessages([welcomeMessage]);
+        setChatMessages(messagesWithProfile);
       }
     }
-  }, [profile, chatHistory, chatHistoryLoading, currentUser, aiTrainingSettings]);
+  }, [profile, chatHistory, chatHistoryLoading, currentUser, aiTrainingSettings, shouldShowWelcome, visitorProfile]);
 
-  // Preload voice model and speak welcome message on profile load
+  // Preload voice model and speak welcome message on profile load (only if showing welcome)
   useEffect(() => {
-    if (profile && !loading && !hasPlayedWelcome && chatMessages.length > 0) {
-      const welcomeMsg = chatMessages.find(m => m.sender === 'avatar');
+    if (profile && !loading && !hasPlayedWelcome && chatMessages.length > 0 && shouldShowWelcome) {
+      const welcomeMsg = chatMessages.find(m => m.sender === 'avatar' && m.id?.startsWith('welcome-'));
       if (welcomeMsg && activeTab === 'chat') {
         // Set voice model ready and play welcome message with slight delay
         setVoiceModelReady(true);
@@ -327,7 +359,7 @@ const ProfilePage: React.FC = () => {
         return () => clearTimeout(timer);
       }
     }
-  }, [profile, loading, hasPlayedWelcome, chatMessages, activeTab, synthesizeSpeech]);
+  }, [profile, loading, hasPlayedWelcome, chatMessages, activeTab, synthesizeSpeech, shouldShowWelcome]);
 
   const profileData = useMemo(() => ({
     displayName: profile?.display_name || profile?.username || 'Unknown User',
@@ -717,12 +749,15 @@ const ProfilePage: React.FC = () => {
     await saveChatMessage(messageContent, 'user');
     
     try {
-      // Generate personalized AI response
+      // Generate personalized AI response with visitor info
       const response = await supabase.functions.invoke('personalized-ai-response', {
         body: {
           userMessage: messageContent,
           profileId: profile.id,
-          userId: currentUser?.id || null
+          userId: currentUser?.id || null,
+          visitorName: getVisitorDisplayName(),
+          visitorDisplayName: visitorProfile?.display_name || currentUser?.user_metadata?.full_name || currentUser?.user_metadata?.name,
+          visitorEmail: currentUser?.email
         }
       });
 
