@@ -26,9 +26,17 @@ interface ChatHistoryRecord {
   created_at: string;
 }
 
+interface ChatMemoryData {
+  last_visit_at: string | null;
+  welcome_shown: boolean;
+  visitor_name: string | null;
+}
+
 export const useAIChatHistory = (profileId: string | null, visitorId: string | null) => {
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [shouldShowWelcome, setShouldShowWelcome] = useState(false);
+  const [lastVisitAt, setLastVisitAt] = useState<string | null>(null);
   const [sessionId] = useState(() => {
     // Generate or retrieve session ID for anonymous users
     const stored = sessionStorage.getItem('chat_session_id');
@@ -38,11 +46,76 @@ export const useAIChatHistory = (profileId: string | null, visitorId: string | n
     return newId;
   });
 
+  // Check if we should show welcome message (29+ minutes since last visit)
+  const checkWelcomeEligibility = useCallback(async () => {
+    if (!profileId) return;
+
+    const visitorKey = visitorId || sessionId;
+    
+    try {
+      // Check ai_chat_memory for last visit
+      const { data: memoryData } = await supabase
+        .from('ai_chat_memory')
+        .select('last_visit_at, welcome_shown, visitor_name')
+        .eq('profile_id', profileId)
+        .eq('visitor_id', visitorKey)
+        .maybeSingle();
+
+      if (memoryData) {
+        setLastVisitAt(memoryData.last_visit_at);
+        
+        // Check if 29+ minutes have passed since last visit
+        if (memoryData.last_visit_at) {
+          const lastVisit = new Date(memoryData.last_visit_at);
+          const now = new Date();
+          const minutesSinceLastVisit = (now.getTime() - lastVisit.getTime()) / (1000 * 60);
+          
+          // Show welcome if 29+ minutes since last visit
+          setShouldShowWelcome(minutesSinceLastVisit >= 29);
+        } else {
+          // First visit - show welcome
+          setShouldShowWelcome(true);
+        }
+
+        // Update last visit time
+        await supabase
+          .from('ai_chat_memory')
+          .update({ 
+            last_visit_at: new Date().toISOString(),
+            welcome_shown: true 
+          })
+          .eq('profile_id', profileId)
+          .eq('visitor_id', visitorKey);
+      } else {
+        // New visitor - create memory record and show welcome
+        setShouldShowWelcome(true);
+        
+        await supabase
+          .from('ai_chat_memory')
+          .insert({
+            profile_id: profileId,
+            visitor_id: visitorKey,
+            last_visit_at: new Date().toISOString(),
+            first_visit_at: new Date().toISOString(),
+            welcome_shown: true,
+            session_count: 1,
+            total_messages: 0
+          });
+      }
+    } catch (error) {
+      console.error('Error checking welcome eligibility:', error);
+      setShouldShowWelcome(true); // Default to showing welcome on error
+    }
+  }, [profileId, visitorId, sessionId]);
+
   const loadChatHistory = useCallback(async () => {
     if (!profileId) return;
 
     setLoading(true);
     try {
+      // Check welcome eligibility first
+      await checkWelcomeEligibility();
+
       // Use type assertion since ai_chat_history is a new table
       let query = (supabase as any)
         .from('ai_chat_history')
@@ -76,7 +149,7 @@ export const useAIChatHistory = (profileId: string | null, visitorId: string | n
     } finally {
       setLoading(false);
     }
-  }, [profileId, visitorId, sessionId]);
+  }, [profileId, visitorId, sessionId, checkWelcomeEligibility]);
 
   const saveMessage = useCallback(async (
     message: string,
@@ -199,6 +272,8 @@ export const useAIChatHistory = (profileId: string | null, visitorId: string | n
     loading,
     saveMessage,
     loadChatHistory,
-    sessionId
+    sessionId,
+    shouldShowWelcome,
+    lastVisitAt
   };
 };
