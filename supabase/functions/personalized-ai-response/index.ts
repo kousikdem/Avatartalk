@@ -23,9 +23,7 @@ const messageSchema = z.object({
     .trim(),
   profileId: z.string().uuid('Invalid profile ID format'),
   userId: z.string().uuid('Invalid user ID format').optional(),
-  visitorName: z.string().optional(),
-  visitorDisplayName: z.string().optional(),
-  visitorEmail: z.string().optional()
+  visitorName: z.string().optional()
 });
 
 const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
@@ -66,12 +64,9 @@ serve(async (req) => {
       });
     }
 
-    const { userMessage, profileId, userId, visitorName, visitorDisplayName, visitorEmail } = validationResult.data;
+    const { userMessage, profileId, userId, visitorName } = validationResult.data;
 
-    // Determine the best visitor identifier to use
-    const visitorIdentifier = visitorDisplayName || visitorName || (visitorEmail ? visitorEmail.split('@')[0] : null);
-
-    console.log('Processing AI request for profile:', profileId, 'visitor:', visitorIdentifier);
+    console.log('Processing AI request for profile:', profileId);
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -214,29 +209,22 @@ Use this persona to guide ALL your responses. This defines:
       });
     }
 
-    // Add profile info and visitor context
+    // Add profile info
     systemPrompt += `\n\n## ABOUT ${creatorName}:
 - Bio: ${profile?.bio || 'Not specified'}
 - Profession: ${profile?.profession || 'Not specified'}
-- Display Name: ${profile?.display_name || 'Not specified'}
-- Username: ${profile?.username || 'Not specified'}
-
-## ABOUT THE VISITOR:
-${visitorIdentifier ? `- Name: ${visitorIdentifier}` : '- Anonymous visitor'}
-${visitorEmail ? `- Email: ${visitorEmail}` : ''}
 
 ## RESPONSE GUIDELINES:
 1. Always respond AS ${creatorName}, not as an AI assistant.
-2. ${visitorIdentifier ? `Address the visitor as "${visitorIdentifier}" when appropriate.` : 'Be friendly to the visitor.'}
-3. Use the knowledge from Q&A pairs, documents, and web content when relevant.
-4. If there's a matching Q&A with a custom link, mention it naturally and the system will add a button.
-5. Keep responses helpful, on-brand, and consistent with the persona.
-6. Format responses professionally:
+2. Use the knowledge from Q&A pairs, documents, and web content when relevant.
+3. If there's a matching Q&A with a custom link, mention it naturally and the system will add a button.
+4. Keep responses helpful, on-brand, and consistent with the persona.
+5. Format responses professionally:
    - Use bullet points for lists (start with - or •)
    - Use numbered lists for steps (1. 2. 3.)
    - Keep paragraphs short and scannable
    - Use clear headings when organizing multiple topics
-7. If relevant Q&A topics exist, briefly mention them so they can be suggested.`;
+6. If relevant Q&A topics exist, briefly mention them so they can be suggested.`;
     
     // Add Q&A topics for related questions
     if (qaPairs.length > 0) {
@@ -444,9 +432,7 @@ ${selectedFollowUp.choices && selectedFollowUp.choices.length > 0 ? `Offer these
           timestamp: new Date().toISOString(),
           requester_id: userId,
           rich_data: richData,
-          visitor_name: visitorName,
-          visitor_display_name: visitorDisplayName,
-          visitor_email: visitorEmail
+          visitor_name: visitorName
         }
       });
     }

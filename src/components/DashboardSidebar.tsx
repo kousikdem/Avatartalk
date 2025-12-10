@@ -38,7 +38,6 @@ interface DashboardSidebarProps {
 const navigationItems = [
   { title: "Dashboard", icon: Home, url: "/settings/dashboard" },
   { title: "Products", icon: Package, url: "/settings/products" },
-  { title: "Virtual Collaboration", icon: Calendar, url: "/settings/virtual-collaboration" },
   { title: "Feed", icon: MessageSquare, url: "/settings/feed" },
   { title: "Avatar", icon: User, url: "/settings/avatar" },
   { title: "AI Training", icon: Brain, url: "/settings/ai-training" },
@@ -46,6 +45,7 @@ const navigationItems = [
   { title: "Analytics", icon: BarChart3, url: "/settings/analytics" },
   { title: "Followers", icon: Users, url: "/settings/followers" },
   { title: "Notifications", icon: Bell, url: "/settings/notifications" },
+  { title: "Calendar", icon: Calendar, url: "/settings/calendar" },
   { title: "Settings", icon: Settings, url: "/settings/account" },
 ];
 

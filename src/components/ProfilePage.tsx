@@ -32,9 +32,6 @@ import EnhancedPostCard from './EnhancedPostCard';
 import EmojiPicker from './EmojiPicker';
 import MessageInput from './MessageInput';
 import { CompactProductCard } from './CompactProductCard';
-import { VirtualCollaborationCard } from './profile/VirtualCollaborationCard';
-import { TwoSideChatMessage } from './profile/TwoSideChatMessage';
-import { TalkToMeButton } from './profile/TalkToMeButton';
 import {
   MessageCircle,
   Share2,
@@ -55,7 +52,6 @@ import {
   ChevronRight,
   HelpCircle,
   Sparkles,
-  Video,
   Globe,
   User,
   Moon,
@@ -154,7 +150,6 @@ const ProfilePage: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [events, setEvents] = useState<any[]>([]);
-  const [virtualProducts, setVirtualProducts] = useState<any[]>([]);
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfiguration | null>(null);
   const [loading, setLoading] = useState(true);
   const [chatMessage, setChatMessage] = useState('');
@@ -220,14 +215,12 @@ const ProfilePage: React.FC = () => {
     stopAudio
   } = useVoiceChat();
 
-  // Chat history persistence with welcome eligibility
+  // Chat history persistence
   const { 
     chatHistory, 
     loading: chatHistoryLoading, 
     saveMessage: saveChatMessage,
-    sessionId,
-    shouldShowWelcome,
-    lastVisitAt
+    sessionId 
   } = useAIChatHistory(profile?.id || null, currentUser?.id || null);
 
   // Profile engagement stats (real-time)
@@ -264,85 +257,55 @@ const ProfilePage: React.FC = () => {
     fetchAISettings();
   }, [profile?.id]);
 
-  // Get visitor's display name for personalization
-  const getVisitorDisplayName = () => {
-    if (visitorProfile?.display_name) return visitorProfile.display_name;
-    if (currentUser?.user_metadata?.full_name) return currentUser.user_metadata.full_name;
-    if (currentUser?.user_metadata?.name) return currentUser.user_metadata.name;
-    if (currentUser?.email) return currentUser.email.split('@')[0];
-    return 'there';
-  };
-
   // Initialize and load chat messages from database
   useEffect(() => {
     if (profile && !chatHistoryLoading) {
       // Build welcome message from AI settings or default
       const getWelcomeMessage = () => {
-        const visitorName = getVisitorDisplayName();
-        
         if (aiTrainingSettings?.welcome_message_enabled && aiTrainingSettings?.welcome_message_text) {
-          // Replace variables in welcome message with actual user data
+          // Replace variables in welcome message
           let welcomeText = aiTrainingSettings.welcome_message_text;
-          welcomeText = welcomeText.replace(/{visitor_name}/gi, visitorName);
+          welcomeText = welcomeText.replace(/{visitor_name}/gi, currentUser?.email?.split('@')[0] || 'there');
           welcomeText = welcomeText.replace(/{username}/gi, profile.username || '');
           welcomeText = welcomeText.replace(/{display_name}/gi, profile.display_name || profile.username || '');
-          welcomeText = welcomeText.replace(/{profile_name}/gi, profile.display_name || profile.username || '');
-          welcomeText = welcomeText.replace(/{bio}/gi, profile.bio || '');
-          welcomeText = welcomeText.replace(/{profession}/gi, profile.profession || '');
           return welcomeText;
         }
-        
-        // Default welcome with visitor's name
-        return `Hi ${visitorName}! I'm ${profile.display_name || profile.username}. How can I help you today?`;
+        return `Hi there! I'm ${profile.display_name || profile.username}. How can I help you today?`;
       };
       
-      // Only show welcome message if shouldShowWelcome is true (29+ minutes since last visit or first visit)
-      if (shouldShowWelcome) {
-        const welcomeMessage: ChatMessage = {
-          id: 'welcome-' + Date.now(),
-          content: getWelcomeMessage(),
-          timestamp: new Date().toISOString(),
-          sender: 'avatar',
-          senderName: profile.display_name || profile.username,
-          senderAvatar: profile.profile_pic_url || profile.avatar_url
-        };
-        
-        if (chatHistory.length > 0) {
-          // Load previous chat history with profile info, prepend welcome
-          const messagesWithProfile: ChatMessage[] = chatHistory.map(msg => ({
-            ...msg,
-            senderName: msg.sender === 'avatar' 
-              ? (profile.display_name || profile.username) 
-              : getVisitorDisplayName(),
-            senderAvatar: msg.sender === 'avatar' 
-              ? (profile.profile_pic_url || profile.avatar_url)
-              : (visitorProfile?.avatar_url || currentUser?.user_metadata?.avatar_url)
-          }));
-          setChatMessages([welcomeMessage, ...messagesWithProfile]);
-        } else {
-          // Just welcome message for new conversations
-          setChatMessages([welcomeMessage]);
-        }
-      } else if (chatHistory.length > 0) {
-        // Don't show welcome (visited within 29 min), just load chat history
+      // Always prepend welcome message first, then chat history
+      const welcomeMessage: ChatMessage = {
+        id: 'welcome-' + Date.now(),
+        content: getWelcomeMessage(),
+        timestamp: new Date().toISOString(),
+        sender: 'avatar',
+        senderName: profile.display_name || profile.username,
+        senderAvatar: profile.profile_pic_url || profile.avatar_url
+      };
+      
+      if (chatHistory.length > 0) {
+        // Load previous chat history with profile info, prepend welcome
         const messagesWithProfile: ChatMessage[] = chatHistory.map(msg => ({
           ...msg,
           senderName: msg.sender === 'avatar' 
             ? (profile.display_name || profile.username) 
-            : getVisitorDisplayName(),
+            : (currentUser?.email?.split('@')[0] || 'Guest'),
           senderAvatar: msg.sender === 'avatar' 
             ? (profile.profile_pic_url || profile.avatar_url)
-            : (visitorProfile?.avatar_url || currentUser?.user_metadata?.avatar_url)
+            : currentUser?.user_metadata?.avatar_url
         }));
-        setChatMessages(messagesWithProfile);
+        setChatMessages([welcomeMessage, ...messagesWithProfile]);
+      } else {
+        // Just welcome message for new conversations
+        setChatMessages([welcomeMessage]);
       }
     }
-  }, [profile, chatHistory, chatHistoryLoading, currentUser, aiTrainingSettings, shouldShowWelcome, visitorProfile]);
+  }, [profile, chatHistory, chatHistoryLoading, currentUser, aiTrainingSettings]);
 
-  // Preload voice model and speak welcome message on profile load (only if showing welcome)
+  // Preload voice model and speak welcome message on profile load
   useEffect(() => {
-    if (profile && !loading && !hasPlayedWelcome && chatMessages.length > 0 && shouldShowWelcome) {
-      const welcomeMsg = chatMessages.find(m => m.sender === 'avatar' && m.id?.startsWith('welcome-'));
+    if (profile && !loading && !hasPlayedWelcome && chatMessages.length > 0) {
+      const welcomeMsg = chatMessages.find(m => m.sender === 'avatar');
       if (welcomeMsg && activeTab === 'chat') {
         // Set voice model ready and play welcome message with slight delay
         setVoiceModelReady(true);
@@ -364,7 +327,7 @@ const ProfilePage: React.FC = () => {
         return () => clearTimeout(timer);
       }
     }
-  }, [profile, loading, hasPlayedWelcome, chatMessages, activeTab, synthesizeSpeech, shouldShowWelcome]);
+  }, [profile, loading, hasPlayedWelcome, chatMessages, activeTab, synthesizeSpeech]);
 
   const profileData = useMemo(() => ({
     displayName: profile?.display_name || profile?.username || 'Unknown User',
@@ -562,14 +525,13 @@ const ProfilePage: React.FC = () => {
       const profileId = profileIdResult.data.id;
       
       // Parallel fetch: profile data and all related data at once
-      const [profileResult, statsResult, productsResult, eventsResult, avatarResult, socialLinksResult, virtualProductsResult] = await Promise.all([
+      const [profileResult, statsResult, productsResult, eventsResult, avatarResult, socialLinksResult] = await Promise.all([
         supabase.rpc('get_public_profile', { profile_id: profileId }),
         supabase.from('user_stats').select('*').eq('user_id', profileId).maybeSingle(),
         supabase.from('products').select('*').eq('user_id', profileId).eq('status', 'published').order('created_at', { ascending: false }).limit(6),
         supabase.from('events').select('*').eq('user_id', profileId).order('created_at', { ascending: false }).limit(6),
         supabase.from('avatar_configurations').select('*').eq('user_id', profileId).eq('is_active', true).maybeSingle(),
-        supabase.from('social_links').select('*').eq('user_id', profileId).maybeSingle(),
-        supabase.from('virtual_products').select('*').eq('user_id', profileId).eq('status', 'published').order('created_at', { ascending: false }).limit(6)
+        supabase.from('social_links').select('*').eq('user_id', profileId).maybeSingle()
       ]);
         
       if (profileResult.error) throw profileResult.error;
@@ -582,7 +544,6 @@ const ProfilePage: React.FC = () => {
       setUserStats(statsResult.data);
       setProducts(productsResult.data || []);
       setEvents(eventsResult.data || []);
-      setVirtualProducts(virtualProductsResult.data || []);
       setAvatarConfig(avatarResult.data);
       setSocialLinks(socialLinksResult.data);
       setLoading(false);
@@ -756,15 +717,12 @@ const ProfilePage: React.FC = () => {
     await saveChatMessage(messageContent, 'user');
     
     try {
-      // Generate personalized AI response with visitor info
+      // Generate personalized AI response
       const response = await supabase.functions.invoke('personalized-ai-response', {
         body: {
           userMessage: messageContent,
           profileId: profile.id,
-          userId: currentUser?.id || null,
-          visitorName: getVisitorDisplayName(),
-          visitorDisplayName: visitorProfile?.display_name || currentUser?.user_metadata?.full_name || currentUser?.user_metadata?.name,
-          visitorEmail: currentUser?.email
+          userId: currentUser?.id || null
         }
       });
 
@@ -1114,52 +1072,39 @@ const ProfilePage: React.FC = () => {
               />
             </div>
 
-            {/* Action Buttons - Talk to Me, Subscribe and Follow */}
+            {/* Action Buttons - Subscribe (left wider) and Follow (right) - Enhanced design */}
             <div className="px-6 pb-4">
-              <div className="flex flex-col gap-3">
-                {/* Talk to Me Button - Full Width */}
-                {profile?.id !== currentUser?.id && (
-                  <TalkToMeButton
-                    profileName={profile?.display_name || profile?.username || 'User'}
-                    visitorName={getVisitorDisplayName()}
-                    onStartConversation={() => setActiveTab('chat')}
-                    disabled={!currentUser}
-                    className="w-full py-3 rounded-xl text-sm"
-                  />
+              <div className="grid grid-cols-5 gap-2">
+                {/* Left Side - Subscribe Button (wider - 3 columns) */}
+                {profile?.id && profile?.id !== currentUser?.id && (
+                  <div className="col-span-3">
+                    <SubscribeButton
+                      targetUserId={profile.id}
+                      targetUsername={profile.username}
+                      currentUserId={currentUser?.id}
+                      className="w-full bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-3 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                    />
+                  </div>
                 )}
                 
-                <div className="grid grid-cols-5 gap-2">
-                  {/* Left Side - Subscribe Button (wider - 3 columns) */}
-                  {profile?.id && profile?.id !== currentUser?.id && (
-                    <div className="col-span-3">
-                      <SubscribeButton
+                {/* Right Side - Enhanced Follow Button (2 columns) */}
+                {profile?.id && profile?.id !== currentUser?.id && (
+                  <div className="col-span-2">
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="w-full h-full"
+                    >
+                      <FollowButton
                         targetUserId={profile.id}
                         targetUsername={profile.username}
-                        currentUserId={currentUser?.id}
-                        className="w-full bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-700 text-white py-3 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                        currentUserId={currentUser?.id || null}
+                        variant="compact"
+                        className="w-full h-full py-3 text-sm font-semibold bg-gradient-to-r from-gray-500 via-gray-600 to-gray-700 hover:from-gray-600 hover:via-gray-700 hover:to-gray-800 border-0 shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl"
                       />
-                    </div>
-                  )}
-                  
-                  {/* Right Side - Enhanced Follow Button (2 columns) */}
-                  {profile?.id && profile?.id !== currentUser?.id && (
-                    <div className="col-span-2">
-                      <motion.div
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="w-full h-full"
-                      >
-                        <FollowButton
-                          targetUserId={profile.id}
-                          targetUsername={profile.username}
-                          currentUserId={currentUser?.id || null}
-                          variant="compact"
-                          className="w-full h-full py-3 text-sm font-semibold bg-gradient-to-r from-gray-500 via-gray-600 to-gray-700 hover:from-gray-600 hover:via-gray-700 hover:to-gray-800 border-0 shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl"
-                        />
-                      </motion.div>
-                    </div>
-                  )}
-                </div>
+                    </motion.div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1270,75 +1215,195 @@ const ProfilePage: React.FC = () => {
                   </div>
                 </TabsContent>
 
-                {/* Chat Tab - Two Side Conversation */}
+                {/* Chat Tab */}
                 <TabsContent value="chat" className="mt-6 flex-1 flex flex-col overflow-hidden">
                   <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent max-h-[400px]">
-                    <div className="space-y-1">
-                      {chatMessages.filter(message => 
-                        message.sender === 'user' && currentUser ? 
-                          (message.senderName === (currentUser.email?.split('@')[0] || 'User')) : true
-                      ).map((message) => (
-                        <TwoSideChatMessage
-                          key={message.id}
-                          message={message}
-                          isDarkTheme={isDarkTheme}
-                          currentUserAvatar={currentUser?.user_metadata?.avatar_url}
-                        />
-                      ))}
-
-                      {/* Typing/Thinking Indicator */}
-                      {(isTalking || isTyping) && (
-                        <div className="flex items-end gap-2 mb-4">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
-                            <div className={`w-full h-full rounded-full ${isDarkTheme ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center overflow-hidden`}>
-                              {profile?.profile_pic_url || profile?.avatar_url ? (
-                                <img 
-                                  src={profile.profile_pic_url || profile.avatar_url} 
-                                  alt={profileData.displayName}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <span className={`text-xs font-bold ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>
-                                  {profileData.avatarInitial}
-                                </span>
+                    <div className="space-y-4">
+                     {chatMessages.filter(message => 
+                       // Show only messages from the current user or messages sent to/from the profile owner
+                       message.sender === 'user' && currentUser ? 
+                         (message.senderName === (currentUser.email?.split('@')[0] || 'User')) : true
+                     ).map((message) => (
+                       <div key={message.id} className={`flex items-start gap-3 ${message.sender === 'avatar' ? 'flex-row-reverse' : ''}`}>
+                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                           <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                             {message.sender === 'avatar' ? (
+                               message.senderAvatar ? (
+                                 <img 
+                                   src={message.senderAvatar} 
+                                   alt={message.senderName}
+                                   className="w-full h-full object-cover"
+                                 />
+                               ) : (
+                                 <span className="text-xs font-bold text-white">
+                                   {(message.senderName?.[0] || 'A').toUpperCase()}
+                                 </span>
+                               )
+                             ) : (
+                               currentUser?.user_metadata?.avatar_url ? (
+                                 <img 
+                                   src={currentUser.user_metadata.avatar_url} 
+                                   alt={message.senderName}
+                                   className="w-full h-full object-cover"
+                                 />
+                               ) : (
+                                 <span className="text-xs font-bold text-white">
+                                   {(message.senderName?.[0] || 'U').toUpperCase()}
+                                 </span>
+                               )
+                             )}
+                           </div>
+                         </div>
+                        <div className={`flex-1 ${message.sender === 'avatar' ? 'flex justify-end' : ''}`}>
+                          <div className={message.sender === 'avatar' ? '' : 'max-w-xs'}>
+                             <div className={`px-4 py-3 rounded-2xl ${
+                              message.sender === 'avatar' 
+                                ? 'bg-slate-700/50 border border-slate-600/30 rounded-tr-md max-w-xs' 
+                                : 'bg-blue-600/20 border border-blue-500/30 rounded-tl-md'
+                            }`}>
+                              {message.isVoiceMessage && (
+                                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-600/20">
+                                  <Volume2 className="w-3 h-3 text-purple-400" />
+                                  <span className="text-xs text-purple-400 font-medium">Voice Message</span>
+                                </div>
+                              )}
+                             <p className={`text-sm ${
+                                message.sender === 'avatar' ? 'text-slate-200' : 'text-blue-100'
+                              }`}>
+                                {message.content}
+                              </p>
+                              
+                              {/* Rich Data: Buttons, Links, Documents */}
+                              {message.sender === 'avatar' && message.richData && (
+                                <div className="mt-3 space-y-2">
+                                  {message.richData.buttons && message.richData.buttons.length > 0 && (
+                                    <div className="flex flex-wrap gap-2">
+                                      {message.richData.buttons.map((button, idx) => (
+                                        <Button
+                                          key={idx}
+                                          variant="outline"
+                                          size="sm"
+                                          className="gap-2"
+                                          onClick={() => window.open(button.url, '_blank', 'noopener,noreferrer')}
+                                        >
+                                          {button.text}
+                                          <ChevronRight className="h-3 w-3" />
+                                        </Button>
+                                      ))}
+                                    </div>
+                                  )}
+                                  
+                                  {message.richData.links && message.richData.links.length > 0 && (
+                                    <div className="space-y-2">
+                                      {message.richData.links.map((link, idx) => (
+                                        <div
+                                          key={idx}
+                                          className="p-3 rounded-lg bg-slate-800/30 border border-slate-700/50 cursor-pointer hover:bg-slate-700/30 transition-colors"
+                                          onClick={() => window.open(link.url, '_blank', 'noopener,noreferrer')}
+                                        >
+                                          <div className="flex items-start gap-2">
+                                            <ChevronRight className="h-4 w-4 mt-1 flex-shrink-0 text-blue-400" />
+                                            <div className="flex-1 min-w-0">
+                                              <p className="text-sm font-medium truncate text-slate-200">{link.title}</p>
+                                              {link.preview && (
+                                                <p className="text-xs text-slate-400 line-clamp-2 mt-1">
+                                                  {link.preview}
+                                                </p>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                  
+                                  {message.richData.documents && message.richData.documents.length > 0 && (
+                                    <div className="space-y-2">
+                                      {message.richData.documents.map((doc, idx) => (
+                                        <div key={idx} className="p-3 rounded-lg bg-slate-800/30 border border-slate-700/50">
+                                          <div className="flex items-start gap-2">
+                                            <FileText className="h-4 w-4 mt-1 flex-shrink-0 text-green-400" />
+                                            <div className="flex-1 min-w-0">
+                                              <p className="text-sm font-medium truncate text-slate-200">{doc.filename}</p>
+                                              <p className="text-xs text-slate-400 uppercase">{doc.type}</p>
+                                              {doc.preview && (
+                                                <p className="text-xs text-slate-400 line-clamp-2 mt-1">
+                                                  {doc.preview}
+                                                </p>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
                               )}
                             </div>
-                          </div>
-                          <div className="max-w-[75%]">
-                            <p className={`text-xs mb-1 ${isDarkTheme ? 'text-slate-400' : 'text-gray-500'}`}>
-                              {profile?.display_name || profile?.username}
+                            <p className={`text-xs text-slate-500 mt-1 ${
+                              message.sender === 'avatar' ? 'text-right' : ''
+                            }`}>
+                              {new Date(message.timestamp).toLocaleTimeString([], { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}
                             </p>
-                            <div className={`px-4 py-3 rounded-2xl rounded-bl-md ${isDarkTheme ? 'bg-slate-700/70 border border-slate-600/30' : 'bg-gray-100 border border-gray-200'}`}>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {(isTalking || isTyping) && (
+                      <div className="flex items-start gap-3 flex-row-reverse">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                          <div className="w-full h-8 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                             {profile?.profile_pic_url || profile?.avatar_url ? (
+                               <img 
+                                 src={profile.profile_pic_url || profile.avatar_url} 
+                                 alt={profileData.displayName}
+                                 className="w-full h-full object-cover"
+                               />
+                             ) : (
+                               <span className="text-xs font-bold text-white">
+                                 {profileData.avatarInitial}
+                               </span>
+                             )}
+                          </div>
+                        </div>
+                        <div className="flex-1 flex justify-end">
+                          <div>
+                            <div className="bg-slate-700/50 border border-slate-600/30 rounded-2xl rounded-tr-md px-4 py-3 max-w-xs">
                               <div className="flex items-center gap-2">
                                 <div className="flex space-x-1">
                                   <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
                                   <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
                                   <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                                 </div>
-                                <span className={`text-xs ${isDarkTheme ? 'text-slate-400' : 'text-gray-500'}`}>
-                                  {isTyping ? "Typing..." : "Thinking..."}
-                                </span>
+                                 <span className="text-xs text-slate-400">
+                                   {isTyping ? "AI is generating response..." : "AI is thinking..."}
+                                 </span>
                               </div>
                             </div>
                           </div>
                         </div>
-                      )}
+                      </div>
+                    )}
                     </div>
                   </div>
                 </TabsContent>
 
-                {/* Products & Virtual Collaboration Tab */}
+                {/* Products & Events Tab */}
                 <TabsContent value="products" className="mt-6 flex-1 flex flex-col overflow-hidden">
                   <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent max-h-[400px]">
                     <div className="space-y-4">
                       <AnimatePresence>
-                    {(products.length > 0 || virtualProducts.length > 0) ? (
+                    {(products.length > 0 || events.length > 0) ? (
                       <div className="space-y-4">
                         {/* Products Section */}
                         {products.length > 0 && (
                           <div className="space-y-4">
                             <h3 className={`font-semibold text-lg mb-3 ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>Products</h3>
-                            <div className="grid grid-cols-1 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               {products.map((product, index) => (
                                 <motion.div
                                   key={product.id}
@@ -1359,29 +1424,38 @@ const ProfilePage: React.FC = () => {
                           </div>
                         )}
 
-                        {/* Virtual Collaboration Section */}
-                        {virtualProducts.length > 0 && (
+                        {/* Events Section */}
+                        {events.length > 0 && (
                           <div className="space-y-4 mt-6">
-                            <div className="flex items-center gap-2 mb-3">
-                              <Video className={`w-5 h-5 ${isDarkTheme ? 'text-blue-400' : 'text-blue-600'}`} />
-                              <h3 className={`font-semibold text-lg ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>Virtual Collaboration</h3>
-                            </div>
-                            <div className="grid grid-cols-1 gap-4">
-                              {virtualProducts.map((vProduct, index) => (
-                                <motion.div
-                                  key={vProduct.id}
-                                  initial={{ opacity: 0, y: 20 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  transition={{ delay: (products.length + index) * 0.1 }}
-                                >
-                                  <VirtualCollaborationCard
-                                    product={vProduct}
-                                    sellerName={profile?.display_name}
-                                    sellerAvatar={profile?.profile_pic_url || profile?.avatar_url}
-                                  />
-                                </motion.div>
-                              ))}
-                            </div>
+                            <h3 className="text-white font-semibold text-lg mb-3">Events</h3>
+                            {events.map((event, index) => (
+                              <motion.div
+                                key={event.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: (products.length + index) * 0.1 }}
+                              >
+                                <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm hover:border-slate-600/50 transition-colors">
+                                  <CardContent className="p-4">
+                                    {event.thumbnail_url && (
+                                      <div className="mb-3 rounded-lg overflow-hidden">
+                                        <img src={event.thumbnail_url} alt={event.title} className="w-full h-24 object-cover" />
+                                      </div>
+                                    )}
+                                    <h4 className="font-semibold text-white mb-2 text-sm">{event.title}</h4>
+                                    <p className="text-xs text-slate-400 mb-3 line-clamp-2">{event.description}</p>
+                                    <div className="flex items-center justify-between">
+                                      <div className="text-xs text-slate-400">
+                                        {new Date(event.start_time).toLocaleDateString()}
+                                      </div>
+                                      <Button size="sm" className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-xs">
+                                        Join Event
+                                      </Button>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              </motion.div>
+                            ))}
                           </div>
                         )}
                       </div>
@@ -1393,7 +1467,7 @@ const ProfilePage: React.FC = () => {
                         <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm">
                           <CardContent className="p-8 text-center">
                             <Globe className="w-8 h-8 mx-auto mb-3 text-blue-400" />
-                            <p className="text-slate-400 text-sm">No products available yet.</p>
+                            <p className="text-slate-400 text-sm">No products or events available yet.</p>
                           </CardContent>
                         </Card>
                       </motion.div>

@@ -12,7 +12,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AvatarPage from "./pages/AvatarPage";
 import FeedPage from "./pages/FeedPage";
-import VirtualCollaborationPage from "./components/VirtualCollaborationPage";
+import CalendarPage from "./components/CalendarPage";
 import ProductsPage from "./pages/ProductsPage";
 import SettingsPage from "./pages/SettingsPage";
 import SocialLinksPage from "./pages/SocialLinksPage";
@@ -94,7 +94,7 @@ const App = () => {
                     <Routes>
                       <Route path="/settings/dashboard" element={<Index />} />
                       <Route path="/settings/avatar" element={<AvatarPage />} />
-                      <Route path="/settings/virtual-collaboration" element={<VirtualCollaborationPage />} />
+                      <Route path="/settings/calendar" element={<CalendarPage />} />
                       <Route path="/settings/products" element={<ProductsPage />} />
                       <Route path="/settings/promo" element={<PromoSettingsPage />} />
                       <Route path="/settings/account" element={<SettingsPage />} />

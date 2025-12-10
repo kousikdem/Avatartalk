@@ -29,12 +29,7 @@ export const usePersonalizedAIChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const sendMessage = async (
-    userMessage: string, 
-    profileId?: string, 
-    userId?: string,
-    visitorInfo?: { displayName?: string; email?: string; name?: string }
-  ) => {
+  const sendMessage = async (userMessage: string, profileId?: string, userId?: string) => {
     // Client-side validation
     const trimmedMessage = userMessage.trim();
     
@@ -66,15 +61,12 @@ export const usePersonalizedAIChat = () => {
     setIsLoading(true);
 
     try {
-      // Call the personalized AI response function with visitor info
+      // Call the personalized AI response function
       const { data, error } = await supabase.functions.invoke('personalized-ai-response', {
         body: {
           userMessage: trimmedMessage,
           profileId: profileId || userId,
-          userId,
-          visitorName: visitorInfo?.name,
-          visitorDisplayName: visitorInfo?.displayName,
-          visitorEmail: visitorInfo?.email
+          userId
         }
       });
 
@@ -84,7 +76,7 @@ export const usePersonalizedAIChat = () => {
 
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: data.response || "I'm having trouble responding right now. Please try again.",
+        text: data.response || "I'm Avatartalk personalized AI powered by Llama 3. Sorry, I couldn't process that request.",
         sender: 'ai',
         timestamp: new Date(),
         richData: data.richData || undefined
@@ -96,7 +88,7 @@ export const usePersonalizedAIChat = () => {
       
       const errorResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: "I'm having trouble responding right now. Please try again.",
+        text: "I'm Avatartalk personalized AI powered by Llama 3, and I'm having trouble responding right now. Please try again.",
         sender: 'ai',
         timestamp: new Date()
       };
