@@ -233,8 +233,6 @@ const ProfilePage: React.FC = () => {
   // Voice model state - preload on profile load
   const [voiceModelReady, setVoiceModelReady] = useState(false);
   const [hasPlayedWelcome, setHasPlayedWelcome] = useState(false);
-  const [lastVisitTime, setLastVisitTime] = useState<Date | null>(null);
-  const [shouldPlayVoiceWelcome, setShouldPlayVoiceWelcome] = useState(false);
 
   // Fetch AI training settings for welcome message
   useEffect(() => {
@@ -259,67 +257,20 @@ const ProfilePage: React.FC = () => {
     fetchAISettings();
   }, [profile?.id]);
 
-  // Check last visit time and determine if welcome voice should play
-  useEffect(() => {
-    if (!profile?.id) return;
-    
-    const VISIT_COOLDOWN_MS = 29 * 60 * 1000; // 29 minutes
-    const storageKey = `last_visit_${profile.id}`;
-    const lastVisit = localStorage.getItem(storageKey);
-    
-    if (lastVisit) {
-      const lastVisitDate = new Date(lastVisit);
-      const now = new Date();
-      const timeSinceLastVisit = now.getTime() - lastVisitDate.getTime();
-      
-      setLastVisitTime(lastVisitDate);
-      
-      // Play voice welcome if more than 29 minutes since last visit
-      if (timeSinceLastVisit >= VISIT_COOLDOWN_MS) {
-        setShouldPlayVoiceWelcome(true);
-      }
-    } else {
-      // First time visitor - play welcome
-      setShouldPlayVoiceWelcome(true);
-    }
-    
-    // Update last visit time
-    localStorage.setItem(storageKey, new Date().toISOString());
-  }, [profile?.id]);
-
-  // Get visitor's display name (logged in user's name or "there" for anonymous)
-  const getVisitorName = () => {
-    if (visitorProfile?.display_name) return visitorProfile.display_name;
-    if (visitorProfile?.username) return visitorProfile.username;
-    if (currentUser?.user_metadata?.full_name) return currentUser.user_metadata.full_name;
-    if (currentUser?.user_metadata?.name) return currentUser.user_metadata.name;
-    if (currentUser?.email) return currentUser.email.split('@')[0];
-    return 'there';
-  };
-
-  // Get profile owner's display name
-  const getOwnerName = () => {
-    return profile?.display_name || profile?.username || 'AI Avatar';
-  };
-
   // Initialize and load chat messages from database
   useEffect(() => {
     if (profile && !chatHistoryLoading) {
-      // Build welcome message from AI settings or default with actual names
+      // Build welcome message from AI settings or default
       const getWelcomeMessage = () => {
-        const visitorName = getVisitorName();
-        const ownerName = getOwnerName();
-        
         if (aiTrainingSettings?.welcome_message_enabled && aiTrainingSettings?.welcome_message_text) {
-          // Replace variables in welcome message with actual names
+          // Replace variables in welcome message
           let welcomeText = aiTrainingSettings.welcome_message_text;
-          welcomeText = welcomeText.replace(/{visitor_name}/gi, visitorName);
+          welcomeText = welcomeText.replace(/{visitor_name}/gi, currentUser?.email?.split('@')[0] || 'there');
           welcomeText = welcomeText.replace(/{username}/gi, profile.username || '');
-          welcomeText = welcomeText.replace(/{display_name}/gi, ownerName);
-          welcomeText = welcomeText.replace(/{name}/gi, ownerName);
+          welcomeText = welcomeText.replace(/{display_name}/gi, profile.display_name || profile.username || '');
           return welcomeText;
         }
-        return `Hi ${visitorName}! I'm ${ownerName}. How can I help you today?`;
+        return `Hi there! I'm ${profile.display_name || profile.username}. How can I help you today?`;
       };
       
       // Always prepend welcome message first, then chat history
@@ -328,7 +279,7 @@ const ProfilePage: React.FC = () => {
         content: getWelcomeMessage(),
         timestamp: new Date().toISOString(),
         sender: 'avatar',
-        senderName: getOwnerName(),
+        senderName: profile.display_name || profile.username,
         senderAvatar: profile.profile_pic_url || profile.avatar_url
       };
       
@@ -337,8 +288,8 @@ const ProfilePage: React.FC = () => {
         const messagesWithProfile: ChatMessage[] = chatHistory.map(msg => ({
           ...msg,
           senderName: msg.sender === 'avatar' 
-            ? getOwnerName()
-            : getVisitorName(),
+            ? (profile.display_name || profile.username) 
+            : (currentUser?.email?.split('@')[0] || 'Guest'),
           senderAvatar: msg.sender === 'avatar' 
             ? (profile.profile_pic_url || profile.avatar_url)
             : currentUser?.user_metadata?.avatar_url
@@ -349,11 +300,11 @@ const ProfilePage: React.FC = () => {
         setChatMessages([welcomeMessage]);
       }
     }
-  }, [profile, chatHistory, chatHistoryLoading, currentUser, aiTrainingSettings, visitorProfile]);
+  }, [profile, chatHistory, chatHistoryLoading, currentUser, aiTrainingSettings]);
 
-  // Preload voice model and speak welcome message on profile load (only if 29+ min since last visit)
+  // Preload voice model and speak welcome message on profile load
   useEffect(() => {
-    if (profile && !loading && !hasPlayedWelcome && chatMessages.length > 0 && shouldPlayVoiceWelcome) {
+    if (profile && !loading && !hasPlayedWelcome && chatMessages.length > 0) {
       const welcomeMsg = chatMessages.find(m => m.sender === 'avatar');
       if (welcomeMsg && activeTab === 'chat') {
         // Set voice model ready and play welcome message with slight delay
@@ -376,34 +327,7 @@ const ProfilePage: React.FC = () => {
         return () => clearTimeout(timer);
       }
     }
-  }, [profile, loading, hasPlayedWelcome, chatMessages, activeTab, synthesizeSpeech, shouldPlayVoiceWelcome]);
-
-  // Handle "Talk to Me" button click - greet visitor with voice
-  const handleTalkToMeClick = async () => {
-    // Switch to chat tab
-    setActiveTab('chat');
-    
-    if (!profile) return;
-    
-    const visitorName = getVisitorName();
-    const ownerName = getOwnerName();
-    const greeting = `Hi ${visitorName}! I'm ${ownerName}. How can I help you today?`;
-    
-    // Play greeting in voice
-    try {
-      setIsTalking(true);
-      await synthesizeSpeech(greeting, {
-        voice: 'neural',
-        speed: 1.0,
-        language: 'en-US'
-      });
-      setHasPlayedWelcome(true);
-    } catch (error) {
-      console.error('Talk to me voice error:', error);
-    } finally {
-      setIsTalking(false);
-    }
-  };
+  }, [profile, loading, hasPlayedWelcome, chatMessages, activeTab, synthesizeSpeech]);
 
   const profileData = useMemo(() => ({
     displayName: profile?.display_name || profile?.username || 'Unknown User',
@@ -449,17 +373,6 @@ const ProfilePage: React.FC = () => {
       // Create default avatar for new users
       if (data.user) {
         await createDefaultForNewUsers();
-        
-        // Fetch visitor's profile for personalized greeting
-        const { data: visitorData } = await supabase
-          .from('profiles')
-          .select('display_name, username, profile_pic_url, avatar_url')
-          .eq('id', data.user.id)
-          .maybeSingle();
-        
-        if (visitorData) {
-          setVisitorProfile(visitorData);
-        }
       }
     };
     getCurrentUser();
@@ -708,13 +621,13 @@ const ProfilePage: React.FC = () => {
         
         messageContent = result.transcription;
         
-        // Add user message with transcription and visitor's actual name
+        // Add user message with transcription
         const userMessage: ChatMessage = {
           id: Date.now().toString(),
           content: messageContent,
           timestamp: new Date().toISOString(),
           sender: 'user',
-          senderName: getVisitorName(),
+          senderName: currentUser?.email?.split('@')[0] || 'Guest',
           senderAvatar: currentUser?.user_metadata?.avatar_url,
           isVoiceMessage: true,
           voiceTranscript: messageContent
@@ -722,13 +635,13 @@ const ProfilePage: React.FC = () => {
         
         setChatMessages(prev => [...prev, userMessage]);
         
-        // Add AI response with owner's actual name
+        // Add AI response
         const aiMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           content: result.textResponse,
           timestamp: new Date().toISOString(),
           sender: 'avatar',
-          senderName: getOwnerName(),
+          senderName: profile.display_name || profile.username || 'AI',
           senderAvatar: profile.avatar_url || profile.profile_pic_url,
           isVoiceMessage: false
         };
@@ -785,13 +698,13 @@ const ProfilePage: React.FC = () => {
       return;
     }
     
-    // Add user message with visitor's actual name
+    // Add user message
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       content: messageContent,
       timestamp: new Date().toISOString(),
       sender: 'user',
-      senderName: getVisitorName(),
+      senderName: currentUser?.email?.split('@')[0] || 'Guest',
       senderAvatar: currentUser?.user_metadata?.avatar_url,
       isVoiceMessage: false
     };
@@ -819,13 +732,13 @@ const ProfilePage: React.FC = () => {
 
       const { response: aiResponse, richData } = response.data;
 
-      // Add AI response with owner's actual name
+      // Add AI response
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         content: aiResponse,
         timestamp: new Date().toISOString(),
         sender: 'avatar',
-        senderName: getOwnerName(),
+        senderName: profile.display_name || profile.username || 'AI',
         senderAvatar: profile.avatar_url || profile.profile_pic_url,
         isVoiceMessage: false,
         richData: richData || undefined
@@ -858,13 +771,13 @@ const ProfilePage: React.FC = () => {
     } catch (error) {
       console.error('Error generating AI response:', error);
       
-      // Add fallback response with owner's name
+      // Add fallback response
       const fallbackMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         content: "I'm having trouble responding right now. Please try again in a moment.",
         timestamp: new Date().toISOString(),
         sender: 'avatar',
-        senderName: getOwnerName(),
+        senderName: profile.display_name || profile.username || 'AI',
         senderAvatar: profile.avatar_url || profile.profile_pic_url,
         isVoiceMessage: false
       };
@@ -1155,7 +1068,7 @@ const ProfilePage: React.FC = () => {
                 isInteractive={true}
                 isTalking={isTalking}
                 onAvatarClick={currentUser?.id === profile?.id ? () => window.location.href = '/avatar' : undefined}
-                onTalkClick={handleTalkToMeClick}
+                onTalkClick={() => setActiveTab('chat')}
               />
             </div>
 
