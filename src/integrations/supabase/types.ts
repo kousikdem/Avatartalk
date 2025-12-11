@@ -1202,6 +1202,69 @@ export type Database = {
           },
         ]
       }
+      host_integrations: {
+        Row: {
+          calendar_sync_enabled: boolean | null
+          created_at: string
+          google_access_token: string | null
+          google_connected: boolean | null
+          google_email: string | null
+          google_refresh_token: string | null
+          google_scopes: string[] | null
+          google_token_expires_at: string | null
+          id: string
+          last_sync_at: string | null
+          updated_at: string
+          user_id: string
+          zoom_access_token: string | null
+          zoom_connected: boolean | null
+          zoom_email: string | null
+          zoom_refresh_token: string | null
+          zoom_token_expires_at: string | null
+          zoom_user_id: string | null
+        }
+        Insert: {
+          calendar_sync_enabled?: boolean | null
+          created_at?: string
+          google_access_token?: string | null
+          google_connected?: boolean | null
+          google_email?: string | null
+          google_refresh_token?: string | null
+          google_scopes?: string[] | null
+          google_token_expires_at?: string | null
+          id?: string
+          last_sync_at?: string | null
+          updated_at?: string
+          user_id: string
+          zoom_access_token?: string | null
+          zoom_connected?: boolean | null
+          zoom_email?: string | null
+          zoom_refresh_token?: string | null
+          zoom_token_expires_at?: string | null
+          zoom_user_id?: string | null
+        }
+        Update: {
+          calendar_sync_enabled?: boolean | null
+          created_at?: string
+          google_access_token?: string | null
+          google_connected?: boolean | null
+          google_email?: string | null
+          google_refresh_token?: string | null
+          google_scopes?: string[] | null
+          google_token_expires_at?: string | null
+          id?: string
+          last_sync_at?: string | null
+          updated_at?: string
+          user_id?: string
+          zoom_access_token?: string | null
+          zoom_connected?: boolean | null
+          zoom_email?: string | null
+          zoom_refresh_token?: string | null
+          zoom_token_expires_at?: string | null
+          zoom_user_id?: string | null
+        }
+        Relationships: []
+      }
       integration_auth: {
         Row: {
           created_at: string | null
@@ -2540,6 +2603,290 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      virtual_bookings: {
+        Row: {
+          actual_end: string | null
+          actual_start: string | null
+          amount: number
+          booking_form_data: Json | null
+          booking_status: string
+          buyer_id: string
+          calendar_event_id: string | null
+          created_at: string
+          currency: string
+          discount_amount: number | null
+          id: string
+          join_url: string | null
+          meeting_id: string | null
+          meeting_provider: string | null
+          password: string | null
+          payment_status: string
+          platform_fee: number | null
+          promo_code_id: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          razorpay_signature: string | null
+          scheduled_end: string | null
+          scheduled_start: string | null
+          seller_earnings: number | null
+          seller_id: string
+          slot_id: string | null
+          tax_amount: number | null
+          total_amount: number
+          updated_at: string
+          virtual_product_id: string
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
+          amount?: number
+          booking_form_data?: Json | null
+          booking_status?: string
+          buyer_id: string
+          calendar_event_id?: string | null
+          created_at?: string
+          currency?: string
+          discount_amount?: number | null
+          id?: string
+          join_url?: string | null
+          meeting_id?: string | null
+          meeting_provider?: string | null
+          password?: string | null
+          payment_status?: string
+          platform_fee?: number | null
+          promo_code_id?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          seller_earnings?: number | null
+          seller_id: string
+          slot_id?: string | null
+          tax_amount?: number | null
+          total_amount?: number
+          updated_at?: string
+          virtual_product_id: string
+        }
+        Update: {
+          actual_end?: string | null
+          actual_start?: string | null
+          amount?: number
+          booking_form_data?: Json | null
+          booking_status?: string
+          buyer_id?: string
+          calendar_event_id?: string | null
+          created_at?: string
+          currency?: string
+          discount_amount?: number | null
+          id?: string
+          join_url?: string | null
+          meeting_id?: string | null
+          meeting_provider?: string | null
+          password?: string | null
+          payment_status?: string
+          platform_fee?: number | null
+          promo_code_id?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          seller_earnings?: number | null
+          seller_id?: string
+          slot_id?: string | null
+          tax_amount?: number | null
+          total_amount?: number
+          updated_at?: string
+          virtual_product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "virtual_bookings_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "virtual_product_slots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "virtual_bookings_virtual_product_id_fkey"
+            columns: ["virtual_product_id"]
+            isOneToOne: false
+            referencedRelation: "virtual_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      virtual_product_slots: {
+        Row: {
+          booked_count: number
+          capacity: number
+          created_at: string
+          end_time: string
+          id: string
+          is_available: boolean | null
+          start_time: string
+          updated_at: string
+          virtual_product_id: string
+        }
+        Insert: {
+          booked_count?: number
+          capacity?: number
+          created_at?: string
+          end_time: string
+          id?: string
+          is_available?: boolean | null
+          start_time: string
+          updated_at?: string
+          virtual_product_id: string
+        }
+        Update: {
+          booked_count?: number
+          capacity?: number
+          created_at?: string
+          end_time?: string
+          id?: string
+          is_available?: boolean | null
+          start_time?: string
+          updated_at?: string
+          virtual_product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "virtual_product_slots_virtual_product_id_fkey"
+            columns: ["virtual_product_id"]
+            isOneToOne: false
+            referencedRelation: "virtual_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      virtual_products: {
+        Row: {
+          auto_generate_meeting_link: boolean | null
+          booking_form_fields: Json | null
+          buffer_time_mins: number | null
+          capacity: number
+          created_at: string
+          currency: string
+          description: string | null
+          duration_mins: number
+          id: string
+          join_link_visibility: string | null
+          max_bookings_per_user: number | null
+          meeting_provider: string
+          min_booking_notice_hours: number | null
+          notify_host_on_booking: boolean | null
+          price: number
+          price_model: string
+          product_type: string
+          promo_codes_enabled: boolean | null
+          recording_allowed: boolean | null
+          refund_policy: string | null
+          reminder_1h: boolean | null
+          reminder_24h: boolean | null
+          require_marketing_consent: boolean | null
+          require_recording_consent: boolean | null
+          require_terms_consent: boolean | null
+          scheduling_mode: string
+          send_calendar_invite: boolean | null
+          status: string
+          tagline: string | null
+          tax_inclusive: boolean | null
+          tax_rate: number | null
+          thumbnail_url: string | null
+          timezone: string
+          title: string
+          updated_at: string
+          user_id: string
+          visibility: string
+          waitlist_enabled: boolean | null
+          waitlist_limit: number | null
+        }
+        Insert: {
+          auto_generate_meeting_link?: boolean | null
+          booking_form_fields?: Json | null
+          buffer_time_mins?: number | null
+          capacity?: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          duration_mins?: number
+          id?: string
+          join_link_visibility?: string | null
+          max_bookings_per_user?: number | null
+          meeting_provider?: string
+          min_booking_notice_hours?: number | null
+          notify_host_on_booking?: boolean | null
+          price?: number
+          price_model?: string
+          product_type?: string
+          promo_codes_enabled?: boolean | null
+          recording_allowed?: boolean | null
+          refund_policy?: string | null
+          reminder_1h?: boolean | null
+          reminder_24h?: boolean | null
+          require_marketing_consent?: boolean | null
+          require_recording_consent?: boolean | null
+          require_terms_consent?: boolean | null
+          scheduling_mode?: string
+          send_calendar_invite?: boolean | null
+          status?: string
+          tagline?: string | null
+          tax_inclusive?: boolean | null
+          tax_rate?: number | null
+          thumbnail_url?: string | null
+          timezone?: string
+          title: string
+          updated_at?: string
+          user_id: string
+          visibility?: string
+          waitlist_enabled?: boolean | null
+          waitlist_limit?: number | null
+        }
+        Update: {
+          auto_generate_meeting_link?: boolean | null
+          booking_form_fields?: Json | null
+          buffer_time_mins?: number | null
+          capacity?: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          duration_mins?: number
+          id?: string
+          join_link_visibility?: string | null
+          max_bookings_per_user?: number | null
+          meeting_provider?: string
+          min_booking_notice_hours?: number | null
+          notify_host_on_booking?: boolean | null
+          price?: number
+          price_model?: string
+          product_type?: string
+          promo_codes_enabled?: boolean | null
+          recording_allowed?: boolean | null
+          refund_policy?: string | null
+          reminder_1h?: boolean | null
+          reminder_24h?: boolean | null
+          require_marketing_consent?: boolean | null
+          require_recording_consent?: boolean | null
+          require_terms_consent?: boolean | null
+          scheduling_mode?: string
+          send_calendar_invite?: boolean | null
+          status?: string
+          tagline?: string | null
+          tax_inclusive?: boolean | null
+          tax_rate?: number | null
+          thumbnail_url?: string | null
+          timezone?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          visibility?: string
+          waitlist_enabled?: boolean | null
+          waitlist_limit?: number | null
+        }
+        Relationships: []
       }
       voice_cloning: {
         Row: {
