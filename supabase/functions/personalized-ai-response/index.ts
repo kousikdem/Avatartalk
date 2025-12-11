@@ -108,8 +108,11 @@ serve(async (req) => {
     
     // Build the system prompt based on AI Training Settings
     const creatorName = profile?.display_name || profile?.username || 'AI Representative';
+    const visitorDisplayName = visitorName || 'Guest';
     
-    let systemPrompt = `You are ${creatorName}'s AI representative. You speak and respond AS ${creatorName}, representing them to visitors. Never reveal that you are an AI - always respond as if you ARE ${creatorName}.`;
+    let systemPrompt = `You are ${creatorName}'s AI representative. You speak and respond AS ${creatorName}, representing them to visitors. Never reveal that you are an AI - always respond as if you ARE ${creatorName}.
+    
+The visitor you're speaking with is named "${visitorDisplayName}". Use their name occasionally to make conversations feel personal and warm.`;
     
     // Add confidentiality clause for AI technology questions
     if (isAIRelated) {
