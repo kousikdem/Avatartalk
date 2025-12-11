@@ -1330,11 +1330,7 @@ const ProfilePage: React.FC = () => {
                 <TabsContent value="chat" className="mt-6 flex-1 flex flex-col overflow-hidden">
                   <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent max-h-[400px]">
                     <div className="space-y-4">
-                     {chatMessages.filter(message => 
-                       // Show only messages from the current user or messages sent to/from the profile owner
-                       message.sender === 'user' && currentUser ? 
-                         (message.senderName === (currentUser.email?.split('@')[0] || 'User')) : true
-                     ).map((message) => (
+                     {chatMessages.map((message) => (
                        <div key={message.id} className={`flex items-start gap-3 ${message.sender === 'avatar' ? 'flex-row-reverse' : ''}`}>
                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
                            <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
