@@ -126,13 +126,16 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
       return;
     }
 
+    // Ensure minimum price of ₹1 (100 paise)
+    const bookingAmount = Math.max(product.price, 100);
+
     setIsProcessing(true);
 
     try {
       // Create order for virtual collaboration
       const { data: orderData, error: orderError } = await supabase.functions.invoke('razorpay-create-order', {
         body: {
-          amount: product.price,
+          amount: bookingAmount,
           currency: product.currency || 'INR',
           productId: product.id,
           productType: 'virtual_collaboration',
@@ -148,28 +151,67 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
         }
       });
 
-      if (orderError) throw orderError;
+      if (orderError) {
+        console.error('Order creation error:', orderError);
+        throw new Error(orderError.message || 'Failed to create order');
+      }
+
+      if (!orderData?.order_id && !orderData?.orderId) {
+        throw new Error('No order ID received from payment gateway');
+      }
+
+      const razorpayOrderId = orderData.order_id || orderData.orderId;
+      const razorpayKeyId = orderData.key_id;
+
+      if (!razorpayKeyId) {
+        throw new Error('Payment gateway not configured properly');
+      }
+
+      // Check if Razorpay is loaded
+      if (typeof window.Razorpay === 'undefined') {
+        // Load Razorpay script dynamically
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error('Failed to load payment gateway'));
+          document.body.appendChild(script);
+        });
+      }
 
       // Initialize Razorpay checkout
       const options = {
-        key: 'rzp_test_key', // Will be replaced with actual key
-        amount: product.price,
-        currency: product.currency || 'INR',
+        key: razorpayKeyId,
+        amount: orderData.amount,
+        currency: orderData.currency || 'INR',
         name: 'Virtual Collaboration',
         description: product.title,
-        order_id: orderData.orderId,
+        order_id: razorpayOrderId,
         handler: async function (response: any) {
           try {
             // Verify payment
-            await supabase.functions.invoke('razorpay-verify-payment', {
+            const { error: verifyError } = await supabase.functions.invoke('razorpay-verify-payment', {
               body: {
                 orderId: response.razorpay_order_id,
                 paymentId: response.razorpay_payment_id,
                 signature: response.razorpay_signature,
                 productId: product.id,
-                productType: 'virtual_collaboration'
+                productType: 'virtual_collaboration',
+                buyerId: currentUserId,
+                sellerId: product.user_id,
+                amount: orderData.amount,
+                metadata: {
+                  is_virtual_collaboration: true,
+                  buyer_info: bookingForm,
+                  event_date: product.event_date,
+                  join_url: product.join_url
+                }
               }
             });
+
+            if (verifyError) {
+              throw verifyError;
+            }
 
             toast({
               title: "Booking Confirmed!",
@@ -177,12 +219,19 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
             });
 
             setIsBookingOpen(false);
-          } catch (error) {
+            setBookingForm({ full_name: '', email: '', phone: '' });
+          } catch (error: any) {
+            console.error('Payment verification error:', error);
             toast({
               title: "Payment Verification Failed",
               description: "Please contact support if amount was deducted.",
               variant: "destructive"
             });
+          }
+        },
+        modal: {
+          ondismiss: function() {
+            setIsProcessing(false);
           }
         },
         prefill: {
@@ -197,16 +246,24 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
 
       // @ts-ignore
       const razorpay = new window.Razorpay(options);
+      razorpay.on('payment.failed', function (response: any) {
+        console.error('Payment failed:', response.error);
+        toast({
+          title: "Payment Failed",
+          description: response.error?.description || "Your payment could not be processed.",
+          variant: "destructive"
+        });
+        setIsProcessing(false);
+      });
       razorpay.open();
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Booking error:', error);
       toast({
         title: "Booking Failed",
-        description: "Unable to process your booking. Please try again.",
+        description: error.message || "Unable to process your booking. Please try again.",
         variant: "destructive"
       });
-    } finally {
       setIsProcessing(false);
     }
   };
