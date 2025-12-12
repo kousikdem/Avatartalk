@@ -126,13 +126,52 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
       return;
     }
 
-    // Ensure minimum price of ₹1 (100 paise)
-    const bookingAmount = Math.max(product.price, 100);
-
     setIsProcessing(true);
 
     try {
-      // Create order for virtual collaboration
+      // Handle FREE products without Razorpay
+      if (product.price === 0) {
+        // Create order directly without payment
+        const { error: orderError } = await supabase
+          .from('orders')
+          .insert({
+            buyer_id: currentUserId,
+            seller_id: product.user_id,
+            product_id: product.id,
+            amount: 0,
+            total_amount: 0,
+            currency: product.currency || 'INR',
+            payment_method: 'free',
+            payment_status: 'completed',
+            order_status: 'completed',
+            metadata: {
+              is_virtual_collaboration: true,
+              product_type: product.product_type,
+              duration_mins: product.duration_mins,
+              buyer_info: bookingForm,
+              event_date: product.event_date,
+              join_url: product.join_url
+            }
+          });
+
+        if (orderError) throw orderError;
+
+        toast({
+          title: "Booking Confirmed!",
+          description: product.join_url 
+            ? "You can now join the meeting using the provided link." 
+            : "You will receive the meeting link via email shortly.",
+        });
+
+        setIsBookingOpen(false);
+        setBookingForm({ full_name: '', email: '', phone: '' });
+        setIsProcessing(false);
+        return;
+      }
+
+      // Paid products - use Razorpay
+      const bookingAmount = Math.max(product.price, 100);
+
       const { data: orderData, error: orderError } = await supabase.functions.invoke('razorpay-create-order', {
         body: {
           amount: bookingAmount,
@@ -167,9 +206,7 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
         throw new Error('Payment gateway not configured properly');
       }
 
-      // Check if Razorpay is loaded
       if (typeof window.Razorpay === 'undefined') {
-        // Load Razorpay script dynamically
         await new Promise<void>((resolve, reject) => {
           const script = document.createElement('script');
           script.src = 'https://checkout.razorpay.com/v1/checkout.js';
@@ -179,7 +216,6 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
         });
       }
 
-      // Initialize Razorpay checkout
       const options = {
         key: razorpayKeyId,
         amount: orderData.amount,
@@ -189,7 +225,6 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
         order_id: razorpayOrderId,
         handler: async function (response: any) {
           try {
-            // Verify payment
             const { error: verifyError } = await supabase.functions.invoke('razorpay-verify-payment', {
               body: {
                 orderId: response.razorpay_order_id,
@@ -209,9 +244,7 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
               }
             });
 
-            if (verifyError) {
-              throw verifyError;
-            }
+            if (verifyError) throw verifyError;
 
             toast({
               title: "Booking Confirmed!",
