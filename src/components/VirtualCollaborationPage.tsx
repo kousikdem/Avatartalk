@@ -425,7 +425,17 @@ const VirtualCollaborationPage = () => {
                 ) : (
                   <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 gap-4' : 'space-y-4'}>
                     {filteredProducts.map((product) => (
-                      <Card key={product.id} className="border-2 hover:shadow-lg transition-all">
+                      <Card key={product.id} className="border-2 hover:shadow-lg transition-all overflow-hidden">
+                        {/* Thumbnail */}
+                        {product.thumbnail_url && (
+                          <div className="h-32 overflow-hidden">
+                            <img 
+                              src={product.thumbnail_url} 
+                              alt={product.title}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
                         <CardContent className="p-4">
                           <div className="flex justify-between items-start mb-3">
                             <div className="flex items-center gap-2">
@@ -439,6 +449,23 @@ const VirtualCollaborationPage = () => {
                           
                           <h3 className="font-semibold text-lg mb-2">{product.title}</h3>
                           <p className="text-muted-foreground text-sm line-clamp-2 mb-3">{product.description}</p>
+                          
+                          {/* Event Date */}
+                          {product.event_date && (
+                            <div className="flex items-center gap-2 text-sm text-primary mb-3">
+                              <CalendarIcon className="w-4 h-4" />
+                              <span className="font-medium">
+                                {new Date(product.event_date).toLocaleDateString('en-IN', {
+                                  weekday: 'short',
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </span>
+                            </div>
+                          )}
                           
                           <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                             <span className="flex items-center gap-1">
@@ -455,15 +482,24 @@ const VirtualCollaborationPage = () => {
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-2 mb-3">
+                          <div className="flex items-center gap-2 mb-3 flex-wrap">
                             {product.provider === 'google_meet' && (
                               <Badge variant="outline" className="text-xs">Google Meet</Badge>
                             )}
                             {product.provider === 'zoom' && (
                               <Badge variant="outline" className="text-xs">Zoom</Badge>
                             )}
-                            {product.auto_generate_link && (
+                            {product.provider === 'manual' && (
+                              <Badge variant="outline" className="text-xs">Manual Link</Badge>
+                            )}
+                            {product.auto_generate_link && product.provider !== 'manual' && (
                               <Badge variant="outline" className="text-xs text-green-600">Auto-link</Badge>
+                            )}
+                            {product.join_url && (
+                              <Badge variant="outline" className="text-xs text-blue-600">
+                                <Link2 className="w-3 h-3 mr-1" />
+                                Link Set
+                              </Badge>
                             )}
                           </div>
                           

@@ -22,6 +22,9 @@ export interface VirtualProduct {
   refund_policy: string;
   refund_days: number;
   thumbnail_url?: string;
+  event_date?: string;
+  manual_link?: string;
+  join_url?: string;
   created_at: string;
   updated_at: string;
 }
@@ -89,7 +92,7 @@ export const useVirtualCollaborations = () => {
         currency: 'INR',
         duration_mins: Math.round((new Date(event.end_time).getTime() - new Date(event.start_time).getTime()) / 60000),
         capacity: (event.attendees as any[])?.length || 10,
-        provider: 'google_meet',
+        provider: event.location?.includes('Zoom') ? 'zoom' : event.location?.includes('Manual') ? 'manual' : 'google_meet',
         auto_generate_link: true,
         status: event.status === 'upcoming' ? 'published' : 'draft',
         timezone: 'Asia/Kolkata',
@@ -99,6 +102,8 @@ export const useVirtualCollaborations = () => {
         refund_policy: '24 hour full refund',
         refund_days: 1,
         thumbnail_url: event.thumbnail_url,
+        event_date: event.start_time,
+        join_url: event.location?.startsWith('http') ? event.location : undefined,
         created_at: event.created_at,
         updated_at: event.updated_at
       }));
