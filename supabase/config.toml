@@ -10,7 +10,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.personalized-ai-response]
-verify_jwt = true
+verify_jwt = false
 
 [functions.personalized-ai-training]
 verify_jwt = true
@@ -31,4 +31,10 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.product-payment-verify]
+verify_jwt = true
+
+[functions.token-purchase-create-order]
+verify_jwt = true
+
+[functions.token-purchase-verify]
 verify_jwt = true
