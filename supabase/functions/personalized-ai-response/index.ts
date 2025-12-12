@@ -278,6 +278,35 @@ ${selectedFollowUp.choices && selectedFollowUp.choices.length > 0 ? `Offer these
       });
     }
 
+    // Simple token estimation: ~4 chars per token for English
+    const estimateTokens = (text: string) => Math.ceil(text.length / 4);
+    const inputTokenEstimate = estimateTokens(systemPrompt + userMessage);
+    const estimatedOutputTokens = 100; // Average response estimate
+    const totalEstimatedTokens = inputTokenEstimate + estimatedOutputTokens;
+
+    // Check user's token balance before making AI call (only for profile owners)
+    if (userId && userId === profileId) {
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('token_balance')
+        .eq('id', userId)
+        .single();
+
+      if (userProfile && userProfile.token_balance !== null && userProfile.token_balance < totalEstimatedTokens) {
+        return new Response(JSON.stringify({ 
+          success: false,
+          error_code: 'ERR_INSUFFICIENT_TOKENS',
+          message: 'Insufficient tokens. Please top up to continue.',
+          response: "I need more tokens to respond. Please top up your token balance to continue our conversation.",
+          token_balance: userProfile.token_balance,
+          tokens_required: totalEstimatedTokens
+        }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {

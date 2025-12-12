@@ -10,6 +10,7 @@ import RealtimeFollowWidget from './RealtimeFollowWidget';
 import { useFollows } from '@/hooks/useFollows';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import TokenDisplay from './TokenDisplay';
 
 const Dashboard = () => {
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -102,6 +103,11 @@ const Dashboard = () => {
             <span className="hidden sm:inline">Logout</span>
           </Button>
         </div>
+      </div>
+
+      {/* Token Balance Display */}
+      <div className="mb-6">
+        <TokenDisplay />
       </div>
 
       {/* Stats Grid */}

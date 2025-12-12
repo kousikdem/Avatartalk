@@ -828,6 +828,47 @@ export type Database = {
           },
         ]
       }
+      daily_token_usage: {
+        Row: {
+          created_at: string | null
+          day: string
+          id: string
+          input_tokens: number | null
+          message_count: number | null
+          output_tokens: number | null
+          total_tokens: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          day: string
+          id?: string
+          input_tokens?: number | null
+          message_count?: number | null
+          output_tokens?: number | null
+          total_tokens?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          day?: string
+          id?: string
+          input_tokens?: number | null
+          message_count?: number | null
+          output_tokens?: number | null
+          total_tokens?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_token_usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       discount_codes: {
         Row: {
           active: boolean | null
@@ -2008,8 +2049,10 @@ export type Database = {
           full_name: string | null
           gender: string | null
           id: string
+          monthly_token_quota: number | null
           profession: string | null
           profile_pic_url: string | null
+          token_balance: number | null
           updated_at: string | null
           username: string | null
         }
@@ -2026,8 +2069,10 @@ export type Database = {
           full_name?: string | null
           gender?: string | null
           id: string
+          monthly_token_quota?: number | null
           profession?: string | null
           profile_pic_url?: string | null
+          token_balance?: number | null
           updated_at?: string | null
           username?: string | null
         }
@@ -2044,8 +2089,10 @@ export type Database = {
           full_name?: string | null
           gender?: string | null
           id?: string
+          monthly_token_quota?: number | null
           profession?: string | null
           profile_pic_url?: string | null
+          token_balance?: number | null
           updated_at?: string | null
           username?: string | null
         }
@@ -2324,6 +2371,149 @@ export type Database = {
           {
             foreignKeyName: "subscriptions_subscribed_to_id_fkey"
             columns: ["subscribed_to_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      token_events: {
+        Row: {
+          balance_after: number
+          change: number
+          created_at: string | null
+          id: string
+          input_tokens: number | null
+          message_id: string | null
+          metadata: Json | null
+          model: string | null
+          output_tokens: number | null
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          balance_after: number
+          change: number
+          created_at?: string | null
+          id?: string
+          input_tokens?: number | null
+          message_id?: string | null
+          metadata?: Json | null
+          model?: string | null
+          output_tokens?: number | null
+          reason: string
+          user_id: string
+        }
+        Update: {
+          balance_after?: number
+          change?: number
+          created_at?: string | null
+          id?: string
+          input_tokens?: number | null
+          message_id?: string | null
+          metadata?: Json | null
+          model?: string | null
+          output_tokens?: number | null
+          reason?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "token_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      token_packages: {
+        Row: {
+          bonus_tokens: number | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          is_popular: boolean | null
+          name: string
+          price_inr: number
+          price_usd: number | null
+          tokens: number
+        }
+        Insert: {
+          bonus_tokens?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_popular?: boolean | null
+          name: string
+          price_inr: number
+          price_usd?: number | null
+          tokens: number
+        }
+        Update: {
+          bonus_tokens?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_popular?: boolean | null
+          name?: string
+          price_inr?: number
+          price_usd?: number | null
+          tokens?: number
+        }
+        Relationships: []
+      }
+      token_purchases: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string | null
+          id: string
+          package_id: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          razorpay_signature: string | null
+          status: string | null
+          tokens_purchased: number
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          package_id?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          status?: string | null
+          tokens_purchased: number
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          package_id?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          status?: string | null
+          tokens_purchased?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "token_purchases_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "token_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "token_purchases_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -3031,6 +3221,22 @@ export type Database = {
       calculate_user_engagement_score: {
         Args: { p_user_id: string }
         Returns: number
+      }
+      credit_user_tokens: {
+        Args: { p_reason: string; p_tokens: number; p_user_id: string }
+        Returns: Json
+      }
+      debit_user_tokens: {
+        Args: {
+          p_input_tokens?: number
+          p_message_id?: string
+          p_model?: string
+          p_output_tokens?: number
+          p_reason: string
+          p_tokens: number
+          p_user_id: string
+        }
+        Returns: Json
       }
       decrement_product_inventory: {
         Args: { p_product_id: string; p_quantity: number; p_variant_id: string }
