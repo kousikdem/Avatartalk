@@ -32,6 +32,7 @@ import EnhancedPostCard from './EnhancedPostCard';
 import EmojiPicker from './EmojiPicker';
 import MessageInput from './MessageInput';
 import { CompactProductCard } from './CompactProductCard';
+import VirtualCollaborationCard from './VirtualCollaborationCard';
 import {
   MessageCircle,
   Share2,
@@ -1531,38 +1532,46 @@ const ProfilePage: React.FC = () => {
                           </div>
                         )}
 
-                        {/* Events Section */}
+                        {/* Virtual Collaboration Section */}
                         {events.length > 0 && (
                           <div className="space-y-4 mt-6">
-                            <h3 className="text-white font-semibold text-lg mb-3">Events</h3>
-                            {events.map((event, index) => (
-                              <motion.div
-                                key={event.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: (products.length + index) * 0.1 }}
-                              >
-                                <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm hover:border-slate-600/50 transition-colors">
-                                  <CardContent className="p-4">
-                                    {event.thumbnail_url && (
-                                      <div className="mb-3 rounded-lg overflow-hidden">
-                                        <img src={event.thumbnail_url} alt={event.title} className="w-full h-24 object-cover" />
-                                      </div>
-                                    )}
-                                    <h4 className="font-semibold text-white mb-2 text-sm">{event.title}</h4>
-                                    <p className="text-xs text-slate-400 mb-3 line-clamp-2">{event.description}</p>
-                                    <div className="flex items-center justify-between">
-                                      <div className="text-xs text-slate-400">
-                                        {new Date(event.start_time).toLocaleDateString()}
-                                      </div>
-                                      <Button size="sm" className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-xs">
-                                        Join Event
-                                      </Button>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              </motion.div>
-                            ))}
+                            <h3 className={`font-semibold text-lg mb-3 ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>
+                              Virtual Collaboration
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {events.map((event, index) => (
+                                <motion.div
+                                  key={event.id}
+                                  initial={{ opacity: 0, y: 20 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: (products.length + index) * 0.1 }}
+                                >
+                                  <VirtualCollaborationCard
+                                    product={{
+                                      id: event.id,
+                                      user_id: event.user_id,
+                                      title: event.title,
+                                      description: event.description || '',
+                                      product_type: event.event_type || 'webinar',
+                                      price: 0,
+                                      currency: 'INR',
+                                      duration_mins: Math.round((new Date(event.end_time).getTime() - new Date(event.start_time).getTime()) / 60000),
+                                      capacity: 100,
+                                      provider: event.location?.includes('Zoom') ? 'zoom' : event.location?.includes('Manual') ? 'manual' : 'google_meet',
+                                      status: 'published',
+                                      event_date: event.start_time,
+                                      thumbnail_url: event.thumbnail_url,
+                                      join_url: event.location?.startsWith('http') ? event.location : undefined,
+                                      created_at: event.created_at
+                                    }}
+                                    sellerName={profile?.display_name || profile?.username}
+                                    sellerAvatar={profile?.profile_pic_url || profile?.avatar_url}
+                                    currentUserId={currentUser?.id}
+                                    isDarkTheme={isDarkTheme}
+                                  />
+                                </motion.div>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -1574,7 +1583,7 @@ const ProfilePage: React.FC = () => {
                         <Card className="bg-slate-800/40 border-slate-700/50 backdrop-blur-sm">
                           <CardContent className="p-8 text-center">
                             <Globe className="w-8 h-8 mx-auto mb-3 text-blue-400" />
-                            <p className="text-slate-400 text-sm">No products or events available yet.</p>
+                            <p className="text-slate-400 text-sm">No products or virtual collaborations available yet.</p>
                           </CardContent>
                         </Card>
                       </motion.div>

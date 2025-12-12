@@ -44,6 +44,9 @@ const VirtualProductForm: React.FC<VirtualProductFormProps> = ({
     scheduling_mode: product?.scheduling_mode || 'scheduled',
     refund_policy: product?.refund_policy || '24 hour full refund',
     refund_days: product?.refund_days || 1,
+    event_date: product?.event_date || '',
+    thumbnail_url: product?.thumbnail_url || '',
+    manual_link: product?.manual_link || '',
     booking_form_fields: product?.booking_form_fields || [
       { key: 'full_name', label: 'Full Name', required: true, type: 'text' },
       { key: 'email', label: 'Email', required: true, type: 'email' },
@@ -170,6 +173,20 @@ const VirtualProductForm: React.FC<VirtualProductFormProps> = ({
                   <SelectItem value="hidden">Hidden</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Thumbnail URL */}
+            <div className="space-y-2">
+              <Label htmlFor="thumbnail">Thumbnail Image URL</Label>
+              <Input
+                id="thumbnail"
+                placeholder="https://example.com/image.jpg"
+                value={formData.thumbnail_url}
+                onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                Add a cover image for your virtual collaboration
+              </p>
             </div>
           </div>
         </TabsContent>
@@ -312,6 +329,20 @@ const VirtualProductForm: React.FC<VirtualProductFormProps> = ({
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Event Date/Time for Webinars */}
+            <div className="space-y-2">
+              <Label htmlFor="event_date">Event Date & Time</Label>
+              <Input
+                id="event_date"
+                type="datetime-local"
+                value={formData.event_date}
+                onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                Set the date and time for your event/webinar
+              </p>
+            </div>
           </div>
         </TabsContent>
 
@@ -393,6 +424,22 @@ const VirtualProductForm: React.FC<VirtualProductFormProps> = ({
                 disabled={formData.provider === 'manual'}
               />
             </div>
+
+            {/* Manual Link Input */}
+            {formData.provider === 'manual' && (
+              <div className="space-y-2">
+                <Label htmlFor="manual_link">Meeting Link (Manual)</Label>
+                <Input
+                  id="manual_link"
+                  placeholder="https://meet.google.com/xxx-xxxx-xxx or zoom.us/j/xxxxx"
+                  value={formData.manual_link}
+                  onChange={(e) => setFormData({ ...formData, manual_link: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter your own meeting link (Google Meet, Zoom, or any other platform)
+                </p>
+              </div>
+            )}
           </div>
         </TabsContent>
 
