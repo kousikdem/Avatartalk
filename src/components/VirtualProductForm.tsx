@@ -175,17 +175,64 @@ const VirtualProductForm: React.FC<VirtualProductFormProps> = ({
               </Select>
             </div>
 
-            {/* Thumbnail URL */}
+            {/* Thumbnail Upload */}
             <div className="space-y-2">
-              <Label htmlFor="thumbnail">Thumbnail Image URL</Label>
-              <Input
-                id="thumbnail"
-                placeholder="https://example.com/image.jpg"
-                value={formData.thumbnail_url}
-                onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })}
-              />
+              <Label htmlFor="thumbnail">Thumbnail Image</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="thumbnail_file"
+                  type="file"
+                  accept="image/*"
+                  className="flex-1"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      try {
+                        const { supabase } = await import('@/integrations/supabase/client');
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (!user) return;
+                        
+                        const fileExt = file.name.split('.').pop();
+                        const fileName = `${user.id}/virtual-collab-${Date.now()}.${fileExt}`;
+                        
+                        const { error: uploadError } = await supabase.storage
+                          .from('avatars')
+                          .upload(fileName, file, { upsert: true });
+                        
+                        if (uploadError) throw uploadError;
+                        
+                        const { data: { publicUrl } } = supabase.storage
+                          .from('avatars')
+                          .getPublicUrl(fileName);
+                        
+                        setFormData({ ...formData, thumbnail_url: publicUrl });
+                      } catch (err) {
+                        console.error('Upload error:', err);
+                      }
+                    }
+                  }}
+                />
+              </div>
+              {formData.thumbnail_url && (
+                <div className="mt-2 relative">
+                  <img 
+                    src={formData.thumbnail_url} 
+                    alt="Thumbnail preview" 
+                    className="w-full h-32 object-cover rounded-lg border"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={() => setFormData({ ...formData, thumbnail_url: '' })}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+              )}
               <p className="text-xs text-muted-foreground">
-                Add a cover image for your virtual collaboration
+                Upload a cover image for your virtual collaboration
               </p>
             </div>
           </div>
