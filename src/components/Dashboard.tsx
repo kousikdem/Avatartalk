@@ -77,14 +77,17 @@ const Dashboard = () => {
 
   return (
     <div className="w-full max-w-7xl mx-auto bg-white p-6">
-      {/* Header Section with Share and Logout Buttons */}
-      <div className="flex items-center justify-between mb-6 sm:mb-8">
+      {/* Header Section with Token Display, Share and Logout Buttons */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Welcome Back!</h1>
           <p className="text-gray-600">Manage your AI avatar and track your interactions</p>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Compact Token Display in Header */}
+          <TokenDisplay compact />
+          
           <Button 
             onClick={() => setIsShareOpen(true)}
             className="bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 hover:from-blue-600 hover:via-purple-600 hover:to-indigo-700 text-white"
@@ -103,11 +106,6 @@ const Dashboard = () => {
             <span className="hidden sm:inline">Logout</span>
           </Button>
         </div>
-      </div>
-
-      {/* Token Balance Display */}
-      <div className="mb-6">
-        <TokenDisplay />
       </div>
 
       {/* Stats Grid */}

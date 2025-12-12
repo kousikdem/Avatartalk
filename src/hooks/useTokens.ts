@@ -43,7 +43,9 @@ export const useTokens = () => {
   const fetchTokenBalance = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        return;
+      }
 
       const { data, error } = await supabase
         .from('profiles')
@@ -51,9 +53,12 @@ export const useTokens = () => {
         .eq('id', user.id)
         .single();
 
-      if (error) throw error;
-      setTokenBalance(data?.token_balance || 0);
-      setMonthlyQuota(data?.monthly_token_quota || 0);
+      if (error) {
+        console.error('Error fetching token balance:', error);
+        return;
+      }
+      setTokenBalance(data?.token_balance ?? 0);
+      setMonthlyQuota(data?.monthly_token_quota ?? 0);
     } catch (error) {
       console.error('Error fetching token balance:', error);
     }
