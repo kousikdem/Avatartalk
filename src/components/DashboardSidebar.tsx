@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Home, 
   Plus, 
@@ -14,8 +14,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Package,
-  Share2
+  Share2,
+  Shield
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Sidebar,
   SidebarContent,
@@ -53,6 +55,23 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
   const { state, setOpen, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
   const isMobile = useIsMobile();
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkSuperAdmin = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      setIsSuperAdmin(data?.role === 'super_admin');
+    };
+    checkSuperAdmin();
+  }, []);
 
   const handleLogoClick = () => {
     window.location.href = '/settings/dashboard';
@@ -63,6 +82,10 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
       setOpen(false);
     }
   };
+
+  const allNavItems = isSuperAdmin 
+    ? [...navigationItems, { title: "Super Admin", icon: Shield, url: "/settings/super-admin" }]
+    : navigationItems;
 
   return (
     <Sidebar 
@@ -119,11 +142,13 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
             </div>
 
             <SidebarMenu className="space-y-2">
-              {navigationItems.map((item) => (
+              {allNavItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
-                    className="bg-white hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 text-gray-700 hover:text-gray-900 w-full transition-all duration-200 rounded-lg border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md backdrop-blur-sm"
+                    className={`bg-white hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 text-gray-700 hover:text-gray-900 w-full transition-all duration-200 rounded-lg border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md backdrop-blur-sm ${
+                      item.title === 'Super Admin' ? 'border-primary/30 bg-primary/5' : ''
+                    }`}
                     tooltip={isCollapsed ? item.title : undefined}
                   >
                     <a 
@@ -133,9 +158,9 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
                       }`}
                       onClick={handleMenuItemClick}
                     >
-                      <item.icon className="w-4 h-4 flex-shrink-0 text-gray-600" />
+                      <item.icon className={`w-4 h-4 flex-shrink-0 ${item.title === 'Super Admin' ? 'text-primary' : 'text-gray-600'}`} />
                       {!isCollapsed && (
-                        <span className="truncate text-sm font-medium text-gray-700">{item.title}</span>
+                        <span className={`truncate text-sm font-medium ${item.title === 'Super Admin' ? 'text-primary' : 'text-gray-700'}`}>{item.title}</span>
                       )}
                     </a>
                   </SidebarMenuButton>

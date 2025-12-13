@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_logs: {
+        Row: {
+          action_type: string
+          admin_id: string
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          new_value: Json | null
+          old_value: Json | null
+          target_id: string | null
+          target_table: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_id: string
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          new_value?: Json | null
+          old_value?: Json | null
+          target_id?: string | null
+          target_table?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_id?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          new_value?: Json | null
+          old_value?: Json | null
+          target_id?: string | null
+          target_table?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       ai_chat_history: {
         Row: {
           created_at: string
@@ -200,6 +239,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ai_system_limits: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          limit_key: string
+          limit_value: Json
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          limit_key: string
+          limit_value?: Json
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          limit_key?: string
+          limit_value?: Json
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
       }
       ai_topics: {
         Row: {
@@ -1064,6 +1133,39 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_flags: {
+        Row: {
+          affected_roles: string[] | null
+          created_at: string | null
+          description: string | null
+          flag_name: string
+          id: string
+          is_enabled: boolean | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          affected_roles?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          flag_name: string
+          id?: string
+          is_enabled?: boolean | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          affected_roles?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          flag_name?: string
+          id?: string
+          is_enabled?: boolean | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       follower_analytics: {
         Row: {
           created_at: string | null
@@ -1739,6 +1841,36 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_settings: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          setting_key: string
+          setting_value?: Json
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           comments_count: number | null
@@ -2376,6 +2508,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      token_configuration: {
+        Row: {
+          config_key: string
+          config_value: Json
+          created_at: string | null
+          description: string | null
+          id: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          config_key: string
+          config_value?: Json
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          config_key?: string
+          config_value?: Json
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
       }
       token_events: {
         Row: {
@@ -3284,6 +3446,17 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      log_admin_action: {
+        Args: {
+          p_action_type: string
+          p_new_value?: Json
+          p_old_value?: Json
+          p_target_id?: string
+          p_target_table?: string
+        }
+        Returns: string
       }
     }
     Enums: {
