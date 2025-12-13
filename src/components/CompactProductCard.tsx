@@ -261,7 +261,7 @@ export const CompactProductCard = ({
                       disabled={!inStock}
                     >
                       <ShoppingCart className="w-4 h-4 mr-2" />
-                      {product.is_free ? 'Get Free Access' : 'Buy Now'}
+                      {product.is_free || product.price === 0 ? 'Get Free Access' : 'Buy Now'}
                     </Button>
                   )}
                 </CardContent>

@@ -284,27 +284,26 @@ ${selectedFollowUp.choices && selectedFollowUp.choices.length > 0 ? `Offer these
     const estimatedOutputTokens = 100; // Average response estimate
     const totalEstimatedTokens = inputTokenEstimate + estimatedOutputTokens;
 
-    // Check user's token balance before making AI call (only for profile owners)
-    if (userId && userId === profileId) {
-      const { data: userProfile } = await supabase
-        .from('profiles')
-        .select('token_balance')
-        .eq('id', userId)
-        .single();
+    // Check profile owner's token balance before making AI call
+    // The profile owner pays for AI responses, not the visitor
+    const { data: profileOwner } = await supabase
+      .from('profiles')
+      .select('token_balance')
+      .eq('id', profileId)
+      .single();
 
-      if (userProfile && userProfile.token_balance !== null && userProfile.token_balance < totalEstimatedTokens) {
-        return new Response(JSON.stringify({ 
-          success: false,
-          error_code: 'ERR_INSUFFICIENT_TOKENS',
-          message: 'Insufficient tokens. Please top up to continue.',
-          response: "I need more tokens to respond. Please top up your token balance to continue our conversation.",
-          token_balance: userProfile.token_balance,
-          tokens_required: totalEstimatedTokens
-        }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+    if (profileOwner && profileOwner.token_balance !== null && profileOwner.token_balance < totalEstimatedTokens) {
+      return new Response(JSON.stringify({ 
+        success: false,
+        error_code: 'ERR_INSUFFICIENT_TOKENS',
+        message: 'The profile owner needs to top up tokens.',
+        response: "I'm temporarily unavailable. Please try again later or contact the profile owner.",
+        token_balance: profileOwner.token_balance,
+        tokens_required: totalEstimatedTokens
+      }), {
+        status: 402,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
