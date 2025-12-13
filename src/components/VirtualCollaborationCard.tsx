@@ -131,30 +131,36 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
     try {
       // Handle FREE products without Razorpay
       if (product.price === 0) {
-        // Create order directly without payment
+        // Create order directly without payment - product_id is nullable for virtual collaborations
         const { error: orderError } = await supabase
           .from('orders')
           .insert({
             buyer_id: currentUserId,
             seller_id: product.user_id,
-            product_id: product.id,
+            // product_id is omitted for virtual collaborations as they use events table, not products
             amount: 0,
             total_amount: 0,
             currency: product.currency || 'INR',
             payment_method: 'free',
             payment_status: 'completed',
             order_status: 'completed',
+            quantity: 1,
             metadata: {
               is_virtual_collaboration: true,
+              virtual_product_id: product.id,
               product_type: product.product_type,
               duration_mins: product.duration_mins,
               buyer_info: bookingForm,
               event_date: product.event_date,
-              join_url: product.join_url
+              join_url: product.join_url,
+              title: product.title
             }
           });
 
-        if (orderError) throw orderError;
+        if (orderError) {
+          console.error('Order creation error:', orderError);
+          throw new Error(orderError.message || 'Failed to create booking');
+        }
 
         toast({
           title: "Booking Confirmed!",

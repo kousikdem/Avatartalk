@@ -138,17 +138,6 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
       return;
     }
 
-    // Validate minimum order amount (₹1 minimum)
-    const calculatedTotal = (product.price || 0) * quantity + (isPhysical && product.shipping_cost ? product.shipping_cost : 0);
-    if (calculatedTotal < 100) {
-      toast({
-        title: "Invalid Order Amount",
-        description: "Order total must be at least ₹1. Please check the product pricing.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     // Validate shipping address for physical products
     if (isPhysical) {
       if (!shippingAddress.full_name || !shippingAddress.phone || 
@@ -166,7 +155,62 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
     setIsProcessing(true);
 
     try {
-      // Create checkout session
+      // Handle FREE products without Razorpay payment
+      const totalPrice = (product.price || 0) * quantity;
+      if (product.is_free || totalPrice === 0) {
+        // Create order directly without payment
+        const { error: orderError } = await supabase
+          .from('orders')
+          .insert({
+            buyer_id: user.id,
+            seller_id: product.user_id,
+            product_id: product.id,
+            quantity,
+            amount: 0,
+            total_amount: 0,
+            currency: currency,
+            payment_method: 'free',
+            payment_status: 'completed',
+            order_status: 'completed',
+            shipping_address: isPhysical ? shippingAddress : null,
+            platform_fee: 0,
+            seller_earnings: 0,
+            metadata: {
+              product_title: product.title,
+              product_type: product.product_type,
+              is_free: true
+            }
+          });
+
+        if (orderError) {
+          console.error('Free order creation error:', orderError);
+          throw new Error(orderError.message || 'Failed to create order');
+        }
+
+        onClose();
+        toast({
+          title: "Success!",
+          description: isDigital 
+            ? "You now have access to this product! Check your chat for download links." 
+            : "Order placed successfully! You'll receive updates via email.",
+        });
+        setIsProcessing(false);
+        return;
+      }
+
+      // Validate minimum order amount for paid products (₹1 minimum)
+      const calculatedTotal = totalPrice + (isPhysical && product.shipping_cost ? product.shipping_cost : 0);
+      if (calculatedTotal < 100) {
+        toast({
+          title: "Invalid Order Amount",
+          description: "Order total must be at least ₹1. Please check the product pricing.",
+          variant: "destructive",
+        });
+        setIsProcessing(false);
+        return;
+      }
+
+      // Create checkout session for paid products
       const checkoutData = await createCheckout({
         productId: product.id,
         quantity,
