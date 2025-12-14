@@ -20,6 +20,7 @@ import { useProducts, Product } from '@/hooks/useProducts';
 import { useOrders } from '@/hooks/useOrders';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import TokenDisplay from '@/components/TokenDisplay';
 
 type ViewMode = 'grid' | 'list';
 type Currency = 'INR' | 'USD' | 'EUR' | 'GBP';
@@ -212,7 +213,8 @@ const ProductsPageEnhanced = () => {
             </p>
           </div>
           
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
+            <TokenDisplay compact />
             <Button
               variant="ghost"
               size="icon"

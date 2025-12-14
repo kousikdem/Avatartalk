@@ -24,6 +24,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useVirtualCollaborations, VirtualProduct, VirtualBooking } from '@/hooks/useVirtualCollaborations';
 import VirtualProductForm from './VirtualProductForm';
 import VirtualBookingCard from './VirtualBookingCard';
+import TokenDisplay from './TokenDisplay';
 
 type ViewMode = 'grid' | 'list';
 type Currency = 'INR' | 'USD' | 'EUR' | 'GBP';
@@ -168,7 +169,8 @@ const VirtualCollaborationPage = () => {
             </p>
           </div>
           
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
+            <TokenDisplay compact />
             <Button
               variant="ghost"
               size="icon"
