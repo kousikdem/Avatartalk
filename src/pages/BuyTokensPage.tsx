@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Coins, Zap, Calculator, CreditCard, Info, TrendingUp, Sparkles } from 'lucide-react';
+import { Coins, Zap, Calculator, CreditCard, Info, TrendingUp, Sparkles, BarChart3 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useTokens } from '@/hooks/useTokens';
-import DashboardSidebar from '@/components/DashboardSidebar';
 import TokenDisplay from '@/components/TokenDisplay';
+import TokenUsageDashboard from '@/components/TokenUsageDashboard';
+import DashboardHeader from '@/components/DashboardHeader';
 
 declare global {
   interface Window {
@@ -30,7 +32,8 @@ const BuyTokensPage: React.FC = () => {
   const [customPriceInput, setCustomPriceInput] = useState<string>('');
   const [customTokenInput, setCustomTokenInput] = useState<string>('');
   const [processing, setProcessing] = useState(false);
-  const { tokenBalance, refetch } = useTokens();
+  const [activeTab, setActiveTab] = useState('buy');
+  const { tokenBalance, dailyUsage, refetch } = useTokens();
   const { toast } = useToast();
 
   // Load Razorpay script
@@ -211,24 +214,29 @@ const BuyTokensPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <DashboardSidebar onCreatePost={() => {}} />
-      
-      <main className="lg:pl-64 p-4 lg:p-8">
-        <div className="max-w-4xl mx-auto space-y-8">
-          {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-amber-500 to-yellow-500 bg-clip-text text-transparent flex items-center gap-3">
-                <Coins className="w-8 h-8 text-amber-500" />
-                Buy AI Tokens
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Power your AI conversations with tokens
-              </p>
-            </div>
-            <TokenDisplay compact />
-          </div>
+    <div className="min-h-screen w-full bg-gradient-to-br from-background via-background to-muted/20 p-4 lg:p-8">
+      <div className="max-w-5xl mx-auto space-y-6">
+        {/* Header */}
+        <DashboardHeader
+          title="AI Tokens"
+          description="Buy tokens and track your AI usage"
+          icon={<Coins className="w-8 h-8 text-amber-500" />}
+        />
+
+            {/* Tabs for Buy / Usage */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 max-w-md">
+                <TabsTrigger value="buy" className="flex items-center gap-2">
+                  <CreditCard className="w-4 h-4" />
+                  Buy Tokens
+                </TabsTrigger>
+                <TabsTrigger value="usage" className="flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4" />
+                  Usage Analytics
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="buy" className="space-y-6 mt-6">
 
           {/* Main Purchase Card */}
           <Card className="border-2 border-amber-200/50 bg-gradient-to-br from-amber-50/50 to-yellow-50/50 dark:from-amber-950/20 dark:to-yellow-950/20">
@@ -413,9 +421,14 @@ const BuyTokensPage: React.FC = () => {
               </CardContent>
             </Card>
           </div>
+              </TabsContent>
+
+              <TabsContent value="usage" className="mt-6">
+                <TokenUsageDashboard />
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
-      </main>
-    </div>
   );
 };
 

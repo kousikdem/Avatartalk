@@ -20,6 +20,7 @@ import { usePosts } from '@/hooks/usePosts';
 import { useFollows } from '@/hooks/useFollows';
 import LikeButton from '@/components/LikeButton';
 import { motion, AnimatePresence } from 'framer-motion';
+import TokenDisplay from '@/components/TokenDisplay';
 
 interface FeedPost {
   id: string;
@@ -327,11 +328,14 @@ const FeedPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 p-4 sm:p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-blue-700 to-indigo-700 bg-clip-text text-transparent">
-            Social Feed
-          </h1>
-          <p className="text-gray-600 mt-1">Stay connected with your community</p>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-blue-700 to-indigo-700 bg-clip-text text-transparent">
+              Social Feed
+            </h1>
+            <p className="text-gray-600 mt-1">Stay connected with your community</p>
+          </div>
+          <TokenDisplay compact />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

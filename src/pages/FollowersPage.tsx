@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import FollowButton from '@/components/FollowButton';
 import LoyaltyBadge from '@/components/LoyaltyBadge';
 import { useLoyalUsers } from '@/hooks/useLoyalUsers';
+import TokenDisplay from '@/components/TokenDisplay';
 
 interface FollowerStats {
   followersCount: number;
@@ -453,7 +454,7 @@ const FollowersPage = () => {
       <Card className="shadow-2xl border-primary/20 overflow-hidden">
         <CardHeader className="border-b bg-gradient-to-r from-primary/10 via-primary/5 to-background pb-6">
           <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-3">
                 <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 text-primary shadow-lg">
                   <Users className="h-7 w-7" />
@@ -467,6 +468,7 @@ const FollowersPage = () => {
                   </p>
                 </div>
               </div>
+              <TokenDisplay compact />
             </div>
 
             {/* Stats Cards */}

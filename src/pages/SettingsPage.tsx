@@ -33,6 +33,7 @@ import { useSubscriptionPlans } from '@/hooks/useSubscriptionPlans';
 import ProfilePictureUpload from '@/components/ProfilePictureUpload';
 import SocialLinksManager from '@/components/SocialLinksManager';
 import { OrdersDashboard } from '@/components/OrdersDashboard';
+import TokenDisplay from '@/components/TokenDisplay';
 
 const SettingsPage = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -290,11 +291,14 @@ const SettingsPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 p-4 sm:p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-blue-700 to-indigo-700 bg-clip-text text-transparent">
-            Settings
-          </h1>
-          <p className="text-gray-600 mt-1">Manage your account preferences and configurations</p>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-blue-700 to-indigo-700 bg-clip-text text-transparent">
+              Settings
+            </h1>
+            <p className="text-gray-600 mt-1">Manage your account preferences and configurations</p>
+          </div>
+          <TokenDisplay compact />
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

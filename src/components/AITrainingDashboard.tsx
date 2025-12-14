@@ -24,6 +24,7 @@ import { WelcomeMessageSettingsComponent } from "@/components/ai-training/Welcom
 import { TopicRulesPanel } from "@/components/ai-training/TopicRulesPanel";
 import { FollowUpQuestionsPanel } from "@/components/ai-training/FollowUpQuestionsPanel";
 import { AIResponsePerspective } from "@/components/ai-training/AIResponsePerspective";
+import TokenDisplay from "@/components/TokenDisplay";
 
 const AITrainingDashboard = () => {
   const { toast } = useToast();
@@ -254,13 +255,16 @@ const AITrainingDashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background p-6">
       <div className="container mx-auto space-y-6">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
-            AI Training Dashboard
-          </h1>
-          <p className="text-muted-foreground">
-            Train your personalized AI with Q&A, documents, web data, and voice
-          </p>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div className="text-center sm:text-left">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+              AI Training Dashboard
+            </h1>
+            <p className="text-muted-foreground">
+              Train your personalized AI with Q&A, documents, web data, and voice
+            </p>
+          </div>
+          <TokenDisplay compact />
         </div>
 
         {/* Training Controls */}
