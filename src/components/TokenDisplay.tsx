@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Coins, Plus, TrendingDown, Sparkles } from 'lucide-react';
+import { Coins, Plus, TrendingDown, Sparkles, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/popover';
 import { useTokens } from '@/hooks/useTokens';
 import TokenPurchaseModal from './TokenPurchaseModal';
+import { useNavigate } from 'react-router-dom';
 
 interface TokenDisplayProps {
   compact?: boolean;
@@ -17,6 +18,7 @@ interface TokenDisplayProps {
 const TokenDisplay: React.FC<TokenDisplayProps> = ({ compact = false }) => {
   const { tokenBalance, loading } = useTokens();
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const navigate = useNavigate();
 
   const formatTokens = (tokens: number) => {
     if (tokens >= 1000000) {
@@ -29,9 +31,13 @@ const TokenDisplay: React.FC<TokenDisplayProps> = ({ compact = false }) => {
   };
 
   const getBalanceColor = () => {
-    if (tokenBalance <= 100) return 'text-red-500';
-    if (tokenBalance <= 500) return 'text-amber-500';
+    if (tokenBalance <= 1000) return 'text-red-500';
+    if (tokenBalance <= 10000) return 'text-amber-500';
     return 'text-emerald-500';
+  };
+
+  const handleBuyTokens = () => {
+    navigate('/settings/buy-tokens');
   };
 
   if (compact) {
@@ -64,7 +70,7 @@ const TokenDisplay: React.FC<TokenDisplayProps> = ({ compact = false }) => {
                 </div>
               </div>
               
-              {tokenBalance <= 500 && (
+              {tokenBalance <= 10000 && (
                 <div className="flex items-center gap-2 p-2 bg-amber-50 rounded-lg text-amber-700 text-xs">
                   <TrendingDown className="w-4 h-4" />
                   <span>Low balance! Top up to continue chatting.</span>
@@ -72,11 +78,21 @@ const TokenDisplay: React.FC<TokenDisplayProps> = ({ compact = false }) => {
               )}
               
               <Button
-                onClick={() => setShowPurchaseModal(true)}
+                onClick={handleBuyTokens}
                 className="w-full gap-2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600"
               >
                 <Plus className="w-4 h-4" />
                 Buy Tokens
+              </Button>
+
+              <Button
+                onClick={() => navigate('/settings/buy-tokens')}
+                variant="outline"
+                size="sm"
+                className="w-full gap-2"
+              >
+                <BarChart3 className="w-4 h-4" />
+                View Usage
               </Button>
             </div>
           </PopoverContent>
@@ -111,7 +127,7 @@ const TokenDisplay: React.FC<TokenDisplayProps> = ({ compact = false }) => {
         </div>
         
         <Button
-          onClick={() => setShowPurchaseModal(true)}
+          onClick={handleBuyTokens}
           className="gap-2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 shadow-md"
         >
           <Plus className="w-4 h-4" />

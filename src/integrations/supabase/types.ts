@@ -897,6 +897,59 @@ export type Database = {
           },
         ]
       }
+      custom_token_purchases: {
+        Row: {
+          amount_inr: number
+          amount_usd: number | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          price_per_million_tokens: number | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          razorpay_signature: string | null
+          status: string | null
+          tokens_requested: number
+          user_id: string
+        }
+        Insert: {
+          amount_inr: number
+          amount_usd?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          price_per_million_tokens?: number | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          status?: string | null
+          tokens_requested: number
+          user_id: string
+        }
+        Update: {
+          amount_inr?: number
+          amount_usd?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          price_per_million_tokens?: number | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          status?: string | null
+          tokens_requested?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_token_purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_token_usage: {
         Row: {
           created_at: string | null

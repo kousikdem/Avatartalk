@@ -1,27 +1,24 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  remainingBalance: number;
+}
+
 interface Message {
   id: string;
   text: string;
   sender: 'user' | 'ai';
   timestamp: Date;
   isTyping?: boolean;
+  tokenUsage?: TokenUsage;
   richData?: {
-    buttons?: Array<{
-      text: string;
-      url: string;
-    }>;
-    links?: Array<{
-      url: string;
-      title: string;
-      preview: string;
-    }>;
-    documents?: Array<{
-      filename: string;
-      type: string;
-      preview: string;
-    }>;
+    buttons?: Array<{ text: string; url: string }>;
+    links?: Array<{ url: string; title: string; preview: string }>;
+    documents?: Array<{ filename: string; type: string; preview: string }>;
   };
 }
 
@@ -30,7 +27,6 @@ export const usePersonalizedAIChat = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const sendMessage = async (userMessage: string, profileId?: string, userId?: string) => {
-    // Client-side validation
     const trimmedMessage = userMessage.trim();
     
     if (!trimmedMessage) {
@@ -61,7 +57,6 @@ export const usePersonalizedAIChat = () => {
     setIsLoading(true);
 
     try {
-      // Call the personalized AI response function
       const { data, error } = await supabase.functions.invoke('personalized-ai-response', {
         body: {
           userMessage: trimmedMessage,
@@ -76,10 +71,11 @@ export const usePersonalizedAIChat = () => {
 
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: data.response || "I'm Avatartalk personalized AI powered by Llama 3. Sorry, I couldn't process that request.",
+        text: data.response || "Sorry, I couldn't process that request.",
         sender: 'ai',
         timestamp: new Date(),
-        richData: data.richData || undefined
+        richData: data.richData || undefined,
+        tokenUsage: data.tokenUsage || undefined
       };
 
       setMessages(prev => [...prev, aiResponse]);
@@ -88,7 +84,7 @@ export const usePersonalizedAIChat = () => {
       
       const errorResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: "I'm Avatartalk personalized AI powered by Llama 3, and I'm having trouble responding right now. Please try again.",
+        text: "I'm having trouble responding right now. Please try again.",
         sender: 'ai',
         timestamp: new Date()
       };
@@ -102,7 +98,7 @@ export const usePersonalizedAIChat = () => {
   const initializeChat = (avatarName: string) => {
     const initialMessage: Message = {
       id: '1',
-      text: `Hi! I'm ${avatarName}, powered by Avatartalk personalized AI using Llama 3. How can I help you today?`,
+      text: `Hi! I'm ${avatarName}. How can I help you today?`,
       sender: 'ai',
       timestamp: new Date()
     };
