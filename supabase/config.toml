@@ -38,3 +38,9 @@ verify_jwt = true
 
 [functions.token-purchase-verify]
 verify_jwt = true
+
+[functions.custom-token-purchase]
+verify_jwt = true
+
+[functions.custom-token-verify]
+verify_jwt = true

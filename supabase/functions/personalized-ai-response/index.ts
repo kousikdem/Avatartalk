@@ -281,7 +281,7 @@ ${selectedFollowUp.choices && selectedFollowUp.choices.length > 0 ? `Offer these
     // Simple token estimation: ~4 chars per token for English
     const estimateTokens = (text: string) => Math.ceil(text.length / 4);
     const inputTokenEstimate = estimateTokens(systemPrompt + userMessage);
-    const estimatedOutputTokens = 100; // Average response estimate
+    const estimatedOutputTokens = 150; // Average response estimate
     const totalEstimatedTokens = inputTokenEstimate + estimatedOutputTokens;
 
     // Check profile owner's token balance before making AI call
@@ -297,9 +297,15 @@ ${selectedFollowUp.choices && selectedFollowUp.choices.length > 0 ? `Offer these
         success: false,
         error_code: 'ERR_INSUFFICIENT_TOKENS',
         message: 'The profile owner needs to top up tokens.',
-        response: "I'm temporarily unavailable. Please try again later or contact the profile owner.",
+        response: "⚠️ You don't have enough tokens. Please top up to continue chatting.",
         token_balance: profileOwner.token_balance,
-        tokens_required: totalEstimatedTokens
+        tokens_required: totalEstimatedTokens,
+        tokenUsage: {
+          inputTokens: inputTokenEstimate,
+          outputTokens: 0,
+          totalTokens: 0,
+          remainingBalance: profileOwner.token_balance
+        }
       }), {
         status: 402,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -362,6 +368,27 @@ ${selectedFollowUp.choices && selectedFollowUp.choices.length > 0 ? `Offer these
 
     const data = await response.json();
     const aiResponse = data.choices[0].message.content;
+
+    // Calculate actual tokens used
+    const actualOutputTokens = estimateTokens(aiResponse);
+    const totalTokensUsed = inputTokenEstimate + actualOutputTokens;
+
+    // Debit tokens from profile owner
+    const { data: debitResult, error: debitError } = await supabase
+      .rpc('debit_user_tokens', {
+        p_user_id: profileId,
+        p_tokens: totalTokensUsed,
+        p_reason: 'consumption',
+        p_model: 'gemini-2.5-flash',
+        p_input_tokens: inputTokenEstimate,
+        p_output_tokens: actualOutputTokens
+      });
+
+    if (debitError) {
+      console.error('Error debiting tokens:', debitError);
+    }
+
+    const newBalance = debitResult?.balance ?? (profileOwner?.token_balance ?? 0) - totalTokensUsed;
 
     // Build rich data from Q&A pairs and web links
     const richData: {
@@ -484,7 +511,13 @@ ${selectedFollowUp.choices && selectedFollowUp.choices.length > 0 ? `Offer these
         success: true, 
         response: aiResponse,
         personality: trainingData?.personality_settings || null,
-        richData: hasRichData ? richData : null
+        richData: hasRichData ? richData : null,
+        tokenUsage: {
+          inputTokens: inputTokenEstimate,
+          outputTokens: actualOutputTokens,
+          totalTokens: totalTokensUsed,
+          remainingBalance: newBalance
+        }
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

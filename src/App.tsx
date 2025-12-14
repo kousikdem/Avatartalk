@@ -23,6 +23,7 @@ import FollowersPage from "./pages/FollowersPage";
 import AITrainingDashboard from "./components/AITrainingDashboard";
 import PromoSettingsPage from "./pages/PromoSettingsPage";
 import SuperAdminPage from "./pages/SuperAdminPage";
+import BuyTokensPage from "./pages/BuyTokensPage";
 import { supabase } from "@/integrations/supabase/client";
 
 const queryClient = new QueryClient();
@@ -104,6 +105,7 @@ const App = () => {
                       <Route path="/settings/followers" element={<FollowersPage />} />
                       <Route path="/settings/ai-training" element={<AITrainingDashboard />} />
                       <Route path="/settings/super-admin" element={<SuperAdminPage />} />
+                      <Route path="/settings/buy-tokens" element={<BuyTokensPage />} />
                       <Route path="/:username" element={<UsernameRedirect />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
