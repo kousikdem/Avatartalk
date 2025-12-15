@@ -640,7 +640,7 @@ const ProfilePage: React.FC = () => {
         supabase.rpc('get_public_profile', { profile_id: profileId }),
         supabase.from('user_stats').select('*').eq('user_id', profileId).maybeSingle(),
         supabase.from('products').select('*').eq('user_id', profileId).eq('status', 'published').order('created_at', { ascending: false }).limit(6),
-        supabase.from('events').select('*').eq('user_id', profileId).order('created_at', { ascending: false }).limit(6),
+        supabase.from('events').select('*').eq('user_id', profileId).in('status', ['published', 'upcoming']).order('created_at', { ascending: false }).limit(6),
         supabase.from('avatar_configurations').select('*').eq('user_id', profileId).eq('is_active', true).maybeSingle(),
         supabase.from('social_links').select('*').eq('user_id', profileId).maybeSingle()
       ]);
@@ -786,6 +786,39 @@ const ProfilePage: React.FC = () => {
     
     if (!messageContent) return;
     
+    // Check if unregistered user has exceeded free chat limit (1 message)
+    if (!currentUser) {
+      const storageKey = `unregistered_chat_count_${profile.id}`;
+      const chatCount = parseInt(localStorage.getItem(storageKey) || '0', 10);
+      
+      if (chatCount >= 1) {
+        // Trigger voice notification
+        try {
+          const speechSynthesis = window.speechSynthesis;
+          const utterance = new SpeechSynthesisUtterance("Please sign in or create an account to continue chatting. You've used your free message.");
+          utterance.rate = 1.0;
+          utterance.pitch = 1.0;
+          speechSynthesis.speak(utterance);
+        } catch (e) {
+          console.error('Speech synthesis error:', e);
+        }
+        
+        toast({
+          title: "Sign In Required",
+          description: "Please sign in or create an account to continue chatting. You've used your free message.",
+          variant: "destructive",
+        });
+        
+        // Show auth modal
+        setIsMainAuthOpen(true);
+        setChatMessage('');
+        return;
+      }
+      
+      // Increment chat count for unregistered users
+      localStorage.setItem(storageKey, (chatCount + 1).toString());
+    }
+    
     // Block AI origin related questions
     const aiOriginKeywords = [
       'qwen', 'faster whisper', 'chattts', 'which model', 'what model',
@@ -824,8 +857,10 @@ const ProfilePage: React.FC = () => {
     setChatMessage('');
     setIsTyping(true);
     
-    // Save user message to database
-    await saveChatMessage(messageContent, 'user');
+    // Save user message to database (if authenticated)
+    if (currentUser) {
+      await saveChatMessage(messageContent, 'user');
+    }
     
     try {
       // Generate personalized AI response
