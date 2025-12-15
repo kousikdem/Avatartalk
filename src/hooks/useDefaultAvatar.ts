@@ -191,22 +191,47 @@ export const useDefaultAvatar = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      if (!user) return false;
+      if (!user) {
+        console.log('No authenticated user for avatar creation');
+        return false;
+      }
 
-      // Check if user already has a default avatar
-      const { data: existingConfig } = await supabase
+      // Check if user already has any avatar configuration
+      const { data: existingConfigs, error: checkError } = await supabase
         .from('avatar_configurations')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .maybeSingle();
+        .select('id, is_active')
+        .eq('user_id', user.id);
 
-      if (existingConfig) return true; // Already has default
+      if (checkError) {
+        console.error('Error checking existing avatars:', checkError);
+        // Continue anyway - try to create
+      }
+
+      // If user has any configs, check if one is active
+      if (existingConfigs && existingConfigs.length > 0) {
+        const hasActive = existingConfigs.some(c => c.is_active);
+        if (hasActive) {
+          console.log('User already has an active avatar');
+          return true;
+        }
+        
+        // User has configs but none active - activate the first one
+        const { error: activateError } = await supabase
+          .from('avatar_configurations')
+          .update({ is_active: true })
+          .eq('id', existingConfigs[0].id);
+          
+        if (!activateError) {
+          console.log('Activated existing avatar configuration');
+          await loadDefaultAvatar();
+          return true;
+        }
+      }
 
       // Create a default avatar configuration for new users
       const defaultAvatarConfig = {
         user_id: user.id,
-        avatar_name: 'Default Avatar',
+        avatar_name: 'My Avatar',
         gender: 'male',
         age_category: 'adult',
         skin_tone: '#F1C27D',
@@ -225,10 +250,35 @@ export const useDefaultAvatar = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating default avatar:', error);
+        
+        // If it's a duplicate key error, try to fetch existing
+        if (error.code === '23505') {
+          await loadDefaultAvatar();
+          return true;
+        }
+        
+        toast({
+          title: "Avatar Setup",
+          description: "Using default avatar settings.",
+        });
+        return false;
+      }
 
       setDefaultConfig(newConfig);
-      await linkWithProfile(newConfig.id);
+      
+      // Try to link with profile (don't fail if this errors)
+      try {
+        await linkWithProfile(newConfig.id);
+      } catch (linkError) {
+        console.error('Error linking avatar with profile:', linkError);
+      }
+
+      toast({
+        title: "Avatar Created",
+        description: "Your personalized avatar has been set up!",
+      });
 
       return true;
     } catch (error) {

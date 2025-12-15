@@ -44,11 +44,25 @@ export const CompactProductCard = ({
     // Check if user is authenticated
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
+      // Trigger voice notification for unregistered user
+      try {
+        const speechSynthesis = window.speechSynthesis;
+        const utterance = new SpeechSynthesisUtterance("Please sign in or create an account to purchase this product.");
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        speechSynthesis.speak(utterance);
+      } catch (e) {
+        console.error('Speech synthesis error:', e);
+      }
+      
       toast({
-        title: "Authentication Required",
-        description: "Please sign in to purchase products",
+        title: "Sign In Required",
+        description: "Please sign in or create an account to purchase products.",
         variant: "destructive",
       });
+      
+      // Dispatch event to show auth modal
+      window.dispatchEvent(new CustomEvent('show-visitor-auth'));
       return;
     }
     

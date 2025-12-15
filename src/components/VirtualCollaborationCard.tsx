@@ -109,11 +109,25 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
 
   const handleBookMeeting = async () => {
     if (!currentUserId) {
+      // Trigger voice notification for unregistered user
+      try {
+        const speechSynthesis = window.speechSynthesis;
+        const utterance = new SpeechSynthesisUtterance("Please sign in or create an account to book this virtual collaboration session.");
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        speechSynthesis.speak(utterance);
+      } catch (e) {
+        console.error('Speech synthesis error:', e);
+      }
+      
       toast({
-        title: "Authentication Required",
-        description: "Please sign in to book this meeting.",
+        title: "Sign In Required",
+        description: "Please sign in or create an account to book this meeting.",
         variant: "destructive"
       });
+      
+      // Dispatch event to show auth modal
+      window.dispatchEvent(new CustomEvent('show-visitor-auth'));
       return;
     }
 
@@ -331,7 +345,7 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
       >
         <Card className={`overflow-hidden border-2 transition-all duration-300 ${
           isDarkTheme 
-            ? 'bg-gradient-to-br from-slate-800/80 via-slate-800/60 to-slate-900/80 border-slate-700/50 hover:border-primary/50' 
+            ? 'bg-gradient-to-br from-slate-700/90 via-slate-600/80 to-slate-700/90 border-slate-500/50 hover:border-primary/60 shadow-lg' 
             : 'bg-white border-gray-200 hover:border-primary/50 shadow-md'
         }`}>
           {/* Thumbnail */}
@@ -342,27 +356,29 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
                 alt={product.title}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
               <Badge 
-                className="absolute top-2 left-2 gap-1"
+                className="absolute top-2 left-2 gap-1 bg-primary/90 text-white"
                 variant={product.product_type === 'webinar' ? 'default' : 'secondary'}
               >
                 {getProductTypeIcon()}
                 {getProductTypeLabel()}
               </Badge>
               {isUpcoming && (
-                <Badge className="absolute top-2 right-2 bg-green-600 text-white">
+                <Badge className="absolute top-2 right-2 bg-green-500 text-white font-semibold">
                   Upcoming
                 </Badge>
               )}
             </div>
           ) : (
             <div className={`h-24 flex items-center justify-center ${
-              isDarkTheme ? 'bg-slate-700/50' : 'bg-gray-100'
+              isDarkTheme ? 'bg-slate-600/60' : 'bg-gray-100'
             }`}>
               <div className="text-center">
-                {getProductTypeIcon()}
-                <Badge className="mt-2" variant="secondary">
+                <div className={isDarkTheme ? 'text-slate-200' : 'text-gray-600'}>
+                  {getProductTypeIcon()}
+                </div>
+                <Badge className="mt-2 bg-primary/80 text-white" variant="secondary">
                   {getProductTypeLabel()}
                 </Badge>
               </div>
@@ -371,59 +387,63 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
 
           <CardContent className="p-4 space-y-3">
             {/* Title */}
-            <h3 className={`font-semibold text-base line-clamp-2 ${
+            <h3 className={`font-bold text-base line-clamp-2 ${
               isDarkTheme ? 'text-white' : 'text-gray-900'
             }`}>
               {product.title}
             </h3>
 
             {/* Description */}
-            <p className={`text-xs line-clamp-2 ${
-              isDarkTheme ? 'text-slate-400' : 'text-gray-600'
+            <p className={`text-sm line-clamp-2 ${
+              isDarkTheme ? 'text-slate-200' : 'text-gray-600'
             }`}>
               {product.description || 'Join this virtual collaboration session'}
             </p>
 
             {/* Event Date */}
             {product.event_date && (
-              <div className={`flex items-center gap-2 text-xs ${
-                isDarkTheme ? 'text-slate-300' : 'text-gray-700'
+              <div className={`flex items-center gap-2 text-sm font-medium ${
+                isDarkTheme ? 'text-slate-100' : 'text-gray-700'
               }`}>
-                <Calendar className="w-3.5 h-3.5" />
+                <Calendar className="w-4 h-4 text-primary" />
                 <span>{formatDate(product.event_date)}</span>
               </div>
             )}
 
             {/* Meta Info */}
-            <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center justify-between text-sm">
               <div className={`flex items-center gap-3 ${
-                isDarkTheme ? 'text-slate-400' : 'text-gray-500'
+                isDarkTheme ? 'text-slate-200' : 'text-gray-600'
               }`}>
                 <span className="flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" />
+                  <Clock className="w-4 h-4" />
                   {product.duration_mins}m
                 </span>
                 <span className="flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5" />
+                  <Users className="w-4 h-4" />
                   {product.capacity}
                 </span>
               </div>
-              <span className={`flex items-center gap-1 ${
-                isDarkTheme ? 'text-blue-400' : 'text-blue-600'
+              <span className={`flex items-center gap-1 font-medium ${
+                isDarkTheme ? 'text-blue-300' : 'text-blue-600'
               }`}>
-                <MapPin className="w-3.5 h-3.5" />
+                <MapPin className="w-4 h-4" />
                 {getProviderLabel()}
               </span>
             </div>
 
             {/* Price & CTA */}
-            <div className="flex items-center justify-between pt-2 border-t border-slate-700/30">
-              <div className="font-bold text-lg text-primary">
+            <div className={`flex items-center justify-between pt-3 border-t ${
+              isDarkTheme ? 'border-slate-500/40' : 'border-gray-200'
+            }`}>
+              <div className={`font-bold text-lg ${
+                isDarkTheme ? 'text-emerald-400' : 'text-primary'
+              }`}>
                 {product.price > 0 ? formatPrice(product.price, product.currency) : 'Free'}
               </div>
               <Button 
                 size="sm" 
-                className="gap-1.5 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700"
+                className="gap-1.5 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 text-white font-semibold shadow-md"
                 onClick={(e) => {
                   e.stopPropagation();
                   if (product.join_url && isPastEvent === false) {
