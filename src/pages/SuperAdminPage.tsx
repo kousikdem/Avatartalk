@@ -11,10 +11,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
   Shield, Settings, Users, Activity, Coins, Brain, 
-  RefreshCw, Plus, AlertTriangle, CheckCircle 
+  RefreshCw, Plus, AlertTriangle, CheckCircle, BarChart3 
 } from 'lucide-react';
 import { useState } from 'react';
 import { format } from 'date-fns';
+import SuperAdminAnalytics from '@/components/SuperAdminAnalytics';
 
 const SuperAdminPage = () => {
   const {
@@ -66,8 +67,12 @@ const SuperAdminPage = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="features" className="space-y-4">
-        <TabsList className="grid grid-cols-6 w-full max-w-3xl">
+      <Tabs defaultValue="analytics" className="space-y-4">
+        <TabsList className="grid grid-cols-7 w-full max-w-4xl">
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Analytics
+          </TabsTrigger>
           <TabsTrigger value="features" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Features
@@ -93,6 +98,11 @@ const SuperAdminPage = () => {
             Logs
           </TabsTrigger>
         </TabsList>
+
+        {/* Analytics Tab */}
+        <TabsContent value="analytics">
+          <SuperAdminAnalytics />
+        </TabsContent>
 
         {/* Feature Flags Tab */}
         <TabsContent value="features" className="space-y-4">
