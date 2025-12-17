@@ -897,6 +897,51 @@ export type Database = {
           },
         ]
       }
+      country_payment_rules: {
+        Row: {
+          allowed_methods: Json | null
+          country_code: string
+          country_name: string
+          created_at: string | null
+          currency: string
+          id: string
+          max_order_amount: number | null
+          min_order_amount: number | null
+          notes: string | null
+          payment_enabled: boolean | null
+          requires_kyc: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          allowed_methods?: Json | null
+          country_code: string
+          country_name: string
+          created_at?: string | null
+          currency: string
+          id?: string
+          max_order_amount?: number | null
+          min_order_amount?: number | null
+          notes?: string | null
+          payment_enabled?: boolean | null
+          requires_kyc?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          allowed_methods?: Json | null
+          country_code?: string
+          country_name?: string
+          created_at?: string | null
+          currency?: string
+          id?: string
+          max_order_amount?: number | null
+          min_order_amount?: number | null
+          notes?: string | null
+          payment_enabled?: boolean | null
+          requires_kyc?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       custom_token_purchases: {
         Row: {
           amount_inr: number
@@ -1789,6 +1834,71 @@ export type Database = {
           },
         ]
       }
+      payment_failure_logs: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          currency: string | null
+          error_code: string | null
+          error_description: string | null
+          failure_reason: string | null
+          id: string
+          metadata: Json | null
+          order_id: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          resolved: boolean | null
+          resolved_at: string | null
+          resolved_by: string | null
+          seller_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          error_code?: string | null
+          error_description?: string | null
+          failure_reason?: string | null
+          id?: string
+          metadata?: Json | null
+          order_id?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          seller_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          error_code?: string | null
+          error_description?: string | null
+          failure_reason?: string | null
+          id?: string
+          metadata?: Json | null
+          order_id?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          seller_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_failure_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_settings: {
         Row: {
           allowed_currencies: Json | null
@@ -1891,6 +2001,48 @@ export type Database = {
           user_id?: string
           voice_model_id?: string | null
           voice_settings?: Json | null
+        }
+        Relationships: []
+      }
+      platform_integration_secrets: {
+        Row: {
+          created_at: string | null
+          environment: string
+          id: string
+          integration_name: string
+          is_active: boolean | null
+          last_verified_at: string | null
+          secret_key: string
+          secret_value: string | null
+          updated_at: string | null
+          updated_by: string | null
+          verification_status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          environment?: string
+          id?: string
+          integration_name: string
+          is_active?: boolean | null
+          last_verified_at?: string | null
+          secret_key: string
+          secret_value?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          verification_status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          environment?: string
+          id?: string
+          integration_name?: string
+          is_active?: boolean | null
+          last_verified_at?: string | null
+          secret_key?: string
+          secret_value?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          verification_status?: string | null
         }
         Relationships: []
       }
@@ -2330,6 +2482,62 @@ export type Database = {
         }
         Relationships: []
       }
+      refund_overrides: {
+        Row: {
+          approved_by: string | null
+          created_at: string | null
+          id: string
+          initiated_by: string
+          order_id: string | null
+          original_amount: number
+          override_reason: string
+          processed_at: string | null
+          razorpay_payment_id: string | null
+          razorpay_refund_id: string | null
+          refund_amount: number
+          refund_reason: string | null
+          status: string | null
+        }
+        Insert: {
+          approved_by?: string | null
+          created_at?: string | null
+          id?: string
+          initiated_by: string
+          order_id?: string | null
+          original_amount: number
+          override_reason: string
+          processed_at?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_refund_id?: string | null
+          refund_amount: number
+          refund_reason?: string | null
+          status?: string | null
+        }
+        Update: {
+          approved_by?: string | null
+          created_at?: string | null
+          id?: string
+          initiated_by?: string
+          order_id?: string | null
+          original_amount?: number
+          override_reason?: string
+          processed_at?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_refund_id?: string | null
+          refund_amount?: number
+          refund_reason?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refund_overrides_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scenario_templates: {
         Row: {
           created_at: string
@@ -2363,6 +2571,90 @@ export type Database = {
           training_prompts?: Json | null
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      settlement_logs: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string | null
+          fees: number | null
+          id: string
+          metadata: Json | null
+          net_amount: number | null
+          settlement_date: string | null
+          settlement_id: string | null
+          settlement_type: string | null
+          status: string | null
+          tax: number | null
+          utr: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency?: string | null
+          fees?: number | null
+          id?: string
+          metadata?: Json | null
+          net_amount?: number | null
+          settlement_date?: string | null
+          settlement_id?: string | null
+          settlement_type?: string | null
+          status?: string | null
+          tax?: number | null
+          utr?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string | null
+          fees?: number | null
+          id?: string
+          metadata?: Json | null
+          net_amount?: number | null
+          settlement_date?: string | null
+          settlement_id?: string | null
+          settlement_type?: string | null
+          status?: string | null
+          tax?: number | null
+          utr?: string | null
+        }
+        Relationships: []
+      }
+      site_settings: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_public: boolean | null
+          setting_category: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          setting_category: string
+          setting_key: string
+          setting_value: Json
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          setting_category?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string | null
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -2561,6 +2853,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tax_configurations: {
+        Row: {
+          country_code: string
+          country_name: string
+          created_at: string | null
+          effective_from: string | null
+          effective_until: string | null
+          id: string
+          is_active: boolean | null
+          is_inclusive: boolean | null
+          tax_name: string
+          tax_rate: number
+          tax_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          country_code: string
+          country_name: string
+          created_at?: string | null
+          effective_from?: string | null
+          effective_until?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_inclusive?: boolean | null
+          tax_name: string
+          tax_rate: number
+          tax_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          country_code?: string
+          country_name?: string
+          created_at?: string | null
+          effective_from?: string | null
+          effective_until?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_inclusive?: boolean | null
+          tax_name?: string
+          tax_rate?: number
+          tax_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       token_configuration: {
         Row: {
@@ -3425,6 +3762,54 @@ export type Database = {
           updated_at?: string | null
           url?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      webhook_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          event_type: string
+          id: string
+          integration_name: string
+          max_retries: number | null
+          next_retry_at: string | null
+          payload: Json | null
+          processed_at: string | null
+          response_body: string | null
+          response_status: number | null
+          retry_count: number | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          event_type: string
+          id?: string
+          integration_name: string
+          max_retries?: number | null
+          next_retry_at?: string | null
+          payload?: Json | null
+          processed_at?: string | null
+          response_body?: string | null
+          response_status?: number | null
+          retry_count?: number | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          integration_name?: string
+          max_retries?: number | null
+          next_retry_at?: string | null
+          payload?: Json | null
+          processed_at?: string | null
+          response_body?: string | null
+          response_status?: number | null
+          retry_count?: number | null
+          status?: string | null
         }
         Relationships: []
       }

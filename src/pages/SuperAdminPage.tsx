@@ -1,4 +1,5 @@
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
+import { useSuperAdminIntegrations } from '@/hooks/useSuperAdminIntegrations';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -9,13 +10,19 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { 
   Shield, Settings, Users, Activity, Coins, Brain, 
-  RefreshCw, Plus, AlertTriangle, CheckCircle, BarChart3 
+  RefreshCw, Plus, AlertTriangle, CheckCircle, BarChart3,
+  Key, CreditCard, Globe
 } from 'lucide-react';
 import { useState } from 'react';
 import { format } from 'date-fns';
 import SuperAdminAnalytics from '@/components/SuperAdminAnalytics';
+import { IntegrationSecretsManager } from '@/components/super-admin/IntegrationSecretsManager';
+import { RazorpayManagement } from '@/components/super-admin/RazorpayManagement';
+import { SiteSettingsManager } from '@/components/super-admin/SiteSettingsManager';
+import { UserSearchManager } from '@/components/super-admin/UserSearchManager';
 
 const SuperAdminPage = () => {
   const {
@@ -35,6 +42,8 @@ const SuperAdminPage = () => {
     addTokensToUser,
     refetch
   } = useSuperAdmin();
+
+  const integrations = useSuperAdminIntegrations();
 
   const [tokenAmount, setTokenAmount] = useState<number>(1000);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
@@ -63,45 +72,97 @@ const SuperAdminPage = () => {
         <Shield className="h-8 w-8 text-primary" />
         <div>
           <h1 className="text-3xl font-bold">Super Admin Dashboard</h1>
-          <p className="text-muted-foreground">Manage platform settings, users, and configurations</p>
+          <p className="text-muted-foreground">Manage platform settings, integrations, users, and configurations</p>
         </div>
       </div>
 
       <Tabs defaultValue="analytics" className="space-y-4">
-        <TabsList className="grid grid-cols-7 w-full max-w-4xl">
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Analytics
-          </TabsTrigger>
-          <TabsTrigger value="features" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Features
-          </TabsTrigger>
-          <TabsTrigger value="platform" className="flex items-center gap-2">
-            <Activity className="h-4 w-4" />
-            Platform
-          </TabsTrigger>
-          <TabsTrigger value="tokens" className="flex items-center gap-2">
-            <Coins className="h-4 w-4" />
-            Tokens
-          </TabsTrigger>
-          <TabsTrigger value="ai" className="flex items-center gap-2">
-            <Brain className="h-4 w-4" />
-            AI Limits
-          </TabsTrigger>
-          <TabsTrigger value="users" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Users
-          </TabsTrigger>
-          <TabsTrigger value="logs" className="flex items-center gap-2">
-            <Activity className="h-4 w-4" />
-            Logs
-          </TabsTrigger>
-        </TabsList>
+        <ScrollArea className="w-full">
+          <TabsList className="inline-flex w-max">
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger value="integrations" className="flex items-center gap-2">
+              <Key className="h-4 w-4" />
+              Integrations
+            </TabsTrigger>
+            <TabsTrigger value="payments" className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              Payments
+            </TabsTrigger>
+            <TabsTrigger value="site" className="flex items-center gap-2">
+              <Globe className="h-4 w-4" />
+              Site Settings
+            </TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Users
+            </TabsTrigger>
+            <TabsTrigger value="features" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Features
+            </TabsTrigger>
+            <TabsTrigger value="tokens" className="flex items-center gap-2">
+              <Coins className="h-4 w-4" />
+              Tokens
+            </TabsTrigger>
+            <TabsTrigger value="ai" className="flex items-center gap-2">
+              <Brain className="h-4 w-4" />
+              AI Limits
+            </TabsTrigger>
+            <TabsTrigger value="logs" className="flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Logs
+            </TabsTrigger>
+          </TabsList>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
 
         {/* Analytics Tab */}
         <TabsContent value="analytics">
           <SuperAdminAnalytics />
+        </TabsContent>
+
+        {/* Integrations Tab */}
+        <TabsContent value="integrations">
+          <IntegrationSecretsManager
+            secrets={integrations.integrationSecrets}
+            onSave={integrations.saveIntegrationSecret}
+            onDelete={integrations.deleteIntegrationSecret}
+            onRefresh={integrations.refetch.integrationSecrets}
+          />
+        </TabsContent>
+
+        {/* Payments Tab */}
+        <TabsContent value="payments">
+          <RazorpayManagement
+            webhookLogs={integrations.webhookLogs}
+            paymentFailures={integrations.paymentFailures}
+            refundOverrides={integrations.refundOverrides}
+            settlementLogs={integrations.settlementLogs}
+            taxConfigurations={integrations.taxConfigurations}
+            countryPaymentRules={integrations.countryPaymentRules}
+            onRetryWebhook={integrations.retryWebhook}
+            onResolveFailure={integrations.resolvePaymentFailure}
+            onCreateRefund={integrations.createRefundOverride}
+            onUpdateTax={integrations.updateTaxConfiguration}
+            onUpdatePaymentRule={integrations.updateCountryPaymentRule}
+            onRefresh={integrations.refetch.all}
+          />
+        </TabsContent>
+
+        {/* Site Settings Tab */}
+        <TabsContent value="site">
+          <SiteSettingsManager
+            settings={integrations.siteSettings}
+            onUpdate={integrations.updateSiteSetting}
+          />
+        </TabsContent>
+
+        {/* Users Tab - Advanced Search */}
+        <TabsContent value="users">
+          <UserSearchManager />
         </TabsContent>
 
         {/* Feature Flags Tab */}
