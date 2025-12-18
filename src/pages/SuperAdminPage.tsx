@@ -157,6 +157,7 @@ const SuperAdminPage = () => {
           <SiteSettingsManager
             settings={integrations.siteSettings}
             onUpdate={integrations.updateSiteSetting}
+            onRefresh={integrations.refetch.siteSettings}
           />
         </TabsContent>
 
@@ -168,9 +169,15 @@ const SuperAdminPage = () => {
         {/* Feature Flags Tab */}
         <TabsContent value="features" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Feature Flags</CardTitle>
-              <CardDescription>Enable or disable platform features globally</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Feature Flags</CardTitle>
+                <CardDescription>Enable or disable platform features globally</CardDescription>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => refetch.featureFlags()}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               {featureFlags.map((flag) => (
@@ -199,38 +206,18 @@ const SuperAdminPage = () => {
           </Card>
         </TabsContent>
 
-        {/* Platform Settings Tab */}
-        <TabsContent value="platform" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Platform Settings</CardTitle>
-              <CardDescription>Configure platform-wide settings</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {platformSettings.map((setting) => (
-                <div key={setting.id} className="p-4 border rounded-lg space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">{setting.setting_key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
-                    <Badge variant="outline">
-                      {format(new Date(setting.updated_at), 'MMM d, yyyy')}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{setting.description}</p>
-                  <pre className="p-2 bg-muted rounded text-xs overflow-auto">
-                    {JSON.stringify(setting.setting_value, null, 2)}
-                  </pre>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         {/* Token Configuration Tab */}
         <TabsContent value="tokens" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Token Configuration</CardTitle>
-              <CardDescription>Manage token packages and pricing</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Token Configuration</CardTitle>
+                <CardDescription>Manage token packages and pricing</CardDescription>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => refetch.tokenConfigs()}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               {tokenConfigs.map((config) => (
@@ -251,9 +238,15 @@ const SuperAdminPage = () => {
         {/* AI Limits Tab */}
         <TabsContent value="ai" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>AI System Limits</CardTitle>
-              <CardDescription>Configure AI usage limits and rate limiting</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>AI System Limits</CardTitle>
+                <CardDescription>Configure AI usage limits and rate limiting</CardDescription>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => refetch.aiLimits()}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               {aiLimits.map((limit) => (
@@ -267,98 +260,6 @@ const SuperAdminPage = () => {
                   <p className="text-sm text-muted-foreground">{limit.description}</p>
                 </div>
               ))}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Users Tab */}
-        <TabsContent value="users" className="space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>User Management</CardTitle>
-                <CardDescription>Manage user roles and token balances</CardDescription>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => refetch.users()}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Joined</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.email}</TableCell>
-                      <TableCell>{user.full_name || '-'}</TableCell>
-                      <TableCell>
-                        <Select
-                          value={user.role}
-                          onValueChange={(value) => assignRole(user.id, value)}
-                        >
-                          <SelectTrigger className="w-32">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="user">User</SelectItem>
-                            <SelectItem value="moderator">Moderator</SelectItem>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="super_admin">Super Admin</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        {user.created_at ? format(new Date(user.created_at), 'MMM d, yyyy') : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => setSelectedUserId(user.id)}
-                            >
-                              <Plus className="h-4 w-4 mr-1" />
-                              Tokens
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Add Tokens to {user.email}</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 pt-4">
-                              <div className="space-y-2">
-                                <Label>Token Amount</Label>
-                                <Input
-                                  type="number"
-                                  value={tokenAmount}
-                                  onChange={(e) => setTokenAmount(parseInt(e.target.value) || 0)}
-                                  min={1}
-                                />
-                              </div>
-                              <Button 
-                                className="w-full"
-                                onClick={() => addTokensToUser(user.id, tokenAmount)}
-                              >
-                                Add {tokenAmount.toLocaleString()} Tokens
-                              </Button>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
             </CardContent>
           </Card>
         </TabsContent>
