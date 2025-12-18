@@ -12,13 +12,15 @@ import {
   Settings, Globe, Search, BarChart, Tag, FileText, Plus, Save
 } from 'lucide-react';
 import { SiteSetting } from '@/hooks/useSuperAdminIntegrations';
+import { RefreshCw } from 'lucide-react';
 
 interface Props {
   settings: SiteSetting[];
   onUpdate: (setting: Partial<SiteSetting>) => Promise<boolean>;
+  onRefresh: () => void;
 }
 
-export const SiteSettingsManager = ({ settings, onUpdate }: Props) => {
+export const SiteSettingsManager = ({ settings, onUpdate, onRefresh }: Props) => {
   const [editedSettings, setEditedSettings] = useState<Record<string, any>>({});
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newSetting, setNewSetting] = useState<Partial<SiteSetting>>({
@@ -129,13 +131,18 @@ export const SiteSettingsManager = ({ settings, onUpdate }: Props) => {
           </CardTitle>
           <CardDescription>Configure SEO, analytics, and general site settings</CardDescription>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Setting
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={onRefresh}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Setting
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add New Setting</DialogTitle>
@@ -185,8 +192,9 @@ export const SiteSettingsManager = ({ settings, onUpdate }: Props) => {
                 Add Setting
               </Button>
             </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="seo" className="space-y-4">
