@@ -20,6 +20,7 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 import SuperAdminAnalytics from '@/components/SuperAdminAnalytics';
 import { IntegrationSecretsManager } from '@/components/super-admin/IntegrationSecretsManager';
+import { IntegrationOAuthManager } from '@/components/super-admin/IntegrationOAuthManager';
 import { RazorpayManagement } from '@/components/super-admin/RazorpayManagement';
 import { SiteSettingsManager } from '@/components/super-admin/SiteSettingsManager';
 import { UserSearchManager } from '@/components/super-admin/UserSearchManager';
@@ -125,7 +126,13 @@ const SuperAdminPage = () => {
         </TabsContent>
 
         {/* Integrations Tab */}
-        <TabsContent value="integrations">
+        <TabsContent value="integrations" className="space-y-6">
+          <IntegrationOAuthManager
+            secrets={integrations.integrationSecrets}
+            onSave={integrations.saveIntegrationSecret}
+            onDelete={integrations.deleteIntegrationSecret}
+            onRefresh={integrations.refetch.integrationSecrets}
+          />
           <IntegrationSecretsManager
             secrets={integrations.integrationSecrets}
             onSave={integrations.saveIntegrationSecret}

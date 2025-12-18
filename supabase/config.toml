@@ -44,3 +44,9 @@ verify_jwt = true
 
 [functions.custom-token-verify]
 verify_jwt = true
+
+[functions.integration-oauth-callback]
+verify_jwt = false
+
+[functions.verify-integration]
+verify_jwt = true
