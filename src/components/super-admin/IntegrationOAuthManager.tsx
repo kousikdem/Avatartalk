@@ -26,6 +26,7 @@ interface IntegrationConfig {
   oauthScopes?: string[];
   secretKeys: { key: string; label: string; isSecret: boolean }[];
   description: string;
+  comingSoon?: boolean;
 }
 
 const INTEGRATIONS: IntegrationConfig[] = [
@@ -39,7 +40,8 @@ const INTEGRATIONS: IntegrationConfig[] = [
       { key: 'key_secret', label: 'Key Secret', isSecret: true },
       { key: 'webhook_secret', label: 'Webhook Secret', isSecret: true },
     ],
-    description: 'Payment processing for subscriptions and products'
+    description: 'Payment processing for subscriptions and products',
+    comingSoon: false,
   },
   {
     name: 'google_meet',
@@ -54,7 +56,8 @@ const INTEGRATIONS: IntegrationConfig[] = [
       { key: 'client_id', label: 'Client ID', isSecret: false },
       { key: 'client_secret', label: 'Client Secret', isSecret: true },
     ],
-    description: 'Video meetings for virtual collaborations'
+    description: 'Video meetings for virtual collaborations',
+    comingSoon: true,
   },
   {
     name: 'google_calendar',
@@ -69,7 +72,8 @@ const INTEGRATIONS: IntegrationConfig[] = [
       { key: 'client_id', label: 'Client ID', isSecret: false },
       { key: 'client_secret', label: 'Client Secret', isSecret: true },
     ],
-    description: 'Calendar sync for scheduling and events'
+    description: 'Calendar sync for scheduling and events',
+    comingSoon: true,
   },
   {
     name: 'zoom',
@@ -80,9 +84,10 @@ const INTEGRATIONS: IntegrationConfig[] = [
     secretKeys: [
       { key: 'client_id', label: 'Client ID', isSecret: false },
       { key: 'client_secret', label: 'Client Secret', isSecret: true },
-      { key: 'account_id', label: 'Account ID', isSecret: false },
+      { key: 'account_id', label: 'Account ID (Server-to-Server)', isSecret: false },
     ],
-    description: 'Video conferencing for virtual collaborations'
+    description: 'Video conferencing for virtual collaborations',
+    comingSoon: false,
   },
 ];
 
@@ -378,6 +383,9 @@ export const IntegrationOAuthManager = ({ secrets, onSave, onDelete, onRefresh }
               <TabsTrigger key={integration.name} value={integration.name} className="flex items-center gap-2">
                 <integration.icon className="h-4 w-4" />
                 <span className="hidden sm:inline">{integration.label}</span>
+                {integration.comingSoon && (
+                  <Badge variant="secondary" className="text-[10px] px-1 py-0 ml-1">Soon</Badge>
+                )}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -391,13 +399,25 @@ export const IntegrationOAuthManager = ({ secrets, onSave, onDelete, onRefresh }
                       <CardTitle className="flex items-center gap-2 text-lg">
                         <integration.icon className="h-5 w-5" />
                         {integration.label}
+                        {integration.comingSoon && (
+                          <Badge variant="secondary" className="ml-2">Coming Soon</Badge>
+                        )}
                       </CardTitle>
                       <CardDescription>{integration.description}</CardDescription>
                     </div>
-                    {getStatusBadge(integration)}
+                    {!integration.comingSoon && getStatusBadge(integration)}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  {integration.comingSoon ? (
+                    <Alert>
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>
+                        {integration.label} integration is coming soon. Stay tuned for updates!
+                      </AlertDescription>
+                    </Alert>
+                  ) : (
+                    <>
                   {/* Credentials Section */}
                   <div className="space-y-4">
                     <h4 className="font-medium text-sm text-muted-foreground">API Credentials</h4>
@@ -531,6 +551,8 @@ export const IntegrationOAuthManager = ({ secrets, onSave, onDelete, onRefresh }
                         </Button>
                       </div>
                     </div>
+                  )}
+                    </>
                   )}
                 </CardContent>
               </Card>
