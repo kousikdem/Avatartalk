@@ -282,27 +282,62 @@ ${selectedFollowUp.choices && selectedFollowUp.choices.length > 0 ? `Offer these
     const estimateTokens = (text: string) => Math.ceil(text.length / 4);
     const inputTokenEstimate = estimateTokens(systemPrompt + userMessage);
     const estimatedOutputTokens = 150; // Average response estimate
-    const totalEstimatedTokens = inputTokenEstimate + estimatedOutputTokens;
 
-    // Check profile owner's token balance before making AI call
-    // The profile owner pays for AI responses, not the visitor
+    // Split token charging:
+    // - Input tokens: charged to the VISITOR (userId) who is asking
+    // - Output tokens: charged to the CREATOR (profileId) who owns the AI
+    
+    // Check creator's token balance for output tokens
     const { data: profileOwner } = await supabase
       .from('profiles')
       .select('token_balance')
       .eq('id', profileId)
       .single();
 
-    if (profileOwner && profileOwner.token_balance !== null && profileOwner.token_balance < totalEstimatedTokens) {
+    // Check visitor's token balance for input tokens (if they have an account)
+    let visitorBalance: number | null = null;
+    if (userId && userId !== profileId) {
+      const { data: visitorProfile } = await supabase
+        .from('profiles')
+        .select('token_balance')
+        .eq('id', userId)
+        .single();
+      visitorBalance = visitorProfile?.token_balance ?? null;
+    }
+
+    // Check if visitor has enough tokens for input (if logged in)
+    if (userId && userId !== profileId && visitorBalance !== null && visitorBalance < inputTokenEstimate) {
       return new Response(JSON.stringify({ 
         success: false,
         error_code: 'ERR_INSUFFICIENT_TOKENS',
-        message: 'The profile owner needs to top up tokens.',
+        message: 'You need to top up tokens to continue chatting.',
         response: "⚠️ You don't have enough tokens. Please top up to continue chatting.",
-        token_balance: profileOwner.token_balance,
-        tokens_required: totalEstimatedTokens,
+        token_balance: visitorBalance,
+        tokens_required: inputTokenEstimate,
         tokenUsage: {
           inputTokens: inputTokenEstimate,
           outputTokens: 0,
+          totalTokens: 0,
+          remainingBalance: visitorBalance
+        }
+      }), {
+        status: 402,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Check if creator has enough tokens for output
+    if (profileOwner && profileOwner.token_balance !== null && profileOwner.token_balance < estimatedOutputTokens) {
+      return new Response(JSON.stringify({ 
+        success: false,
+        error_code: 'ERR_CREATOR_INSUFFICIENT_TOKENS',
+        message: 'The creator needs to top up tokens.',
+        response: "⚠️ The creator's AI is temporarily unavailable. Please try again later.",
+        token_balance: profileOwner.token_balance,
+        tokens_required: estimatedOutputTokens,
+        tokenUsage: {
+          inputTokens: 0,
+          outputTokens: estimatedOutputTokens,
           totalTokens: 0,
           remainingBalance: profileOwner.token_balance
         }
@@ -371,24 +406,51 @@ ${selectedFollowUp.choices && selectedFollowUp.choices.length > 0 ? `Offer these
 
     // Calculate actual tokens used
     const actualOutputTokens = estimateTokens(aiResponse);
-    const totalTokensUsed = inputTokenEstimate + actualOutputTokens;
 
-    // Debit tokens from profile owner
-    const { data: debitResult, error: debitError } = await supabase
+    // Split token charging:
+    // - Input tokens: charged to the VISITOR (userId) who is asking
+    // - Output tokens: charged to the CREATOR (profileId) who owns the AI
+    
+    let visitorNewBalance = visitorBalance;
+    let creatorNewBalance = profileOwner?.token_balance ?? 0;
+
+    // Debit input tokens from visitor (if logged in and not the creator)
+    if (userId && userId !== profileId) {
+      const { data: visitorDebitResult, error: visitorDebitError } = await supabase
+        .rpc('debit_user_tokens', {
+          p_user_id: userId,
+          p_tokens: inputTokenEstimate,
+          p_reason: 'consumption',
+          p_model: 'gemini-2.5-flash',
+          p_input_tokens: inputTokenEstimate,
+          p_output_tokens: 0
+        });
+
+      if (visitorDebitError) {
+        console.error('Error debiting input tokens from visitor:', visitorDebitError);
+      } else {
+        visitorNewBalance = visitorDebitResult?.balance ?? (visitorBalance ?? 0) - inputTokenEstimate;
+      }
+    }
+
+    // Debit output tokens from creator
+    const { data: creatorDebitResult, error: creatorDebitError } = await supabase
       .rpc('debit_user_tokens', {
         p_user_id: profileId,
-        p_tokens: totalTokensUsed,
+        p_tokens: actualOutputTokens,
         p_reason: 'consumption',
         p_model: 'gemini-2.5-flash',
-        p_input_tokens: inputTokenEstimate,
+        p_input_tokens: 0,
         p_output_tokens: actualOutputTokens
       });
 
-    if (debitError) {
-      console.error('Error debiting tokens:', debitError);
+    if (creatorDebitError) {
+      console.error('Error debiting output tokens from creator:', creatorDebitError);
+    } else {
+      creatorNewBalance = creatorDebitResult?.balance ?? (profileOwner?.token_balance ?? 0) - actualOutputTokens;
     }
 
-    const newBalance = debitResult?.balance ?? (profileOwner?.token_balance ?? 0) - totalTokensUsed;
+    const totalTokensUsed = inputTokenEstimate + actualOutputTokens;
 
     // Build rich data from Q&A pairs and web links
     const richData: {
@@ -516,7 +578,12 @@ ${selectedFollowUp.choices && selectedFollowUp.choices.length > 0 ? `Offer these
           inputTokens: inputTokenEstimate,
           outputTokens: actualOutputTokens,
           totalTokens: totalTokensUsed,
-          remainingBalance: newBalance
+          visitorBalance: visitorNewBalance,
+          creatorBalance: creatorNewBalance,
+          chargedTo: {
+            input: userId && userId !== profileId ? 'visitor' : 'creator',
+            output: 'creator'
+          }
         }
       }),
       {
