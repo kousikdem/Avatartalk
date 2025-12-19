@@ -108,6 +108,7 @@ serve(async (req) => {
       case 'zoom': {
         const clientId = Deno.env.get('ZOOM_CLIENT_ID');
         const clientSecret = Deno.env.get('ZOOM_CLIENT_SECRET');
+        const accountId = Deno.env.get('ZOOM_ACCOUNT_ID');
         
         if (!clientId || !clientSecret) {
           status = 'failed';
@@ -115,40 +116,81 @@ serve(async (req) => {
           break;
         }
 
-        // Check for stored access token
-        const { data: tokenData } = await supabase
-          .from('platform_integration_secrets')
-          .select('secret_value')
-          .eq('integration_name', 'zoom')
-          .eq('secret_key', 'access_token')
-          .eq('environment', environment || 'live')
-          .single();
+        // Try Server-to-Server OAuth first (preferred for backend)
+        if (accountId) {
+          try {
+            // Get access token using Server-to-Server OAuth
+            const tokenResponse = await fetch('https://zoom.us/oauth/token', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+                'Content-Type': 'application/x-www-form-urlencoded',
+              },
+              body: `grant_type=account_credentials&account_id=${accountId}`,
+            });
 
-        const { data: emailData } = await supabase
-          .from('platform_integration_secrets')
-          .select('secret_value')
-          .eq('integration_name', 'zoom')
-          .eq('secret_key', 'connected_email')
-          .eq('environment', environment || 'live')
-          .single();
+            if (tokenResponse.ok) {
+              const tokenData = await tokenResponse.json();
+              
+              // Verify token by fetching user info
+              const userResponse = await fetch('https://api.zoom.us/v2/users/me', {
+                headers: { Authorization: `Bearer ${tokenData.access_token}` },
+              });
 
-        if (tokenData?.secret_value) {
-          // Verify token is still valid
-          const response = await fetch('https://api.zoom.us/v2/users/me', {
-            headers: { Authorization: `Bearer ${tokenData.secret_value}` },
-          });
-
-          if (response.ok) {
-            status = 'verified';
-            message = 'Connected to Zoom';
-            connectedEmail = emailData?.secret_value || '';
-          } else {
-            status = 'expired';
-            message = 'Token expired, reconnection required';
+              if (userResponse.ok) {
+                const userData = await userResponse.json();
+                status = 'verified';
+                message = 'Zoom Server-to-Server OAuth verified';
+                connectedEmail = userData.email || '';
+              } else {
+                status = 'failed';
+                message = 'Failed to verify Zoom token';
+              }
+            } else {
+              status = 'failed';
+              message = 'Invalid Zoom Server-to-Server credentials';
+            }
+          } catch (e) {
+            console.error('Zoom verification error:', e);
+            status = 'failed';
+            message = 'Failed to connect to Zoom API';
           }
         } else {
-          status = 'pending';
-          message = 'OAuth connection required';
+          // Check for stored access token from OAuth flow
+          const { data: tokenData } = await supabase
+            .from('platform_integration_secrets')
+            .select('secret_value')
+            .eq('integration_name', 'zoom')
+            .eq('secret_key', 'access_token')
+            .eq('environment', environment || 'live')
+            .single();
+
+          const { data: emailData } = await supabase
+            .from('platform_integration_secrets')
+            .select('secret_value')
+            .eq('integration_name', 'zoom')
+            .eq('secret_key', 'connected_email')
+            .eq('environment', environment || 'live')
+            .single();
+
+          if (tokenData?.secret_value) {
+            // Verify token is still valid
+            const response = await fetch('https://api.zoom.us/v2/users/me', {
+              headers: { Authorization: `Bearer ${tokenData.secret_value}` },
+            });
+
+            if (response.ok) {
+              status = 'verified';
+              message = 'Connected to Zoom';
+              connectedEmail = emailData?.secret_value || '';
+            } else {
+              status = 'expired';
+              message = 'Token expired, reconnection required';
+            }
+          } else {
+            status = 'pending';
+            message = 'Configure ZOOM_ACCOUNT_ID or complete OAuth flow';
+          }
         }
         break;
       }
