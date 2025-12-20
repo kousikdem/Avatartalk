@@ -1,5 +1,8 @@
 project_id = "hnxnvdzrwbtmcohdptfq"
 
+[functions.user-zoom-oauth]
+verify_jwt = false
+
 [functions.voice-to-text]
 verify_jwt = true
 
