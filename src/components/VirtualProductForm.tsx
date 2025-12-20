@@ -37,7 +37,7 @@ const VirtualProductForm: React.FC<VirtualProductFormProps> = ({
     currency: product?.currency || 'INR',
     duration_mins: product?.duration_mins || 60,
     capacity: product?.capacity || 1,
-    provider: product?.provider || 'google_meet',
+    provider: product?.provider || 'zoom',
     auto_generate_link: product?.auto_generate_link ?? true,
     status: product?.status || 'draft',
     timezone: product?.timezone || 'Asia/Kolkata',
@@ -406,15 +406,15 @@ const VirtualProductForm: React.FC<VirtualProductFormProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="google_meet">
-                    <div className="flex items-center gap-2">
+                  <SelectItem value="google_meet" disabled>
+                    <div className="flex items-center gap-2 opacity-60">
                       <svg className="w-4 h-4" viewBox="0 0 24 24">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                         <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                         <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                       </svg>
-                      Google Meet
+                      Google Meet (Coming Soon)
                     </div>
                   </SelectItem>
                   <SelectItem value="zoom">
@@ -431,25 +431,38 @@ const VirtualProductForm: React.FC<VirtualProductFormProps> = ({
             </div>
 
             {/* Integration Status */}
-            {formData.provider !== 'manual' && (
-              <Card className={integrations?.[formData.provider === 'google_meet' ? 'google_connected' : 'zoom_connected'] 
+            {formData.provider === 'google_meet' && (
+              <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5 text-orange-600" />
+                    <span className="text-orange-700 dark:text-orange-400">
+                      Google Meet integration is coming soon. Please use Zoom or Manual Link.
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {formData.provider === 'zoom' && (
+              <Card className={integrations?.zoom_connected 
                 ? "border-green-200 bg-green-50 dark:bg-green-950/20" 
                 : "border-orange-200 bg-orange-50 dark:bg-orange-950/20"
               }>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2">
-                    {integrations?.[formData.provider === 'google_meet' ? 'google_connected' : 'zoom_connected'] ? (
+                    {integrations?.zoom_connected ? (
                       <>
                         <CheckCircle2 className="w-5 h-5 text-green-600" />
                         <span className="text-green-700 dark:text-green-400">
-                          {formData.provider === 'google_meet' ? 'Google' : 'Zoom'} connected - Meeting links will be auto-generated
+                          Zoom connected ({integrations.zoom_email}) - Meeting links will be auto-generated
                         </span>
                       </>
                     ) : (
                       <>
                         <AlertCircle className="w-5 h-5 text-orange-600" />
                         <span className="text-orange-700 dark:text-orange-400">
-                          Connect {formData.provider === 'google_meet' ? 'Google' : 'Zoom'} from the integration bar to auto-generate links
+                          Connect Zoom from the integration bar to auto-generate meeting links
                         </span>
                       </>
                     )}
@@ -458,19 +471,20 @@ const VirtualProductForm: React.FC<VirtualProductFormProps> = ({
               </Card>
             )}
 
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Auto-generate Meeting Link</Label>
-                <p className="text-xs text-muted-foreground">
-                  Automatically create meeting link when booking is confirmed
-                </p>
+            {formData.provider === 'zoom' && integrations?.zoom_connected && (
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Auto-generate Meeting Link</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Automatically create Zoom meeting link when product is published
+                  </p>
+                </div>
+                <Switch
+                  checked={formData.auto_generate_link}
+                  onCheckedChange={(v) => setFormData({ ...formData, auto_generate_link: v })}
+                />
               </div>
-              <Switch
-                checked={formData.auto_generate_link}
-                onCheckedChange={(v) => setFormData({ ...formData, auto_generate_link: v })}
-                disabled={formData.provider === 'manual'}
-              />
-            </div>
+            )}
 
             {/* Manual Link Input */}
             {formData.provider === 'manual' && (

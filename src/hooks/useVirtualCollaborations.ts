@@ -285,19 +285,137 @@ export const useVirtualCollaborations = () => {
   };
 
   const connectGoogle = async () => {
-    // OAuth flow would be implemented here
     toast({
       title: "Coming Soon",
-      description: "Google OAuth integration will be available soon.",
+      description: "Google Meet & Calendar integration will be available soon.",
     });
   };
 
-  const connectZoom = async () => {
-    // OAuth flow would be implemented here
-    toast({
-      title: "Coming Soon",
-      description: "Zoom OAuth integration will be available soon.",
-    });
+  const connectZoom = async (): Promise<string | null> => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast({
+          title: "Error",
+          description: "Please log in to connect Zoom.",
+          variant: "destructive"
+        });
+        return null;
+      }
+
+      const { data, error } = await supabase.functions.invoke('user-zoom-oauth', {
+        body: {},
+        headers: {},
+      });
+
+      // Use direct fetch with query params
+      const response = await fetch(
+        `https://hnxnvdzrwbtmcohdptfq.supabase.co/functions/v1/user-zoom-oauth?action=get_auth_url`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to get Zoom auth URL');
+      }
+
+      const result = await response.json();
+      return result.auth_url;
+    } catch (error: any) {
+      console.error('Zoom connect error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to initiate Zoom connection.",
+        variant: "destructive"
+      });
+      return null;
+    }
+  };
+
+  const createZoomMeeting = async (topic: string, durationMins: number, startTime?: string, timezone?: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Not authenticated');
+      }
+
+      const response = await fetch(
+        `https://hnxnvdzrwbtmcohdptfq.supabase.co/functions/v1/user-zoom-oauth?action=create_meeting`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            topic,
+            duration_mins: durationMins,
+            start_time: startTime,
+            timezone,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create meeting');
+      }
+
+      const result = await response.json();
+      return result.meeting;
+    } catch (error: any) {
+      console.error('Create Zoom meeting error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create Zoom meeting.",
+        variant: "destructive"
+      });
+      return null;
+    }
+  };
+
+  const disconnectZoom = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Not authenticated');
+      }
+
+      const response = await fetch(
+        `https://hnxnvdzrwbtmcohdptfq.supabase.co/functions/v1/user-zoom-oauth?action=disconnect`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to disconnect Zoom');
+      }
+
+      toast({
+        title: "Disconnected",
+        description: "Zoom has been disconnected successfully.",
+      });
+
+      fetchIntegrations();
+    } catch (error: any) {
+      console.error('Disconnect Zoom error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to disconnect Zoom.",
+        variant: "destructive"
+      });
+    }
   };
 
   const disconnectIntegration = async (provider: 'google' | 'zoom') => {
@@ -338,11 +456,14 @@ export const useVirtualCollaborations = () => {
     isLoading,
     fetchProducts,
     fetchBookings,
+    fetchIntegrations,
     createProduct,
     updateProduct,
     deleteProduct,
     connectGoogle,
     connectZoom,
+    createZoomMeeting,
+    disconnectZoom,
     disconnectIntegration
   };
 };
