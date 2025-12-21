@@ -384,21 +384,16 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
             <h3 className="font-bold text-base line-clamp-2 text-gray-900">
               {product.title}
             </h3>
-              {product.title}
-            </h3>
 
             {/* Description */}
             <p className="text-sm line-clamp-2 text-gray-600">
               {product.description || 'Join this virtual collaboration session'}
-            </p>
             </p>
 
             {/* Event Date */}
             {product.event_date && (
               <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
                 <Calendar className="w-4 h-4 text-primary" />
-                <span>{formatDate(product.event_date)}</span>
-              </div>
                 <span>{formatDate(product.event_date)}</span>
               </div>
             )}
