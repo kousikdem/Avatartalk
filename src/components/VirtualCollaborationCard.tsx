@@ -343,11 +343,7 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
         className="cursor-pointer"
         onClick={() => setIsDetailsOpen(true)}
       >
-        <Card className={`overflow-hidden border-2 transition-all duration-300 ${
-          isDarkTheme 
-            ? 'bg-gradient-to-br from-slate-700/90 via-slate-600/80 to-slate-700/90 border-slate-500/50 hover:border-primary/60 shadow-lg' 
-            : 'bg-white border-gray-200 hover:border-primary/50 shadow-md'
-        }`}>
+        <Card className="overflow-hidden border-2 transition-all duration-300 bg-white border-gray-200 hover:border-primary/50 shadow-md">
           {/* Thumbnail */}
           {product.thumbnail_url ? (
             <div className="relative h-32 overflow-hidden">
@@ -371,11 +367,9 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
               )}
             </div>
           ) : (
-            <div className={`h-24 flex items-center justify-center ${
-              isDarkTheme ? 'bg-slate-600/60' : 'bg-gray-100'
-            }`}>
-              <div className="text-center">
-                <div className={isDarkTheme ? 'text-slate-200' : 'text-gray-600'}>
+            <div className="h-24 flex items-center justify-center bg-gray-100">
+            <div className="text-center">
+                <div className="text-gray-600">
                   {getProductTypeIcon()}
                 </div>
                 <Badge className="mt-2 bg-primary/80 text-white" variant="secondary">
@@ -387,34 +381,31 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
 
           <CardContent className="p-4 space-y-3">
             {/* Title */}
-            <h3 className={`font-bold text-base line-clamp-2 ${
-              isDarkTheme ? 'text-white' : 'text-gray-900'
-            }`}>
+            <h3 className="font-bold text-base line-clamp-2 text-gray-900">
+              {product.title}
+            </h3>
               {product.title}
             </h3>
 
             {/* Description */}
-            <p className={`text-sm line-clamp-2 ${
-              isDarkTheme ? 'text-slate-200' : 'text-gray-600'
-            }`}>
+            <p className="text-sm line-clamp-2 text-gray-600">
               {product.description || 'Join this virtual collaboration session'}
+            </p>
             </p>
 
             {/* Event Date */}
             {product.event_date && (
-              <div className={`flex items-center gap-2 text-sm font-medium ${
-                isDarkTheme ? 'text-slate-100' : 'text-gray-700'
-              }`}>
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
                 <Calendar className="w-4 h-4 text-primary" />
+                <span>{formatDate(product.event_date)}</span>
+              </div>
                 <span>{formatDate(product.event_date)}</span>
               </div>
             )}
 
             {/* Meta Info */}
             <div className="flex items-center justify-between text-sm">
-              <div className={`flex items-center gap-3 ${
-                isDarkTheme ? 'text-slate-200' : 'text-gray-600'
-              }`}>
+              <div className="flex items-center gap-3 text-gray-600">
                 <span className="flex items-center gap-1">
                   <Clock className="w-4 h-4" />
                   {product.duration_mins}m
@@ -424,21 +415,15 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
                   {product.capacity}
                 </span>
               </div>
-              <span className={`flex items-center gap-1 font-medium ${
-                isDarkTheme ? 'text-blue-300' : 'text-blue-600'
-              }`}>
+              <span className="flex items-center gap-1 font-medium text-blue-600">
                 <MapPin className="w-4 h-4" />
                 {getProviderLabel()}
               </span>
             </div>
 
             {/* Price & CTA */}
-            <div className={`flex items-center justify-between pt-3 border-t ${
-              isDarkTheme ? 'border-slate-500/40' : 'border-gray-200'
-            }`}>
-              <div className={`font-bold text-lg ${
-                isDarkTheme ? 'text-emerald-400' : 'text-primary'
-              }`}>
+            <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+              <div className="font-bold text-lg text-primary">
                 {product.price > 0 ? formatPrice(product.price, product.currency) : 'Free'}
               </div>
               <Button 

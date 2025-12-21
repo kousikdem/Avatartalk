@@ -2076,19 +2076,102 @@ export type Database = {
         }
         Relationships: []
       }
+      post_link_clicks: {
+        Row: {
+          clicked_at: string
+          id: string
+          link_url: string | null
+          post_id: string
+          user_id: string | null
+        }
+        Insert: {
+          clicked_at?: string
+          id?: string
+          link_url?: string | null
+          post_id: string
+          user_id?: string | null
+        }
+        Update: {
+          clicked_at?: string
+          id?: string
+          link_url?: string | null
+          post_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_link_clicks_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_unlocks: {
+        Row: {
+          id: string
+          payment_amount: number | null
+          payment_currency: string | null
+          post_id: string
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          payment_amount?: number | null
+          payment_currency?: string | null
+          post_id: string
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          payment_amount?: number | null
+          payment_currency?: string | null
+          post_id?: string
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_unlocks_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           comments_count: number | null
           content: string | null
           created_at: string
+          currency: string | null
           id: string
           is_paid: boolean | null
+          is_subscriber_only: boolean | null
           likes_count: number | null
+          link_button_text: string | null
+          link_button_url: string | null
+          link_clicks: number | null
+          link_thumbnail_url: string | null
           media_type: string | null
           media_url: string | null
           metadata: Json | null
+          poll_options: Json | null
+          poll_votes: Json | null
           post_type: string | null
           price: number | null
+          subscription_plan_id: string | null
+          title: string | null
           updated_at: string
           user_id: string
           views_count: number | null
@@ -2097,14 +2180,24 @@ export type Database = {
           comments_count?: number | null
           content?: string | null
           created_at?: string
+          currency?: string | null
           id?: string
           is_paid?: boolean | null
+          is_subscriber_only?: boolean | null
           likes_count?: number | null
+          link_button_text?: string | null
+          link_button_url?: string | null
+          link_clicks?: number | null
+          link_thumbnail_url?: string | null
           media_type?: string | null
           media_url?: string | null
           metadata?: Json | null
+          poll_options?: Json | null
+          poll_votes?: Json | null
           post_type?: string | null
           price?: number | null
+          subscription_plan_id?: string | null
+          title?: string | null
           updated_at?: string
           user_id: string
           views_count?: number | null
@@ -2113,19 +2206,36 @@ export type Database = {
           comments_count?: number | null
           content?: string | null
           created_at?: string
+          currency?: string | null
           id?: string
           is_paid?: boolean | null
+          is_subscriber_only?: boolean | null
           likes_count?: number | null
+          link_button_text?: string | null
+          link_button_url?: string | null
+          link_clicks?: number | null
+          link_thumbnail_url?: string | null
           media_type?: string | null
           media_url?: string | null
           metadata?: Json | null
+          poll_options?: Json | null
+          poll_votes?: Json | null
           post_type?: string | null
           price?: number | null
+          subscription_plan_id?: string | null
+          title?: string | null
           updated_at?: string
           user_id?: string
           views_count?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "posts_subscription_plan_id_fkey"
+            columns: ["subscription_plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "posts_user_id_fkey"
             columns: ["user_id"]
@@ -3884,6 +3994,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_post_link_clicks: {
+        Args: { post_id_param: string }
+        Returns: undefined
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       log_admin_action: {
