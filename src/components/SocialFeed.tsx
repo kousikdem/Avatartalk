@@ -1,24 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, Image, Video, Loader2 } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { PlusCircle, Loader2, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { usePosts } from '@/hooks/usePosts';
-import PostCard from './PostCard';
-import { motion, AnimatePresence } from 'framer-motion';
+import EnhancedPostCardWithLocks from './EnhancedPostCardWithLocks';
+import EnhancedCreatePostModal from './EnhancedCreatePostModal';
+import { motion } from 'framer-motion';
 
 interface ExtendedPost {
   id: string;
   user_id: string;
+  title?: string;
   content: string;
+  post_type: string;
   media_url?: string;
   media_type?: string;
   likes_count: number;
   comments_count: number;
   views_count: number;
+  link_clicks?: number;
+  is_paid?: boolean;
+  price?: number;
+  currency?: string;
+  is_subscriber_only?: boolean;
+  subscription_plan_id?: string;
+  poll_options?: any;
+  poll_votes?: any;
+  link_thumbnail_url?: string;
+  link_button_text?: string;
+  link_button_url?: string;
   created_at: string;
   profile?: {
     username: string;
@@ -31,30 +43,66 @@ interface SocialFeedProps {
   userId?: string;
   showCreatePost?: boolean;
   feedType?: 'user' | 'following' | 'public';
+  showLinkClicks?: boolean;
 }
 
 const SocialFeed: React.FC<SocialFeedProps> = ({ 
   userId, 
   showCreatePost = true,
-  feedType = 'user'
+  feedType = 'user',
+  showLinkClicks = false
 }) => {
   const [posts, setPosts] = useState<ExtendedPost[]>([]);
   const [loading, setLoading] = useState(false);
   const [showPostModal, setShowPostModal] = useState(false);
-  const [newPostContent, setNewPostContent] = useState('');
-  const [uploadingMedia, setUploadingMedia] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [isSubscriber, setIsSubscriber] = useState(false);
 
   const { toast } = useToast();
 
-  // Get current user
+  // Get current user and profile
   useEffect(() => {
     const getCurrentUser = async () => {
       const { data } = await supabase.auth.getUser();
       setCurrentUser(data.user);
+      
+      if (data.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+        setUserProfile(profile);
+      }
     };
     getCurrentUser();
   }, []);
+
+  // Check subscription status
+  useEffect(() => {
+    if (currentUser && userId && currentUser.id !== userId) {
+      checkSubscriptionStatus();
+    }
+  }, [currentUser, userId]);
+
+  const checkSubscriptionStatus = async () => {
+    if (!currentUser || !userId) return;
+    
+    try {
+      const { data } = await supabase
+        .from('subscriptions')
+        .select('id')
+        .eq('subscriber_id', currentUser.id)
+        .eq('subscribed_to_id', userId)
+        .eq('status', 'active')
+        .maybeSingle();
+      
+      setIsSubscriber(!!data);
+    } catch (error) {
+      console.error('Error checking subscription:', error);
+    }
+  };
 
   // Fetch posts based on feed type
   useEffect(() => {
@@ -99,7 +147,6 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
           break;
         case 'following':
           if (userId) {
-            // Get posts from users that current user follows
             const { data: follows } = await supabase
               .from('follows')
               .select('following_id')
@@ -109,7 +156,6 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
               const followingIds = follows.map(f => f.following_id);
               query = query.in('user_id', followingIds);
             } else {
-              // If not following anyone, return empty array
               setPosts([]);
               setLoading(false);
               return;
@@ -117,7 +163,6 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
           }
           break;
         case 'public':
-          // Show all public posts (no filter)
           break;
       }
 
@@ -139,46 +184,6 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
     }
   };
 
-  const handleCreatePost = async () => {
-    if (!newPostContent.trim() || !currentUser) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('posts')
-        .insert([{
-          user_id: currentUser.id,
-          content: newPostContent.trim(),
-          post_type: 'text',
-          likes_count: 0,
-          comments_count: 0,
-          views_count: 0
-        }])
-        .select(`
-          *,
-          profile:profiles!posts_user_id_fkey(username, display_name, avatar_url)
-        `)
-        .single();
-
-      if (error) throw error;
-
-      setPosts(prev => [data, ...prev]);
-      setNewPostContent('');
-      setShowPostModal(false);
-      
-      toast({
-        title: "Success",
-        description: "Post created successfully!",
-      });
-    } catch (error) {
-      console.error('Error creating post:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create post",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handlePostUpdate = (updatedPost: ExtendedPost) => {
     setPosts(prev => 
       prev.map(post => 
@@ -187,184 +192,97 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
     );
   };
 
-  const handleMediaUpload = async (file: File) => {
-    if (!currentUser) return;
-
-    setUploadingMedia(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${currentUser.id}/${Date.now()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('profile-pictures') // Using existing bucket
-        .upload(fileName, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('profile-pictures')
-        .getPublicUrl(fileName);
-
-      // Create post with media
-      const { data, error } = await supabase
-        .from('posts')
-        .insert([{
-          user_id: currentUser.id,
-          content: newPostContent.trim() || 'Shared a photo',
-          post_type: 'media',
-          media_url: publicUrl,
-          media_type: file.type,
-          likes_count: 0,
-          comments_count: 0,
-          views_count: 0
-        }])
-        .select(`
-          *,
-          profile:profiles!posts_user_id_fkey(username, display_name, avatar_url)
-        `)
-        .single();
-
-      if (error) throw error;
-
-      setPosts(prev => [data, ...prev]);
-      setNewPostContent('');
-      setShowPostModal(false);
-      
-      toast({
-        title: "Success",
-        description: "Post with media created successfully!",
-      });
-    } catch (error) {
-      console.error('Error uploading media:', error);
-      toast({
-        title: "Error",
-        description: "Failed to upload media",
-        variant: "destructive",
-      });
-    } finally {
-      setUploadingMedia(false);
-    }
+  const handlePostCreated = () => {
+    fetchPosts();
   };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Create Post Section */}
       {showCreatePost && currentUser && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-start space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium">
-                {(currentUser.email?.[0] || 'U').toUpperCase()}
-              </div>
-              <div className="flex-1">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Card className="bg-card border-border shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <Avatar className="w-12 h-12 ring-2 ring-primary/20">
+                  <AvatarImage src={userProfile?.avatar_url} />
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-purple-600 text-primary-foreground font-semibold">
+                    {(userProfile?.display_name?.[0] || currentUser.email?.[0] || 'U').toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
                 <Button
                   variant="outline"
                   onClick={() => setShowPostModal(true)}
-                  className="w-full justify-start text-left text-gray-500 hover:text-gray-700"
+                  className="flex-1 justify-start text-left h-12 px-4 bg-muted/50 border-border hover:bg-muted hover:border-primary/30 text-muted-foreground transition-all"
                 >
-                  What's on your mind?
+                  <Sparkles className="w-4 h-4 mr-2 text-primary" />
+                  Share something amazing...
+                </Button>
+                <Button
+                  onClick={() => setShowPostModal(true)}
+                  size="icon"
+                  className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 text-primary-foreground shadow-md"
+                >
+                  <PlusCircle className="w-5 h-5" />
                 </Button>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </motion.div>
       )}
 
-      {/* Create Post Modal */}
-      <AnimatePresence>
-        {showPostModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-            onClick={() => setShowPostModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-lg p-6 w-full max-w-md"
-            >
-              <h3 className="font-semibold mb-4">Create Post</h3>
-              <Textarea
-                value={newPostContent}
-                onChange={(e) => setNewPostContent(e.target.value)}
-                placeholder="What's on your mind?"
-                rows={4}
-                className="mb-4"
-              />
-              
-              <div className="flex items-center justify-between">
-                <div className="flex space-x-2">
-                  <input
-                    type="file"
-                    accept="image/*,video/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleMediaUpload(file);
-                    }}
-                    className="hidden"
-                    id="media-upload"
-                  />
-                  <label htmlFor="media-upload">
-                    <Button variant="outline" size="sm" asChild>
-                      <span className="cursor-pointer">
-                        {uploadingMedia ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Image className="w-4 h-4" />
-                        )}
-                      </span>
-                    </Button>
-                  </label>
-                </div>
-                
-                <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowPostModal(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleCreatePost}
-                    disabled={!newPostContent.trim() && !uploadingMedia}
-                  >
-                    Post
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Enhanced Create Post Modal */}
+      <EnhancedCreatePostModal
+        isOpen={showPostModal}
+        onClose={() => setShowPostModal(false)}
+        onPostCreated={handlePostCreated}
+      />
 
       {/* Posts Feed */}
       <div className="space-y-6">
         {loading ? (
-          <div className="text-center py-8">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
-            <p className="text-gray-500">Loading posts...</p>
+          <div className="text-center py-12">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+            <p className="text-muted-foreground">Loading posts...</p>
           </div>
         ) : posts.length > 0 ? (
-          posts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              currentUserId={currentUser?.id}
-              onPostUpdate={handlePostUpdate}
-            />
-          ))
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: { opacity: 0 },
+              visible: {
+                opacity: 1,
+                transition: { staggerChildren: 0.1 }
+              }
+            }}
+            className="space-y-6"
+          >
+            {posts.map((post) => (
+              <EnhancedPostCardWithLocks
+                key={post.id}
+                post={post}
+                currentUserId={currentUser?.id}
+                onPostUpdate={handlePostUpdate}
+                isSubscriber={isSubscriber}
+                showLinkClicks={showLinkClicks}
+              />
+            ))}
+          </motion.div>
         ) : (
-          <Card>
-            <CardContent className="text-center py-12">
-              <PlusCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="font-medium text-gray-900 mb-2">No posts yet</h3>
-              <p className="text-gray-500 mb-4">
+          <Card className="bg-card border-border">
+            <CardContent className="text-center py-16">
+              <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">
+                <PlusCircle className="w-10 h-10 text-muted-foreground" />
+              </div>
+              <h3 className="font-semibold text-foreground text-lg mb-2">No posts yet</h3>
+              <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
                 {feedType === 'user' 
                   ? "Share your first post to get started!" 
                   : feedType === 'following'
@@ -373,8 +291,12 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
                 }
               </p>
               {showCreatePost && currentUser && (
-                <Button onClick={() => setShowPostModal(true)}>
-                  Create Post
+                <Button 
+                  onClick={() => setShowPostModal(true)}
+                  className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700"
+                >
+                  <PlusCircle className="w-4 h-4 mr-2" />
+                  Create Your First Post
                 </Button>
               )}
             </CardContent>
