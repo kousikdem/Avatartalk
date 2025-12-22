@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Share2, Users, MessageSquare, BarChart3, Calendar, LogOut, Settings, Home, ShoppingBag } from 'lucide-react';
+import { Share2, Users, MessageSquare, BarChart3, Calendar, LogOut, Settings, Home, ShoppingBag, PlusCircle } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import ShareModal from './ShareModal';
 import ChangeableAvatarPreview from './ChangeableAvatarPreview';
@@ -11,9 +11,11 @@ import { useFollows } from '@/hooks/useFollows';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import TokenDisplay from './TokenDisplay';
+import EnhancedCreatePostModal from './EnhancedCreatePostModal';
 
 const Dashboard = () => {
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const { profileData, loading } = useUserProfile();
   const { following, refetch } = useFollows(profileData?.id);
   const { toast } = useToast();
@@ -170,6 +172,17 @@ const Dashboard = () => {
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 <Button 
                   variant="outline" 
+                  className="h-16 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 hover:from-emerald-600 hover:via-green-600 hover:to-teal-600 text-white border-0"
+                  onClick={() => setIsCreatePostOpen(true)}
+                >
+                  <div className="text-center">
+                    <PlusCircle className="h-6 w-6 mx-auto mb-1" />
+                    <div className="text-sm">Create Post</div>
+                  </div>
+                </Button>
+                
+                <Button 
+                  variant="outline" 
                   className="h-16 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 hover:from-blue-600 hover:via-purple-600 hover:to-indigo-700 text-white border-0"
                   onClick={() => window.location.href = '/avatar'}
                 >
@@ -294,6 +307,15 @@ const Dashboard = () => {
         onClose={() => setIsShareOpen(false)}
         profileUrl={profileData?.public_link || `${window.location.origin}/profile`}
         username={profileData?.username || 'user'}
+      />
+
+      {/* Create Post Modal */}
+      <EnhancedCreatePostModal
+        isOpen={isCreatePostOpen}
+        onClose={() => setIsCreatePostOpen(false)}
+        onPostCreated={() => {
+          setIsCreatePostOpen(false);
+        }}
       />
     </div>
   );
