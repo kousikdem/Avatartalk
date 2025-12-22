@@ -28,7 +28,7 @@ import LoyaltyBadge from './LoyaltyBadge';
 import EnhancedShareModal from './EnhancedShareModal';
 import SocialLinksMenu from './SocialLinksMenu';
 import SocialLinksPopup from './SocialLinksPopup';
-import EnhancedPostCard from './EnhancedPostCard';
+import EnhancedPostCardWithLocks from './EnhancedPostCardWithLocks';
 import EmojiPicker from './EmojiPicker';
 import MessageInput from './MessageInput';
 import { CompactProductCard } from './CompactProductCard';
@@ -1330,18 +1330,19 @@ const ProfilePage: React.FC = () => {
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.1 }}
                         >
-                          <EnhancedPostCard
+                          <EnhancedPostCardWithLocks
                             post={{
                               ...post,
                               profile: {
                                 username: profile.username,
                                 display_name: profile.display_name,
-                                avatar_url: profile.avatar_url,
-                                profile_pic_url: profile.profile_pic_url
+                                avatar_url: profile.avatar_url || profile.profile_pic_url
                               }
                             }}
                             currentUserId={currentUser?.id}
                             showComments={true}
+                            isSubscriber={isActiveSubscriber}
+                            showLinkClicks={isOwnProfile}
                           />
                         </motion.div>
                       ))
