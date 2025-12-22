@@ -16,7 +16,7 @@ import VirtualCollaborationPage from "./components/VirtualCollaborationPage";
 import ProductsPage from "./pages/ProductsPage";
 import SettingsPage from "./pages/SettingsPage";
 import SocialLinksPage from "./pages/SocialLinksPage";
-import EnhancedCreatePostModal from "./components/EnhancedCreatePostModal";  
+import CreatePostModal from "./components/CreatePostModal";  
 import ProfilePage from "./components/ProfilePage";
 import UsernameRedirect from "./components/UsernameRedirect";
 import FollowersPage from "./pages/FollowersPage";
@@ -113,7 +113,7 @@ const App = () => {
                     </Routes>
                   </main>
 
-                  <EnhancedCreatePostModal 
+                  <CreatePostModal 
                     isOpen={isCreatePostOpen}
                     onClose={() => setIsCreatePostOpen(false)}
                   />
