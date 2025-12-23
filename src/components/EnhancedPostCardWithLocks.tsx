@@ -65,6 +65,8 @@ interface EnhancedPostCardWithLocksProps {
   showComments?: boolean;
   isSubscriber?: boolean;
   showLinkClicks?: boolean;
+  onSubscribeClick?: () => void;
+  profileUsername?: string;
 }
 
 const EnhancedPostCardWithLocks: React.FC<EnhancedPostCardWithLocksProps> = ({ 
@@ -73,7 +75,9 @@ const EnhancedPostCardWithLocks: React.FC<EnhancedPostCardWithLocksProps> = ({
   onPostUpdate,
   showComments = true,
   isSubscriber = false,
-  showLinkClicks = false
+  showLinkClicks = false,
+  onSubscribeClick,
+  profileUsername
 }) => {
   const [showCommentsSection, setShowCommentsSection] = useState(false);
   const [newComment, setNewComment] = useState('');
@@ -452,14 +456,29 @@ const EnhancedPostCardWithLocks: React.FC<EnhancedPostCardWithLocksProps> = ({
                   </>
                 ) : (
                   <>
-                    <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mb-4">
+                    <div className="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-4">
                       <Crown className="w-8 h-8 text-purple-600" />
                     </div>
                     <h4 className="font-bold text-foreground mb-1">Subscribers Only</h4>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Subscribe to view this exclusive content
+                    <p className="text-sm text-muted-foreground mb-4 text-center">
+                      Subscribe to {profileUsername || 'this creator'} to view this exclusive content
                     </p>
-                    <Button className="bg-gradient-to-r from-purple-500 to-pink-500">
+                    <Button 
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                      onClick={() => {
+                        if (!currentUserId) {
+                          window.dispatchEvent(new CustomEvent('show-visitor-auth'));
+                          return;
+                        }
+                        if (onSubscribeClick) {
+                          onSubscribeClick();
+                        } else {
+                          // Scroll to subscribe button in profile
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+                      }}
+                    >
+                      <Crown className="w-4 h-4 mr-2" />
                       Subscribe Now
                     </Button>
                   </>

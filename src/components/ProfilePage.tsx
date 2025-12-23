@@ -1224,7 +1224,7 @@ const ProfilePage: React.FC = () => {
               <div className="grid grid-cols-5 gap-2">
                 {/* Left Side - Subscribe Button (wider - 3 columns) */}
                 {profile?.id && profile?.id !== currentUser?.id && (
-                  <div className="col-span-3">
+                  <div className="col-span-3" data-subscribe-button-wrapper>
                     <SubscribeButton
                       targetUserId={profile.id}
                       targetUsername={profile.username}
@@ -1343,6 +1343,12 @@ const ProfilePage: React.FC = () => {
                             showComments={true}
                             isSubscriber={isActiveSubscriber}
                             showLinkClicks={isOwnProfile}
+                            profileUsername={profile.username}
+                            onSubscribeClick={() => {
+                              // Trigger subscribe button click
+                              const subscribeBtn = document.querySelector('[data-subscribe-button]') as HTMLButtonElement;
+                              if (subscribeBtn) subscribeBtn.click();
+                            }}
                           />
                         </motion.div>
                       ))

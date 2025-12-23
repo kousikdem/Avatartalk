@@ -194,6 +194,7 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
         onClick={handleSubscribeClick}
         disabled={isProcessing}
         className={className}
+        data-subscribe-button
       >
         {isProcessing ? (
           <Loader2 className="h-4 w-4 animate-spin mr-2" />

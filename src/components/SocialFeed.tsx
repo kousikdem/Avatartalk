@@ -272,6 +272,7 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
                 onPostUpdate={handlePostUpdate}
                 isSubscriber={isSubscriber}
                 showLinkClicks={showLinkClicks}
+                profileUsername={post.profile?.username}
               />
             ))}
           </motion.div>
