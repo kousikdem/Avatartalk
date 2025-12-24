@@ -266,7 +266,7 @@ export const useSuperAdmin = () => {
     const { error } = await supabase.rpc('credit_user_tokens', {
       p_user_id: userId,
       p_tokens: amount,
-      p_reason: 'Admin credit'
+      p_reason: 'bonus'
     });
 
     if (error) {
