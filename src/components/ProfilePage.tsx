@@ -33,6 +33,7 @@ import EmojiPicker from './EmojiPicker';
 import MessageInput from './MessageInput';
 import { CompactProductCard } from './CompactProductCard';
 import VirtualCollaborationCard from './VirtualCollaborationCard';
+import TokenGiftModal from './TokenGiftModal';
 import {
   MessageCircle,
   Share2,
@@ -61,7 +62,8 @@ import {
   Twitch,
   Music,
   FileText,
-  BadgeCheck
+  BadgeCheck,
+  Gift
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -170,6 +172,7 @@ const ProfilePage: React.FC = () => {
   const [productsTabMessage, setProductsTabMessage] = useState('');
   const [activeTab, setActiveTab] = useState('chat');
   const [aiTrainingSettings, setAiTrainingSettings] = useState<any>(null);
+  const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
   const { toast } = useToast();
 
   const {
@@ -1210,6 +1213,14 @@ const ProfilePage: React.FC = () => {
                 isTalking={isTalking}
                 onAvatarClick={currentUser?.id === profile?.id ? () => window.location.href = '/avatar' : undefined}
                 onTalkClick={handleTalkToMeClick}
+                showGiftButton={currentUser?.id !== profile?.id}
+                onGiftClick={() => {
+                  if (!currentUser) {
+                    setIsMainAuthOpen(true);
+                    return;
+                  }
+                  setIsGiftModalOpen(true);
+                }}
               />
             </div>
 
@@ -1792,6 +1803,17 @@ const ProfilePage: React.FC = () => {
         isOpen={isMainAuthOpen}
         onClose={() => setIsMainAuthOpen(false)}
       />
+      
+      {/* Token Gift Modal */}
+      {profile && (
+        <TokenGiftModal
+          open={isGiftModalOpen}
+          onOpenChange={setIsGiftModalOpen}
+          receiverId={profile.id}
+          receiverName={profile.display_name || profile.username}
+          senderId={currentUser?.id}
+        />
+      )}
     </div>
   );
 };

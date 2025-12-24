@@ -169,19 +169,30 @@ export const UserSearchManager = () => {
   }, [searchQuery, filters]);
 
   const addTokensToUser = async (userId: string, amount: number) => {
-    const { error } = await supabase.rpc('credit_user_tokens', {
-      p_user_id: userId,
-      p_tokens: amount,
-      p_reason: 'Admin credit'
-    });
+    try {
+      const { data, error } = await supabase.rpc('credit_user_tokens', {
+        p_user_id: userId,
+        p_tokens: amount,
+        p_reason: 'Admin credit'
+      });
 
-    if (error) {
+      if (error) {
+        console.error('RPC error:', error);
+        toast({ title: 'Error', description: `Failed to add tokens: ${error.message}`, variant: 'destructive' });
+        return;
+      }
+
+      if (data && !data.success) {
+        toast({ title: 'Error', description: data.error || 'Failed to add tokens', variant: 'destructive' });
+        return;
+      }
+
+      toast({ title: 'Success', description: `Added ${amount.toLocaleString()} tokens` });
+      fetchUsers();
+    } catch (err) {
+      console.error('Token add error:', err);
       toast({ title: 'Error', description: 'Failed to add tokens', variant: 'destructive' });
-      return;
     }
-
-    toast({ title: 'Success', description: `Added ${amount.toLocaleString()} tokens` });
-    fetchUsers();
   };
 
   const assignRole = async (userId: string, role: string) => {

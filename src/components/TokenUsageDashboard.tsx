@@ -1,12 +1,26 @@
-import React from 'react';
-import { Coins, TrendingUp, TrendingDown, MessageSquare, Calendar, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Coins, TrendingUp, TrendingDown, MessageSquare, Calendar, ArrowUpRight, ArrowDownRight, Gift } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useTokens } from '@/hooks/useTokens';
+import { useTokenGifts } from '@/hooks/useTokenGifts';
 import TokenDisplay from './TokenDisplay';
+import { supabase } from '@/integrations/supabase/client';
 
 const TokenUsageDashboard: React.FC = () => {
   const { tokenBalance, events, dailyUsage, loading } = useTokens();
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>();
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) setCurrentUserId(user.id);
+    };
+    getUser();
+  }, []);
+
+  const { receivedGifts, totalReceived, loading: giftsLoading } = useTokenGifts(currentUserId);
 
   const totalUsedToday = dailyUsage.find(d => 
     new Date(d.day).toDateString() === new Date().toDateString()
@@ -198,6 +212,62 @@ const TokenUsageDashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Gifted Tokens Section */}
+      <Card className="bg-gradient-to-br from-pink-50 to-purple-50 border-pink-200">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Gift className="w-5 h-5 text-pink-500" />
+            Received Token Gifts
+            {totalReceived > 0 && (
+              <Badge className="ml-2 bg-pink-600 text-white">
+                {totalReceived.toLocaleString()} tokens
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3 max-h-[300px] overflow-y-auto">
+            {giftsLoading ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Loading gifts...</p>
+            ) : receivedGifts.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No gifts received yet
+              </p>
+            ) : (
+              receivedGifts.map((gift) => (
+                <div
+                  key={gift.id}
+                  className="flex items-center justify-between p-3 bg-white rounded-lg hover:bg-pink-50 transition-colors border border-pink-100"
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={gift.sender?.profile_pic_url || ''} />
+                      <AvatarFallback className="bg-pink-200 text-pink-700">
+                        {(gift.sender?.display_name || gift.sender?.username || 'U')[0].toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm font-medium text-pink-700">
+                        +{gift.amount.toLocaleString()} tokens
+                      </p>
+                      <p className="text-xs text-pink-600">
+                        From: {gift.sender?.display_name || gift.sender?.username || 'Anonymous'}
+                      </p>
+                      {gift.message && (
+                        <p className="text-xs text-gray-500 mt-1 italic">"{gift.message}"</p>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDate(gift.created_at)}
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Daily Usage Chart */}
       {dailyUsage.length > 0 && (
