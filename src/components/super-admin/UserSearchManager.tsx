@@ -182,8 +182,12 @@ export const UserSearchManager = () => {
         return;
       }
 
-      if (data && !data.success) {
-        toast({ title: 'Error', description: data.error || 'Failed to add tokens', variant: 'destructive' });
+      const result = (data && typeof data === 'object')
+        ? (data as { success?: boolean; error?: string })
+        : null;
+
+      if (result?.success === false) {
+        toast({ title: 'Error', description: result.error || 'Failed to add tokens', variant: 'destructive' });
         return;
       }
 
