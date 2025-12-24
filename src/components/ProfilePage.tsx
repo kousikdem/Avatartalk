@@ -1073,8 +1073,16 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  // Show profile not found only after loading is complete
-  if (!loading && !profile) {
+  // Show loading text briefly
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-4">
+        <p className="text-white/80 text-lg">Loading profile...</p>
+      </div>
+    );
+  }
+
+  if (!profile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-4">
         <Card className="bg-slate-900/80 border-slate-700/50 backdrop-blur-xl max-w-md w-full">
