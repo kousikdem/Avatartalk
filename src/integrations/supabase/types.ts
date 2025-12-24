@@ -3089,6 +3089,69 @@ export type Database = {
           },
         ]
       }
+      token_gifts: {
+        Row: {
+          amount: number
+          amount_paid: number
+          completed_at: string | null
+          created_at: string
+          currency: string
+          id: string
+          message: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          razorpay_signature: string | null
+          receiver_id: string
+          sender_id: string
+          status: string
+        }
+        Insert: {
+          amount: number
+          amount_paid: number
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          message?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          receiver_id: string
+          sender_id: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          amount_paid?: number
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          message?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          receiver_id?: string
+          sender_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "token_gifts_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "token_gifts_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       token_packages: {
         Row: {
           bonus_tokens: number | null
@@ -4009,6 +4072,14 @@ export type Database = {
           p_target_table?: string
         }
         Returns: string
+      }
+      process_token_gift: {
+        Args: {
+          p_gift_id: string
+          p_razorpay_payment_id: string
+          p_razorpay_signature: string
+        }
+        Returns: Json
       }
     }
     Enums: {

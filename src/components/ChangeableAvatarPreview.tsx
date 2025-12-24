@@ -2,7 +2,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Camera, MessageSquare } from 'lucide-react';
+import { Camera, MessageSquare, Gift } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Canvas } from '@react-three/fiber';
@@ -21,6 +21,8 @@ interface ChangeableAvatarPreviewProps {
   className?: string;
   onAvatarClick?: () => void;
   onTalkClick?: () => void;
+  onGiftClick?: () => void;
+  showGiftButton?: boolean;
 }
 
 const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
@@ -32,7 +34,9 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
   isTalking = false,
   className = '',
   onAvatarClick,
-  onTalkClick
+  onTalkClick,
+  onGiftClick,
+  showGiftButton = false
 }) => {
   const [avatarData, setAvatarData] = useState<any>(null);
   const [profileData, setProfileData] = useState<any>(null);
@@ -296,6 +300,23 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
           )}
 
         </div>
+
+        {/* Gift Button - Bottom Left */}
+        {showGiftButton && onGiftClick && (
+          <div className="absolute bottom-4 left-4 z-10">
+            <Button
+              size="sm"
+              className="rounded-full bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white shadow-lg p-3 flex items-center justify-center"
+              onClick={(e) => {
+                e.stopPropagation();
+                onGiftClick();
+              }}
+              title="Gift Tokens"
+            >
+              <Gift className="w-5 h-5" />
+            </Button>
+          </div>
+        )}
 
         {/* Talk to Me Button - Always visible, floating at bottom center */}
         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10">
