@@ -1073,22 +1073,8 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-4">
-        <motion.div
-          className="text-center space-y-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-white/80">Loading avatar profile...</p>
-        </motion.div>
-      </div>
-    );
-  }
-
-  if (!profile) {
+  // Show profile not found only after loading is complete
+  if (!loading && !profile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-4">
         <Card className="bg-slate-900/80 border-slate-700/50 backdrop-blur-xl max-w-md w-full">
@@ -1313,16 +1299,7 @@ const ProfilePage: React.FC = () => {
                 <TabsContent value="posts" className="mt-6 flex-1 overflow-hidden flex flex-col">
                   <div className="overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent max-h-[400px]">
                     <AnimatePresence>
-                    {postsLoading ? (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="text-center py-8"
-                      >
-                        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                        <p className="text-slate-400 text-sm">Loading posts...</p>
-                      </motion.div>
-                    ) : userPosts.length > 0 ? (
+                    {userPosts.length > 0 ? (
                       userPosts.map((post, index) => (
                         <motion.div
                           key={post.id}
