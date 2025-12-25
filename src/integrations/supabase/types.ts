@@ -3433,6 +3433,66 @@ export type Database = {
           },
         ]
       }
+      user_chat_settings: {
+        Row: {
+          ai_responses_enabled: boolean | null
+          allow_direct_chat: boolean | null
+          created_at: string | null
+          direct_chat_free: boolean | null
+          enable_daily_limit: boolean | null
+          enable_gift_popup: boolean | null
+          enable_rich_responses: boolean | null
+          enable_voice_responses: boolean | null
+          free_messages_per_day: number | null
+          gift_popup_after_messages: number | null
+          gift_popup_message: string | null
+          id: string
+          max_message_length: number | null
+          pause_ai_until: string | null
+          show_gift_button: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          ai_responses_enabled?: boolean | null
+          allow_direct_chat?: boolean | null
+          created_at?: string | null
+          direct_chat_free?: boolean | null
+          enable_daily_limit?: boolean | null
+          enable_gift_popup?: boolean | null
+          enable_rich_responses?: boolean | null
+          enable_voice_responses?: boolean | null
+          free_messages_per_day?: number | null
+          gift_popup_after_messages?: number | null
+          gift_popup_message?: string | null
+          id?: string
+          max_message_length?: number | null
+          pause_ai_until?: string | null
+          show_gift_button?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          ai_responses_enabled?: boolean | null
+          allow_direct_chat?: boolean | null
+          created_at?: string | null
+          direct_chat_free?: boolean | null
+          enable_daily_limit?: boolean | null
+          enable_gift_popup?: boolean | null
+          enable_rich_responses?: boolean | null
+          enable_voice_responses?: boolean | null
+          free_messages_per_day?: number | null
+          gift_popup_after_messages?: number | null
+          gift_popup_message?: string | null
+          id?: string
+          max_message_length?: number | null
+          pause_ai_until?: string | null
+          show_gift_button?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           granted_at: string | null
@@ -3800,6 +3860,45 @@ export type Database = {
           visibility?: string
           waitlist_enabled?: boolean | null
           waitlist_limit?: number | null
+        }
+        Relationships: []
+      }
+      visitor_chat_usage: {
+        Row: {
+          created_at: string | null
+          gift_popup_shown: boolean | null
+          gift_popup_shown_at: string | null
+          id: string
+          last_message_at: string | null
+          message_count: number | null
+          profile_id: string
+          session_id: string | null
+          usage_date: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          gift_popup_shown?: boolean | null
+          gift_popup_shown_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          message_count?: number | null
+          profile_id: string
+          session_id?: string | null
+          usage_date?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          gift_popup_shown?: boolean | null
+          gift_popup_shown_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          message_count?: number | null
+          profile_id?: string
+          session_id?: string | null
+          usage_date?: string | null
+          visitor_id?: string | null
         }
         Relationships: []
       }
