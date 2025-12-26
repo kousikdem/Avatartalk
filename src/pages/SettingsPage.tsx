@@ -24,7 +24,8 @@ import {
   Instagram,
   Youtube,
   Globe,
-  CreditCard
+  CreditCard,
+  MessageSquare
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,6 +35,7 @@ import ProfilePictureUpload from '@/components/ProfilePictureUpload';
 import SocialLinksManager from '@/components/SocialLinksManager';
 import { OrdersDashboard } from '@/components/OrdersDashboard';
 import TokenDisplay from '@/components/TokenDisplay';
+import UserChatSettingsPanel from '@/components/UserChatSettingsPanel';
 
 const SettingsPage = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -302,7 +304,7 @@ const SettingsPage = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 bg-white shadow-sm">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-8 bg-white shadow-sm">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Profile
@@ -310,6 +312,10 @@ const SettingsPage = () => {
             <TabsTrigger value="avatar" className="flex items-center gap-2">
               <Palette className="h-4 w-4" />
               Avatar
+            </TabsTrigger>
+            <TabsTrigger value="chat" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              AI Chat
             </TabsTrigger>
             <TabsTrigger value="social" className="flex items-center gap-2">
               <Link className="h-4 w-4" />
@@ -530,6 +536,11 @@ const SettingsPage = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* AI Chat Settings */}
+          <TabsContent value="chat" className="space-y-6">
+            {currentUser && <UserChatSettingsPanel userId={currentUser.id} />}
           </TabsContent>
 
           {/* Social Links */}

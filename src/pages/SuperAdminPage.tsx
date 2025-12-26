@@ -14,7 +14,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { 
   Shield, Settings, Users, Activity, Coins, Brain, 
   RefreshCw, Plus, AlertTriangle, CheckCircle, BarChart3,
-  Key, CreditCard, Globe
+  Key, CreditCard, Globe, MessageSquare
 } from 'lucide-react';
 import { useState } from 'react';
 import { format } from 'date-fns';
@@ -24,6 +24,7 @@ import { IntegrationOAuthManager } from '@/components/super-admin/IntegrationOAu
 import { RazorpayManagement } from '@/components/super-admin/RazorpayManagement';
 import { SiteSettingsManager } from '@/components/super-admin/SiteSettingsManager';
 import { UserSearchManager } from '@/components/super-admin/UserSearchManager';
+import ChatSettingsManager from '@/components/super-admin/ChatSettingsManager';
 
 const SuperAdminPage = () => {
   const {
@@ -107,6 +108,10 @@ const SuperAdminPage = () => {
             <TabsTrigger value="tokens" className="flex items-center gap-2">
               <Coins className="h-4 w-4" />
               Tokens
+            </TabsTrigger>
+            <TabsTrigger value="chat" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Chat Settings
             </TabsTrigger>
             <TabsTrigger value="ai" className="flex items-center gap-2">
               <Brain className="h-4 w-4" />
@@ -240,6 +245,11 @@ const SuperAdminPage = () => {
               ))}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Chat Settings Tab */}
+        <TabsContent value="chat" className="space-y-4">
+          <ChatSettingsManager />
         </TabsContent>
 
         {/* AI Limits Tab */}

@@ -106,7 +106,7 @@ const GiftTokenPopup: React.FC<GiftTokenPopupProps> = ({
         }
 
         // Gift from own tokens - direct transfer
-        const { data, error } = await supabase.rpc('transfer_tokens', {
+        const { data, error } = await supabase.rpc('transfer_tokens' as any, {
           p_sender_id: user.id,
           p_receiver_id: receiverId,
           p_amount: calculatedTokens,

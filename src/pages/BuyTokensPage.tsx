@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Coins, Zap, Calculator, CreditCard, Info, TrendingUp, Sparkles, BarChart3 } from 'lucide-react';
+import { Coins, Zap, Calculator, CreditCard, Info, TrendingUp, Sparkles, BarChart3, Gift, Search, User } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,12 +7,14 @@ import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useTokens } from '@/hooks/useTokens';
 import TokenDisplay from '@/components/TokenDisplay';
 import TokenUsageDashboard from '@/components/TokenUsageDashboard';
 import DashboardHeader from '@/components/DashboardHeader';
+import GiftTokenPopup from '@/components/GiftTokenPopup';
 
 declare global {
   interface Window {
@@ -33,6 +35,11 @@ const BuyTokensPage: React.FC = () => {
   const [customTokenInput, setCustomTokenInput] = useState<string>('');
   const [processing, setProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState('buy');
+  const [userSearch, setUserSearch] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [giftModalOpen, setGiftModalOpen] = useState(false);
   const { tokenBalance, dailyUsage, refetch } = useTokens();
   const { toast } = useToast();
 
@@ -213,6 +220,26 @@ const BuyTokensPage: React.FC = () => {
     { tokens: 50000000, label: '50M' },
   ];
 
+  // Search users for gifting
+  const handleUserSearch = async () => {
+    if (!userSearch.trim()) return;
+    setSearchLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, profile_pic_url')
+        .or(`username.ilike.%${userSearch}%,display_name.ilike.%${userSearch}%`)
+        .limit(10);
+      
+      if (!error && data) {
+        setSearchResults(data);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+    }
+    setSearchLoading(false);
+  };
+
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-background via-background to-muted/20 p-4 lg:p-8">
       <div className="max-w-5xl mx-auto space-y-6">
@@ -225,10 +252,14 @@ const BuyTokensPage: React.FC = () => {
 
             {/* Tabs for Buy / Usage */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 max-w-md">
+              <TabsList className="grid w-full grid-cols-3 max-w-lg">
                 <TabsTrigger value="buy" className="flex items-center gap-2">
                   <CreditCard className="w-4 h-4" />
                   Buy Tokens
+                </TabsTrigger>
+                <TabsTrigger value="gift" className="flex items-center gap-2">
+                  <Gift className="w-4 h-4" />
+                  Gift Tokens
                 </TabsTrigger>
                 <TabsTrigger value="usage" className="flex items-center gap-2">
                   <BarChart3 className="w-4 h-4" />
@@ -423,10 +454,121 @@ const BuyTokensPage: React.FC = () => {
           </div>
               </TabsContent>
 
+              {/* Gift Tokens Tab */}
+              <TabsContent value="gift" className="mt-6 space-y-6">
+                <Card className="border-2 border-pink-200/50 bg-gradient-to-br from-pink-50/50 to-purple-50/50 dark:from-pink-950/20 dark:to-purple-950/20">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Gift className="w-5 h-5 text-pink-500" />
+                      Gift Tokens to a User
+                    </CardTitle>
+                    <CardDescription>
+                      Search for a user and gift them tokens to support their AI conversations
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Search Input */}
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search by username or display name..."
+                          value={userSearch}
+                          onChange={(e) => setUserSearch(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && handleUserSearch()}
+                          className="pl-10"
+                        />
+                      </div>
+                      <Button onClick={handleUserSearch} disabled={searchLoading}>
+                        {searchLoading ? 'Searching...' : 'Search'}
+                      </Button>
+                    </div>
+
+                    {/* Search Results */}
+                    {searchResults.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">Select a user to gift:</p>
+                        <div className="grid gap-2 max-h-60 overflow-y-auto">
+                          {searchResults.map((user) => (
+                            <div
+                              key={user.id}
+                              className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:bg-pink-50 dark:hover:bg-pink-950/30 ${
+                                selectedUser?.id === user.id ? 'border-pink-500 bg-pink-50 dark:bg-pink-950/30' : 'border-border'
+                              }`}
+                              onClick={() => setSelectedUser(user)}
+                            >
+                              <Avatar className="h-10 w-10">
+                                <AvatarImage src={user.profile_pic_url} />
+                                <AvatarFallback className="bg-pink-100 text-pink-700">
+                                  {(user.display_name || user.username || 'U')[0].toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1">
+                                <p className="font-medium">{user.display_name || user.username}</p>
+                                <p className="text-sm text-muted-foreground">@{user.username}</p>
+                              </div>
+                              {selectedUser?.id === user.id && (
+                                <Badge className="bg-pink-500">Selected</Badge>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Gift Button */}
+                    {selectedUser && (
+                      <Button
+                        onClick={() => setGiftModalOpen(true)}
+                        className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
+                        size="lg"
+                      >
+                        <Gift className="w-4 h-4 mr-2" />
+                        Gift Tokens to {selectedUser.display_name || selectedUser.username}
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Info Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card className="bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-950/30 dark:to-rose-950/30">
+                    <CardContent className="pt-6">
+                      <Gift className="w-8 h-8 text-pink-500 mb-3" />
+                      <h3 className="font-semibold">Support Creators</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Help your favorite creators continue their AI conversations by gifting tokens.
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30">
+                    <CardContent className="pt-6">
+                      <Sparkles className="w-8 h-8 text-purple-500 mb-3" />
+                      <h3 className="font-semibold">Gift from Balance</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        You can gift from your own token balance (keep min 15K tokens) or buy and gift.
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
               <TabsContent value="usage" className="mt-6">
                 <TokenUsageDashboard />
               </TabsContent>
             </Tabs>
+
+            {/* Gift Modal */}
+            {selectedUser && (
+              <GiftTokenPopup
+                open={giftModalOpen}
+                onOpenChange={setGiftModalOpen}
+                receiverId={selectedUser.id}
+                receiverName={selectedUser.display_name || selectedUser.username}
+                receiverAvatar={selectedUser.profile_pic_url}
+              />
+            )}
           </div>
         </div>
   );
