@@ -4180,6 +4180,15 @@ export type Database = {
         }
         Returns: Json
       }
+      transfer_tokens: {
+        Args: {
+          p_amount: number
+          p_message?: string
+          p_receiver_id: string
+          p_sender_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user" | "super_admin"
