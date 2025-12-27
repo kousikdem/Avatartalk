@@ -34,6 +34,7 @@ import MessageInput from './MessageInput';
 import { CompactProductCard } from './CompactProductCard';
 import VirtualCollaborationCard from './VirtualCollaborationCard';
 import TokenGiftModal from './TokenGiftModal';
+import GiftTokenPopup from './GiftTokenPopup';
 import {
   MessageCircle,
   Share2,
@@ -173,6 +174,8 @@ const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('chat');
   const [aiTrainingSettings, setAiTrainingSettings] = useState<any>(null);
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
+  const [isFirstTimeGiftPopupOpen, setIsFirstTimeGiftPopupOpen] = useState(false);
+  const [hasShownFirstTimeGiftPopup, setHasShownFirstTimeGiftPopup] = useState(false);
   const { toast } = useToast();
 
   const {
@@ -452,6 +455,42 @@ const ProfilePage: React.FC = () => {
 
   // Check if this is the user's own profile
   const isOwnProfile = currentUser?.id === profile?.id;
+
+  // First-time visitor gift popup - ask visitors to gift tokens
+  useEffect(() => {
+    if (!profile?.id || isOwnProfile || hasShownFirstTimeGiftPopup || !loading) return;
+    
+    const checkAndShowGiftPopup = async () => {
+      // Check localStorage for first-time visit
+      const giftPopupKey = `gift_popup_shown_${profile.id}`;
+      const hasSeenPopup = localStorage.getItem(giftPopupKey);
+      
+      if (!hasSeenPopup) {
+        // Delay popup for better UX - show after 3 seconds
+        const timer = setTimeout(() => {
+          setIsFirstTimeGiftPopupOpen(true);
+          setHasShownFirstTimeGiftPopup(true);
+          localStorage.setItem(giftPopupKey, 'true');
+          
+          // Play voice message asking for gift
+          const giftMessage = `Hello! I'm ${profile.display_name || profile.username}. Would you like to gift some AI tokens to help power my voice and text conversations? It really helps!`;
+          try {
+            const speechSynthesis = window.speechSynthesis;
+            const utterance = new SpeechSynthesisUtterance(giftMessage);
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            speechSynthesis.speak(utterance);
+          } catch (e) {
+            console.error('Speech synthesis error:', e);
+          }
+        }, 3000);
+        
+        return () => clearTimeout(timer);
+      }
+    };
+    
+    checkAndShowGiftPopup();
+  }, [profile, isOwnProfile, hasShownFirstTimeGiftPopup, loading]);
 
   // Real-time follower count updates from database
   useEffect(() => {
@@ -1804,14 +1843,27 @@ const ProfilePage: React.FC = () => {
         onClose={() => setIsMainAuthOpen(false)}
       />
       
-      {/* Token Gift Modal */}
+      {/* Token Gift Modal - Manual trigger */}
       {profile && (
-        <TokenGiftModal
+        <GiftTokenPopup
           open={isGiftModalOpen}
           onOpenChange={setIsGiftModalOpen}
           receiverId={profile.id}
           receiverName={profile.display_name || profile.username}
-          senderId={currentUser?.id}
+          receiverAvatar={profile.profile_pic_url || profile.avatar_url}
+        />
+      )}
+
+      {/* First-Time Visitor Gift Popup */}
+      {profile && (
+        <GiftTokenPopup
+          open={isFirstTimeGiftPopupOpen}
+          onOpenChange={setIsFirstTimeGiftPopupOpen}
+          receiverId={profile.id}
+          receiverName={profile.display_name || profile.username}
+          receiverAvatar={profile.profile_pic_url || profile.avatar_url}
+          isFirstTimeVisitor={true}
+          customMessage={`Help ${profile.display_name || profile.username} power their AI assistant with voice + text capabilities!`}
         />
       )}
     </div>
