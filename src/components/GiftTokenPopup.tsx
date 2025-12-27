@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Gift, Coins, Heart, Sparkles, Mic, Volume2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useTokenPrice } from '@/hooks/useTokenPrice';
 
 declare global {
   interface Window {
@@ -32,8 +33,6 @@ interface GiftTokenPopupProps {
   isFirstTimeVisitor?: boolean;
 }
 
-// Regular token price: 1M tokens = ₹420
-const TOKENS_PER_RUPEE = 1000000 / 420; // ~2380.95 tokens per ₹1
 const MIN_AMOUNT = 10; // ₹10 minimum
 
 const presetAmounts = [
@@ -59,7 +58,9 @@ const GiftTokenPopup: React.FC<GiftTokenPopupProps> = ({
   const [processing, setProcessing] = useState(false);
   const [senderBalance, setSenderBalance] = useState<number | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [minRetainTokens, setMinRetainTokens] = useState(15000);
   const { toast } = useToast();
+  const { tokensPerRupee, pricePerMillion } = useTokenPrice();
 
   useEffect(() => {
     // Load Razorpay script
@@ -70,7 +71,7 @@ const GiftTokenPopup: React.FC<GiftTokenPopupProps> = ({
       document.body.appendChild(script);
     }
 
-    // Fetch sender balance and user ID
+    // Fetch sender balance, user ID, and min retain tokens
     const fetchUserData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -82,15 +83,29 @@ const GiftTokenPopup: React.FC<GiftTokenPopupProps> = ({
           .single();
         if (data) setSenderBalance(data.token_balance);
       }
+
+      // Fetch min retain tokens from system limits
+      const { data: limitData } = await supabase
+        .from('ai_system_limits')
+        .select('limit_value')
+        .eq('limit_key', 'visitor_gift_minimum_tokens')
+        .maybeSingle();
+      
+      if (limitData?.limit_value) {
+        const limitValue = limitData.limit_value as { limit?: number };
+        if (limitValue.limit) {
+          setMinRetainTokens(limitValue.limit);
+        }
+      }
     };
     fetchUserData();
   }, []);
 
   const finalAmount = customAmount ? parseFloat(customAmount) : selectedAmount;
-  const calculatedTokens = Math.floor(finalAmount * TOKENS_PER_RUPEE);
+  const calculatedTokens = Math.floor(finalAmount * tokensPerRupee);
   
-  // User can gift from own tokens if they have enough to retain 15k after gifting
-  const canGiftFromOwn = senderBalance !== null && senderBalance >= calculatedTokens + 15000;
+  // User can gift from own tokens if they have enough to retain minRetainTokens after gifting
+  const canGiftFromOwn = senderBalance !== null && senderBalance >= calculatedTokens + minRetainTokens;
 
   const handleGift = async (fromOwnTokens: boolean) => {
     if (processing) return;
@@ -260,7 +275,7 @@ const GiftTokenPopup: React.FC<GiftTokenPopupProps> = ({
                   )}
                   <div className="text-center">
                     <div className="font-bold text-lg">{preset.label}</div>
-                    <div className="text-xs opacity-80">{Math.floor(preset.amount * TOKENS_PER_RUPEE).toLocaleString()} tokens</div>
+                    <div className="text-xs opacity-80">{Math.floor(preset.amount * tokensPerRupee).toLocaleString()} tokens</div>
                   </div>
                 </Button>
               ))}
@@ -334,7 +349,7 @@ const GiftTokenPopup: React.FC<GiftTokenPopupProps> = ({
                 className="w-full h-12 border-2 border-pink-400 text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-900/30 font-semibold"
               >
                 <Heart className="w-4 h-4 mr-2 text-pink-500" />
-                Gift from My Tokens (Keep 15K)
+                Gift from My Tokens (Keep {(minRetainTokens / 1000).toFixed(0)}K)
               </Button>
             )}
           </div>

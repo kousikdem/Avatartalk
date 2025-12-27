@@ -301,20 +301,19 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
 
         </div>
 
-        {/* Gift Button - Bottom Left - Highly Visible */}
+        {/* Gift Button - Bottom Left - Icon Only */}
         {showGiftButton && onGiftClick && (
           <div className="absolute bottom-4 left-4 z-10">
             <Button
-              size="lg"
-              className="rounded-full bg-gradient-to-r from-pink-500 via-rose-500 to-purple-500 hover:from-pink-600 hover:via-rose-600 hover:to-purple-600 text-white shadow-xl hover:shadow-2xl px-5 py-3 flex items-center gap-2 animate-pulse hover:animate-none transition-all border-2 border-white/30"
+              size="icon"
+              className="rounded-full w-12 h-12 bg-gradient-to-r from-pink-500 via-rose-500 to-purple-500 hover:from-pink-600 hover:via-rose-600 hover:to-purple-600 text-white shadow-xl hover:shadow-2xl animate-pulse hover:animate-none transition-all border-2 border-white/30"
               onClick={(e) => {
                 e.stopPropagation();
                 onGiftClick();
               }}
               title="Gift AI Tokens"
             >
-              <Gift className="w-5 h-5" />
-              <span className="font-bold text-sm">Gift Tokens</span>
+              <Gift className="w-6 h-6" />
             </Button>
           </div>
         )}
