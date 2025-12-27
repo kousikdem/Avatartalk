@@ -49,54 +49,6 @@ const UserChatSettingsPanel: React.FC<UserChatSettingsPanelProps> = ({ userId })
 
   return (
     <div className="space-y-6">
-      {/* Daily Chat Limits */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-blue-500" />
-            Daily Chat Limits
-          </CardTitle>
-          <CardDescription>
-            Control how many free messages visitors can send per day
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label>Enable Daily Limit</Label>
-              <p className="text-sm text-muted-foreground">
-                Limit free messages per visitor per day
-              </p>
-            </div>
-            <Switch
-              checked={settings.enable_daily_limit}
-              onCheckedChange={(checked) => updateSettings({ enable_daily_limit: checked })}
-              disabled={saving}
-            />
-          </div>
-
-          {settings.enable_daily_limit && (
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <Label>Free Messages Per Day</Label>
-                <Badge variant="secondary">{settings.free_messages_per_day} messages</Badge>
-              </div>
-              <Slider
-                value={[settings.free_messages_per_day]}
-                onValueChange={([value]) => updateSettings({ free_messages_per_day: value })}
-                min={1}
-                max={50}
-                step={1}
-                disabled={saving}
-              />
-              <p className="text-xs text-muted-foreground">
-                After this limit, visitors will be prompted to gift tokens
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Gift Token Settings */}
       <Card>
         <CardHeader>

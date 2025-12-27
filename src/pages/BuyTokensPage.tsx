@@ -22,12 +22,13 @@ declare global {
   }
 }
 
-// Pricing: 1 Token = $0.000005, 1M Tokens = $5 = ₹420 (approx)
+// Pricing: 1M Tokens = ₹420 (same as gift token price)
 const PRICE_PER_MILLION_TOKENS_USD = 5;
 const PRICE_PER_MILLION_TOKENS_INR = 420;
-const MIN_TOKENS = 100000; // 100K minimum
+const MIN_TOKENS = 23809; // ~₹10 worth of tokens
 const MAX_TOKENS = 100000000; // 100M maximum
-const MIN_AMOUNT_INR = 42; // ₹42 = 100K tokens
+const MIN_AMOUNT_INR = 10; // ₹10 minimum (same as gift)
+const TOKENS_PER_RUPEE = 1000000 / 420; // ~2380.95 tokens per ₹1
 
 const BuyTokensPage: React.FC = () => {
   const [tokenAmount, setTokenAmount] = useState<number>(1000000);
@@ -211,13 +212,13 @@ const BuyTokensPage: React.FC = () => {
     }
   };
 
-  // Quick select options
+  // Quick select options - starting from ₹10
   const quickOptions = [
-    { tokens: 500000, label: '500K' },
-    { tokens: 1000000, label: '1M' },
-    { tokens: 5000000, label: '5M' },
-    { tokens: 10000000, label: '10M' },
-    { tokens: 50000000, label: '50M' },
+    { tokens: Math.floor(10 * TOKENS_PER_RUPEE), label: '₹10', amount: 10 },
+    { tokens: Math.floor(50 * TOKENS_PER_RUPEE), label: '₹50', amount: 50 },
+    { tokens: Math.floor(100 * TOKENS_PER_RUPEE), label: '₹100', amount: 100 },
+    { tokens: Math.floor(500 * TOKENS_PER_RUPEE), label: '₹500', amount: 500 },
+    { tokens: Math.floor(1000 * TOKENS_PER_RUPEE), label: '₹1000', amount: 1000 },
   ];
 
   // Search users for gifting
@@ -295,8 +296,8 @@ const BuyTokensPage: React.FC = () => {
               {/* Slider */}
               <div className="px-4">
                 <div className="flex justify-between text-xs text-muted-foreground mb-2">
-                  <span>100K</span>
-                  <span>100M</span>
+                  <span>₹10</span>
+                  <span>₹42,000 (100M)</span>
                 </div>
                 <Slider
                   value={[tokenAmount]}
@@ -308,11 +309,11 @@ const BuyTokensPage: React.FC = () => {
                 />
               </div>
 
-              {/* Quick Select */}
+              {/* Quick Select - Now shows ₹ amounts */}
               <div className="flex flex-wrap gap-2 justify-center">
                 {quickOptions.map((option) => (
                   <Button
-                    key={option.tokens}
+                    key={option.amount}
                     variant={tokenAmount === option.tokens ? "default" : "outline"}
                     size="sm"
                     onClick={() => {
@@ -322,7 +323,7 @@ const BuyTokensPage: React.FC = () => {
                     }}
                     className={tokenAmount === option.tokens ? "bg-gradient-to-r from-amber-500 to-yellow-500" : ""}
                   >
-                    {option.label}
+                    {option.label} ({formatTokens(option.tokens)})
                   </Button>
                 ))}
               </div>
