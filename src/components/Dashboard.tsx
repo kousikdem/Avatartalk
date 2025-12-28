@@ -1,8 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Share2, Users, MessageSquare, BarChart3, Calendar, LogOut, Settings, Home, ShoppingBag, PlusCircle } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { 
+  Share2, Users, MessageSquare, BarChart3, LogOut, 
+  Home, ShoppingBag, PlusCircle, Menu, Brain, Video,
+  Coins, Calendar, UserCircle, Link, Bell, Settings
+} from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import ShareModal from './ShareModal';
 import ChangeableAvatarPreview from './ChangeableAvatarPreview';
@@ -13,13 +18,48 @@ import { useToast } from '@/hooks/use-toast';
 import TokenDisplay from './TokenDisplay';
 import CurrencySelector from './CurrencySelector';
 import EnhancedCreatePostModal from './EnhancedCreatePostModal';
+import DashboardSidebar from './DashboardSidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Dashboard = () => {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [upcomingCollabs, setUpcomingCollabs] = useState(0);
+  const [upcomingMeetings, setUpcomingMeetings] = useState(0);
   const { profileData, loading } = useUserProfile();
   const { following, refetch } = useFollows(profileData?.id);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
+
+  // Fetch upcoming collaborations and meetings
+  useEffect(() => {
+    const fetchUpcomingCounts = async () => {
+      if (!profileData?.id) return;
+      
+      const now = new Date().toISOString();
+      
+      // Fetch upcoming events (collabs)
+      const { data: collabs } = await supabase
+        .from('collaborations')
+        .select('id')
+        .eq('user_id', profileData.id)
+        .eq('status', 'active');
+      
+      // Fetch upcoming calendar events (meetings)
+      const { data: meetings } = await supabase
+        .from('calendar_events')
+        .select('id')
+        .eq('user_id', profileData.id)
+        .gte('start_time', now);
+      
+      setUpcomingCollabs(collabs?.length || 0);
+      setUpcomingMeetings(meetings?.length || 0);
+    };
+    
+    fetchUpcomingCounts();
+  }, [profileData?.id]);
 
   // Realtime follows updates for stats - refetch profile data
   React.useEffect(() => {
@@ -78,207 +118,277 @@ const Dashboard = () => {
     );
   }
 
+  const mobileNavItems = [
+    { title: "Dashboard", icon: Home, url: "/settings/dashboard" },
+    { title: "Products", icon: ShoppingBag, url: "/settings/products" },
+    { title: "Virtual Collaboration", icon: Video, url: "/settings/virtual-collaboration" },
+    { title: "Feed", icon: MessageSquare, url: "/settings/feed" },
+    { title: "Avatar", icon: UserCircle, url: "/settings/avatar" },
+    { title: "AI Training", icon: Brain, url: "/settings/ai-training" },
+    { title: "Social Links", icon: Link, url: "/settings/social-links" },
+    { title: "Analytics", icon: BarChart3, url: "/settings/analytics" },
+    { title: "Followers", icon: Users, url: "/settings/followers" },
+    { title: "Notifications", icon: Bell, url: "/settings/notifications" },
+    { title: "Settings", icon: Settings, url: "/settings/account" },
+    { title: "Buy Tokens", icon: Coins, url: "/settings/buy-tokens" },
+  ];
+
   return (
-    <div className="w-full max-w-7xl mx-auto bg-white p-6">
-      {/* Header Section with Token Display, Share and Logout Buttons */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Welcome Back!</h1>
-          <p className="text-gray-600">Manage your AI avatar and track your interactions</p>
+    <div className="w-full max-w-7xl mx-auto bg-white p-3 sm:p-6">
+      {/* Header Section with Mobile Menu, Token Display, Share and Logout Buttons */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-8">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          {/* Mobile Menu Button */}
+          {isMobile && (
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="shrink-0">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-72 p-0">
+                <div className="p-4 border-b">
+                  <h2 className="font-semibold text-lg bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    AvatarTalk.Co
+                  </h2>
+                  <p className="text-xs text-gray-500">Dashboard Menu</p>
+                </div>
+                <div className="p-3 space-y-1">
+                  <Button
+                    onClick={() => {
+                      setIsCreatePostOpen(true);
+                      setMobileMenuOpen(false);
+                    }}
+                    className="w-full mb-3 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 text-white"
+                  >
+                    <PlusCircle className="w-4 h-4 mr-2" />
+                    Create Post
+                  </Button>
+                  {mobileNavItems.map((item) => (
+                    <a
+                      key={item.title}
+                      href={item.url}
+                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <item.icon className="w-5 h-5 text-gray-600" />
+                      <span className="text-sm font-medium text-gray-700">{item.title}</span>
+                    </a>
+                  ))}
+                </div>
+              </SheetContent>
+            </Sheet>
+          )}
+          
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-3xl font-bold text-gray-900 truncate">Welcome Back!</h1>
+            <p className="text-gray-600 text-xs sm:text-base truncate">Manage your AI avatar</p>
+          </div>
         </div>
         
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap w-full sm:w-auto justify-end">
           <CurrencySelector compact />
           <TokenDisplay compact />
           
           <Button 
             onClick={() => setIsShareOpen(true)}
+            size={isMobile ? "icon" : "default"}
             className="bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 hover:from-blue-600 hover:via-purple-600 hover:to-indigo-700 text-white"
           >
-            <Share2 className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Share Profile</span>
-            <span className="sm:hidden">Share</span>
+            <Share2 className="w-4 h-4" />
+            {!isMobile && <span className="ml-2">Share Profile</span>}
           </Button>
           
           <Button 
             onClick={handleLogout}
             variant="outline"
+            size={isMobile ? "icon" : "default"}
             className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-400"
           >
-            <LogOut className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Logout</span>
+            <LogOut className="w-4 h-4" />
+            {!isMobile && <span className="ml-2">Logout</span>}
           </Button>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
         <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 hover:shadow-lg transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-700">Total Followers</CardTitle>
-            <Users className="h-4 w-4 text-blue-600" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium text-gray-700">Followers</CardTitle>
+            <Users className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{profileData?.followers_count || 0}</div>
-            <p className="text-xs text-gray-600">+20% from last month</p>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-xl sm:text-2xl font-bold text-gray-900">{profileData?.followers_count || 0}</div>
+            <p className="text-xs text-gray-600 hidden sm:block">+20% from last month</p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 hover:shadow-lg transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-700">Messages</CardTitle>
-            <MessageSquare className="h-4 w-4 text-purple-600" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium text-gray-700">Messages</CardTitle>
+            <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-xl sm:text-2xl font-bold text-gray-900">
               {(profileData?.analytics?.total_chats_sent || 0) + (profileData?.analytics?.total_chats_received || 0)}
             </div>
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-gray-600 hidden sm:block">
               {profileData?.analytics?.total_chats_sent || 0} sent • {profileData?.analytics?.total_chats_received || 0} received
             </p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 hover:shadow-lg transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-700">Loyalty Score</CardTitle>
-            <BarChart3 className="h-4 w-4 text-green-600" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium text-gray-700">Collabs</CardTitle>
+            <Video className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">85</div>
-            <p className="text-xs text-gray-600">+5% from last month</p>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-xl sm:text-2xl font-bold text-gray-900">{upcomingCollabs}</div>
+            <p className="text-xs text-gray-600 hidden sm:block">Upcoming collaborations</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200 hover:shadow-lg transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-700">Events</CardTitle>
-            <Calendar className="h-4 w-4 text-orange-600" />
+        <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 hover:shadow-lg transition-all duration-300">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium text-gray-700">Meetings</CardTitle>
+            <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">12</div>
-            <p className="text-xs text-gray-600">3 upcoming</p>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-xl sm:text-2xl font-bold text-gray-900">{upcomingMeetings}</div>
+            <p className="text-xs text-gray-600 hidden sm:block">Scheduled meetings</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2">
           {/* Quick Actions */}
           <Card className="bg-gradient-to-br from-slate-50 to-gray-50 border border-slate-200">
-            <CardHeader>
-              <CardTitle className="text-gray-900">Quick Actions</CardTitle>
+            <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-4">
+              <CardTitle className="text-gray-900 text-base sm:text-lg">Quick Actions</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+              <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-4">
+                {/* Create Post */}
                 <Button 
                   variant="outline" 
-                  className="h-16 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 hover:from-emerald-600 hover:via-green-600 hover:to-teal-600 text-white border-0"
+                  className="h-14 sm:h-20 bg-white hover:bg-gray-50 border border-gray-200 flex flex-col items-center justify-center gap-1 sm:gap-2 p-1 sm:p-2"
                   onClick={() => setIsCreatePostOpen(true)}
                 >
-                  <div className="text-center">
-                    <PlusCircle className="h-6 w-6 mx-auto mb-1" />
-                    <div className="text-sm">Create Post</div>
+                  <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500">
+                    <PlusCircle className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
                   </div>
+                  <span className="text-[10px] sm:text-xs text-gray-700 font-medium truncate w-full text-center">Post</span>
                 </Button>
                 
+                {/* Avatar */}
                 <Button 
                   variant="outline" 
-                  className="h-16 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 hover:from-blue-600 hover:via-purple-600 hover:to-indigo-700 text-white border-0"
-                  onClick={() => window.location.href = '/avatar'}
+                  className="h-14 sm:h-20 bg-white hover:bg-gray-50 border border-gray-200 flex flex-col items-center justify-center gap-1 sm:gap-2 p-1 sm:p-2"
+                  onClick={() => window.location.href = '/settings/avatar'}
                 >
-                  <div className="text-center">
-                    <Users className="h-6 w-6 mx-auto mb-1" />
-                    <div className="text-sm">Setup Avatar</div>
+                  <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500">
+                    <UserCircle className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
                   </div>
+                  <span className="text-[10px] sm:text-xs text-gray-700 font-medium truncate w-full text-center">Avatar</span>
                 </Button>
                 
+                {/* Products */}
                 <Button 
                   variant="outline" 
-                  className="h-16 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 hover:from-purple-600 hover:via-pink-600 hover:to-red-600 text-white border-0"
-                  onClick={() => window.location.href = '/products'}
+                  className="h-14 sm:h-20 bg-white hover:bg-gray-50 border border-gray-200 flex flex-col items-center justify-center gap-1 sm:gap-2 p-1 sm:p-2"
+                  onClick={() => window.location.href = '/settings/products'}
                 >
-                  <div className="text-center">
-                    <ShoppingBag className="h-6 w-6 mx-auto mb-1" />
-                    <div className="text-sm">Products</div>
+                  <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-purple-400 to-pink-500">
+                    <ShoppingBag className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
                   </div>
+                  <span className="text-[10px] sm:text-xs text-gray-700 font-medium truncate w-full text-center">Products</span>
                 </Button>
                 
+                {/* Virtual Collab */}
                 <Button 
                   variant="outline" 
-                  className="h-16 bg-gradient-to-r from-green-500 via-teal-500 to-blue-500 hover:from-green-600 hover:via-teal-600 hover:to-blue-600 text-white border-0"
-                  onClick={() => window.location.href = '/calendar'}
+                  className="h-14 sm:h-20 bg-white hover:bg-gray-50 border border-gray-200 flex flex-col items-center justify-center gap-1 sm:gap-2 p-1 sm:p-2"
+                  onClick={() => window.location.href = '/settings/virtual-collaboration'}
                 >
-                  <div className="text-center">
-                    <Calendar className="h-6 w-6 mx-auto mb-1" />
-                    <div className="text-sm">Calendar</div>
+                  <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500">
+                    <Video className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
                   </div>
+                  <span className="text-[10px] sm:text-xs text-gray-700 font-medium truncate w-full text-center">Collab</span>
                 </Button>
                 
+                {/* Feed */}
                 <Button 
                   variant="outline" 
-                  className="h-16 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 hover:from-orange-600 hover:via-red-600 hover:to-pink-600 text-white border-0"
-                  onClick={() => window.location.href = '/feed'}
+                  className="h-14 sm:h-20 bg-white hover:bg-gray-50 border border-gray-200 flex flex-col items-center justify-center gap-1 sm:gap-2 p-1 sm:p-2"
+                  onClick={() => window.location.href = '/settings/feed'}
                 >
-                  <div className="text-center">
-                    <Home className="h-6 w-6 mx-auto mb-1" />
-                    <div className="text-sm">Feed</div>
+                  <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-orange-400 to-red-500">
+                    <Home className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
                   </div>
+                  <span className="text-[10px] sm:text-xs text-gray-700 font-medium truncate w-full text-center">Feed</span>
                 </Button>
                 
+                {/* AI Training */}
                 <Button 
                   variant="outline" 
-                  className="h-16 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 hover:from-cyan-600 hover:via-blue-600 hover:to-indigo-600 text-white border-0"
-                  onClick={() => window.location.href = '/settings'}
-                >
-                  <div className="text-center">
-                    <Settings className="h-6 w-6 mx-auto mb-1" />
-                    <div className="text-sm">Settings</div>
-                  </div>
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  className="h-16 bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500 hover:from-indigo-600 hover:via-violet-600 hover:to-purple-600 text-white border-0"
+                  className="h-14 sm:h-20 bg-white hover:bg-gray-50 border border-gray-200 flex flex-col items-center justify-center gap-1 sm:gap-2 p-1 sm:p-2"
                   onClick={() => window.location.href = '/settings/ai-training'}
                 >
-                  <div className="text-center">
-                    <MessageSquare className="h-6 w-6 mx-auto mb-1" />
-                    <div className="text-sm">AI Training</div>
+                  <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-violet-400 to-purple-500">
+                    <Brain className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
                   </div>
+                  <span className="text-[10px] sm:text-xs text-gray-700 font-medium truncate w-full text-center">AI</span>
                 </Button>
                 
+                {/* Buy Tokens */}
                 <Button 
                   variant="outline" 
-                  className="h-16 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 hover:from-violet-600 hover:via-purple-600 hover:to-fuchsia-600 text-white border-0"
-                  onClick={() => window.location.href = '/'}
+                  className="h-14 sm:h-20 bg-white hover:bg-gray-50 border border-gray-200 flex flex-col items-center justify-center gap-1 sm:gap-2 p-1 sm:p-2"
+                  onClick={() => window.location.href = '/settings/buy-tokens'}
                 >
-                  <div className="text-center">
-                    <MessageSquare className="h-6 w-6 mx-auto mb-1" />
-                    <div className="text-sm">Messages</div>
+                  <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500">
+                    <Coins className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
                   </div>
+                  <span className="text-[10px] sm:text-xs text-gray-700 font-medium truncate w-full text-center">Tokens</span>
                 </Button>
                 
+                {/* Analytics */}
                 <Button 
                   variant="outline" 
-                  className="h-16 bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500 hover:from-amber-600 hover:via-yellow-600 hover:to-orange-600 text-white border-0"
-                  onClick={() => window.location.href = '/analytics'}
+                  className="h-14 sm:h-20 bg-white hover:bg-gray-50 border border-gray-200 flex flex-col items-center justify-center gap-1 sm:gap-2 p-1 sm:p-2"
+                  onClick={() => window.location.href = '/settings/analytics'}
                 >
-                  <div className="text-center">
-                    <BarChart3 className="h-6 w-6 mx-auto mb-1" />
-                    <div className="text-sm">Analytics</div>
+                  <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500">
+                    <BarChart3 className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
                   </div>
+                  <span className="text-[10px] sm:text-xs text-gray-700 font-medium truncate w-full text-center">Analytics</span>
                 </Button>
                 
+                {/* Settings */}
                 <Button 
                   variant="outline" 
-                  className="h-16 bg-gradient-to-r from-pink-500 via-rose-500 to-red-500 hover:from-pink-600 hover:via-rose-600 hover:to-red-600 text-white border-0"
+                  className="h-14 sm:h-20 bg-white hover:bg-gray-50 border border-gray-200 flex flex-col items-center justify-center gap-1 sm:gap-2 p-1 sm:p-2"
+                  onClick={() => window.location.href = '/settings/account'}
+                >
+                  <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-slate-400 to-gray-600">
+                    <Settings className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
+                  </div>
+                  <span className="text-[10px] sm:text-xs text-gray-700 font-medium truncate w-full text-center">Settings</span>
+                </Button>
+                
+                {/* Share */}
+                <Button 
+                  variant="outline" 
+                  className="h-14 sm:h-20 bg-white hover:bg-gray-50 border border-gray-200 flex flex-col items-center justify-center gap-1 sm:gap-2 p-1 sm:p-2"
                   onClick={() => setIsShareOpen(true)}
                 >
-                  <div className="text-center">
-                    <Share2 className="h-6 w-6 mx-auto mb-1" />
-                    <div className="text-sm">Share</div>
+                  <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-pink-400 to-rose-500">
+                    <Share2 className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
                   </div>
+                  <span className="text-[10px] sm:text-xs text-gray-700 font-medium truncate w-full text-center">Share</span>
                 </Button>
               </div>
             </CardContent>
