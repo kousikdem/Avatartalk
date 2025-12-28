@@ -10,7 +10,7 @@ interface LimitValue {
 }
 
 export const useTokenPrice = () => {
-  const [pricePerMillion, setPricePerMillion] = useState<number>(DEFAULT_PRICE_PER_MILLION);
+  const [pricePerMillionINR, setPricePerMillionINR] = useState<number>(DEFAULT_PRICE_PER_MILLION);
   const [loading, setLoading] = useState(true);
 
   const fetchPrice = useCallback(async () => {
@@ -24,16 +24,16 @@ export const useTokenPrice = () => {
       if (!error && data?.limit_value) {
         const limitValue = data.limit_value as LimitValue;
         if (limitValue.limit) {
-          setPricePerMillion(limitValue.limit);
+          setPricePerMillionINR(limitValue.limit);
         } else {
-          setPricePerMillion(DEFAULT_PRICE_PER_MILLION);
+          setPricePerMillionINR(DEFAULT_PRICE_PER_MILLION);
         }
       } else {
-        setPricePerMillion(DEFAULT_PRICE_PER_MILLION);
+        setPricePerMillionINR(DEFAULT_PRICE_PER_MILLION);
       }
     } catch (error) {
       console.error('Error fetching token price:', error);
-      setPricePerMillion(DEFAULT_PRICE_PER_MILLION);
+      setPricePerMillionINR(DEFAULT_PRICE_PER_MILLION);
     } finally {
       setLoading(false);
     }
@@ -43,21 +43,23 @@ export const useTokenPrice = () => {
     fetchPrice();
   }, [fetchPrice]);
 
-  // Calculate tokens from rupees
+  // Calculate tokens from rupees (INR base)
   const tokensFromRupees = (rupees: number): number => {
-    return Math.floor((rupees / pricePerMillion) * 1000000);
+    return Math.floor((rupees / pricePerMillionINR) * 1000000);
   };
 
-  // Calculate rupees from tokens
+  // Calculate rupees from tokens (INR base)
   const rupeesFromTokens = (tokens: number): number => {
-    return (tokens / 1000000) * pricePerMillion;
+    return (tokens / 1000000) * pricePerMillionINR;
   };
 
   // Tokens per rupee
-  const tokensPerRupee = 1000000 / pricePerMillion;
+  const tokensPerRupee = 1000000 / pricePerMillionINR;
 
+  // For backward compatibility, also export pricePerMillion
   return {
-    pricePerMillion,
+    pricePerMillion: pricePerMillionINR,
+    pricePerMillionINR,
     tokensPerRupee,
     tokensFromRupees,
     rupeesFromTokens,
