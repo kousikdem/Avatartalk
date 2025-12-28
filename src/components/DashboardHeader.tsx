@@ -1,5 +1,6 @@
 import React from 'react';
 import TokenDisplay from './TokenDisplay';
+import CurrencySelector from './CurrencySelector';
 
 interface DashboardHeaderProps {
   title: string;
@@ -28,7 +29,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         </div>
       </div>
       
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap">
+        <CurrencySelector compact />
         <TokenDisplay compact />
         {children}
       </div>

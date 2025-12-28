@@ -26,6 +26,7 @@ import SuperAdminPage from "./pages/SuperAdminPage";
 import BuyTokensPage from "./pages/BuyTokensPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import { supabase } from "@/integrations/supabase/client";
+import { CurrencyProvider } from "@/hooks/useCurrency";
 
 const queryClient = new QueryClient();
 
@@ -80,48 +81,50 @@ const App = () => {
   if (user) {
     return (
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <div className="min-h-screen bg-white text-black">
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <SidebarProvider 
-                defaultOpen={!isMobile}
-                open={sidebarOpen}
-                onOpenChange={setSidebarOpen}
-              >
-                <div className="flex min-h-screen w-full bg-white">
-                  <DashboardSidebar onCreatePost={() => setIsCreatePostOpen(true)} />
-                  
-                  <main className="flex-1 min-w-0 transition-all duration-300 bg-white">
-                    <Routes>
-                      <Route path="/settings/dashboard" element={<Index />} />
-                      <Route path="/settings/avatar" element={<AvatarPage />} />
-                      <Route path="/settings/virtual-collaboration" element={<VirtualCollaborationPage />} />
-                      <Route path="/settings/products" element={<ProductsPage />} />
-                      <Route path="/settings/promo" element={<PromoSettingsPage />} />
-                      <Route path="/settings/account" element={<SettingsPage />} />
-                      <Route path="/settings/social-links" element={<SocialLinksPage />} />
-                      <Route path="/settings/feed" element={<FeedPage />} />
-                      <Route path="/settings/followers" element={<FollowersPage />} />
-                      <Route path="/settings/ai-training" element={<AITrainingDashboard />} />
-                      <Route path="/settings/analytics" element={<AnalyticsPage />} />
-                      <Route path="/settings/super-admin" element={<SuperAdminPage />} />
-                      <Route path="/settings/buy-tokens" element={<BuyTokensPage />} />
-                      <Route path="/:username" element={<UsernameRedirect />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </main>
+        <CurrencyProvider>
+          <TooltipProvider>
+            <div className="min-h-screen bg-white text-black">
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <SidebarProvider 
+                  defaultOpen={!isMobile}
+                  open={sidebarOpen}
+                  onOpenChange={setSidebarOpen}
+                >
+                  <div className="flex min-h-screen w-full bg-white">
+                    <DashboardSidebar onCreatePost={() => setIsCreatePostOpen(true)} />
+                    
+                    <main className="flex-1 min-w-0 transition-all duration-300 bg-white">
+                      <Routes>
+                        <Route path="/settings/dashboard" element={<Index />} />
+                        <Route path="/settings/avatar" element={<AvatarPage />} />
+                        <Route path="/settings/virtual-collaboration" element={<VirtualCollaborationPage />} />
+                        <Route path="/settings/products" element={<ProductsPage />} />
+                        <Route path="/settings/promo" element={<PromoSettingsPage />} />
+                        <Route path="/settings/account" element={<SettingsPage />} />
+                        <Route path="/settings/social-links" element={<SocialLinksPage />} />
+                        <Route path="/settings/feed" element={<FeedPage />} />
+                        <Route path="/settings/followers" element={<FollowersPage />} />
+                        <Route path="/settings/ai-training" element={<AITrainingDashboard />} />
+                        <Route path="/settings/analytics" element={<AnalyticsPage />} />
+                        <Route path="/settings/super-admin" element={<SuperAdminPage />} />
+                        <Route path="/settings/buy-tokens" element={<BuyTokensPage />} />
+                        <Route path="/:username" element={<UsernameRedirect />} />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </main>
 
-                  <EnhancedCreatePostModal 
-                    isOpen={isCreatePostOpen}
-                    onClose={() => setIsCreatePostOpen(false)}
-                  />
-                </div>
-              </SidebarProvider>
-            </BrowserRouter>
-          </div>
-        </TooltipProvider>
+                    <EnhancedCreatePostModal 
+                      isOpen={isCreatePostOpen}
+                      onClose={() => setIsCreatePostOpen(false)}
+                    />
+                  </div>
+                </SidebarProvider>
+              </BrowserRouter>
+            </div>
+          </TooltipProvider>
+        </CurrencyProvider>
       </QueryClientProvider>
     );
   }
@@ -129,21 +132,23 @@ const App = () => {
   // For non-authenticated users, show landing page without sidebar
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <div className="min-h-screen bg-white text-black">
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <div className="min-h-screen w-full bg-white">
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/:username" element={<UsernameRedirect />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </div>
-          </BrowserRouter>
-        </div>
-      </TooltipProvider>
+      <CurrencyProvider>
+        <TooltipProvider>
+          <div className="min-h-screen bg-white text-black">
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <div className="min-h-screen w-full bg-white">
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/:username" element={<UsernameRedirect />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </div>
+            </BrowserRouter>
+          </div>
+        </TooltipProvider>
+      </CurrencyProvider>
     </QueryClientProvider>
   );
 };

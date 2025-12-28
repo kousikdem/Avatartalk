@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useTokens } from '@/hooks/useTokens';
 import { useTokenPrice } from '@/hooks/useTokenPrice';
+import { useCurrency } from '@/hooks/useCurrency';
 import TokenUsageDashboard from '@/components/TokenUsageDashboard';
 import DashboardHeader from '@/components/DashboardHeader';
 import GiftTokenPopup from '@/components/GiftTokenPopup';
@@ -38,8 +39,10 @@ const BuyTokensPage: React.FC = () => {
   const [giftModalOpen, setGiftModalOpen] = useState(false);
   const { refetch } = useTokens();
   const { pricePerMillion, tokensPerRupee } = useTokenPrice();
+  const { formatPrice, getCurrencyInfo, convertFromINR } = useCurrency();
   const { toast } = useToast();
 
+  const currencyInfo = getCurrencyInfo();
   const MIN_TOKENS = useMemo(() => Math.floor(MIN_AMOUNT_INR * tokensPerRupee), [tokensPerRupee]);
 
   useEffect(() => {
@@ -52,7 +55,7 @@ const BuyTokensPage: React.FC = () => {
   }, []);
 
   const priceInINR = useMemo(() => (tokenAmount / 1000000) * pricePerMillion, [tokenAmount, pricePerMillion]);
-  const priceInUSD = useMemo(() => Math.round(priceInINR / 84), [priceInINR]);
+  const priceInSelectedCurrency = useMemo(() => convertFromINR(priceInINR), [priceInINR, convertFromINR]);
 
   const handleSliderChange = (value: number[]) => {
     setTokenAmount(value[0]);
@@ -135,13 +138,13 @@ const BuyTokensPage: React.FC = () => {
     }
   };
 
-  const quickOptions = useMemo(() => [
-    { tokens: Math.floor(10 * tokensPerRupee), label: '₹10' },
-    { tokens: Math.floor(50 * tokensPerRupee), label: '₹50' },
-    { tokens: Math.floor(100 * tokensPerRupee), label: '₹100' },
-    { tokens: Math.floor(500 * tokensPerRupee), label: '₹500' },
-    { tokens: Math.floor(1000 * tokensPerRupee), label: '₹1000' },
-  ], [tokensPerRupee]);
+  const quickOptions = useMemo(() => {
+    const baseOptions = [10, 50, 100, 500, 1000];
+    return baseOptions.map(inr => ({
+      tokens: Math.floor(inr * tokensPerRupee),
+      label: formatPrice(inr)
+    }));
+  }, [tokensPerRupee, formatPrice]);
 
   const handleUserSearch = async () => {
     if (!userSearch.trim()) return;
@@ -167,7 +170,7 @@ const BuyTokensPage: React.FC = () => {
             <Card className="border border-amber-200/50 bg-gradient-to-br from-amber-50/30 to-yellow-50/30 dark:from-amber-950/20 dark:to-yellow-950/20">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-lg"><Zap className="w-5 h-5 text-amber-500" />Buy Tokens</CardTitle>
-                <CardDescription>1M tokens = ₹{pricePerMillion}</CardDescription>
+                <CardDescription>1M tokens = {formatPrice(pricePerMillion)}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-center py-3 bg-gradient-to-br from-amber-100/50 to-yellow-100/50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-xl">
@@ -186,17 +189,17 @@ const BuyTokensPage: React.FC = () => {
                 <Separator />
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className="text-xs font-medium"><Calculator className="w-3 h-3 inline mr-1" />Amount (₹)</label><Input type="number" placeholder={`Min ₹${MIN_AMOUNT_INR}`} value={customPriceInput} onChange={(e) => handlePriceInputChange(e.target.value)} className="h-9" /></div>
+                  <div><label className="text-xs font-medium"><Calculator className="w-3 h-3 inline mr-1" />Amount ({currencyInfo.symbol})</label><Input type="number" placeholder={`Min ${formatPrice(MIN_AMOUNT_INR)}`} value={customPriceInput} onChange={(e) => handlePriceInputChange(e.target.value)} className="h-9" /></div>
                   <div><label className="text-xs font-medium"><Sparkles className="w-3 h-3 inline mr-1" />Tokens</label><Input type="text" placeholder="Tokens" value={customTokenInput} onChange={(e) => handleTokenInputChange(e.target.value)} className="h-9" /></div>
                 </div>
 
                 <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg flex justify-between items-center">
                   <span className="font-semibold">Total</span>
-                  <span className="font-bold text-amber-600">₹{priceInINR.toFixed(0)} <span className="text-xs text-muted-foreground">(~${priceInUSD})</span></span>
+                  <span className="font-bold text-amber-600">{formatPrice(priceInINR)} <span className="text-xs text-muted-foreground">(₹{priceInINR.toFixed(0)})</span></span>
                 </div>
 
                 <Button onClick={handlePurchase} disabled={processing || priceInINR < MIN_AMOUNT_INR} className="w-full h-11 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600">
-                  {processing ? 'Processing...' : <><CreditCard className="w-4 h-4 mr-2" />Pay ₹{priceInINR.toFixed(0)}</>}
+                  {processing ? 'Processing...' : <><CreditCard className="w-4 h-4 mr-2" />Pay {formatPrice(priceInINR)}</>}
                 </Button>
               </CardContent>
             </Card>

@@ -11,6 +11,7 @@ import { useFollows } from '@/hooks/useFollows';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import TokenDisplay from './TokenDisplay';
+import CurrencySelector from './CurrencySelector';
 import EnhancedCreatePostModal from './EnhancedCreatePostModal';
 
 const Dashboard = () => {
@@ -86,8 +87,8 @@ const Dashboard = () => {
           <p className="text-gray-600">Manage your AI avatar and track your interactions</p>
         </div>
         
-        <div className="flex items-center gap-3 flex-wrap">
-          {/* Compact Token Display in Header */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <CurrencySelector compact />
           <TokenDisplay compact />
           
           <Button 
