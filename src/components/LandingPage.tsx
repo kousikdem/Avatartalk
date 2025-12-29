@@ -308,10 +308,11 @@ const LandingPage = () => {
                   </div>
                   <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 shadow-sm" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-xl font-bold text-white leading-tight mb-0.5 truncate">Demo Avatar</h3>
-                  <p className="text-slate-400 text-sm">@demouser</p>
-                </div>
+              </div>
+              
+              <div className="flex-1 min-w-0 text-left ml-3">
+                <h3 className="text-xl font-bold text-white leading-tight mb-0.5 truncate">Demo Avatar</h3>
+                <p className="text-slate-400 text-sm">@demouser</p>
               </div>
               
               <Button
@@ -319,13 +320,13 @@ const LandingPage = () => {
                 size="sm"
                 className="text-slate-400 hover:text-white p-2 rounded-full bg-slate-800/30"
               >
-                <Share2 className="h-4 w-4" />
+                <UserCircle className="h-4 w-4" />
               </Button>
             </div>
 
             <div className="px-6 pb-4">
               <p className="text-slate-300 text-sm leading-relaxed">
-                Exploring AI and technology. Creating innovative solutions with personalized AI avatars.
+                Increase Your Brand value to 10X Through AvatarTalk's Clone Avatar.
               </p>
             </div>
 
