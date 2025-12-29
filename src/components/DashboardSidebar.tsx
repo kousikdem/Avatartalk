@@ -38,17 +38,17 @@ interface DashboardSidebarProps {
 }
 
 const navigationItems = [
-  { title: "Dashboard", icon: Home, url: "/settings/dashboard" },
-  { title: "Products", icon: Package, url: "/settings/products" },
-  { title: "Virtual Collaboration", icon: Calendar, url: "/settings/virtual-collaboration" },
-  { title: "Feed", icon: MessageSquare, url: "/settings/feed" },
-  { title: "Avatar", icon: User, url: "/settings/avatar" },
-  { title: "AI Training", icon: Brain, url: "/settings/ai-training" },
-  { title: "Social Links", icon: Share2, url: "/settings/social-links" },
-  { title: "Analytics", icon: BarChart3, url: "/settings/analytics" },
-  { title: "Followers", icon: Users, url: "/settings/followers" },
-  { title: "Notifications", icon: Bell, url: "/settings/notifications" },
-  { title: "Settings", icon: Settings, url: "/settings/account" },
+  { title: "Dashboard", icon: Home, url: "/settings/dashboard", gradient: "from-blue-500 to-cyan-500" },
+  { title: "Products", icon: Package, url: "/settings/products", gradient: "from-emerald-500 to-teal-500" },
+  { title: "Virtual Collaboration", icon: Calendar, url: "/settings/virtual-collaboration", gradient: "from-violet-500 to-purple-500" },
+  { title: "Feed", icon: MessageSquare, url: "/settings/feed", gradient: "from-pink-500 to-rose-500" },
+  { title: "Avatar", icon: User, url: "/settings/avatar", gradient: "from-amber-500 to-orange-500" },
+  { title: "AI Training", icon: Brain, url: "/settings/ai-training", gradient: "from-fuchsia-500 to-pink-500" },
+  { title: "Social Links", icon: Share2, url: "/settings/social-links", gradient: "from-sky-500 to-blue-500" },
+  { title: "Analytics", icon: BarChart3, url: "/settings/analytics", gradient: "from-indigo-500 to-violet-500" },
+  { title: "Followers", icon: Users, url: "/settings/followers", gradient: "from-green-500 to-emerald-500" },
+  { title: "Notifications", icon: Bell, url: "/settings/notifications", gradient: "from-red-500 to-orange-500" },
+  { title: "Settings", icon: Settings, url: "/settings/account", gradient: "from-slate-500 to-gray-600" },
 ];
 
 const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => {
@@ -84,7 +84,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
   };
 
   const allNavItems = isSuperAdmin 
-    ? [...navigationItems, { title: "Super Admin", icon: Shield, url: "/settings/super-admin" }]
+    ? [...navigationItems, { title: "Super Admin", icon: Shield, url: "/settings/super-admin", gradient: "from-yellow-500 to-amber-500" }]
     : navigationItems;
 
   return (
@@ -158,9 +158,11 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
                       }`}
                       onClick={handleMenuItemClick}
                     >
-                      <item.icon className={`w-4 h-4 flex-shrink-0 ${item.title === 'Super Admin' ? 'text-primary' : 'text-gray-600'}`} />
+                      <div className={`p-1.5 rounded-lg bg-gradient-to-br ${item.gradient}`}>
+                        <item.icon className="w-4 h-4 flex-shrink-0 text-white" />
+                      </div>
                       {!isCollapsed && (
-                        <span className={`truncate text-sm font-medium ${item.title === 'Super Admin' ? 'text-primary' : 'text-gray-700'}`}>{item.title}</span>
+                        <span className="truncate text-sm font-medium text-gray-700">{item.title}</span>
                       )}
                     </a>
                   </SidebarMenuButton>
