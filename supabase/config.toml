@@ -53,3 +53,15 @@ verify_jwt = false
 
 [functions.verify-integration]
 verify_jwt = true
+
+[functions.gift-token-create-order]
+verify_jwt = true
+
+[functions.gift-token-verify]
+verify_jwt = true
+
+[functions.platform-plan-checkout]
+verify_jwt = true
+
+[functions.platform-plan-verify]
+verify_jwt = true
