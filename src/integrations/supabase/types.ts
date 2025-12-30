@@ -2046,6 +2046,260 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_plan_transactions: {
+        Row: {
+          amount: number
+          billing_cycle_months: number | null
+          created_at: string
+          currency: string | null
+          id: string
+          metadata: Json | null
+          plan_id: string | null
+          plan_key: string
+          previous_plan_key: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          razorpay_signature: string | null
+          status: string
+          transaction_type: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          billing_cycle_months?: number | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          metadata?: Json | null
+          plan_id?: string | null
+          plan_key: string
+          previous_plan_key?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          status?: string
+          transaction_type?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          billing_cycle_months?: number | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          metadata?: Json | null
+          plan_id?: string | null
+          plan_key?: string
+          previous_plan_key?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          status?: string
+          transaction_type?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_plan_transactions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "platform_pricing_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_pricing_plans: {
+        Row: {
+          advanced_analytics: boolean | null
+          ai_tokens_monthly: number | null
+          api_access: boolean | null
+          avatar_type: string | null
+          basic_analytics: boolean | null
+          billing_cycle: string
+          brand_collaborations: boolean | null
+          created_at: string
+          custom_voice_enabled: boolean | null
+          digital_products_enabled: boolean | null
+          discount_12_month: number | null
+          discount_3_month: number | null
+          discount_6_month: number | null
+          display_order: number | null
+          doc_upload_enabled: boolean | null
+          earnings_analytics: boolean | null
+          events_enabled: boolean | null
+          features_list: Json | null
+          google_calendar_full: boolean | null
+          google_calendar_readonly: boolean | null
+          google_meet_integration: boolean | null
+          id: string
+          is_active: boolean | null
+          is_popular: boolean | null
+          max_avatars: number | null
+          max_team_members: number | null
+          multi_currency_enabled: boolean | null
+          multilingual_ai: boolean | null
+          multiple_admins: boolean | null
+          multiple_avatars_per_profile: boolean | null
+          offer_badge: string | null
+          offer_expires_at: string | null
+          offer_text: string | null
+          paid_events_enabled: boolean | null
+          payments_enabled: boolean | null
+          physical_products_enabled: boolean | null
+          plan_key: string
+          plan_name: string
+          price_12_month_inr: number | null
+          price_12_month_usd: number | null
+          price_3_month_inr: number | null
+          price_3_month_usd: number | null
+          price_6_month_inr: number | null
+          price_6_month_usd: number | null
+          price_inr: number
+          price_usd: number
+          priority_ai_processing: boolean | null
+          promo_codes_enabled: boolean | null
+          qa_training_enabled: boolean | null
+          shopify_integration: boolean | null
+          subscription_button_enabled: boolean | null
+          tagline: string | null
+          team_enabled: boolean | null
+          training_storage_mb: number | null
+          unlimited_training_sources: boolean | null
+          updated_at: string
+          virtual_meetings_enabled: boolean | null
+          voice_clone_enabled: boolean | null
+          voice_minutes_monthly: number | null
+          web_training_enabled: boolean | null
+          zoom_integration: boolean | null
+        }
+        Insert: {
+          advanced_analytics?: boolean | null
+          ai_tokens_monthly?: number | null
+          api_access?: boolean | null
+          avatar_type?: string | null
+          basic_analytics?: boolean | null
+          billing_cycle?: string
+          brand_collaborations?: boolean | null
+          created_at?: string
+          custom_voice_enabled?: boolean | null
+          digital_products_enabled?: boolean | null
+          discount_12_month?: number | null
+          discount_3_month?: number | null
+          discount_6_month?: number | null
+          display_order?: number | null
+          doc_upload_enabled?: boolean | null
+          earnings_analytics?: boolean | null
+          events_enabled?: boolean | null
+          features_list?: Json | null
+          google_calendar_full?: boolean | null
+          google_calendar_readonly?: boolean | null
+          google_meet_integration?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          is_popular?: boolean | null
+          max_avatars?: number | null
+          max_team_members?: number | null
+          multi_currency_enabled?: boolean | null
+          multilingual_ai?: boolean | null
+          multiple_admins?: boolean | null
+          multiple_avatars_per_profile?: boolean | null
+          offer_badge?: string | null
+          offer_expires_at?: string | null
+          offer_text?: string | null
+          paid_events_enabled?: boolean | null
+          payments_enabled?: boolean | null
+          physical_products_enabled?: boolean | null
+          plan_key: string
+          plan_name: string
+          price_12_month_inr?: number | null
+          price_12_month_usd?: number | null
+          price_3_month_inr?: number | null
+          price_3_month_usd?: number | null
+          price_6_month_inr?: number | null
+          price_6_month_usd?: number | null
+          price_inr?: number
+          price_usd?: number
+          priority_ai_processing?: boolean | null
+          promo_codes_enabled?: boolean | null
+          qa_training_enabled?: boolean | null
+          shopify_integration?: boolean | null
+          subscription_button_enabled?: boolean | null
+          tagline?: string | null
+          team_enabled?: boolean | null
+          training_storage_mb?: number | null
+          unlimited_training_sources?: boolean | null
+          updated_at?: string
+          virtual_meetings_enabled?: boolean | null
+          voice_clone_enabled?: boolean | null
+          voice_minutes_monthly?: number | null
+          web_training_enabled?: boolean | null
+          zoom_integration?: boolean | null
+        }
+        Update: {
+          advanced_analytics?: boolean | null
+          ai_tokens_monthly?: number | null
+          api_access?: boolean | null
+          avatar_type?: string | null
+          basic_analytics?: boolean | null
+          billing_cycle?: string
+          brand_collaborations?: boolean | null
+          created_at?: string
+          custom_voice_enabled?: boolean | null
+          digital_products_enabled?: boolean | null
+          discount_12_month?: number | null
+          discount_3_month?: number | null
+          discount_6_month?: number | null
+          display_order?: number | null
+          doc_upload_enabled?: boolean | null
+          earnings_analytics?: boolean | null
+          events_enabled?: boolean | null
+          features_list?: Json | null
+          google_calendar_full?: boolean | null
+          google_calendar_readonly?: boolean | null
+          google_meet_integration?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          is_popular?: boolean | null
+          max_avatars?: number | null
+          max_team_members?: number | null
+          multi_currency_enabled?: boolean | null
+          multilingual_ai?: boolean | null
+          multiple_admins?: boolean | null
+          multiple_avatars_per_profile?: boolean | null
+          offer_badge?: string | null
+          offer_expires_at?: string | null
+          offer_text?: string | null
+          paid_events_enabled?: boolean | null
+          payments_enabled?: boolean | null
+          physical_products_enabled?: boolean | null
+          plan_key?: string
+          plan_name?: string
+          price_12_month_inr?: number | null
+          price_12_month_usd?: number | null
+          price_3_month_inr?: number | null
+          price_3_month_usd?: number | null
+          price_6_month_inr?: number | null
+          price_6_month_usd?: number | null
+          price_inr?: number
+          price_usd?: number
+          priority_ai_processing?: boolean | null
+          promo_codes_enabled?: boolean | null
+          qa_training_enabled?: boolean | null
+          shopify_integration?: boolean | null
+          subscription_button_enabled?: boolean | null
+          tagline?: string | null
+          team_enabled?: boolean | null
+          training_storage_mb?: number | null
+          unlimited_training_sources?: boolean | null
+          updated_at?: string
+          virtual_meetings_enabled?: boolean | null
+          voice_clone_enabled?: boolean | null
+          voice_minutes_monthly?: number | null
+          web_training_enabled?: boolean | null
+          zoom_integration?: boolean | null
+        }
+        Relationships: []
+      }
       platform_settings: {
         Row: {
           created_at: string | null
@@ -3492,6 +3746,77 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_platform_subscriptions: {
+        Row: {
+          auto_renew: boolean | null
+          billing_cycle_months: number | null
+          created_at: string
+          currency: string | null
+          expires_at: string | null
+          id: string
+          metadata: Json | null
+          plan_id: string | null
+          plan_key: string
+          price_paid: number | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          razorpay_signature: string | null
+          razorpay_subscription_id: string | null
+          starts_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_renew?: boolean | null
+          billing_cycle_months?: number | null
+          created_at?: string
+          currency?: string | null
+          expires_at?: string | null
+          id?: string
+          metadata?: Json | null
+          plan_id?: string | null
+          plan_key?: string
+          price_paid?: number | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          razorpay_subscription_id?: string | null
+          starts_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_renew?: boolean | null
+          billing_cycle_months?: number | null
+          created_at?: string
+          currency?: string | null
+          expires_at?: string | null
+          id?: string
+          metadata?: Json | null
+          plan_id?: string | null
+          plan_key?: string
+          price_paid?: number | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          razorpay_subscription_id?: string | null
+          starts_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_platform_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "platform_pricing_plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
