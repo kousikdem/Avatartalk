@@ -12,6 +12,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import ShareModal from './ShareModal';
 import ChangeableAvatarPreview from './ChangeableAvatarPreview';
 import RealtimeFollowWidget from './RealtimeFollowWidget';
+import DashboardPlanUpgrade from './DashboardPlanUpgrade';
 import { useFollows } from '@/hooks/useFollows';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -397,6 +398,9 @@ const Dashboard = () => {
 
         {/* Changeable Avatar Preview and Social Activity */}
         <div className="lg:col-span-1 space-y-6">
+          {/* Plan Upgrade Card */}
+          <DashboardPlanUpgrade />
+          
           {/* Changeable Avatar with Real-time Features */}
           <ChangeableAvatarPreview
             userId={profileData?.id}

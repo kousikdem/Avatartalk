@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -46,18 +46,37 @@ import {
   Send,
   Smile,
   MicOff,
-  VolumeX
+  VolumeX,
+  Loader2,
+  Coins
 } from 'lucide-react';
 import MainAuth from './MainAuth';
 import VisitorAuth from './VisitorAuth';
 import RealisticDemoAvatar3D from './RealisticDemoAvatar3D';
+import { usePlatformPricingPlans, PlatformFeature } from '@/hooks/usePlatformPricingPlans';
+
+const planIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+  free: Star,
+  creator: Zap,
+  pro: Crown,
+  business: Rocket,
+};
 
 const LandingPage = () => {
+  const navigate = useNavigate();
   const [isMainAuthOpen, setIsMainAuthOpen] = useState(false);
   const [isVisitorAuthOpen, setIsVisitorAuthOpen] = useState(false);
   const [demoActiveTab, setDemoActiveTab] = useState<'posts' | 'chat' | 'product'>('chat');
   const [demoMessage, setDemoMessage] = useState('');
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  
+  const { plans, loading: plansLoading } = usePlatformPricingPlans();
+
+  const formatTokens = (tokens: number) => {
+    if (tokens >= 1000000) return `${tokens / 1000000}M`;
+    if (tokens >= 1000) return `${tokens / 1000}K`;
+    return tokens.toString();
+  };
 
   const features = [
     {
@@ -209,54 +228,22 @@ const LandingPage = () => {
     }
   ];
 
-  const pricingPlans = [
-    {
-      name: "Starter",
-      price: "Free",
-      description: "Perfect for getting started",
-      icon: Star,
-      features: [
-        "1 AI Avatar",
-        "Basic customization", 
-        "5 conversations/day",
-        "Email support",
-        "Basic analytics"
-      ],
-      popular: false
-    },
-    {
-      name: "Creator",
-      price: "$19",
-      period: "/month",
-      description: "For serious content creators",
-      icon: Zap,
-      features: [
-        "3 AI Avatars",
-        "Advanced customization",
-        "Unlimited conversations",
-        "Voice cloning",
-        "Advanced analytics",
-        "Custom branding"
-      ],
-      popular: true
-    },
-    {
-      name: "Business", 
-      price: "$49",
-      period: "/month",
-      description: "For teams and businesses",
-      icon: Crown,
-      features: [
-        "Unlimited avatars",
-        "Team collaboration",
-        "White-label solution",
-        "Custom integrations",
-        "24/7 phone support",
-        "Custom domain"
-      ],
-      popular: false
-    }
-  ];
+  // Dynamic pricing plans from database - fallback to static if loading
+  const dynamicPricingPlans = plans.map(plan => {
+    const PlanIcon = planIcons[plan.plan_key] || Star;
+    const features = (plan.features_list || []) as PlatformFeature[];
+    return {
+      id: plan.id,
+      name: plan.plan_name,
+      price: plan.plan_key === 'free' ? 'Free' : `₹${plan.price_inr}`,
+      period: plan.plan_key === 'free' ? '' : '/month',
+      description: plan.tagline || '',
+      icon: PlanIcon,
+      tokens: plan.ai_tokens_monthly,
+      features: features.slice(0, 6).map(f => f.text),
+      popular: plan.is_popular || false
+    };
+  });
 
   return (
     <div className="min-h-screen bg-white text-black">
@@ -1020,45 +1007,72 @@ const LandingPage = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {pricingPlans.map((plan, index) => (
-              <Card key={index} className={`gradient-card p-8 relative ${plan.popular ? 'ring-2 ring-blue-500 scale-105' : ''}`}>
-                {plan.popular && (
-                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-                    Most Popular
-                  </Badge>
-                )}
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                    <plan.icon className="w-6 h-6 text-white" />
+          {plansLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {dynamicPricingPlans.map((plan, index) => (
+                <Card key={plan.id || index} className={`gradient-card p-6 relative ${plan.popular ? 'ring-2 ring-blue-500 scale-105' : ''}`}>
+                  {plan.popular && (
+                    <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-500 to-purple-500 text-white">
+                      Most Popular
+                    </Badge>
+                  )}
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mb-4 mx-auto">
+                      <plan.icon className="w-6 h-6 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">
+                      {plan.name}
+                    </h3>
+                    <div className="text-2xl font-bold text-gray-900 mb-1">
+                      {plan.price}
+                      {plan.period && <span className="text-sm text-gray-600">{plan.period}</span>}
+                    </div>
+                    <p className="text-gray-600 text-sm mb-4">
+                      {plan.description}
+                    </p>
+                    
+                    {/* Token highlight */}
+                    {plan.tokens > 0 && (
+                      <div className="flex items-center justify-center gap-1 mb-4 py-2 px-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
+                        <Coins className="w-4 h-4 text-yellow-500" />
+                        <span className="text-sm font-medium text-gray-700">{formatTokens(plan.tokens)} AI Tokens/mo</span>
+                      </div>
+                    )}
+                    
+                    <Button 
+                      className={`w-full mb-4 ${plan.popular ? 'gradient-button' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'}`}
+                      onClick={() => setIsMainAuthOpen(true)}
+                    >
+                      Get Started
+                    </Button>
+                    <ul className="text-left space-y-2">
+                      {plan.features.map((feature, featureIndex) => (
+                        <li key={featureIndex} className="flex items-start text-gray-700 text-sm">
+                          <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                    {plan.name}
-                  </h3>
-                  <div className="text-3xl font-bold text-gray-900 mb-1">
-                    {plan.price}
-                    {plan.period && <span className="text-lg text-gray-600">{plan.period}</span>}
-                  </div>
-                  <p className="text-gray-600 mb-6">
-                    {plan.description}
-                  </p>
-                  <Button 
-                    className={`w-full mb-6 ${plan.popular ? 'gradient-button' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'}`}
-                    onClick={() => setIsMainAuthOpen(true)}
-                  >
-                    Get Started
-                  </Button>
-                  <ul className="text-left space-y-3">
-                    {plan.features.map((feature, featureIndex) => (
-                      <li key={featureIndex} className="flex items-center text-gray-700">
-                        <CheckCircle className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              ))}
+            </div>
+          )}
+          
+          <div className="text-center mt-8">
+            <Button 
+              variant="outline" 
+              size="lg"
+              onClick={() => navigate('/pricing')}
+              className="border-blue-500 text-blue-600 hover:bg-blue-50"
+            >
+              View Full Pricing Details
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
           </div>
         </div>
       </section>

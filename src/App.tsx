@@ -25,6 +25,7 @@ import PromoSettingsPage from "./pages/PromoSettingsPage";
 import SuperAdminPage from "./pages/SuperAdminPage";
 import BuyTokensPage from "./pages/BuyTokensPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
+import PricingPage from "./components/PricingPage";
 import { supabase } from "@/integrations/supabase/client";
 import { CurrencyProvider } from "@/hooks/useCurrency";
 
@@ -110,6 +111,7 @@ const App = () => {
                         <Route path="/settings/analytics" element={<AnalyticsPage />} />
                         <Route path="/settings/super-admin" element={<SuperAdminPage />} />
                         <Route path="/settings/buy-tokens" element={<BuyTokensPage />} />
+                        <Route path="/pricing" element={<PricingPage />} />
                         <Route path="/:username" element={<UsernameRedirect />} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
@@ -141,6 +143,7 @@ const App = () => {
               <div className="min-h-screen w-full bg-white">
                 <Routes>
                   <Route path="/" element={<Index />} />
+                  <Route path="/pricing" element={<PricingPage />} />
                   <Route path="/:username" element={<UsernameRedirect />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
