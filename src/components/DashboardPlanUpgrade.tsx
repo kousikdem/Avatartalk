@@ -50,8 +50,6 @@ const DashboardPlanUpgrade = () => {
 
   const monthlyTokens = currentPlan?.ai_tokens_monthly || 10000;
   const tokenUsagePercent = Math.min((tokenBalance / monthlyTokens) * 100, 100);
-  const monthlyTokens = currentPlan?.ai_tokens_monthly || 10000;
-  const tokenUsagePercent = Math.min((tokenBalance / monthlyTokens) * 100, 100);
 
   const formatTokens = (tokens: number) => {
     if (tokens >= 1000000) return `${(tokens / 1000000).toFixed(1)}M`;
