@@ -14,7 +14,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { 
   Shield, Settings, Users, Activity, Coins, Brain, 
   RefreshCw, Plus, AlertTriangle, CheckCircle, BarChart3,
-  Key, CreditCard, Globe, MessageSquare
+  Key, CreditCard, Globe, MessageSquare, Package
 } from 'lucide-react';
 import { useState } from 'react';
 import { format } from 'date-fns';
@@ -25,6 +25,7 @@ import { RazorpayManagement } from '@/components/super-admin/RazorpayManagement'
 import { SiteSettingsManager } from '@/components/super-admin/SiteSettingsManager';
 import { UserSearchManager } from '@/components/super-admin/UserSearchManager';
 import ChatSettingsManager from '@/components/super-admin/ChatSettingsManager';
+import PlanManagement from '@/components/super-admin/PlanManagement';
 
 const SuperAdminPage = () => {
   const {
@@ -85,6 +86,10 @@ const SuperAdminPage = () => {
               <BarChart3 className="h-4 w-4" />
               Analytics
             </TabsTrigger>
+            <TabsTrigger value="plans" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Plans
+            </TabsTrigger>
             <TabsTrigger value="integrations" className="flex items-center gap-2">
               <Key className="h-4 w-4" />
               Integrations
@@ -128,6 +133,11 @@ const SuperAdminPage = () => {
         {/* Analytics Tab */}
         <TabsContent value="analytics">
           <SuperAdminAnalytics />
+        </TabsContent>
+
+        {/* Plans Management Tab */}
+        <TabsContent value="plans">
+          <PlanManagement />
         </TabsContent>
 
         {/* Integrations Tab */}
