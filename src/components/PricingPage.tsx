@@ -1,21 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Slider } from '@/components/ui/slider';
 import { 
   Check, Star, Zap, Crown, Rocket, User, Bot, UserCircle, Coins, FileText, 
   BarChart2, Link, Users, Gift, Sparkles, MessageCircle, Mic, Brain, FileUp,
   Package, CreditCard, Tag, BarChart3, Video, Calendar, Globe, MessageSquare,
   Mic2, AudioLines, CalendarDays, Link2, TrendingUp, DollarSign, UserCog,
   Shield, Infinity, Code, Users2, Building2, Handshake, Ticket, Receipt,
-  ShoppingBag, Loader2
+  ShoppingBag, Loader2, Eye, Lock, ChevronRight
 } from 'lucide-react';
 import Navbar from './Navbar';
 import { usePlatformPricingPlans, useUserPlatformSubscription, PlatformFeature } from '@/hooks/usePlatformPricingPlans';
-import { useCurrency } from '@/hooks/useCurrency';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import MainAuth from './MainAuth';
@@ -32,7 +31,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   BarChart3, Video, Calendar, Globe, MessageSquare, Mic2, AudioLines,
   CalendarDays, Link2, TrendingUp, DollarSign, UserCog, Shield, Infinity,
   Code, Users2, Building2, Handshake, Ticket, Receipt, ShoppingBag, Star,
-  Zap, Crown, Rocket, Check
+  Zap, Crown, Rocket, Check, Eye, Lock
 };
 
 const planGradients: Record<string, string> = {
@@ -49,18 +48,39 @@ const planIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   business: Rocket,
 };
 
+// Duration options in months
+const durationOptions = [1, 3, 6, 12, 24];
+const durationLabels: Record<number, string> = {
+  1: '1 Month',
+  3: '3 Months',
+  6: '6 Months',
+  12: '1 Year',
+  24: '2 Years',
+};
+
+const durationDiscounts: Record<number, number> = {
+  1: 0,
+  3: 10,
+  6: 15,
+  12: 20,
+  24: 30,
+};
+
 const PricingPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { plans, loading } = usePlatformPricingPlans();
   const { effectivePlanKey, refetch: refetchSubscription } = useUserPlatformSubscription();
-  const { currency, formatPrice } = useCurrency();
   
-  const [billingCycle, setBillingCycle] = useState<1 | 3 | 6 | 12>(1);
+  // Default to 12 months (1 year) and USD
+  const [durationIndex, setDurationIndex] = useState(3); // Index 3 = 12 months
+  const [currency, setCurrency] = useState<'USD' | 'INR'>('USD');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [selectedPlanForPurchase, setSelectedPlanForPurchase] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [user, setUser] = useState<any>(null);
+
+  const billingCycle = durationOptions[durationIndex];
 
   useEffect(() => {
     // Load Razorpay script
@@ -83,40 +103,40 @@ const PricingPage = () => {
 
     return () => {
       subscription.unsubscribe();
-      document.body.removeChild(script);
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
     };
   }, []);
 
-  const getBillingLabel = () => {
-    switch (billingCycle) {
-      case 3: return '3 Months';
-      case 6: return '6 Months';
-      case 12: return '1 Year';
-      default: return '1 Month';
-    }
-  };
-
-  const getDiscount = (plan: any) => {
-    switch (billingCycle) {
-      case 3: return plan.discount_3_month || 10;
-      case 6: return plan.discount_6_month || 15;
-      case 12: return plan.discount_12_month || 20;
-      default: return 0;
-    }
-  };
-
   const getPrice = (plan: any) => {
     const isINR = currency === 'INR';
-    switch (billingCycle) {
-      case 3:
-        return isINR ? plan.price_3_month_inr : plan.price_3_month_usd;
-      case 6:
-        return isINR ? plan.price_6_month_inr : plan.price_6_month_usd;
-      case 12:
-        return isINR ? plan.price_12_month_inr : plan.price_12_month_usd;
-      default:
-        return isINR ? plan.price_inr : plan.price_usd;
+    const months = billingCycle;
+    
+    // Get base monthly price
+    let baseMonthly = isINR ? plan.price_inr : plan.price_usd;
+    
+    // Check for pre-set multi-month prices
+    if (months === 3) {
+      const preset = isINR ? plan.price_3_month_inr : plan.price_3_month_usd;
+      if (preset) return preset;
+    } else if (months === 6) {
+      const preset = isINR ? plan.price_6_month_inr : plan.price_6_month_usd;
+      if (preset) return preset;
+    } else if (months === 12) {
+      const preset = isINR ? plan.price_12_month_inr : plan.price_12_month_usd;
+      if (preset) return preset;
     }
+    
+    // Calculate with discount for other durations
+    const discount = durationDiscounts[months] || 0;
+    const total = baseMonthly * months;
+    return Math.round(total * (1 - discount / 100));
+  };
+
+  const getMonthlyPrice = (plan: any) => {
+    const totalPrice = getPrice(plan);
+    return Math.round(totalPrice / billingCycle);
   };
 
   const formatTokens = (tokens: number) => {
@@ -149,7 +169,7 @@ const PricingPage = () => {
         body: {
           planId,
           billingCycleMonths: billingCycle,
-          currency: currency === 'INR' ? 'INR' : 'USD',
+          currency: currency,
         },
       });
 
@@ -160,7 +180,7 @@ const PricingPage = () => {
         amount: data.amount * 100,
         currency: data.currency,
         name: 'AvatarTalk',
-        description: `${data.planName} Plan - ${getBillingLabel()}`,
+        description: `${data.planName} Plan - ${durationLabels[billingCycle]}`,
         order_id: data.orderId,
         handler: async (response: any) => {
           try {
@@ -178,7 +198,7 @@ const PricingPage = () => {
 
             toast({
               title: "🎉 Subscription Activated!",
-              description: `Welcome to ${data.planName}! Your plan is now active.`,
+              description: `Welcome to ${data.planName}! ${formatTokens(plan.ai_tokens_monthly)} tokens have been added to your account.`,
             });
 
             refetchSubscription();
@@ -214,9 +234,13 @@ const PricingPage = () => {
     }
   };
 
-  const renderFeatureIcon = (iconName: string) => {
+  const renderFeatureIcon = (iconName: string, included: boolean) => {
     const IconComponent = iconMap[iconName] || Check;
-    return <IconComponent className="w-4 h-4" />;
+    return (
+      <span className={included ? 'text-primary' : 'text-muted-foreground/40'}>
+        <IconComponent className="w-4 h-4" />
+      </span>
+    );
   };
 
   if (loading) {
@@ -244,27 +268,57 @@ const PricingPage = () => {
               Increase Your Brand Value to 10X with AI Avatars. Start free, scale as you grow.
             </p>
             
-            {/* Billing Cycle Selector */}
-            <div className="flex justify-center mb-8">
-              <Tabs value={billingCycle.toString()} onValueChange={(v) => setBillingCycle(parseInt(v) as 1 | 3 | 6 | 12)}>
-                <TabsList className="bg-muted/50 backdrop-blur-sm">
-                  <TabsTrigger value="1" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                    Monthly
-                  </TabsTrigger>
-                  <TabsTrigger value="3" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                    3 Months
-                    <Badge className="ml-2 bg-green-500/20 text-green-600 text-xs">-10%</Badge>
-                  </TabsTrigger>
-                  <TabsTrigger value="6" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                    6 Months
-                    <Badge className="ml-2 bg-green-500/20 text-green-600 text-xs">-15%</Badge>
-                  </TabsTrigger>
-                  <TabsTrigger value="12" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                    1 Year
-                    <Badge className="ml-2 bg-green-500/20 text-green-600 text-xs">-20%</Badge>
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
+            {/* Currency Toggle */}
+            <div className="flex justify-center gap-2 mb-6">
+              <Button 
+                variant={currency === 'USD' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setCurrency('USD')}
+                className={currency === 'USD' ? 'bg-primary' : ''}
+              >
+                $ USD
+              </Button>
+              <Button 
+                variant={currency === 'INR' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setCurrency('INR')}
+                className={currency === 'INR' ? 'bg-primary' : ''}
+              >
+                ₹ INR
+              </Button>
+            </div>
+            
+            {/* Duration Slider */}
+            <div className="max-w-md mx-auto mb-8">
+              <div className="bg-card/80 backdrop-blur-sm rounded-xl p-6 border">
+                <div className="flex justify-between mb-4">
+                  <span className="text-sm font-medium">{durationLabels[billingCycle]}</span>
+                  {billingCycle > 1 && (
+                    <Badge className="bg-green-500/20 text-green-600">
+                      Save {durationDiscounts[billingCycle]}%
+                    </Badge>
+                  )}
+                </div>
+                <Slider
+                  value={[durationIndex]}
+                  onValueChange={(value) => setDurationIndex(value[0])}
+                  min={0}
+                  max={4}
+                  step={1}
+                  className="w-full"
+                />
+                <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+                  {durationOptions.map((d, i) => (
+                    <span 
+                      key={d} 
+                      className={`cursor-pointer ${i === durationIndex ? 'text-primary font-medium' : ''}`}
+                      onClick={() => setDurationIndex(i)}
+                    >
+                      {d === 1 ? '1M' : d === 3 ? '3M' : d === 6 ? '6M' : d === 12 ? '1Y' : '2Y'}
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -274,7 +328,8 @@ const PricingPage = () => {
               const PlanIcon = planIcons[plan.plan_key] || Star;
               const gradient = planGradients[plan.plan_key] || planGradients.free;
               const price = getPrice(plan);
-              const discount = getDiscount(plan);
+              const monthlyPrice = getMonthlyPrice(plan);
+              const discount = durationDiscounts[billingCycle];
               const isCurrentPlan = effectivePlanKey === plan.plan_key;
               const features = (plan.features_list || []) as PlatformFeature[];
 
@@ -301,14 +356,6 @@ const PricingPage = () => {
                     </div>
                   )}
 
-                  {plan.offer_badge && (
-                    <div className="absolute -top-3 left-4">
-                      <Badge className="bg-orange-500 text-white px-3 py-1">
-                        {plan.offer_badge}
-                      </Badge>
-                    </div>
-                  )}
-
                   <CardHeader className="text-center pb-4 pt-8">
                     <div className={`w-14 h-14 mx-auto mb-4 rounded-full bg-gradient-to-r ${gradient} flex items-center justify-center shadow-lg`}>
                       <PlanIcon className="w-7 h-7 text-white" />
@@ -326,12 +373,14 @@ const PricingPage = () => {
                         <div>
                           <div className="text-4xl font-bold">
                             {currency === 'INR' ? '₹' : '$'}{price}
-                            <span className="text-base font-normal text-muted-foreground">/{getBillingLabel()}</span>
                           </div>
-                          {billingCycle > 1 && discount > 0 && (
-                            <Badge className="mt-2 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                              Save {discount}%
-                            </Badge>
+                          <div className="text-sm text-muted-foreground">
+                            for {durationLabels[billingCycle]}
+                          </div>
+                          {billingCycle > 1 && (
+                            <div className="text-xs text-primary mt-1">
+                              ≈ {currency === 'INR' ? '₹' : '$'}{monthlyPrice}/month
+                            </div>
                           )}
                         </div>
                       )}
@@ -340,30 +389,34 @@ const PricingPage = () => {
 
                   <CardContent className="space-y-4">
                     {/* AI Tokens highlight */}
-                    {plan.ai_tokens_monthly > 0 && (
-                      <div className={`p-3 rounded-lg bg-gradient-to-r ${gradient} bg-opacity-10`}>
-                        <div className="flex items-center gap-2 text-sm font-medium">
-                          <Coins className="w-4 h-4" />
-                          <span>{formatTokens(plan.ai_tokens_monthly)} AI Tokens/month</span>
-                        </div>
+                    <div className={`p-3 rounded-lg bg-gradient-to-r ${gradient}/10 border border-current/10`}>
+                      <div className="flex items-center justify-center gap-2 font-medium">
+                        <Coins className="w-5 h-5" />
+                        <span className="text-lg">{formatTokens(plan.ai_tokens_monthly)} AI Tokens</span>
                       </div>
-                    )}
+                      <p className="text-xs text-center text-muted-foreground mt-1">
+                        Added to your account on activation
+                      </p>
+                    </div>
 
-                    {/* Features list */}
+                    {/* Features list with icons */}
                     <ul className="space-y-2">
-                      {features.map((feature, idx) => (
+                      {features.slice(0, 8).map((feature, idx) => (
                         <li key={idx} className="flex items-start gap-2 text-sm">
-                          <span className={`mt-0.5 bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>
-                            {renderFeatureIcon(feature.icon)}
-                          </span>
+                          {renderFeatureIcon(feature.icon, true)}
                           <span className={feature.coming_soon ? 'text-muted-foreground' : ''}>
                             {feature.text}
                             {feature.coming_soon && (
-                              <Badge variant="outline" className="ml-2 text-xs">Soon</Badge>
+                              <Badge variant="outline" className="ml-1 text-[10px] px-1">Soon</Badge>
                             )}
                           </span>
                         </li>
                       ))}
+                      {features.length > 8 && (
+                        <li className="text-xs text-muted-foreground text-center">
+                          +{features.length - 8} more features
+                        </li>
+                      )}
                     </ul>
 
                     {/* CTA Button */}
@@ -373,19 +426,26 @@ const PricingPage = () => {
                           ? 'bg-green-500 hover:bg-green-600'
                           : plan.is_popular
                           ? `bg-gradient-to-r ${gradient} hover:opacity-90`
-                          : 'bg-secondary hover:bg-secondary/80'
+                          : ''
                       }`}
+                      variant={isCurrentPlan || plan.is_popular ? 'default' : 'outline'}
                       onClick={() => handlePurchase(plan.id)}
                       disabled={processing || isCurrentPlan}
                     >
                       {processing ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : isCurrentPlan ? (
-                        'Current Plan'
+                        <>
+                          <Check className="w-4 h-4 mr-1" />
+                          Current Plan
+                        </>
                       ) : plan.plan_key === 'free' ? (
                         'Get Started Free'
                       ) : (
-                        'Subscribe Now'
+                        <>
+                          Subscribe Now
+                          <ChevronRight className="w-4 h-4 ml-1" />
+                        </>
                       )}
                     </Button>
                   </CardContent>
@@ -398,41 +458,36 @@ const PricingPage = () => {
           <div className="mt-16 text-center">
             <h2 className="text-3xl font-bold mb-4">Need More AI Tokens?</h2>
             <p className="text-muted-foreground mb-6">
-              Works with all paid plans. Scale your AI usage as needed.
+              Buy additional tokens anytime. Works with all plans.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-              <Card className="bg-card/80 backdrop-blur-sm">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 flex items-center justify-center">
-                      <Coins className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="text-left">
-                      <h3 className="font-semibold">AI Token Pack</h3>
-                      <p className="text-sm text-muted-foreground">₹1000 = 1M tokens</p>
-                    </div>
-                  </div>
-                  <Button className="w-full mt-4" variant="outline" onClick={() => navigate('/buy-tokens')}>
-                    Buy Tokens
-                  </Button>
-                </CardContent>
-              </Card>
-              <Card className="bg-card/80 backdrop-blur-sm">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-400 to-pink-500 flex items-center justify-center">
-                      <Code className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="text-left">
-                      <h3 className="font-semibold">API Usage</h3>
-                      <p className="text-sm text-muted-foreground">Pay as you go</p>
-                    </div>
-                  </div>
-                  <Button className="w-full mt-4" variant="outline" disabled>
-                    Coming Soon
-                  </Button>
-                </CardContent>
-              </Card>
+            <div className="flex justify-center gap-4">
+              <Button size="lg" variant="outline" onClick={() => navigate('/buy-tokens')}>
+                <Coins className="w-5 h-5 mr-2" />
+                Buy Token Pack
+              </Button>
+            </div>
+          </div>
+
+          {/* Feature Comparison - Key Highlights */}
+          <div className="mt-20">
+            <h2 className="text-3xl font-bold text-center mb-8">Plan Features at a Glance</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { icon: ShoppingBag, label: 'Sell Products', plan: 'Creator+' },
+                { icon: CreditCard, label: 'Paid Posts', plan: 'Creator+' },
+                { icon: Mic2, label: 'Voice Clone', plan: 'Pro+' },
+                { icon: Video, label: 'Virtual Meetings', plan: 'Pro+' },
+                { icon: BarChart3, label: 'Advanced Analytics', plan: 'Pro+' },
+                { icon: Eye, label: 'Visitors List', plan: 'Business' },
+                { icon: Code, label: 'API Access', plan: 'Business' },
+                { icon: Users2, label: 'Team System', plan: 'Business' },
+              ].map(({ icon: Icon, label, plan }) => (
+                <Card key={label} className="bg-card/60 p-4 text-center">
+                  <Icon className="w-8 h-8 mx-auto mb-2 text-primary" />
+                  <p className="font-medium text-sm">{label}</p>
+                  <Badge variant="secondary" className="mt-1 text-xs">{plan}</Badge>
+                </Card>
+              ))}
             </div>
           </div>
 
@@ -442,26 +497,22 @@ const PricingPage = () => {
               Frequently Asked Questions
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              <div className="space-y-6">
-                <Card className="bg-card/80 backdrop-blur-sm p-6">
-                  <h3 className="text-lg font-semibold mb-2">Can I change plans anytime?</h3>
-                  <p className="text-muted-foreground">Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately.</p>
-                </Card>
-                <Card className="bg-card/80 backdrop-blur-sm p-6">
-                  <h3 className="text-lg font-semibold mb-2">What's included in the free plan?</h3>
-                  <p className="text-muted-foreground">The free plan includes 10K AI tokens, basic avatar, public profile, and community access.</p>
-                </Card>
-              </div>
-              <div className="space-y-6">
-                <Card className="bg-card/80 backdrop-blur-sm p-6">
-                  <h3 className="text-lg font-semibold mb-2">Do you offer refunds?</h3>
-                  <p className="text-muted-foreground">Yes, we offer a 7-day money-back guarantee for all paid plans.</p>
-                </Card>
-                <Card className="bg-card/80 backdrop-blur-sm p-6">
-                  <h3 className="text-lg font-semibold mb-2">How do AI tokens work?</h3>
-                  <p className="text-muted-foreground">AI tokens are used for text and voice AI responses. Each plan includes monthly tokens that reset.</p>
-                </Card>
-              </div>
+              <Card className="bg-card/80 backdrop-blur-sm p-6">
+                <h3 className="text-lg font-semibold mb-2">How do tokens work?</h3>
+                <p className="text-muted-foreground">When you subscribe, your plan's tokens are immediately added to your account. Use them for AI chat, voice responses, and more. Buy extra tokens anytime if needed.</p>
+              </Card>
+              <Card className="bg-card/80 backdrop-blur-sm p-6">
+                <h3 className="text-lg font-semibold mb-2">Can I upgrade anytime?</h3>
+                <p className="text-muted-foreground">Yes! Upgrade instantly from your dashboard. Your new plan's tokens will be added to your existing balance.</p>
+              </Card>
+              <Card className="bg-card/80 backdrop-blur-sm p-6">
+                <h3 className="text-lg font-semibold mb-2">What's the refund policy?</h3>
+                <p className="text-muted-foreground">We offer a 7-day money-back guarantee for all paid plans. No questions asked.</p>
+              </Card>
+              <Card className="bg-card/80 backdrop-blur-sm p-6">
+                <h3 className="text-lg font-semibold mb-2">Which plan is best for creators?</h3>
+                <p className="text-muted-foreground">The Creator plan unlocks product sales and payments. For full voice cloning and virtual meetings, go Pro.</p>
+              </Card>
             </div>
           </div>
         </div>
