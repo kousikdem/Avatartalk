@@ -1,6 +1,7 @@
 import React from 'react';
 import TokenDisplay from './TokenDisplay';
 import CurrencySelector from './CurrencySelector';
+import PlanBadge from './PlanBadge';
 
 interface DashboardHeaderProps {
   title: string;
@@ -19,13 +20,16 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
       <div className="flex items-center gap-3">
         {icon}
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-            {title}
-          </h1>
-          {description && (
-            <p className="text-muted-foreground mt-1">{description}</p>
-          )}
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+              {title}
+            </h1>
+            {description && (
+              <p className="text-muted-foreground mt-1">{description}</p>
+            )}
+          </div>
+          <PlanBadge size="md" showIcon />
         </div>
       </div>
       
