@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Home, 
@@ -15,7 +14,11 @@ import {
   ChevronRight,
   Package,
   Share2,
-  Shield
+  Shield,
+  Lock,
+  Zap,
+  Crown,
+  Rocket
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -30,32 +33,65 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { usePlanFeatures, PlanFeatureKey } from '@/hooks/usePlanFeatures';
 import Logo from './Logo';
 
 interface DashboardSidebarProps {
   onCreatePost: () => void;
 }
 
-const navigationItems = [
-  { title: "Dashboard", icon: Home, url: "/settings/dashboard", gradient: "from-blue-500 to-cyan-500" },
-  { title: "Products", icon: Package, url: "/settings/products", gradient: "from-emerald-500 to-teal-500" },
-  { title: "Virtual Collaboration", icon: Calendar, url: "/settings/virtual-collaboration", gradient: "from-violet-500 to-purple-500" },
-  { title: "Feed", icon: MessageSquare, url: "/settings/feed", gradient: "from-pink-500 to-rose-500" },
-  { title: "Avatar", icon: User, url: "/settings/avatar", gradient: "from-amber-500 to-orange-500" },
-  { title: "AI Training", icon: Brain, url: "/settings/ai-training", gradient: "from-fuchsia-500 to-pink-500" },
-  { title: "Social Links", icon: Share2, url: "/settings/social-links", gradient: "from-sky-500 to-blue-500" },
-  { title: "Analytics", icon: BarChart3, url: "/settings/analytics", gradient: "from-indigo-500 to-violet-500" },
-  { title: "Followers", icon: Users, url: "/settings/followers", gradient: "from-green-500 to-emerald-500" },
-  { title: "Notifications", icon: Bell, url: "/settings/notifications", gradient: "from-red-500 to-orange-500" },
-  { title: "Settings", icon: Settings, url: "/settings/account", gradient: "from-slate-500 to-gray-600" },
+interface NavItem {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  url: string;
+  gradient: string;
+  requiredPlan?: 'free' | 'creator' | 'pro' | 'business';
+  featureKey?: PlanFeatureKey;
+}
+
+const navigationItems: NavItem[] = [
+  { title: "Dashboard", icon: Home, url: "/settings/dashboard", gradient: "from-blue-500 to-cyan-500", requiredPlan: 'free' },
+  { title: "Products", icon: Package, url: "/settings/products", gradient: "from-emerald-500 to-teal-500", requiredPlan: 'creator', featureKey: 'payments_enabled' },
+  { title: "Virtual Collaboration", icon: Calendar, url: "/settings/virtual-collaboration", gradient: "from-violet-500 to-purple-500", requiredPlan: 'pro', featureKey: 'virtual_meetings_enabled' },
+  { title: "Feed", icon: MessageSquare, url: "/settings/feed", gradient: "from-pink-500 to-rose-500", requiredPlan: 'free' },
+  { title: "Avatar", icon: User, url: "/settings/avatar", gradient: "from-amber-500 to-orange-500", requiredPlan: 'free' },
+  { title: "AI Training", icon: Brain, url: "/settings/ai-training", gradient: "from-fuchsia-500 to-pink-500", requiredPlan: 'free' },
+  { title: "Social Links", icon: Share2, url: "/settings/social-links", gradient: "from-sky-500 to-blue-500", requiredPlan: 'free' },
+  { title: "Analytics", icon: BarChart3, url: "/settings/analytics", gradient: "from-indigo-500 to-violet-500", requiredPlan: 'pro', featureKey: 'advanced_analytics' },
+  { title: "Followers", icon: Users, url: "/settings/followers", gradient: "from-green-500 to-emerald-500", requiredPlan: 'free' },
+  { title: "Notifications", icon: Bell, url: "/settings/notifications", gradient: "from-red-500 to-orange-500", requiredPlan: 'free' },
+  { title: "Settings", icon: Settings, url: "/settings/account", gradient: "from-slate-500 to-gray-600", requiredPlan: 'free' },
 ];
+
+const planHierarchy: Record<string, number> = {
+  free: 0,
+  creator: 1,
+  pro: 2,
+  business: 3,
+};
+
+const planIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+  creator: Zap,
+  pro: Crown,
+  business: Rocket,
+};
+
+const planColors: Record<string, string> = {
+  creator: 'bg-blue-500',
+  pro: 'bg-purple-500',
+  business: 'bg-orange-500',
+};
 
 const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => {
   const { state, setOpen, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
   const isMobile = useIsMobile();
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const { effectivePlanKey, loading: planLoading } = usePlanFeatures();
+
+  const userPlanLevel = planHierarchy[effectivePlanKey] || 0;
 
   useEffect(() => {
     const checkSuperAdmin = async () => {
@@ -77,14 +113,29 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
     window.location.href = '/settings/dashboard';
   };
 
-  const handleMenuItemClick = () => {
+  const handleMenuItemClick = (e: React.MouseEvent, item: NavItem) => {
+    const requiredLevel = planHierarchy[item.requiredPlan || 'free'] || 0;
+    const isLocked = userPlanLevel < requiredLevel;
+    
+    if (isLocked) {
+      e.preventDefault();
+      window.location.href = '/pricing';
+      return;
+    }
+    
     if (isMobile) {
       setOpen(false);
     }
   };
 
-  const allNavItems = isSuperAdmin 
-    ? [...navigationItems, { title: "Super Admin", icon: Shield, url: "/settings/super-admin", gradient: "from-yellow-500 to-amber-500" }]
+  const isFeatureLocked = (item: NavItem): boolean => {
+    if (planLoading) return false;
+    const requiredLevel = planHierarchy[item.requiredPlan || 'free'] || 0;
+    return userPlanLevel < requiredLevel;
+  };
+
+  const allNavItems: NavItem[] = isSuperAdmin 
+    ? [...navigationItems, { title: "Super Admin", icon: Shield, url: "/settings/super-admin", gradient: "from-yellow-500 to-amber-500", requiredPlan: 'free' }]
     : navigationItems;
 
   return (
@@ -142,32 +193,56 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
             </div>
 
             <SidebarMenu className="space-y-2">
-              {allNavItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    className={`bg-white hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 text-gray-700 hover:text-gray-900 w-full transition-all duration-200 rounded-lg border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md backdrop-blur-sm ${
-                      item.title === 'Super Admin' ? 'border-primary/30 bg-primary/5' : ''
-                    }`}
-                    tooltip={isCollapsed ? item.title : undefined}
-                  >
-                    <a 
-                      href={item.url} 
-                      className={`flex items-center w-full ${
-                        isCollapsed ? 'justify-center p-3' : 'gap-3 p-3'
-                      }`}
-                      onClick={handleMenuItemClick}
+              {allNavItems.map((item) => {
+                const locked = isFeatureLocked(item);
+                const requiredPlan = item.requiredPlan || 'free';
+                const PlanIcon = planIcons[requiredPlan];
+                
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      className={`bg-white hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 text-gray-700 hover:text-gray-900 w-full transition-all duration-200 rounded-lg border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md backdrop-blur-sm ${
+                        item.title === 'Super Admin' ? 'border-primary/30 bg-primary/5' : ''
+                      } ${locked ? 'opacity-60' : ''}`}
+                      tooltip={isCollapsed ? (locked ? `${item.title} (${requiredPlan} plan)` : item.title) : undefined}
                     >
-                      <div className={`p-1.5 rounded-lg bg-gradient-to-br ${item.gradient}`}>
-                        <item.icon className="w-4 h-4 flex-shrink-0 text-white" />
-                      </div>
-                      {!isCollapsed && (
-                        <span className="truncate text-sm font-medium text-gray-700">{item.title}</span>
-                      )}
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+                      <a 
+                        href={locked ? '/pricing' : item.url} 
+                        className={`flex items-center w-full ${
+                          isCollapsed ? 'justify-center p-3' : 'gap-3 p-3'
+                        }`}
+                        onClick={(e) => handleMenuItemClick(e, item)}
+                      >
+                        <div className={`p-1.5 rounded-lg bg-gradient-to-br ${item.gradient} relative`}>
+                          <item.icon className="w-4 h-4 flex-shrink-0 text-white" />
+                          {locked && (
+                            <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
+                              <Lock className="w-2.5 h-2.5 text-gray-500" />
+                            </div>
+                          )}
+                        </div>
+                        {!isCollapsed && (
+                          <div className="flex items-center justify-between flex-1 min-w-0">
+                            <span className={`truncate text-sm font-medium ${locked ? 'text-gray-400' : 'text-gray-700'}`}>
+                              {item.title}
+                            </span>
+                            {locked && (
+                              <Badge 
+                                variant="outline" 
+                                className={`ml-2 text-xs px-1.5 py-0 ${planColors[requiredPlan]} text-white border-0`}
+                              >
+                                {PlanIcon && <PlanIcon className="w-2.5 h-2.5 mr-0.5" />}
+                                {requiredPlan.charAt(0).toUpperCase() + requiredPlan.slice(1)}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                      </a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
