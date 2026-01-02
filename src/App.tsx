@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import DashboardSidebar from "@/components/DashboardSidebar";
+import DashboardPageLayout from "@/components/DashboardPageLayout";
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Index from "./pages/Index";
@@ -98,20 +99,21 @@ const App = () => {
                     
                     <main className="flex-1 min-w-0 transition-all duration-300 bg-white">
                       <Routes>
-                        <Route path="/settings/dashboard" element={<Index />} />
-                        <Route path="/settings/avatar" element={<AvatarPage />} />
-                        <Route path="/settings/virtual-collaboration" element={<VirtualCollaborationPage />} />
-                        <Route path="/settings/products" element={<ProductsPage />} />
-                        <Route path="/settings/promo" element={<PromoSettingsPage />} />
-                        <Route path="/settings/account" element={<SettingsPage />} />
-                        <Route path="/settings/social-links" element={<SocialLinksPage />} />
-                        <Route path="/settings/feed" element={<FeedPage />} />
-                        <Route path="/settings/followers" element={<FollowersPage />} />
-                        <Route path="/settings/ai-training" element={<AITrainingDashboard />} />
-                        <Route path="/settings/analytics" element={<AnalyticsPage />} />
-                        <Route path="/settings/super-admin" element={<SuperAdminPage />} />
-                        <Route path="/settings/buy-tokens" element={<BuyTokensPage />} />
-                        <Route path="/pricing" element={<PricingPage />} />
+                        <Route path="/settings/dashboard" element={<DashboardPageLayout><Index /></DashboardPageLayout>} />
+                        <Route path="/settings/avatar" element={<DashboardPageLayout><AvatarPage /></DashboardPageLayout>} />
+                        <Route path="/settings/virtual-collaboration" element={<DashboardPageLayout><VirtualCollaborationPage /></DashboardPageLayout>} />
+                        <Route path="/settings/products" element={<DashboardPageLayout><ProductsPage /></DashboardPageLayout>} />
+                        <Route path="/settings/promo" element={<DashboardPageLayout><PromoSettingsPage /></DashboardPageLayout>} />
+                        <Route path="/settings/account" element={<DashboardPageLayout><SettingsPage /></DashboardPageLayout>} />
+                        <Route path="/settings/social-links" element={<DashboardPageLayout><SocialLinksPage /></DashboardPageLayout>} />
+                        <Route path="/settings/feed" element={<DashboardPageLayout><FeedPage /></DashboardPageLayout>} />
+                        <Route path="/settings/followers" element={<DashboardPageLayout><FollowersPage /></DashboardPageLayout>} />
+                        <Route path="/settings/ai-training" element={<DashboardPageLayout><AITrainingDashboard /></DashboardPageLayout>} />
+                        <Route path="/settings/analytics" element={<DashboardPageLayout><AnalyticsPage /></DashboardPageLayout>} />
+                        <Route path="/settings/super-admin" element={<DashboardPageLayout><SuperAdminPage /></DashboardPageLayout>} />
+                        <Route path="/settings/buy-tokens" element={<DashboardPageLayout><BuyTokensPage /></DashboardPageLayout>} />
+                        <Route path="/pricing" element={<DashboardPageLayout><PricingPage /></DashboardPageLayout>} />
+                        <Route path="/settings/notifications" element={<DashboardPageLayout><Index /></DashboardPageLayout>} />
                         <Route path="/:username" element={<UsernameRedirect />} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Home, 
   Plus, 
@@ -18,7 +19,9 @@ import {
   Lock,
   Zap,
   Crown,
-  Rocket
+  Rocket,
+  ArrowUp,
+  Sparkles
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -30,6 +33,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from '@/components/ui/button';
@@ -85,6 +89,7 @@ const planColors: Record<string, string> = {
 };
 
 const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => {
+  const navigate = useNavigate();
   const { state, setOpen, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
   const isMobile = useIsMobile();
@@ -110,7 +115,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
   }, []);
 
   const handleLogoClick = () => {
-    window.location.href = '/settings/dashboard';
+    navigate('/settings/dashboard');
   };
 
   const handleMenuItemClick = (e: React.MouseEvent, item: NavItem) => {
@@ -119,7 +124,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
     
     if (isLocked) {
       e.preventDefault();
-      window.location.href = '/pricing';
+      navigate('/pricing');
       return;
     }
     
@@ -137,6 +142,11 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
   const allNavItems: NavItem[] = isSuperAdmin 
     ? [...navigationItems, { title: "Super Admin", icon: Shield, url: "/settings/super-admin", gradient: "from-yellow-500 to-amber-500", requiredPlan: 'free' }]
     : navigationItems;
+
+  const nextPlan = effectivePlanKey === 'free' ? 'Creator' 
+    : effectivePlanKey === 'creator' ? 'Pro'
+    : effectivePlanKey === 'pro' ? 'Business'
+    : null;
 
   return (
     <Sidebar 
@@ -247,6 +257,29 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      {/* Pricing Plan Button at Bottom */}
+      <SidebarFooter className="p-3 border-t border-gray-200 bg-white">
+        <Button
+          onClick={() => navigate('/pricing')}
+          className={`w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-md hover:shadow-lg transition-all ${
+            isCollapsed ? 'px-2 py-2' : 'px-4 py-2.5'
+          }`}
+          size={isCollapsed ? "icon" : "default"}
+        >
+          {isCollapsed ? (
+            <Sparkles className="w-4 h-4" />
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4 mr-2" />
+              <span className="text-sm font-medium">
+                {nextPlan ? `Upgrade to ${nextPlan}` : 'View Plans'}
+              </span>
+              {nextPlan && <ArrowUp className="w-3.5 h-3.5 ml-1" />}
+            </>
+          )}
+        </Button>
+      </SidebarFooter>
     </Sidebar>
   );
 };

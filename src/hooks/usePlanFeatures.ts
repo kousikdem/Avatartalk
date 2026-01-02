@@ -62,6 +62,14 @@ const planHierarchy: Record<string, number> = {
   business: 3,
 };
 
+// Plan limits for products and collaborations
+export const planLimits: Record<string, { products: number; collaborations: number; tokens: number }> = {
+  free: { products: 0, collaborations: 0, tokens: 10000 },
+  creator: { products: 2, collaborations: 2, tokens: 1000000 },
+  pro: { products: 10, collaborations: 10, tokens: 2000000 },
+  business: { products: -1, collaborations: -1, tokens: 5000000 }, // -1 = unlimited
+};
+
 export const usePlanFeatures = () => {
   const { currentPlan, effectivePlanKey, subscription, isExpired, loading } = useUserPlatformSubscription();
 
@@ -81,6 +89,30 @@ export const usePlanFeatures = () => {
 
   const getRequiredPlanForFeature = (featureKey: PlanFeatureKey): string => {
     return featurePlanRequirements[featureKey] || 'free';
+  };
+
+  const limits = useMemo(() => {
+    return planLimits[effectivePlanKey] || planLimits.free;
+  }, [effectivePlanKey]);
+
+  const canAddProduct = (currentCount: number): boolean => {
+    if (limits.products === -1) return true; // Unlimited
+    return currentCount < limits.products;
+  };
+
+  const canAddCollaboration = (currentCount: number): boolean => {
+    if (limits.collaborations === -1) return true; // Unlimited
+    return currentCount < limits.collaborations;
+  };
+
+  const getRemainingProducts = (currentCount: number): number | 'unlimited' => {
+    if (limits.products === -1) return 'unlimited';
+    return Math.max(0, limits.products - currentCount);
+  };
+
+  const getRemainingCollaborations = (currentCount: number): number | 'unlimited' => {
+    if (limits.collaborations === -1) return 'unlimited';
+    return Math.max(0, limits.collaborations - currentCount);
   };
 
   const canSellProducts = useMemo(() => hasFeature('payments_enabled'), [planLevel, loading]);
@@ -104,6 +136,12 @@ export const usePlanFeatures = () => {
     planLevel,
     hasFeature,
     getRequiredPlanForFeature,
+    // Plan limits
+    limits,
+    canAddProduct,
+    canAddCollaboration,
+    getRemainingProducts,
+    getRemainingCollaborations,
     // Convenient boolean checks
     canSellProducts,
     canSellDigitalProducts,

@@ -216,6 +216,14 @@ export const useUserPlatformSubscription = () => {
 export const usePlatformPlanManagement = () => {
   const { toast } = useToast();
 
+  // Token amounts per plan
+  const planTokens: Record<string, number> = {
+    free: 10000,
+    creator: 1000000,  // 1M
+    pro: 2000000,      // 2M
+    business: 5000000, // 5M
+  };
+
   const createPlan = async (planData: { plan_key: string; plan_name: string; [key: string]: unknown }) => {
     try {
       const { error } = await supabase
@@ -266,14 +274,59 @@ export const usePlatformPlanManagement = () => {
     }
   };
 
-  const upgradeUserPlan = async (userId: string, planKey: string, planId: string) => {
+  const addTokensToUser = async (userId: string, tokensToAdd: number, reason: string = 'plan_activation') => {
+    try {
+      // Get current balance
+      const { data: profile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('token_balance')
+        .eq('id', userId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const currentBalance = profile?.token_balance || 0;
+      const newBalance = currentBalance + tokensToAdd;
+
+      // Update token balance
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ 
+          token_balance: newBalance,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+
+      if (updateError) throw updateError;
+
+      // Log the token event
+      await supabase
+        .from('token_events')
+        .insert([{
+          user_id: userId,
+          change: tokensToAdd,
+          balance_after: newBalance,
+          reason: reason,
+        }]);
+
+      return true;
+    } catch (error) {
+      console.error('Error adding tokens:', error);
+      return false;
+    }
+  };
+
+  const upgradeUserPlan = async (userId: string, planKey: string, planId: string, isFirstTime: boolean = false) => {
     try {
       // Check if user has existing subscription
       const { data: existing } = await supabase
         .from('user_platform_subscriptions')
-        .select('id')
+        .select('id, plan_key')
         .eq('user_id', userId)
         .maybeSingle();
+
+      const previousPlanKey = existing?.plan_key || 'free';
+      const isUpgrade = existing ? true : false;
 
       const subscriptionData = {
         user_id: userId,
@@ -300,7 +353,14 @@ export const usePlatformPlanManagement = () => {
         if (error) throw error;
       }
 
-      toast({ title: "Success", description: `User upgraded to ${planKey} plan` });
+      // Add tokens based on plan
+      const tokensToAdd = planTokens[planKey] || 0;
+      if (tokensToAdd > 0 && planKey !== 'free') {
+        const reason = isUpgrade ? `plan_upgrade_${previousPlanKey}_to_${planKey}` : `plan_activation_${planKey}`;
+        await addTokensToUser(userId, tokensToAdd, reason);
+      }
+
+      toast({ title: "Success", description: `User upgraded to ${planKey} plan with ${(tokensToAdd / 1000000).toFixed(1)}M tokens added` });
       return true;
     } catch (error) {
       console.error('Error upgrading user:', error);
@@ -324,6 +384,8 @@ export const usePlatformPlanManagement = () => {
     updatePlan,
     deletePlan,
     upgradeUserPlan,
-    getAllPlans
+    getAllPlans,
+    addTokensToUser,
+    planTokens,
   };
 };
