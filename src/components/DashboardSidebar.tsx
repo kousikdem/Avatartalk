@@ -11,8 +11,6 @@ import {
   Calendar,
   Brain,
   User,
-  ChevronLeft,
-  ChevronRight,
   Package,
   Share2,
   Shield,
@@ -90,7 +88,7 @@ const planColors: Record<string, string> = {
 
 const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => {
   const navigate = useNavigate();
-  const { state, setOpen, toggleSidebar } = useSidebar();
+  const { state, setOpen } = useSidebar();
   const isCollapsed = state === "collapsed";
   const isMobile = useIsMobile();
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -114,9 +112,6 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
     checkSuperAdmin();
   }, []);
 
-  const handleLogoClick = () => {
-    navigate('/settings/dashboard');
-  };
 
   const handleMenuItemClick = (e: React.MouseEvent, item: NavItem) => {
     const requiredLevel = planHierarchy[item.requiredPlan || 'free'] || 0;
@@ -153,35 +148,13 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
       className="border-r border-gray-200 bg-white shadow-sm"
       collapsible="icon"
     >
-      <SidebarHeader className="p-4 border-b border-gray-200 bg-white">
-        <div className="flex items-center justify-between gap-3">
-          <div 
-            className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-all duration-300 flex-1 min-w-0"
-            onClick={handleLogoClick}
-          >
-            <Logo size="md" className="flex-shrink-0 shadow-md" />
-            {!isCollapsed && (
-              <div className="min-w-0 flex-1">
-                <h2 className="font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate text-base">AvatarTalk.Co</h2>
-                <p className="text-xs text-gray-600 truncate">Dashboard</p>
-              </div>
-            )}
-          </div>
-          
-          {!isMobile && (
-            <Button
-              onClick={toggleSidebar}
-              variant="ghost"
-              size="icon"
-              className="h-10 w-10 p-2 hover:bg-gray-100 transition-colors flex-shrink-0 text-gray-700 bg-gray-50 border border-gray-200 shadow-sm hover:shadow-md"
-              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              {isCollapsed ? (
-                <ChevronRight className="h-6 w-6" />
-              ) : (
-                <ChevronLeft className="h-6 w-6" />
-              )}
-            </Button>
+      <SidebarHeader className="p-3 border-b border-gray-200 bg-white">
+        {/* Minimal header - main branding is in the header strip */}
+        <div className="flex items-center justify-center">
+          {isCollapsed ? (
+            <Logo size="sm" className="shadow-md" />
+          ) : (
+            <p className="text-xs text-gray-500 font-medium">Navigation</p>
           )}
         </div>
       </SidebarHeader>
