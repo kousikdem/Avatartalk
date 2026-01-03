@@ -76,32 +76,32 @@ const DashboardHeaderStrip: React.FC = () => {
 
   return (
     <>
-      <div className="w-full bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 px-4 py-2.5 sticky top-0 z-40 shadow-lg">
-        <div className="flex items-center justify-between gap-3 max-w-7xl mx-auto">
-          {/* Left section - Logo and Menu Toggle */}
-          <div className="flex items-center gap-3">
+      <div className="w-full bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 px-3 py-2 sticky top-0 z-40 shadow-lg">
+        <div className="flex items-center justify-between gap-2 max-w-7xl mx-auto">
+          {/* Left section - Menu Toggle and Logo */}
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="icon"
               onClick={toggleSidebar}
-              className="h-9 w-9 text-white hover:bg-white/20"
+              className="h-8 w-8 text-white hover:bg-white/20"
             >
-              <Menu className="h-5 w-5" />
+              <Menu className="h-4 w-4" />
             </Button>
             
             <div 
-              className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity"
+              className="flex items-center gap-1.5 cursor-pointer hover:opacity-90 transition-opacity"
               onClick={() => navigate('/settings/dashboard')}
             >
               <Logo size="sm" className="shadow-md" />
-              <span className="text-white font-semibold text-lg hidden sm:block">
+              <span className="text-white font-semibold text-base hidden sm:block">
                 AvatarTalk.Co
               </span>
             </div>
           </div>
 
           {/* Right section - Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <div className="hidden sm:block">
               <CurrencySelector compact />
             </div>
@@ -112,14 +112,17 @@ const DashboardHeaderStrip: React.FC = () => {
               variant="ghost"
               size="sm"
               onClick={handleShare}
-              className="gap-1.5 h-8 px-3 text-white hover:bg-white/20"
+              className="gap-1 h-7 px-2 text-white hover:bg-white/20"
             >
               <Share2 className="w-3.5 h-3.5" />
               <span className="hidden md:inline text-xs">Share</span>
             </Button>
 
-            {/* Plan Badge */}
-            <div className="hidden sm:block">
+            {/* Plan Badge with Upgrade */}
+            <div 
+              className="hidden sm:block cursor-pointer"
+              onClick={() => navigate('/pricing')}
+            >
               <PlanBadge size="sm" showIcon />
             </div>
 
@@ -128,15 +131,15 @@ const DashboardHeaderStrip: React.FC = () => {
               <DropdownMenuTrigger asChild>
                 <Button 
                   variant="ghost" 
-                  className="flex items-center gap-2 h-9 px-2 text-white hover:bg-white/20"
+                  className="flex items-center gap-1.5 h-8 px-1.5 text-white hover:bg-white/20"
                 >
-                  <Avatar className="h-7 w-7 border-2 border-white/50">
+                  <Avatar className="h-6 w-6 border border-white/50">
                     <AvatarImage src={userProfile?.profile_pic_url || ''} alt={displayName} />
                     <AvatarFallback className="bg-white/20 text-white text-xs font-medium">
                       {initials}
                     </AvatarFallback>
                   </Avatar>
-                  <ChevronDown className="h-3.5 w-3.5 hidden sm:block" />
+                  <ChevronDown className="h-3 w-3 hidden sm:block" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -148,7 +151,7 @@ const DashboardHeaderStrip: React.FC = () => {
                   <User className="w-4 h-4 mr-2" />
                   Account Settings
                 </DropdownMenuItem>
-                <div className="sm:hidden px-2 py-1.5">
+                <div className="sm:hidden px-2 py-1.5" onClick={() => navigate('/pricing')}>
                   <PlanBadge size="sm" showIcon />
                 </div>
                 <DropdownMenuSeparator />

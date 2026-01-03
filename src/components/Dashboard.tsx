@@ -134,81 +134,15 @@ const Dashboard = () => {
     { title: "Buy Tokens", icon: Coins, url: "/settings/buy-tokens" },
   ];
 
-  return (
+    return (
     <div className="w-full max-w-7xl mx-auto bg-white p-3 sm:p-6">
-      {/* Header Section with Mobile Menu, Token Display, Share and Logout Buttons */}
+      {/* Header Section */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-8">
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          {/* Mobile Menu Button */}
-          {isMobile && (
-            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="shrink-0">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-72 p-0">
-                <div className="p-4 border-b">
-                  <h2 className="font-semibold text-lg bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    AvatarTalk.Co
-                  </h2>
-                  <p className="text-xs text-gray-500">Dashboard Menu</p>
-                </div>
-                <div className="p-3 space-y-1">
-                  <Button
-                    onClick={() => {
-                      setIsCreatePostOpen(true);
-                      setMobileMenuOpen(false);
-                    }}
-                    className="w-full mb-3 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 text-white"
-                  >
-                    <PlusCircle className="w-4 h-4 mr-2" />
-                    Create Post
-                  </Button>
-                  {mobileNavItems.map((item) => (
-                    <a
-                      key={item.title}
-                      href={item.url}
-                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <item.icon className="w-5 h-5 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-700">{item.title}</span>
-                    </a>
-                  ))}
-                </div>
-              </SheetContent>
-            </Sheet>
-          )}
-          
           <div className="flex-1 min-w-0">
             <h1 className="text-xl sm:text-3xl font-bold text-gray-900 truncate">Welcome Back!</h1>
             <p className="text-gray-600 text-xs sm:text-base truncate">Manage your AI avatar</p>
           </div>
-        </div>
-        
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap w-full sm:w-auto justify-end">
-          <CurrencySelector compact />
-          <TokenDisplay compact />
-          
-          <Button 
-            onClick={() => setIsShareOpen(true)}
-            size={isMobile ? "icon" : "default"}
-            className="bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 hover:from-blue-600 hover:via-purple-600 hover:to-indigo-700 text-white"
-          >
-            <Share2 className="w-4 h-4" />
-            {!isMobile && <span className="ml-2">Share Profile</span>}
-          </Button>
-          
-          <Button 
-            onClick={handleLogout}
-            variant="outline"
-            size={isMobile ? "icon" : "default"}
-            className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-400"
-          >
-            <LogOut className="w-4 h-4" />
-            {!isMobile && <span className="ml-2">Logout</span>}
-          </Button>
         </div>
       </div>
 
