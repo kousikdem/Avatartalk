@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +18,7 @@ import {
   TrendingUp, Clock, MapPin, Eye, Edit, Trash2, ExternalLink,
   Percent, RefreshCw, Search, Settings, Link2, CheckCircle2,
   AlertCircle, Play, Pause, Copy, Mail, Phone, Building2,
-  Ticket, Star, Filter, Grid3X3, List, Zap, Globe
+  Ticket, Star, Filter, Grid3X3, List, Zap, Globe, Lock
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,6 +26,8 @@ import { useVirtualCollaborations, VirtualProduct, VirtualBooking } from '@/hook
 import VirtualProductForm from './VirtualProductForm';
 import VirtualBookingCard from './VirtualBookingCard';
 import TokenDisplay from './TokenDisplay';
+import { usePlanFeatures } from '@/hooks/usePlanFeatures';
+import { LimitReachedBanner } from '@/components/LockedFeatureOverlay';
 
 type ViewMode = 'grid' | 'list';
 type Currency = 'INR' | 'USD' | 'EUR' | 'GBP';
@@ -37,6 +40,7 @@ const EXCHANGE_RATES: Record<Currency, number> = {
 };
 
 const VirtualCollaborationPage = () => {
+  const navigate = useNavigate();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<VirtualProduct | null>(null);
@@ -47,6 +51,15 @@ const VirtualCollaborationPage = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [calendarSyncEnabled, setCalendarSyncEnabled] = useState(false);
   const { toast } = useToast();
+  
+  // Plan features
+  const { 
+    canHostVirtualMeetings, 
+    canAddCollaboration, 
+    limits, 
+    effectivePlanKey,
+    hasFeature
+  } = usePlanFeatures();
   
   const { 
     products, 
@@ -238,15 +251,41 @@ const VirtualCollaborationPage = () => {
               </SelectContent>
             </Select>
             
+            {/* Create Collaboration - Locked based on plan */}
             <Button 
-              onClick={() => setIsAddModalOpen(true)}
-              className="bg-primary"
+              onClick={() => {
+                if (!canHostVirtualMeetings) {
+                  navigate('/pricing');
+                  return;
+                }
+                if (!canAddCollaboration(myProducts.length)) {
+                  toast({
+                    title: "Collaboration Limit Reached",
+                    description: `Upgrade to add more collaborations. Current limit: ${limits.collaborations}`,
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                setIsAddModalOpen(true);
+              }}
+              className={`bg-primary ${!canHostVirtualMeetings ? 'opacity-60' : ''}`}
             >
-              <Plus className="w-4 h-4 mr-2" />
+              {!canHostVirtualMeetings ? <Lock className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
               Create Virtual Collaboration
+              {!canHostVirtualMeetings && (
+                <Badge variant="secondary" className="ml-2 text-xs bg-white/20">Pro+</Badge>
+              )}
             </Button>
           </div>
         </div>
+
+        {/* Limit Reached Banner */}
+        <LimitReachedBanner
+          currentCount={myProducts.length}
+          limit={limits.collaborations === -1 ? 'unlimited' : limits.collaborations}
+          itemName="Collaborations"
+          planForMore={effectivePlanKey === 'pro' ? 'business' : 'pro'}
+        />
 
         {/* Integration Bar */}
         <Card className="border-2 bg-gradient-to-r from-blue-50/50 via-purple-50/50 to-pink-50/50 dark:from-blue-950/20 dark:via-purple-950/20 dark:to-pink-950/20">

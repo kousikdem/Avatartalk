@@ -9,8 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { 
   Plus, Grid3X3, List, Eye, Edit, Trash2, TrendingUp, 
   ShoppingBag, DollarSign, Package, Download, Store, Search,
-  Filter, BarChart3, CreditCard, TrendingDown, Percent, RefreshCw, ShoppingCart
+  Filter, BarChart3, CreditCard, TrendingDown, Percent, RefreshCw, ShoppingCart, Lock
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import ProductForm from '@/components/ProductForm';
 import ProductCard from '@/components/ProductCard';
 import ProductAnalyticsModal from '@/components/ProductAnalyticsModal';
@@ -21,6 +22,8 @@ import { useOrders } from '@/hooks/useOrders';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import TokenDisplay from '@/components/TokenDisplay';
+import { usePlanFeatures } from '@/hooks/usePlanFeatures';
+import { LimitReachedBanner } from '@/components/LockedFeatureOverlay';
 
 type ViewMode = 'grid' | 'list';
 type Currency = 'INR' | 'USD' | 'EUR' | 'GBP';
@@ -33,6 +36,7 @@ const EXCHANGE_RATES: Record<Currency, number> = {
 };
 
 const ProductsPageEnhanced = () => {
+  const navigate = useNavigate();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
@@ -48,6 +52,15 @@ const ProductsPageEnhanced = () => {
   const { orders } = useOrders();
   const { toast } = useToast();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  
+  // Plan features
+  const { 
+    canSellProducts, 
+    canAddProduct, 
+    limits, 
+    effectivePlanKey,
+    hasFeature
+  } = usePlanFeatures();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -199,9 +212,46 @@ const ProductsPageEnhanced = () => {
     }).format(converted / 100);
   };
 
+  // Determine next plan for upgrade
+  const nextPlanForProducts = effectivePlanKey === 'free' ? 'creator' 
+    : effectivePlanKey === 'creator' ? 'pro' 
+    : 'business';
+
+  const handleAddProduct = () => {
+    if (!canSellProducts) {
+      navigate('/pricing');
+      return;
+    }
+    if (!canAddProduct(myProducts.length)) {
+      toast({
+        title: "Product Limit Reached",
+        description: `Upgrade to add more products. Current limit: ${limits.products}`,
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsAddModalOpen(true);
+  };
+
+  const handlePromoSettings = () => {
+    if (!hasFeature('promo_codes_enabled')) {
+      navigate('/pricing');
+      return;
+    }
+    window.location.href = '/settings/promo';
+  };
+
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
+        {/* Limit Reached Banner */}
+        <LimitReachedBanner
+          currentCount={myProducts.length}
+          limit={limits.products === -1 ? 'unlimited' : limits.products}
+          itemName="Products"
+          planForMore={nextPlanForProducts}
+        />
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -237,13 +287,18 @@ const ProductsPageEnhanced = () => {
               </SelectContent>
             </Select>
             
+            {/* Promo Settings - Locked for free plan */}
             <Button 
               variant="outline"
-              onClick={() => window.location.href = '/settings/promo'}
-              className="border-2"
+              onClick={handlePromoSettings}
+              className={`border-2 ${!hasFeature('promo_codes_enabled') ? 'opacity-60' : ''}`}
             >
+              {!hasFeature('promo_codes_enabled') && <Lock className="w-3 h-3 mr-1" />}
               <Percent className="w-4 h-4 mr-2" />
               Promo Settings
+              {!hasFeature('promo_codes_enabled') && (
+                <Badge variant="secondary" className="ml-2 text-xs">Creator+</Badge>
+              )}
             </Button>
             
             <Button 
@@ -255,12 +310,17 @@ const ProductsPageEnhanced = () => {
               Shopify
               <Badge variant="secondary" className="ml-2">Soon</Badge>
             </Button>
+            
+            {/* Add Product - Locked based on plan */}
             <Button 
-              onClick={() => setIsAddModalOpen(true)}
-              className="bg-primary"
+              onClick={handleAddProduct}
+              className={`bg-primary ${!canSellProducts ? 'opacity-60' : ''}`}
             >
-              <Plus className="w-4 h-4 mr-2" />
+              {!canSellProducts ? <Lock className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
               Add Product
+              {!canSellProducts && (
+                <Badge variant="secondary" className="ml-2 text-xs bg-white/20">Creator+</Badge>
+              )}
             </Button>
           </div>
         </div>

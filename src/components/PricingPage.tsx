@@ -1,23 +1,41 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Slider } from '@/components/ui/slider';
 import { 
   Check, Star, Zap, Crown, Rocket, User, Bot, UserCircle, Coins, FileText, 
   BarChart2, Link, Users, Gift, Sparkles, MessageCircle, Mic, Brain, FileUp,
   Package, CreditCard, Tag, BarChart3, Video, Calendar, Globe, MessageSquare,
   Mic2, AudioLines, CalendarDays, Link2, TrendingUp, DollarSign, UserCog,
   Shield, Infinity, Code, Users2, Building2, Handshake, Ticket, Receipt,
-  ShoppingBag, Loader2, Eye, Lock, ChevronRight
+  ShoppingBag, Loader2, Eye, Lock, ChevronRight, Share2, ChevronDown, LogOut
 } from 'lucide-react';
-import Navbar from './Navbar';
 import { usePlatformPricingPlans, useUserPlatformSubscription, PlatformFeature } from '@/hooks/usePlatformPricingPlans';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import MainAuth from './MainAuth';
+import Logo from './Logo';
+import TokenDisplay from './TokenDisplay';
+import ShareModal from './ShareModal';
+import PlanBadge from './PlanBadge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { CURRENCIES, useCurrency } from '@/hooks/useCurrency';
 
 declare global {
   interface Window {
@@ -48,7 +66,6 @@ const planIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   business: Rocket,
 };
 
-// Duration options in months
 const durationOptions = [1, 3, 6, 12, 24];
 const durationLabels: Record<number, string> = {
   1: '1 Month',
@@ -71,27 +88,34 @@ const PricingPage = () => {
   const { toast } = useToast();
   const { plans, loading } = usePlatformPricingPlans();
   const { effectivePlanKey, refetch: refetchSubscription } = useUserPlatformSubscription();
+  const { currency: selectedCurrency, setCurrency: setGlobalCurrency } = useCurrency();
   
-  // Default to 12 months (1 year) and USD
-  const [durationIndex, setDurationIndex] = useState(3); // Index 3 = 12 months
-  const [currency, setCurrency] = useState<'USD' | 'INR'>('USD');
+  const [durationIndex, setDurationIndex] = useState(3);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [selectedPlanForPurchase, setSelectedPlanForPurchase] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   const billingCycle = durationOptions[durationIndex];
 
   useEffect(() => {
-    // Load Razorpay script
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
     document.body.appendChild(script);
 
-    // Check auth state
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       setUser(user);
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('username, display_name, profile_pic_url')
+          .eq('id', user.id)
+          .single();
+        setUserProfile({ ...data, email: user.email });
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -110,13 +134,10 @@ const PricingPage = () => {
   }, []);
 
   const getPrice = (plan: any) => {
-    const isINR = currency === 'INR';
+    const isINR = selectedCurrency === 'INR';
     const months = billingCycle;
-    
-    // Get base monthly price
     let baseMonthly = isINR ? plan.price_inr : plan.price_usd;
     
-    // Check for pre-set multi-month prices
     if (months === 3) {
       const preset = isINR ? plan.price_3_month_inr : plan.price_3_month_usd;
       if (preset) return preset;
@@ -128,7 +149,6 @@ const PricingPage = () => {
       if (preset) return preset;
     }
     
-    // Calculate with discount for other durations
     const discount = durationDiscounts[months] || 0;
     const total = baseMonthly * months;
     return Math.round(total * (1 - discount / 100));
@@ -169,7 +189,7 @@ const PricingPage = () => {
         body: {
           planId,
           billingCycleMonths: billingCycle,
-          currency: currency,
+          currency: selectedCurrency === 'INR' ? 'INR' : 'USD',
         },
       });
 
@@ -202,7 +222,7 @@ const PricingPage = () => {
             });
 
             refetchSubscription();
-            navigate('/dashboard');
+            navigate('/settings/dashboard');
           } catch (err) {
             console.error('Verification error:', err);
             toast({
@@ -212,12 +232,8 @@ const PricingPage = () => {
             });
           }
         },
-        prefill: {
-          email: user.email,
-        },
-        theme: {
-          color: '#8B5CF6',
-        },
+        prefill: { email: user.email },
+        theme: { color: '#8B5CF6' },
       };
 
       const razorpay = new window.Razorpay(options);
@@ -234,6 +250,11 @@ const PricingPage = () => {
     }
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
+  };
+
   const renderFeatureIcon = (iconName: string, included: boolean) => {
     const IconComponent = iconMap[iconName] || Check;
     return (
@@ -242,6 +263,13 @@ const PricingPage = () => {
       </span>
     );
   };
+
+  const displayName = userProfile?.display_name || userProfile?.username || 'User';
+  const initials = displayName.slice(0, 2).toUpperCase();
+  const profileUrl = userProfile?.username 
+    ? `${window.location.origin}/${userProfile.username}`
+    : window.location.origin;
+  const currSymbol = CURRENCIES.find(c => c.code === selectedCurrency)?.symbol || '$';
 
   if (loading) {
     return (
@@ -252,12 +280,98 @@ const PricingPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-secondary/10">
-      <Navbar showAuth={true} />
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-background via-primary/5 to-secondary/10">
+      {/* Header Strip - Blue Gradient */}
+      <div className="w-full bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 px-3 py-2 sticky top-0 z-40 shadow-lg">
+        <div className="flex items-center justify-between gap-2 max-w-7xl mx-auto">
+          <div className="flex items-center gap-2">
+            <div 
+              className="flex items-center gap-1.5 cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => navigate('/settings/dashboard')}
+            >
+              <Logo size="sm" className="shadow-md" />
+              <span className="text-white font-semibold text-base hidden sm:block">
+                AvatarTalk.Co
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Select value={selectedCurrency} onValueChange={(val) => setGlobalCurrency(val as any)}>
+              <SelectTrigger className="h-7 w-20 bg-white/20 border-white/30 text-white text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CURRENCIES.map((curr) => (
+                  <SelectItem key={curr.code} value={curr.code}>
+                    {curr.symbol} {curr.code}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {user && <TokenDisplay compact />}
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowShareModal(true)}
+              className="gap-1 h-7 px-2 text-white hover:bg-white/20"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span className="hidden md:inline text-xs">Share</span>
+            </Button>
+
+            {user ? (
+              <>
+                <div className="hidden sm:block cursor-pointer" onClick={() => navigate('/pricing')}>
+                  <PlanBadge size="sm" showIcon />
+                </div>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="flex items-center gap-1.5 h-8 px-1.5 text-white hover:bg-white/20">
+                      <Avatar className="h-6 w-6 border border-white/50">
+                        <AvatarImage src={userProfile?.profile_pic_url || ''} alt={displayName} />
+                        <AvatarFallback className="bg-white/20 text-white text-xs font-medium">
+                          {initials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <ChevronDown className="h-3 w-3 hidden sm:block" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <div className="px-3 py-2 border-b">
+                      <p className="text-sm font-medium">{displayName}</p>
+                      <p className="text-xs text-muted-foreground truncate">{userProfile?.email}</p>
+                    </div>
+                    <DropdownMenuItem onClick={() => navigate('/settings/account')}>
+                      <User className="w-4 h-4 mr-2" />
+                      Account Settings
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/settings/dashboard')}>
+                      <BarChart2 className="w-4 h-4 mr-2" />
+                      Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <Button size="sm" variant="secondary" onClick={() => setShowAuthModal(true)} className="h-7 text-xs">
+                Sign In
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
       
-      <div className="pt-20 pb-16">
+      <div className="flex-1 pt-8 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
               <span className="bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
@@ -268,68 +382,58 @@ const PricingPage = () => {
               Increase Your Brand Value to 10X with AI Avatars. Start free, scale as you grow.
             </p>
             
-            {/* Currency Toggle */}
-            <div className="flex justify-center gap-2 mb-6">
-              <Button 
-                variant={currency === 'USD' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setCurrency('USD')}
-                className={currency === 'USD' ? 'bg-primary' : ''}
-              >
-                $ USD
-              </Button>
-              <Button 
-                variant={currency === 'INR' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setCurrency('INR')}
-                className={currency === 'INR' ? 'bg-primary' : ''}
-              >
-                ₹ INR
-              </Button>
-            </div>
-            
-            {/* Duration Slider */}
-            <div className="max-w-md mx-auto mb-8">
+            <div className="max-w-lg mx-auto mb-8">
               <div className="bg-card/80 backdrop-blur-sm rounded-xl p-6 border">
-                <div className="flex justify-between mb-4">
-                  <span className="text-sm font-medium">{durationLabels[billingCycle]}</span>
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <label className="text-sm font-medium">Billing Period:</label>
+                    <Select value={durationIndex.toString()} onValueChange={(val) => setDurationIndex(parseInt(val))}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {durationOptions.map((d, i) => (
+                          <SelectItem key={d} value={i.toString()}>
+                            {durationLabels[d]}
+                            {durationDiscounts[d] > 0 && ` (-${durationDiscounts[d]}%)`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="flex items-center justify-between gap-4">
+                    <label className="text-sm font-medium">Currency:</label>
+                    <Select value={selectedCurrency} onValueChange={(val) => setGlobalCurrency(val as any)}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CURRENCIES.map((curr) => (
+                          <SelectItem key={curr.code} value={curr.code}>
+                            {curr.symbol} {curr.code} - {curr.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
                   {billingCycle > 1 && (
-                    <Badge className="bg-green-500/20 text-green-600">
-                      Save {durationDiscounts[billingCycle]}%
+                    <Badge className="bg-green-500/20 text-green-600 self-center">
+                      Save {durationDiscounts[billingCycle]}% with {durationLabels[billingCycle]}
                     </Badge>
                   )}
-                </div>
-                <Slider
-                  value={[durationIndex]}
-                  onValueChange={(value) => setDurationIndex(value[0])}
-                  min={0}
-                  max={4}
-                  step={1}
-                  className="w-full"
-                />
-                <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-                  {durationOptions.map((d, i) => (
-                    <span 
-                      key={d} 
-                      className={`cursor-pointer ${i === durationIndex ? 'text-primary font-medium' : ''}`}
-                      onClick={() => setDurationIndex(i)}
-                    >
-                      {d === 1 ? '1M' : d === 3 ? '3M' : d === 6 ? '6M' : d === 12 ? '1Y' : '2Y'}
-                    </span>
-                  ))}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Pricing Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {plans.map((plan) => {
               const PlanIcon = planIcons[plan.plan_key] || Star;
               const gradient = planGradients[plan.plan_key] || planGradients.free;
               const price = getPrice(plan);
               const monthlyPrice = getMonthlyPrice(plan);
-              const discount = durationDiscounts[billingCycle];
               const isCurrentPlan = effectivePlanKey === plan.plan_key;
               const features = (plan.features_list || []) as PlatformFeature[];
 
@@ -350,9 +454,7 @@ const PricingPage = () => {
 
                   {isCurrentPlan && (
                     <div className="absolute -top-3 right-4">
-                      <Badge className="bg-green-500 text-white px-3 py-1">
-                        Current Plan
-                      </Badge>
+                      <Badge className="bg-green-500 text-white px-3 py-1">Current Plan</Badge>
                     </div>
                   )}
 
@@ -366,21 +468,15 @@ const PricingPage = () => {
                     <div className="mt-4">
                       {plan.plan_key === 'free' ? (
                         <div className="text-4xl font-bold">
-                          {currency === 'INR' ? '₹0' : '$0'}
+                          {currSymbol}0
                           <span className="text-base font-normal text-muted-foreground">/forever</span>
                         </div>
                       ) : (
                         <div>
-                          <div className="text-4xl font-bold">
-                            {currency === 'INR' ? '₹' : '$'}{price}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            for {durationLabels[billingCycle]}
-                          </div>
+                          <div className="text-4xl font-bold">{currSymbol}{price}</div>
+                          <div className="text-sm text-muted-foreground">for {durationLabels[billingCycle]}</div>
                           {billingCycle > 1 && (
-                            <div className="text-xs text-primary mt-1">
-                              ≈ {currency === 'INR' ? '₹' : '$'}{monthlyPrice}/month
-                            </div>
+                            <div className="text-xs text-primary mt-1">≈ {currSymbol}{monthlyPrice}/month</div>
                           )}
                         </div>
                       )}
@@ -388,7 +484,6 @@ const PricingPage = () => {
                   </CardHeader>
 
                   <CardContent className="space-y-4">
-                    {/* AI Tokens highlight */}
                     <div className={`p-3 rounded-lg bg-gradient-to-r ${gradient}/10 border border-current/10`}>
                       <div className="flex items-center justify-center gap-2 font-medium">
                         <Coins className="w-5 h-5" />
@@ -399,7 +494,6 @@ const PricingPage = () => {
                       </p>
                     </div>
 
-                    {/* Features list with icons */}
                     <ul className="space-y-2">
                       {features.slice(0, 8).map((feature, idx) => (
                         <li key={idx} className="flex items-start gap-2 text-sm">
@@ -419,14 +513,9 @@ const PricingPage = () => {
                       )}
                     </ul>
 
-                    {/* CTA Button */}
                     <Button
                       className={`w-full mt-4 ${
-                        isCurrentPlan
-                          ? 'bg-green-500 hover:bg-green-600'
-                          : plan.is_popular
-                          ? `bg-gradient-to-r ${gradient} hover:opacity-90`
-                          : ''
+                        isCurrentPlan ? 'bg-green-500 hover:bg-green-600' : plan.is_popular ? `bg-gradient-to-r ${gradient} hover:opacity-90` : ''
                       }`}
                       variant={isCurrentPlan || plan.is_popular ? 'default' : 'outline'}
                       onClick={() => handlePurchase(plan.id)}
@@ -435,17 +524,11 @@ const PricingPage = () => {
                       {processing ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : isCurrentPlan ? (
-                        <>
-                          <Check className="w-4 h-4 mr-1" />
-                          Current Plan
-                        </>
+                        <><Check className="w-4 h-4 mr-1" />Current Plan</>
                       ) : plan.plan_key === 'free' ? (
                         'Get Started Free'
                       ) : (
-                        <>
-                          Subscribe Now
-                          <ChevronRight className="w-4 h-4 ml-1" />
-                        </>
+                        <>Subscribe Now<ChevronRight className="w-4 h-4 ml-1" /></>
                       )}
                     </Button>
                   </CardContent>
@@ -454,21 +537,15 @@ const PricingPage = () => {
             })}
           </div>
 
-          {/* Token Add-ons Section */}
           <div className="mt-16 text-center">
             <h2 className="text-3xl font-bold mb-4">Need More AI Tokens?</h2>
-            <p className="text-muted-foreground mb-6">
-              Buy additional tokens anytime. Works with all plans.
-            </p>
-            <div className="flex justify-center gap-4">
-              <Button size="lg" variant="outline" onClick={() => navigate('/buy-tokens')}>
-                <Coins className="w-5 h-5 mr-2" />
-                Buy Token Pack
-              </Button>
-            </div>
+            <p className="text-muted-foreground mb-6">Buy additional tokens anytime. Works with all plans.</p>
+            <Button size="lg" variant="outline" onClick={() => navigate('/settings/buy-tokens')}>
+              <Coins className="w-5 h-5 mr-2" />
+              Buy Token Pack
+            </Button>
           </div>
 
-          {/* Feature Comparison - Key Highlights */}
           <div className="mt-20">
             <h2 className="text-3xl font-bold text-center mb-8">Plan Features at a Glance</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -491,15 +568,12 @@ const PricingPage = () => {
             </div>
           </div>
 
-          {/* FAQ Section */}
           <div className="mt-20">
-            <h2 className="text-3xl font-bold text-center mb-12">
-              Frequently Asked Questions
-            </h2>
+            <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               <Card className="bg-card/80 backdrop-blur-sm p-6">
                 <h3 className="text-lg font-semibold mb-2">How do tokens work?</h3>
-                <p className="text-muted-foreground">When you subscribe, your plan's tokens are immediately added to your account. Use them for AI chat, voice responses, and more. Buy extra tokens anytime if needed.</p>
+                <p className="text-muted-foreground">When you subscribe, your plan's tokens are immediately added to your account. Use them for AI chat, voice responses, and more.</p>
               </Card>
               <Card className="bg-card/80 backdrop-blur-sm p-6">
                 <h3 className="text-lg font-semibold mb-2">Can I upgrade anytime?</h3>
@@ -511,21 +585,25 @@ const PricingPage = () => {
               </Card>
               <Card className="bg-card/80 backdrop-blur-sm p-6">
                 <h3 className="text-lg font-semibold mb-2">Which plan is best for creators?</h3>
-                <p className="text-muted-foreground">The Creator plan unlocks product sales and payments. For full voice cloning and virtual meetings, go Pro.</p>
+                <p className="text-muted-foreground">The Creator plan unlocks product sales and payments. For voice cloning and virtual meetings, go Pro.</p>
               </Card>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Auth Modal */}
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        profileUrl={profileUrl}
+        username={userProfile?.username || 'user'}
+      />
+
       <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Sign in to Continue</DialogTitle>
-            <DialogDescription>
-              Create an account or sign in to purchase this plan
-            </DialogDescription>
+            <DialogDescription>Create an account or sign in to purchase this plan</DialogDescription>
           </DialogHeader>
           <MainAuth isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
         </DialogContent>
