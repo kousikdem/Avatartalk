@@ -76,7 +76,7 @@ const DashboardHeaderStrip: React.FC = () => {
 
   return (
     <>
-      <div className="w-full bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 px-3 py-2 sticky top-0 z-40 shadow-lg">
+      <div className="w-full bg-white border-b border-gray-200 px-3 py-2 sticky top-0 z-40 shadow-sm">
         <div className="flex items-center justify-between gap-2 max-w-7xl mx-auto">
           {/* Left section - Menu Toggle and Logo */}
           <div className="flex items-center gap-2">
@@ -84,7 +84,7 @@ const DashboardHeaderStrip: React.FC = () => {
               variant="ghost"
               size="icon"
               onClick={toggleSidebar}
-              className="h-8 w-8 text-white hover:bg-white/20"
+              className="h-8 w-8 text-gray-700 hover:bg-gray-100"
             >
               <Menu className="h-4 w-4" />
             </Button>
@@ -94,7 +94,7 @@ const DashboardHeaderStrip: React.FC = () => {
               onClick={() => navigate('/settings/dashboard')}
             >
               <Logo size="sm" className="shadow-md" />
-              <span className="text-white font-semibold text-base hidden sm:block">
+              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent font-semibold text-base hidden sm:block">
                 AvatarTalk.Co
               </span>
             </div>
@@ -112,7 +112,7 @@ const DashboardHeaderStrip: React.FC = () => {
               variant="ghost"
               size="sm"
               onClick={handleShare}
-              className="gap-1 h-7 px-2 text-white hover:bg-white/20"
+              className="gap-1 h-7 px-2 text-gray-700 hover:bg-gray-100"
             >
               <Share2 className="w-3.5 h-3.5" />
               <span className="hidden md:inline text-xs">Share</span>
@@ -129,13 +129,13 @@ const DashboardHeaderStrip: React.FC = () => {
             {/* Profile Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
+              <Button 
                   variant="ghost" 
-                  className="flex items-center gap-1.5 h-8 px-1.5 text-white hover:bg-white/20"
+                  className="flex items-center gap-1.5 h-8 px-1.5 text-gray-700 hover:bg-gray-100"
                 >
-                  <Avatar className="h-6 w-6 border border-white/50">
+                  <Avatar className="h-6 w-6 border border-gray-300">
                     <AvatarImage src={userProfile?.profile_pic_url || ''} alt={displayName} />
-                    <AvatarFallback className="bg-white/20 text-white text-xs font-medium">
+                    <AvatarFallback className="bg-gray-100 text-gray-700 text-xs font-medium">
                       {initials}
                     </AvatarFallback>
                   </Avatar>

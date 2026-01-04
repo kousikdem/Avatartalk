@@ -228,7 +228,7 @@ const LandingPage = () => {
     }
   ];
 
-  // Dynamic pricing plans from database - fallback to static if loading
+  // Dynamic pricing plans from database - show all features
   const dynamicPricingPlans = plans.map(plan => {
     const PlanIcon = planIcons[plan.plan_key] || Star;
     const features = (plan.features_list || []) as PlatformFeature[];
@@ -240,7 +240,7 @@ const LandingPage = () => {
       description: plan.tagline || '',
       icon: PlanIcon,
       tokens: plan.ai_tokens_monthly,
-      features: features.slice(0, 6).map(f => f.text),
+      features: features.map(f => f.text),
       popular: plan.is_popular || false
     };
   });
@@ -1012,7 +1012,7 @@ const LandingPage = () => {
               <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="flex flex-row flex-wrap justify-center gap-6">
               {dynamicPricingPlans.map((plan, index) => {
                 const planGradients: Record<string, string> = {
                   Free: 'from-slate-400 to-slate-500',
@@ -1023,7 +1023,7 @@ const LandingPage = () => {
                 const gradient = planGradients[plan.name] || 'from-blue-500 to-purple-500';
                 
                 return (
-                  <Card key={plan.id || index} className={`gradient-card p-6 relative ${plan.popular ? 'ring-2 ring-blue-500 scale-105' : ''}`}>
+                  <Card key={plan.id || index} className={`gradient-card p-6 relative w-full sm:w-[280px] flex-shrink-0 ${plan.popular ? 'ring-2 ring-blue-500 scale-105' : ''}`}>
                     {plan.popular && (
                       <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-500 to-purple-500 text-white">
                         Most Popular
@@ -1058,7 +1058,7 @@ const LandingPage = () => {
                       >
                         Get Started
                       </Button>
-                      <ul className="text-left space-y-2">
+                      <ul className="text-left space-y-2 max-h-64 overflow-y-auto">
                         {plan.features.map((feature, featureIndex) => (
                           <li key={featureIndex} className="flex items-start text-gray-700 text-sm">
                             <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
