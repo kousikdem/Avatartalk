@@ -1013,53 +1013,63 @@ const LandingPage = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {dynamicPricingPlans.map((plan, index) => (
-                <Card key={plan.id || index} className={`gradient-card p-6 relative ${plan.popular ? 'ring-2 ring-blue-500 scale-105' : ''}`}>
-                  {plan.popular && (
-                    <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-                      Most Popular
-                    </Badge>
-                  )}
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                      <plan.icon className="w-6 h-6 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      {plan.name}
-                    </h3>
-                    <div className="text-2xl font-bold text-gray-900 mb-1">
-                      {plan.price}
-                      {plan.period && <span className="text-sm text-gray-600">{plan.period}</span>}
-                    </div>
-                    <p className="text-gray-600 text-sm mb-4">
-                      {plan.description}
-                    </p>
-                    
-                    {/* Token highlight */}
-                    {plan.tokens > 0 && (
-                      <div className="flex items-center justify-center gap-1 mb-4 py-2 px-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
-                        <Coins className="w-4 h-4 text-yellow-500" />
-                        <span className="text-sm font-medium text-gray-700">{formatTokens(plan.tokens)} AI Tokens/mo</span>
-                      </div>
+              {dynamicPricingPlans.map((plan, index) => {
+                const planGradients: Record<string, string> = {
+                  Free: 'from-slate-400 to-slate-500',
+                  Creator: 'from-blue-500 to-purple-500',
+                  Pro: 'from-purple-500 to-pink-500',
+                  Business: 'from-orange-500 to-red-500',
+                };
+                const gradient = planGradients[plan.name] || 'from-blue-500 to-purple-500';
+                
+                return (
+                  <Card key={plan.id || index} className={`gradient-card p-6 relative ${plan.popular ? 'ring-2 ring-blue-500 scale-105' : ''}`}>
+                    {plan.popular && (
+                      <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-500 to-purple-500 text-white">
+                        Most Popular
+                      </Badge>
                     )}
-                    
-                    <Button 
-                      className={`w-full mb-4 ${plan.popular ? 'gradient-button' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'}`}
-                      onClick={() => setIsMainAuthOpen(true)}
-                    >
-                      Get Started
-                    </Button>
-                    <ul className="text-left space-y-2">
-                      {plan.features.map((feature, featureIndex) => (
-                        <li key={featureIndex} className="flex items-start text-gray-700 text-sm">
-                          <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </Card>
-              ))}
+                    <div className="text-center">
+                      <div className={`w-12 h-12 bg-gradient-to-r ${gradient} rounded-lg flex items-center justify-center mb-4 mx-auto shadow-lg`}>
+                        <plan.icon className="w-6 h-6 text-white" />
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        {plan.name}
+                      </h3>
+                      <div className="text-2xl font-bold text-gray-900 mb-1">
+                        {plan.price}
+                        {plan.period && <span className="text-sm text-gray-600">{plan.period}</span>}
+                      </div>
+                      <p className="text-gray-600 text-sm mb-4">
+                        {plan.description}
+                      </p>
+                      
+                      {/* Token highlight */}
+                      {plan.tokens > 0 && (
+                        <div className={`flex items-center justify-center gap-1 mb-4 py-2 px-3 bg-gradient-to-r ${gradient}/10 rounded-lg`}>
+                          <Coins className="w-4 h-4 text-yellow-500" />
+                          <span className="text-sm font-medium text-gray-700">{formatTokens(plan.tokens)} AI Tokens/mo</span>
+                        </div>
+                      )}
+                      
+                      <Button 
+                        className={`w-full mb-4 ${plan.popular ? `bg-gradient-to-r ${gradient} hover:opacity-90` : 'bg-gray-100 text-gray-900 hover:bg-gray-200'}`}
+                        onClick={() => setIsMainAuthOpen(true)}
+                      >
+                        Get Started
+                      </Button>
+                      <ul className="text-left space-y-2">
+                        {plan.features.map((feature, featureIndex) => (
+                          <li key={featureIndex} className="flex items-start text-gray-700 text-sm">
+                            <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
           )}
           

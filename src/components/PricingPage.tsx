@@ -20,6 +20,10 @@ import Logo from './Logo';
 import TokenDisplay from './TokenDisplay';
 import ShareModal from './ShareModal';
 import PlanBadge from './PlanBadge';
+import DashboardSidebar from './DashboardSidebar';
+import CurrencySelector from './CurrencySelector';
+import { useSidebar } from '@/components/ui/sidebar';
+import { Menu } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -89,6 +93,7 @@ const PricingPage = () => {
   const { plans, loading } = usePlatformPricingPlans();
   const { effectivePlanKey, refetch: refetchSubscription } = useUserPlatformSubscription();
   const { currency: selectedCurrency, setCurrency: setGlobalCurrency } = useCurrency();
+  const { toggleSidebar } = useSidebar();
   
   const [durationIndex, setDurationIndex] = useState(3);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -97,6 +102,7 @@ const PricingPage = () => {
   const [user, setUser] = useState<any>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [showCreatePost, setShowCreatePost] = useState(false);
 
   const billingCycle = durationOptions[durationIndex];
 
@@ -280,25 +286,123 @@ const PricingPage = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-background via-primary/5 to-secondary/10">
-      {/* Header Strip - Blue Gradient */}
-      <div className="w-full bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 px-3 py-2 sticky top-0 z-40 shadow-lg">
-        <div className="flex items-center justify-between gap-2 max-w-7xl mx-auto">
-          <div className="flex items-center gap-2">
-            <div 
-              className="flex items-center gap-1.5 cursor-pointer hover:opacity-90 transition-opacity"
-              onClick={() => navigate('/settings/dashboard')}
-            >
-              <Logo size="sm" className="shadow-md" />
-              <span className="text-white font-semibold text-base hidden sm:block">
-                AvatarTalk.Co
-              </span>
+    <div className="flex min-h-screen bg-gradient-to-br from-background via-primary/5 to-secondary/10">
+      {/* Sidebar */}
+      <DashboardSidebar onCreatePost={() => setShowCreatePost(true)} />
+      
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col min-h-screen">
+        {/* Header Strip - Blue Gradient */}
+        <div className="w-full bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 px-3 py-2 sticky top-0 z-40 shadow-lg">
+          <div className="flex items-center justify-between gap-2">
+            {/* Left section - Menu Toggle and Logo */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleSidebar}
+                className="h-8 w-8 text-white hover:bg-white/20"
+              >
+                <Menu className="h-4 w-4" />
+              </Button>
+              
+              <div 
+                className="flex items-center gap-1.5 cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => navigate('/settings/dashboard')}
+              >
+                <Logo size="sm" className="shadow-md" />
+                <span className="text-white font-semibold text-base hidden sm:block">
+                  AvatarTalk.Co
+                </span>
+              </div>
+            </div>
+
+            {/* Right section */}
+            <div className="flex items-center gap-1.5">
+              <div className="hidden sm:block">
+                <CurrencySelector compact />
+              </div>
+              
+              {user && <TokenDisplay compact />}
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowShareModal(true)}
+                className="gap-1 h-7 px-2 text-white hover:bg-white/20"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                <span className="hidden md:inline text-xs">Share</span>
+              </Button>
+
+              {user ? (
+                <>
+                  <div className="hidden sm:block cursor-pointer" onClick={() => navigate('/pricing')}>
+                    <PlanBadge size="sm" showIcon />
+                  </div>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="flex items-center gap-1.5 h-8 px-1.5 text-white hover:bg-white/20">
+                        <Avatar className="h-6 w-6 border border-white/50">
+                          <AvatarImage src={userProfile?.profile_pic_url || ''} alt={displayName} />
+                          <AvatarFallback className="bg-white/20 text-white text-xs font-medium">
+                            {initials}
+                          </AvatarFallback>
+                        </Avatar>
+                        <ChevronDown className="h-3 w-3 hidden sm:block" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <div className="px-3 py-2 border-b">
+                        <p className="text-sm font-medium">{displayName}</p>
+                        <p className="text-xs text-muted-foreground truncate">{userProfile?.email}</p>
+                      </div>
+                      <DropdownMenuItem onClick={() => navigate('/settings/account')}>
+                        <User className="w-4 h-4 mr-2" />
+                        Account Settings
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/settings/dashboard')}>
+                        <BarChart2 className="w-4 h-4 mr-2" />
+                        Dashboard
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Logout
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              ) : (
+                <Button size="sm" variant="secondary" onClick={() => setShowAuthModal(true)} className="h-7 text-xs">
+                  Sign In
+                </Button>
+              )}
             </div>
           </div>
-
-          <div className="flex items-center gap-1.5">
+        </div>
+        
+        {/* Main Content Area */}
+        <div className="flex-1 pt-4 pb-16 px-4 sm:px-6 lg:px-8">
+          {/* Compact Billing & Currency Selector */}
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
+            <Select value={durationIndex.toString()} onValueChange={(val) => setDurationIndex(parseInt(val))}>
+              <SelectTrigger className="w-36 h-9">
+                <SelectValue placeholder="Billing" />
+              </SelectTrigger>
+              <SelectContent>
+                {durationOptions.map((d, i) => (
+                  <SelectItem key={d} value={i.toString()}>
+                    {durationLabels[d]}
+                    {durationDiscounts[d] > 0 && ` (-${durationDiscounts[d]}%)`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
             <Select value={selectedCurrency} onValueChange={(val) => setGlobalCurrency(val as any)}>
-              <SelectTrigger className="h-7 w-20 bg-white/20 border-white/30 text-white text-xs">
+              <SelectTrigger className="w-28 h-9">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -310,122 +414,23 @@ const PricingPage = () => {
               </SelectContent>
             </Select>
             
-            {user && <TokenDisplay compact />}
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowShareModal(true)}
-              className="gap-1 h-7 px-2 text-white hover:bg-white/20"
-            >
-              <Share2 className="w-3.5 h-3.5" />
-              <span className="hidden md:inline text-xs">Share</span>
-            </Button>
-
-            {user ? (
-              <>
-                <div className="hidden sm:block cursor-pointer" onClick={() => navigate('/pricing')}>
-                  <PlanBadge size="sm" showIcon />
-                </div>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="flex items-center gap-1.5 h-8 px-1.5 text-white hover:bg-white/20">
-                      <Avatar className="h-6 w-6 border border-white/50">
-                        <AvatarImage src={userProfile?.profile_pic_url || ''} alt={displayName} />
-                        <AvatarFallback className="bg-white/20 text-white text-xs font-medium">
-                          {initials}
-                        </AvatarFallback>
-                      </Avatar>
-                      <ChevronDown className="h-3 w-3 hidden sm:block" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <div className="px-3 py-2 border-b">
-                      <p className="text-sm font-medium">{displayName}</p>
-                      <p className="text-xs text-muted-foreground truncate">{userProfile?.email}</p>
-                    </div>
-                    <DropdownMenuItem onClick={() => navigate('/settings/account')}>
-                      <User className="w-4 h-4 mr-2" />
-                      Account Settings
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate('/settings/dashboard')}>
-                      <BarChart2 className="w-4 h-4 mr-2" />
-                      Dashboard
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Logout
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            ) : (
-              <Button size="sm" variant="secondary" onClick={() => setShowAuthModal(true)} className="h-7 text-xs">
-                Sign In
-              </Button>
+            {billingCycle > 1 && (
+              <Badge className="bg-green-500/20 text-green-600">
+                Save {durationDiscounts[billingCycle]}%
+              </Badge>
             )}
           </div>
-        </div>
-      </div>
-      
-      <div className="flex-1 pt-8 pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+
+          {/* Title */}
+          <div className="text-center mb-6">
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">
               <span className="bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
                 Choose Your Plan
               </span>
             </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-              Increase Your Brand Value to 10X with AI Avatars. Start free, scale as you grow.
+            <p className="text-muted-foreground">
+              Start free, scale as you grow
             </p>
-            
-            <div className="max-w-lg mx-auto mb-8">
-              <div className="bg-card/80 backdrop-blur-sm rounded-xl p-6 border">
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <label className="text-sm font-medium">Billing Period:</label>
-                    <Select value={durationIndex.toString()} onValueChange={(val) => setDurationIndex(parseInt(val))}>
-                      <SelectTrigger className="w-40">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {durationOptions.map((d, i) => (
-                          <SelectItem key={d} value={i.toString()}>
-                            {durationLabels[d]}
-                            {durationDiscounts[d] > 0 && ` (-${durationDiscounts[d]}%)`}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="flex items-center justify-between gap-4">
-                    <label className="text-sm font-medium">Currency:</label>
-                    <Select value={selectedCurrency} onValueChange={(val) => setGlobalCurrency(val as any)}>
-                      <SelectTrigger className="w-40">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CURRENCIES.map((curr) => (
-                          <SelectItem key={curr.code} value={curr.code}>
-                            {curr.symbol} {curr.code} - {curr.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {billingCycle > 1 && (
-                    <Badge className="bg-green-500/20 text-green-600 self-center">
-                      Save {durationDiscounts[billingCycle]}% with {durationLabels[billingCycle]}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -590,24 +595,24 @@ const PricingPage = () => {
             </div>
           </div>
         </div>
+
+        <ShareModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          profileUrl={profileUrl}
+          username={userProfile?.username || 'user'}
+        />
+
+        <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Sign in to Continue</DialogTitle>
+              <DialogDescription>Create an account or sign in to purchase this plan</DialogDescription>
+            </DialogHeader>
+            <MainAuth isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+          </DialogContent>
+        </Dialog>
       </div>
-
-      <ShareModal
-        isOpen={showShareModal}
-        onClose={() => setShowShareModal(false)}
-        profileUrl={profileUrl}
-        username={userProfile?.username || 'user'}
-      />
-
-      <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Sign in to Continue</DialogTitle>
-            <DialogDescription>Create an account or sign in to purchase this plan</DialogDescription>
-          </DialogHeader>
-          <MainAuth isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

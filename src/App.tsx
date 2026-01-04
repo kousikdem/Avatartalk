@@ -142,14 +142,16 @@ const App = () => {
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <div className="min-h-screen w-full bg-white">
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/pricing" element={<PricingPage />} />
-                  <Route path="/:username" element={<UsernameRedirect />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </div>
+              <SidebarProvider defaultOpen={false}>
+                <div className="min-h-screen w-full bg-white">
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/pricing" element={<PricingPage />} />
+                    <Route path="/:username" element={<UsernameRedirect />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </div>
+              </SidebarProvider>
             </BrowserRouter>
           </div>
         </TooltipProvider>
