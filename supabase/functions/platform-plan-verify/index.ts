@@ -159,17 +159,46 @@ serve(async (req) => {
       console.error('Transaction update error:', txUpdateError);
     }
 
-    // Credit tokens based on plan
-    if (plan.ai_tokens_monthly > 0) {
-      const { error: tokenError } = await supabase.rpc('credit_user_tokens', {
-        target_user_id: user.id,
-        amount: plan.ai_tokens_monthly,
-      });
+    // Credit tokens based on plan from database
+    const tokensToAdd = plan.ai_tokens_monthly || 0;
+    if (tokensToAdd > 0) {
+      // Get current token balance
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('token_balance')
+        .eq('id', user.id)
+        .single();
 
-      if (tokenError) {
-        console.error('Token credit error:', tokenError);
+      if (profileError) {
+        console.error('Profile fetch error:', profileError);
       } else {
-        console.log('Tokens credited:', plan.ai_tokens_monthly);
+        const currentBalance = profile?.token_balance || 0;
+        const newBalance = currentBalance + tokensToAdd;
+
+        // Update token balance
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ 
+            token_balance: newBalance,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', user.id);
+
+        if (updateError) {
+          console.error('Token update error:', updateError);
+        } else {
+          console.log(`Tokens credited: ${tokensToAdd} (${currentBalance} -> ${newBalance})`);
+        }
+
+        // Log the token event
+        await supabase
+          .from('token_events')
+          .insert([{
+            user_id: user.id,
+            change: tokensToAdd,
+            balance_after: newBalance,
+            reason: `plan_purchase_${plan.plan_key}`,
+          }]);
       }
     }
 
