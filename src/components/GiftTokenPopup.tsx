@@ -326,16 +326,29 @@ const GiftTokenPopup: React.FC<GiftTokenPopupProps> = ({
             </div>
           )}
 
-          {/* Action Button */}
-          <div className="pt-1">
+          {/* Action Buttons */}
+          <div className="space-y-2 pt-1">
             <Button
               onClick={() => handleGift(false)}
               disabled={processing || finalAmount < MIN_AMOUNT}
-              className="w-full h-10 text-sm font-bold bg-gradient-to-r from-pink-500 via-rose-500 to-purple-500 hover:from-pink-600 hover:via-rose-600 hover:to-purple-600 text-white shadow-lg"
+              className="w-full h-9 text-sm font-bold bg-gradient-to-r from-pink-500 via-rose-500 to-purple-500 hover:from-pink-600 hover:via-rose-600 hover:to-purple-600 text-white shadow-lg"
             >
               <Gift className="w-4 h-4 mr-1.5" />
               {processing ? 'Processing...' : `Pay ₹${finalAmount.toFixed(0)} & Gift`}
             </Button>
+
+            {canGiftFromOwn && (
+              <Button
+                variant="outline"
+                onClick={() => handleGift(true)}
+                disabled={processing}
+                size="sm"
+                className="w-full h-8 border border-pink-400 text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-900/30 font-medium text-xs"
+              >
+                <Heart className="w-3.5 h-3.5 mr-1 text-pink-500" />
+                Gift from My Tokens ({calculatedTokens.toLocaleString()} tokens)
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>

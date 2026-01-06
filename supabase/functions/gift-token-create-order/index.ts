@@ -14,14 +14,15 @@ serve(async (req) => {
   try {
     const { senderId, receiverId, amount, amountPaid, message } = await req.json();
 
-    if (!senderId || !receiverId || !amount || !amountPaid) {
+    // Only receiverId, amount, and amountPaid are required - senderId can be null for anonymous gifting
+    if (!receiverId || !amount || !amountPaid) {
       return new Response(
         JSON.stringify({ success: false, error: "Missing required fields" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    if (amountPaid < 10) {
+    if (amountPaid < 1000) { // amountPaid is in paise, so 1000 paise = ₹10
       return new Response(
         JSON.stringify({ success: false, error: "Minimum amount is ₹10" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -42,29 +43,18 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Check sender's token balance (must have at least 15k tokens)
-    const { data: senderProfile, error: senderError } = await supabase
-      .from("profiles")
-      .select("token_balance, display_name, username")
-      .eq("id", senderId)
-      .single();
-
-    if (senderError || !senderProfile) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Sender not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if ((senderProfile.token_balance || 0) < 15000) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "You need at least 15,000 tokens to send gifts. Please purchase more tokens first.",
-          current_balance: senderProfile.token_balance || 0
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // Get sender info if senderId is provided (optional for anonymous gifting)
+    let senderName = "Anonymous";
+    if (senderId) {
+      const { data: senderProfile } = await supabase
+        .from("profiles")
+        .select("display_name, username")
+        .eq("id", senderId)
+        .single();
+      
+      if (senderProfile) {
+        senderName = senderProfile.display_name || senderProfile.username || "Anonymous";
+      }
     }
 
     // Verify receiver exists
