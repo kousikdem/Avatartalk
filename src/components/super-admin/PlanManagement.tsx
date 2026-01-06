@@ -30,7 +30,7 @@ interface UserWithSubscription {
 
 const PlanManagement = () => {
   const { toast } = useToast();
-  const { updatePlan, getAllPlans, upgradeUserPlan } = usePlatformPlanManagement();
+  const { updatePlan, getAllPlans } = usePlatformPlanManagement();
   
   const [plans, setPlans] = useState<PlatformPricingPlan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,12 +109,26 @@ const PlanManagement = () => {
 
     setUpgrading(true);
     try {
-      const success = await upgradeUserPlan(selectedUser.id, selectedNewPlan, plan.id);
-      if (success) {
-        setSelectedUser(null);
-        setSelectedNewPlan('');
-        handleSearchUsers(); // Refresh search results
-      }
+      const { data, error } = await supabase.functions.invoke('admin-platform-plan-change', {
+        body: {
+          targetUserId: selectedUser.id,
+          planId: plan.id,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: `User upgraded to ${selectedNewPlan}. Tokens updated${data?.tokenDelta ? ` (+${data.tokenDelta})` : ''}.`,
+      });
+
+      setSelectedUser(null);
+      setSelectedNewPlan('');
+      handleSearchUsers(); // Refresh search results
+    } catch (error) {
+      console.error('Error upgrading user:', error);
+      toast({ title: 'Error', description: 'Failed to change user plan', variant: 'destructive' });
     } finally {
       setUpgrading(false);
     }

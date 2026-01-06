@@ -65,3 +65,6 @@ verify_jwt = true
 
 [functions.platform-plan-verify]
 verify_jwt = true
+
+[functions.admin-platform-plan-change]
+verify_jwt = true
