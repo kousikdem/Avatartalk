@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +10,8 @@ import {
   ChevronDown,
   ChevronUp,
   Tag,
-  Clock
+  Clock,
+  Eye
 } from 'lucide-react';
 import { Product } from '@/hooks/useProducts';
 import { CheckoutModal } from '@/components/CheckoutModal';
@@ -18,6 +19,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getShortTaxLabel, calculateTax } from '@/utils/taxCalculation';
+import { useViewTracking } from '@/hooks/useViewTracking';
 
 interface CompactProductCardProps {
   product: Product;
@@ -36,7 +38,25 @@ export const CompactProductCard = ({
 }: CompactProductCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Get current user for view tracking
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    getUser();
+  }, []);
+
+  // Track product view after 3 seconds when expanded
+  useViewTracking({
+    type: 'product',
+    targetId: isExpanded ? product.id : '',
+    viewerId: currentUserId,
+    delaySeconds: 3
+  });
 
   const handleBuyClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
