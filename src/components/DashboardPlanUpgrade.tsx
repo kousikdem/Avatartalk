@@ -129,19 +129,19 @@ const DashboardPlanUpgrade = () => {
               </div>
             </div>
             <div className="text-right">
-              <p className="text-xs text-muted-foreground">Monthly Quota</p>
+              <p className="text-xs text-muted-foreground">Plan Tokens</p>
               <p className="text-sm font-semibold">{formatTokens(monthlyTokens)}</p>
             </div>
           </div>
           
           <div className="space-y-1">
             <Progress 
-              value={tokenUsagePercent} 
+              value={Math.min(100, (tokenBalance / monthlyTokens) * 100)} 
               className="h-2"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Used: {formatTokens(tokenBalance)}</span>
-              <span>{tokenUsagePercent.toFixed(0)}% remaining</span>
+              <span>Balance: {formatTokens(tokenBalance)}</span>
+              <span>Plan: {formatTokens(monthlyTokens)}</span>
             </div>
           </div>
           

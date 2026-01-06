@@ -159,8 +159,16 @@ serve(async (req) => {
       console.error('Transaction update error:', txUpdateError);
     }
 
-    // Credit tokens based on plan from database
-    const tokensToAdd = plan.ai_tokens_monthly || 0;
+    // Token amounts per plan (matches frontend usePlatformPricingPlans)
+    const planTokens: Record<string, number> = {
+      free: 10000,
+      creator: 1000000,  // 1M
+      pro: 2000000,      // 2M
+      business: 5000000, // 5M
+    };
+
+    // Credit tokens based on plan key
+    const tokensToAdd = planTokens[plan.plan_key] || plan.ai_tokens_monthly || 0;
     if (tokensToAdd > 0) {
       // Get current token balance
       const { data: profile, error: profileError } = await supabase
@@ -187,7 +195,7 @@ serve(async (req) => {
         if (updateError) {
           console.error('Token update error:', updateError);
         } else {
-          console.log(`Tokens credited: ${tokensToAdd} (${currentBalance} -> ${newBalance})`);
+          console.log(`Plan tokens credited: ${tokensToAdd} (${currentBalance} -> ${newBalance}) for ${plan.plan_key} plan`);
         }
 
         // Log the token event
@@ -197,7 +205,7 @@ serve(async (req) => {
             user_id: user.id,
             change: tokensToAdd,
             balance_after: newBalance,
-            reason: `plan_purchase_${plan.plan_key}`,
+            reason: `plan_purchase_${plan.plan_key}_tokens_${tokensToAdd}`,
           }]);
       }
     }

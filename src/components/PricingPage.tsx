@@ -374,7 +374,7 @@ const PricingPage = () => {
                       <span className="text-lg">{formatTokens(plan.ai_tokens_monthly)} AI Tokens</span>
                     </div>
                     <p className="text-xs text-center text-muted-foreground mt-1">
-                      Added to your account on activation
+                      Added to your balance on plan activation
                     </p>
                   </div>
 

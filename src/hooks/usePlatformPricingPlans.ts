@@ -224,6 +224,14 @@ export const usePlatformPlanManagement = () => {
     business: 5000000, // 5M
   };
 
+  // Plan hierarchy for upgrade/downgrade detection
+  const planHierarchy: Record<string, number> = {
+    free: 0,
+    creator: 1,
+    pro: 2,
+    business: 3,
+  };
+
   const createPlan = async (planData: { plan_key: string; plan_name: string; [key: string]: unknown }) => {
     try {
       const { error } = await supabase
@@ -316,6 +324,49 @@ export const usePlatformPlanManagement = () => {
     }
   };
 
+  const removeTokensFromUser = async (userId: string, tokensToRemove: number, reason: string = 'plan_downgrade') => {
+    try {
+      // Get current balance
+      const { data: profile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('token_balance')
+        .eq('id', userId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const currentBalance = profile?.token_balance || 0;
+      // Ensure balance doesn't go negative
+      const newBalance = Math.max(0, currentBalance - tokensToRemove);
+
+      // Update token balance
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ 
+          token_balance: newBalance,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+
+      if (updateError) throw updateError;
+
+      // Log the token event (negative change)
+      await supabase
+        .from('token_events')
+        .insert([{
+          user_id: userId,
+          change: -tokensToRemove,
+          balance_after: newBalance,
+          reason: reason,
+        }]);
+
+      return true;
+    } catch (error) {
+      console.error('Error removing tokens:', error);
+      return false;
+    }
+  };
+
   const upgradeUserPlan = async (userId: string, planKey: string, planId: string, isFirstTime: boolean = false) => {
     try {
       // Check if user has existing subscription
@@ -326,7 +377,10 @@ export const usePlatformPlanManagement = () => {
         .maybeSingle();
 
       const previousPlanKey = existing?.plan_key || 'free';
-      const isUpgrade = existing ? true : false;
+      const previousLevel = planHierarchy[previousPlanKey] || 0;
+      const newLevel = planHierarchy[planKey] || 0;
+      const isUpgrade = newLevel > previousLevel;
+      const isDowngrade = newLevel < previousLevel;
 
       const subscriptionData = {
         user_id: userId,
@@ -337,7 +391,7 @@ export const usePlatformPlanManagement = () => {
         price_paid: 0,
         starts_at: new Date().toISOString(),
         expires_at: planKey === 'free' ? null : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        metadata: { upgraded_by_admin: true }
+        metadata: { upgraded_by_admin: true, previous_plan: previousPlanKey }
       };
 
       if (existing) {
@@ -353,18 +407,54 @@ export const usePlatformPlanManagement = () => {
         if (error) throw error;
       }
 
-      // Add tokens based on plan
-      const tokensToAdd = planTokens[planKey] || 0;
-      if (tokensToAdd > 0 && planKey !== 'free') {
-        const reason = isUpgrade ? `plan_upgrade_${previousPlanKey}_to_${planKey}` : `plan_activation_${planKey}`;
-        await addTokensToUser(userId, tokensToAdd, reason);
+      // Handle tokens based on upgrade or downgrade
+      if (isUpgrade) {
+        // Add tokens for the new plan
+        const tokensToAdd = planTokens[planKey] || 0;
+        if (tokensToAdd > 0) {
+          const reason = `plan_upgrade_${previousPlanKey}_to_${planKey}`;
+          await addTokensToUser(userId, tokensToAdd, reason);
+          toast({ 
+            title: "Success", 
+            description: `User upgraded to ${planKey} plan with ${(tokensToAdd / 1000000).toFixed(1)}M tokens added` 
+          });
+        }
+      } else if (isDowngrade) {
+        // Remove tokens from the previous plan
+        const tokensToRemove = planTokens[previousPlanKey] || 0;
+        if (tokensToRemove > 0 && previousPlanKey !== 'free') {
+          const reason = `plan_downgrade_${previousPlanKey}_to_${planKey}`;
+          await removeTokensFromUser(userId, tokensToRemove, reason);
+          
+          // If new plan also has tokens, add them
+          const newPlanTokens = planTokens[planKey] || 0;
+          if (newPlanTokens > 0 && planKey !== 'free') {
+            await addTokensToUser(userId, newPlanTokens, `plan_activation_${planKey}`);
+          }
+          
+          toast({ 
+            title: "Plan Changed", 
+            description: `User downgraded to ${planKey} plan. ${(tokensToRemove / 1000000).toFixed(1)}M tokens removed from previous plan.` 
+          });
+        } else {
+          toast({ 
+            title: "Plan Changed", 
+            description: `User changed to ${planKey} plan` 
+          });
+        }
+      } else {
+        // Same plan level, just add tokens
+        const tokensToAdd = planTokens[planKey] || 0;
+        if (tokensToAdd > 0 && planKey !== 'free') {
+          await addTokensToUser(userId, tokensToAdd, `plan_activation_${planKey}`);
+        }
+        toast({ title: "Success", description: `User plan set to ${planKey}` });
       }
 
-      toast({ title: "Success", description: `User upgraded to ${planKey} plan with ${(tokensToAdd / 1000000).toFixed(1)}M tokens added` });
       return true;
     } catch (error) {
       console.error('Error upgrading user:', error);
-      toast({ title: "Error", description: "Failed to upgrade user", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to change user plan", variant: "destructive" });
       return false;
     }
   };
@@ -386,6 +476,8 @@ export const usePlatformPlanManagement = () => {
     upgradeUserPlan,
     getAllPlans,
     addTokensToUser,
+    removeTokensFromUser,
     planTokens,
+    planHierarchy,
   };
 };
