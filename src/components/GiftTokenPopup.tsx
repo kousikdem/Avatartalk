@@ -217,128 +217,124 @@ const GiftTokenPopup: React.FC<GiftTokenPopupProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-gradient-to-br from-pink-50 via-white to-purple-50 dark:from-pink-950/50 dark:via-slate-900 dark:to-purple-950/50 border-2 border-pink-300 dark:border-pink-700">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-2xl text-pink-700 dark:text-pink-300">
-            <Gift className="w-7 h-7 text-pink-500" />
+      <DialogContent className="sm:max-w-sm max-h-[90vh] overflow-y-auto bg-gradient-to-br from-pink-50 via-white to-purple-50 dark:from-pink-950/50 dark:via-slate-900 dark:to-purple-950/50 border-2 border-pink-300 dark:border-pink-700 p-4 sm:p-5">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl text-pink-700 dark:text-pink-300">
+            <Gift className="w-5 h-5 text-pink-500" />
             Gift AI Tokens
           </DialogTitle>
-          <DialogDescription className="text-base text-pink-600 dark:text-pink-400">
+          <DialogDescription className="text-sm text-pink-600 dark:text-pink-400">
             {isFirstTimeVisitor 
               ? customMessage || (
-                <span className="flex items-center gap-2">
-                  <Mic className="w-4 h-4" />
-                  <Volume2 className="w-4 h-4" />
-                  Help {receiverName} power their AI assistant with voice + text capabilities!
+                <span className="flex items-center gap-1.5">
+                  <Mic className="w-3.5 h-3.5" />
+                  <Volume2 className="w-3.5 h-3.5" />
+                  Help {receiverName} power their AI!
                 </span>
               )
-              : `Send tokens to support ${receiverName}'s AI conversations`
+              : `Support ${receiverName}'s AI conversations`
             }
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5 py-4">
-          {/* Receiver Info */}
-          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-pink-100 to-purple-100 dark:from-pink-900/40 dark:to-purple-900/40 rounded-xl border-2 border-pink-200 dark:border-pink-700">
-            <Avatar className="h-14 w-14 ring-4 ring-pink-300 dark:ring-pink-600">
+        <div className="space-y-3 py-2">
+          {/* Receiver Info - Compact */}
+          <div className="flex items-center gap-2.5 p-2.5 bg-gradient-to-r from-pink-100 to-purple-100 dark:from-pink-900/40 dark:to-purple-900/40 rounded-lg border border-pink-200 dark:border-pink-700">
+            <Avatar className="h-10 w-10 ring-2 ring-pink-300 dark:ring-pink-600">
               <AvatarImage src={receiverAvatar} />
-              <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white text-xl font-bold">
+              <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white text-sm font-bold">
                 {receiverName[0]?.toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-bold text-lg text-pink-800 dark:text-pink-200">{receiverName}</p>
-              <p className="text-sm text-pink-600 dark:text-pink-400">Will receive your gift</p>
+              <p className="font-semibold text-sm text-pink-800 dark:text-pink-200">{receiverName}</p>
+              <p className="text-xs text-pink-600 dark:text-pink-400">Will receive your gift</p>
             </div>
           </div>
 
-          {/* Amount Selection */}
-          <div className="space-y-3">
-            <Label className="text-lg font-semibold text-pink-700 dark:text-pink-300">Select Amount</Label>
-            <div className="grid grid-cols-3 gap-2">
+          {/* Amount Selection - Compact Grid */}
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold text-pink-700 dark:text-pink-300">Select Amount</Label>
+            <div className="grid grid-cols-5 gap-1.5">
               {presetAmounts.map((preset) => (
                 <Button
                   key={preset.amount}
                   variant={selectedAmount === preset.amount && !customAmount ? 'default' : 'outline'}
-                  className={`relative h-auto py-3 ${selectedAmount === preset.amount && !customAmount 
-                    ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white border-0 shadow-lg' 
-                    : 'border-2 border-pink-300 dark:border-pink-600 hover:bg-pink-50 dark:hover:bg-pink-900/30'}`}
+                  size="sm"
+                  className={`relative h-auto py-1.5 px-1 ${selectedAmount === preset.amount && !customAmount 
+                    ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white border-0 shadow-md' 
+                    : 'border border-pink-300 dark:border-pink-600 hover:bg-pink-50 dark:hover:bg-pink-900/30'}`}
                   onClick={() => {
                     setSelectedAmount(preset.amount);
                     setCustomAmount('');
                   }}
                 >
                   {preset.popular && (
-                    <Badge className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs px-1.5 shadow-md">
-                      Popular
+                    <Badge className="absolute -top-1.5 -right-1 bg-amber-500 text-white text-[8px] px-1 py-0 leading-tight">
+                      ★
                     </Badge>
                   )}
-                  <div className="text-center">
-                    <div className="font-bold text-lg">{preset.label}</div>
-                    <div className="text-xs opacity-80">{Math.floor(preset.amount * tokensPerRupee).toLocaleString()} tokens</div>
-                  </div>
+                  <span className="font-bold text-xs">{preset.label}</span>
                 </Button>
               ))}
             </div>
 
-            <div className="relative mt-3">
+            <div className="relative">
               <Input
                 type="number"
-                placeholder={`Custom amount (min ₹${MIN_AMOUNT})`}
+                placeholder={`Custom (min ₹${MIN_AMOUNT})`}
                 value={customAmount}
                 onChange={(e) => setCustomAmount(e.target.value)}
                 min={MIN_AMOUNT}
-                className="pl-8 h-12 text-lg border-2 border-pink-300 dark:border-pink-600 focus:border-pink-500"
+                className="pl-6 h-9 text-sm border border-pink-300 dark:border-pink-600 focus:border-pink-500"
               />
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-pink-500 font-bold">₹</span>
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-pink-500 font-bold text-sm">₹</span>
             </div>
           </div>
 
-          {/* Token Preview */}
-          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/40 dark:to-yellow-900/40 rounded-xl border-2 border-amber-300 dark:border-amber-600">
-            <div className="flex items-center gap-2">
-              <Coins className="w-6 h-6 text-amber-500" />
-              <span className="text-base font-medium text-amber-700 dark:text-amber-300">Tokens to gift</span>
+          {/* Token Preview - Compact */}
+          <div className="flex items-center justify-between p-2.5 bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/40 dark:to-yellow-900/40 rounded-lg border border-amber-300 dark:border-amber-600">
+            <div className="flex items-center gap-1.5">
+              <Coins className="w-4 h-4 text-amber-500" />
+              <span className="text-xs font-medium text-amber-700 dark:text-amber-300">Tokens</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-amber-500 animate-pulse" />
-              <span className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+            <div className="flex items-center gap-1">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span className="text-lg font-bold text-amber-600 dark:text-amber-400">
                 {calculatedTokens.toLocaleString()}
               </span>
             </div>
           </div>
 
-          {/* Message */}
-          <div className="space-y-2">
-            <Label className="text-pink-700 dark:text-pink-300 font-medium">Message (optional)</Label>
+          {/* Message - Compact */}
+          <div className="space-y-1">
+            <Label className="text-xs text-pink-700 dark:text-pink-300">Message (optional)</Label>
             <Textarea
-              placeholder="Add a personal message..."
+              placeholder="Add a message..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              rows={2}
-              className="border-2 border-pink-300 dark:border-pink-600 focus:border-pink-500"
+              rows={1}
+              className="border border-pink-300 dark:border-pink-600 focus:border-pink-500 text-sm min-h-[36px] resize-none"
             />
           </div>
 
-          {/* Your Balance - only show if logged in */}
+          {/* Your Balance - Compact */}
           {senderBalance !== null && (
-            <div className="text-sm p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
-              Your balance: <span className="font-bold text-pink-600">{senderBalance.toLocaleString()} tokens</span>
-              {canGiftFromOwn && (
-                <span className="text-green-600 ml-2 font-medium">✓ Can gift from own tokens</span>
-              )}
+            <div className="text-xs p-2 bg-slate-100 dark:bg-slate-800 rounded-md flex items-center justify-between">
+              <span>Your balance: <span className="font-bold text-pink-600">{senderBalance.toLocaleString()}</span></span>
+              {canGiftFromOwn && <span className="text-green-600 font-medium">✓ Can gift</span>}
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="space-y-3">
+          {/* Action Buttons - Compact */}
+          <div className="space-y-2 pt-1">
             <Button
               onClick={() => handleGift(false)}
               disabled={processing || finalAmount < MIN_AMOUNT}
-              className="w-full h-14 text-lg font-bold bg-gradient-to-r from-pink-500 via-rose-500 to-purple-500 hover:from-pink-600 hover:via-rose-600 hover:to-purple-600 text-white shadow-xl hover:shadow-2xl transition-all"
+              className="w-full h-10 text-sm font-bold bg-gradient-to-r from-pink-500 via-rose-500 to-purple-500 hover:from-pink-600 hover:via-rose-600 hover:to-purple-600 text-white shadow-lg"
             >
-              <Gift className="w-5 h-5 mr-2" />
-              {processing ? 'Processing...' : `Pay ₹${finalAmount.toFixed(0)} & Gift ${calculatedTokens.toLocaleString()} Tokens`}
+              <Gift className="w-4 h-4 mr-1.5" />
+              {processing ? 'Processing...' : `Pay ₹${finalAmount.toFixed(0)} & Gift`}
             </Button>
 
             {canGiftFromOwn && (
@@ -346,10 +342,11 @@ const GiftTokenPopup: React.FC<GiftTokenPopupProps> = ({
                 variant="outline"
                 onClick={() => handleGift(true)}
                 disabled={processing}
-                className="w-full h-12 border-2 border-pink-400 text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-900/30 font-semibold"
+                size="sm"
+                className="w-full h-8 border border-pink-400 text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-900/30 font-medium text-xs"
               >
-                <Heart className="w-4 h-4 mr-2 text-pink-500" />
-                Gift from My Tokens (Keep {(minRetainTokens / 1000).toFixed(0)}K)
+                <Heart className="w-3.5 h-3.5 mr-1 text-pink-500" />
+                Gift from My Tokens
               </Button>
             )}
           </div>
