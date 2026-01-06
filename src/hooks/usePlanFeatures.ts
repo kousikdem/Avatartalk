@@ -65,8 +65,8 @@ const planHierarchy: Record<string, number> = {
 // Plan limits for products and collaborations
 export const planLimits: Record<string, { products: number; collaborations: number; tokens: number }> = {
   free: { products: 0, collaborations: 0, tokens: 10000 },
-  creator: { products: 2, collaborations: 2, tokens: 1000000 },
-  pro: { products: 10, collaborations: 10, tokens: 2000000 },
+  creator: { products: 5, collaborations: 5, tokens: 1000000 },
+  pro: { products: 15, collaborations: 15, tokens: 2000000 },
   business: { products: -1, collaborations: -1, tokens: 5000000 }, // -1 = unlimited
 };
 
