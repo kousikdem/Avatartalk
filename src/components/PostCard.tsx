@@ -3,13 +3,14 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Heart, MessageCircle, Share2, Send, MoreVertical } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Send, MoreVertical, Eye } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLikes } from '@/hooks/useLikes';
 import { useComments } from '@/hooks/useComments';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useViewTracking } from '@/hooks/useViewTracking';
 
 interface Post {
   id: string;
@@ -60,6 +61,14 @@ const PostCard: React.FC<PostCardProps> = ({
   
   const { toast } = useToast();
   const { likesCount, isLiked, toggleLike, loading: likesLoading } = useLikes(post.id, 'post');
+
+  // Track post view after 3 seconds
+  useViewTracking({
+    type: 'post',
+    targetId: post.id,
+    viewerId: currentUserId,
+    delaySeconds: 3
+  });
   
   // Real-time updates for post engagement
   useEffect(() => {
@@ -282,7 +291,13 @@ const PostCard: React.FC<PostCardProps> = ({
 
           {/* Engagement Stats */}
           <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
-            <span>{likesCount} {likesCount === 1 ? 'like' : 'likes'}</span>
+            <div className="flex items-center gap-4">
+              <span>{likesCount} {likesCount === 1 ? 'like' : 'likes'}</span>
+              <span className="flex items-center gap-1">
+                <Eye className="w-3 h-3" />
+                {post.views_count || 0} views
+              </span>
+            </div>
             <span>{post.comments_count} {post.comments_count === 1 ? 'comment' : 'comments'}</span>
           </div>
 

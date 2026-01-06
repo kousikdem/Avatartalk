@@ -18,6 +18,7 @@ import { useDefaultAvatar } from '@/hooks/useDefaultAvatar';
 import { useActiveSubscription } from '@/hooks/useActiveSubscription';
 import { useAIChatHistory } from '@/hooks/useAIChatHistory';
 import { useProfileEngagement } from '@/hooks/useProfileEngagement';
+import { useViewTracking } from '@/hooks/useViewTracking';
 import FuturisticAvatar3D from './FuturisticAvatar3D';
 import ChangeableAvatarPreview from './ChangeableAvatarPreview';
 import SocialFeed from './SocialFeed';
@@ -236,6 +237,14 @@ const ProfilePage: React.FC = () => {
     loading: engagementLoading,
     incrementConversation 
   } = useProfileEngagement(profile?.id || null);
+
+  // Track profile view after 3 seconds
+  useViewTracking({
+    type: 'profile',
+    targetId: profile?.id || '',
+    viewerId: currentUser?.id,
+    delaySeconds: 3
+  });
 
   // Voice model state - preload on profile load
   const [voiceModelReady, setVoiceModelReady] = useState(false);
@@ -701,14 +710,7 @@ const ProfilePage: React.FC = () => {
       setSocialLinks(socialLinksResult.data);
       setLoading(false);
 
-      // Track profile visit (fire and forget - don't await)
-      const currentUserId = userResult.data.user?.id;
-      if (profileData.id !== currentUserId) {
-        supabase.from('profile_visitors').insert({
-          visitor_id: currentUserId || null,
-          visited_profile_id: profileData.id,
-        });
-      }
+      // Note: Profile view tracking is now handled by useViewTracking hook with 3-second delay
 
     } catch (error) {
       console.error('Error fetching profile:', error);

@@ -170,10 +170,10 @@ const AnalyticsPage = () => {
         />
       </div>
 
-      {/* Main Analytics Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="bg-muted p-1 rounded-lg">
+        <TabsList className="bg-muted p-1 rounded-lg flex-wrap">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="visitors">Visitors</TabsTrigger>
           <TabsTrigger value="products">Products</TabsTrigger>
           <TabsTrigger value="engagement">Engagement</TabsTrigger>
           <TabsTrigger value="followers">Followers</TabsTrigger>
@@ -265,6 +265,152 @@ const AnalyticsPage = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Visitors Tab */}
+        <TabsContent value="visitors" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard title="Profile Views" value={formatNumber(analytics?.profileViews || 0)} icon={Eye} />
+            <StatCard title="Product Views" value={formatNumber(analytics?.totalProductViews || 0)} icon={Package} />
+            <StatCard title="Post Views" value={formatNumber(analytics?.totalPostViews || 0)} icon={MessageSquare} />
+            <StatCard title="Total Conversations" value={formatNumber(analytics?.totalConversations || 0)} icon={Users} />
+          </div>
+
+          {/* Profile Views Trend */}
+          <Card className="bg-card">
+            <CardHeader>
+              <CardTitle className="text-foreground">Visitor Trend</CardTitle>
+              <CardDescription>Profile views over time (3s+ duration)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={analytics?.engagementTrend || []}>
+                    <defs>
+                      <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="date" tickFormatter={(date) => format(new Date(date), 'MMM d')} stroke="hsl(var(--muted-foreground))" />
+                    <YAxis stroke="hsl(var(--muted-foreground))" />
+                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
+                    <Legend />
+                    <Area type="monotone" dataKey="views" name="Profile Views" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorViews)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Views by Location */}
+          {analytics?.viewsByLocation && analytics.viewsByLocation.length > 0 && (
+            <Card className="bg-card">
+              <CardHeader>
+                <CardTitle className="text-foreground">Visitors by Location</CardTitle>
+                <CardDescription>Geographic distribution of your profile visitors</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {analytics.viewsByLocation.map((location, index) => (
+                    <div key={location.country} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="text-muted-foreground">{index + 1}.</span>
+                        <Globe className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-medium text-foreground">{location.country}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-24 h-2 rounded-full bg-muted overflow-hidden">
+                          <div 
+                            className="h-full bg-primary rounded-full" 
+                            style={{ width: `${(location.views / analytics.viewsByLocation[0].views) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-sm text-muted-foreground w-12 text-right">{location.views}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* View Analytics Summary */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="bg-card">
+              <CardHeader>
+                <CardTitle className="text-foreground">View Distribution</CardTitle>
+                <CardDescription>Breakdown of views across different content types</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Profile Views', value: analytics?.profileViews || 0 },
+                          { name: 'Product Views', value: analytics?.totalProductViews || 0 },
+                          { name: 'Post Views', value: analytics?.totalPostViews || 0 }
+                        ]}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => percent > 0 ? `${name} ${(percent * 100).toFixed(0)}%` : ''}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {[0, 1, 2].map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card">
+              <CardHeader>
+                <CardTitle className="text-foreground">Engagement Metrics</CardTitle>
+                <CardDescription>How visitors interact with your content</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-3">
+                      <Eye className="w-5 h-5 text-primary" />
+                      <span className="font-medium text-foreground">Profile Views</span>
+                    </div>
+                    <span className="text-xl font-bold text-primary">{formatNumber(analytics?.profileViews || 0)}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-3">
+                      <Package className="w-5 h-5 text-green-500" />
+                      <span className="font-medium text-foreground">Product Views</span>
+                    </div>
+                    <span className="text-xl font-bold text-green-500">{formatNumber(analytics?.totalProductViews || 0)}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-3">
+                      <MessageSquare className="w-5 h-5 text-blue-500" />
+                      <span className="font-medium text-foreground">Post Views</span>
+                    </div>
+                    <span className="text-xl font-bold text-blue-500">{formatNumber(analytics?.totalPostViews || 0)}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-3">
+                      <TrendingUp className="w-5 h-5 text-purple-500" />
+                      <span className="font-medium text-foreground">Engagement Score</span>
+                    </div>
+                    <span className="text-xl font-bold text-purple-500">{analytics?.engagementScore?.toFixed(0) || '0'}/100</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* Products Tab */}
