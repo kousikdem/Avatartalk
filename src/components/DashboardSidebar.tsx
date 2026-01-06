@@ -14,10 +14,6 @@ import {
   Package,
   Share2,
   Shield,
-  Lock,
-  Zap,
-  Crown,
-  Rocket,
   ArrowUp,
   Sparkles
 } from 'lucide-react';
@@ -35,7 +31,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePlanFeatures, PlanFeatureKey } from '@/hooks/usePlanFeatures';
 import Logo from './Logo';
@@ -74,18 +69,6 @@ const planHierarchy: Record<string, number> = {
   business: 3,
 };
 
-const planIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-  creator: Zap,
-  pro: Crown,
-  business: Rocket,
-};
-
-const planColors: Record<string, string> = {
-  creator: 'bg-blue-500',
-  pro: 'bg-purple-500',
-  business: 'bg-orange-500',
-};
-
 const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => {
   const navigate = useNavigate();
   const { state, setOpen } = useSidebar();
@@ -114,24 +97,15 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
 
 
   const handleMenuItemClick = (e: React.MouseEvent, item: NavItem) => {
-    const requiredLevel = planHierarchy[item.requiredPlan || 'free'] || 0;
-    const isLocked = userPlanLevel < requiredLevel;
-    
-    if (isLocked) {
-      e.preventDefault();
-      navigate('/pricing');
-      return;
-    }
-    
+    // Navigate to page directly - features are locked on the page itself, not the sidebar
     if (isMobile) {
       setOpen(false);
     }
   };
 
+  // Sidebar menu items are never locked - pages handle their own feature locking
   const isFeatureLocked = (item: NavItem): boolean => {
-    if (planLoading) return false;
-    const requiredLevel = planHierarchy[item.requiredPlan || 'free'] || 0;
-    return userPlanLevel < requiredLevel;
+    return false;
   };
 
   const allNavItems: NavItem[] = isSuperAdmin 
@@ -177,48 +151,30 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
 
             <SidebarMenu className="space-y-2">
               {allNavItems.map((item) => {
-                const locked = isFeatureLocked(item);
-                const requiredPlan = item.requiredPlan || 'free';
-                const PlanIcon = planIcons[requiredPlan];
-                
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
                       className={`bg-white hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 text-gray-700 hover:text-gray-900 w-full transition-all duration-200 rounded-lg border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md backdrop-blur-sm ${
                         item.title === 'Super Admin' ? 'border-primary/30 bg-primary/5' : ''
-                      } ${locked ? 'opacity-60' : ''}`}
-                      tooltip={isCollapsed ? (locked ? `${item.title} (${requiredPlan} plan)` : item.title) : undefined}
+                      }`}
+                      tooltip={isCollapsed ? item.title : undefined}
                     >
                       <a 
-                        href={locked ? '/pricing' : item.url} 
+                        href={item.url} 
                         className={`flex items-center w-full ${
                           isCollapsed ? 'justify-center p-3' : 'gap-3 p-3'
                         }`}
                         onClick={(e) => handleMenuItemClick(e, item)}
                       >
-                        <div className={`p-1.5 rounded-lg bg-gradient-to-br ${item.gradient} relative`}>
+                        <div className={`p-1.5 rounded-lg bg-gradient-to-br ${item.gradient}`}>
                           <item.icon className="w-4 h-4 flex-shrink-0 text-white" />
-                          {locked && (
-                            <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
-                              <Lock className="w-2.5 h-2.5 text-gray-500" />
-                            </div>
-                          )}
                         </div>
                         {!isCollapsed && (
                           <div className="flex items-center justify-between flex-1 min-w-0">
-                            <span className={`truncate text-sm font-medium ${locked ? 'text-gray-400' : 'text-gray-700'}`}>
+                            <span className="truncate text-sm font-medium text-gray-700">
                               {item.title}
                             </span>
-                            {locked && (
-                              <Badge 
-                                variant="outline" 
-                                className={`ml-2 text-xs px-1.5 py-0 ${planColors[requiredPlan]} text-white border-0`}
-                              >
-                                {PlanIcon && <PlanIcon className="w-2.5 h-2.5 mr-0.5" />}
-                                {requiredPlan.charAt(0).toUpperCase() + requiredPlan.slice(1)}
-                              </Badge>
-                            )}
                           </div>
                         )}
                       </a>
