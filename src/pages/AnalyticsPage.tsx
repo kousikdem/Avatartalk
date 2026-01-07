@@ -5,8 +5,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { 
   LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
@@ -20,7 +18,21 @@ import { format, subDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import TokenDisplay from '@/components/TokenDisplay';
 
-const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
+// Modern gradient color palette
+const CHART_GRADIENTS = {
+  primary: { start: '#8B5CF6', end: '#6366F1' },
+  success: { start: '#10B981', end: '#059669' },
+  warning: { start: '#F59E0B', end: '#D97706' },
+  danger: { start: '#EF4444', end: '#DC2626' },
+  info: { start: '#06B6D4', end: '#0891B2' },
+  pink: { start: '#EC4899', end: '#DB2777' },
+  purple: { start: '#A855F7', end: '#9333EA' },
+  indigo: { start: '#6366F1', end: '#4F46E5' },
+};
+
+const PIE_COLORS = [
+  '#8B5CF6', '#10B981', '#F59E0B', '#06B6D4', '#EC4899', '#6366F1', '#A855F7', '#EF4444'
+];
 
 const AnalyticsPage = () => {
   const [dateRange, setDateRange] = useState({
@@ -70,16 +82,26 @@ const AnalyticsPage = () => {
     return value.toString();
   };
 
-  const StatCard = ({ title, value, change, icon: Icon, trend, suffix = '' }: {
+  const StatCard = ({ title, value, change, icon: Icon, trend, suffix = '', gradientFrom, gradientTo }: {
     title: string;
     value: string | number;
     change?: number;
     icon: any;
     trend?: 'up' | 'down' | 'neutral';
     suffix?: string;
+    gradientFrom?: string;
+    gradientTo?: string;
   }) => (
-    <Card className="bg-card border-border">
-      <CardContent className="p-6">
+    <Card className="bg-card border-border overflow-hidden relative group hover:shadow-lg transition-all duration-300">
+      <div 
+        className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-300"
+        style={{ 
+          background: gradientFrom && gradientTo 
+            ? `linear-gradient(135deg, ${gradientFrom}, ${gradientTo})` 
+            : 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary)/0.5))'
+        }}
+      />
+      <CardContent className="p-6 relative z-10">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
@@ -93,28 +115,67 @@ const AnalyticsPage = () => {
               )}
             </div>
           </div>
-          <div className="p-3 rounded-full bg-primary/10">
-            <Icon className="h-6 w-6 text-primary" />
+          <div 
+            className="p-3 rounded-xl"
+            style={{ 
+              background: gradientFrom && gradientTo 
+                ? `linear-gradient(135deg, ${gradientFrom}, ${gradientTo})` 
+                : 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary)/0.8))'
+            }}
+          >
+            <Icon className="h-6 w-6 text-white" />
           </div>
         </div>
       </CardContent>
     </Card>
   );
 
+  // Custom tooltip component for modern look
+  const CustomTooltip = ({ active, payload, label, formatter }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-card/95 backdrop-blur-sm border border-border rounded-xl p-4 shadow-xl">
+          <p className="text-sm font-medium text-foreground mb-2">{label}</p>
+          {payload.map((entry: any, index: number) => (
+            <div key={index} className="flex items-center gap-2 text-sm">
+              <div 
+                className="w-3 h-3 rounded-full" 
+                style={{ background: entry.color }}
+              />
+              <span className="text-muted-foreground">{entry.name}:</span>
+              <span className="font-semibold text-foreground">
+                {formatter ? formatter(entry.value) : entry.value}
+              </span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-purple-500/20 rounded-full blur-xl animate-pulse" />
+          <RefreshCw className="h-12 w-12 animate-spin text-primary relative z-10" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6 bg-background min-h-screen">
+    <div className="container mx-auto p-6 space-y-8 bg-background min-h-screen">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <BarChart3 className="h-8 w-8 text-primary" />
+        <div className="flex items-center gap-4">
+          <div 
+            className="p-3 rounded-xl"
+            style={{ background: `linear-gradient(135deg, ${CHART_GRADIENTS.primary.start}, ${CHART_GRADIENTS.primary.end})` }}
+          >
+            <BarChart3 className="h-8 w-8 text-white" />
+          </div>
           <div>
             <h1 className="text-3xl font-bold text-foreground">Analytics Dashboard</h1>
             <p className="text-muted-foreground">Track your performance and growth</p>
@@ -123,7 +184,7 @@ const AnalyticsPage = () => {
         <div className="flex items-center gap-3">
           <TokenDisplay />
           <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
-            <SelectTrigger className="w-32 bg-card">
+            <SelectTrigger className="w-32 bg-card border-border">
               <SelectValue placeholder="Period" />
             </SelectTrigger>
             <SelectContent>
@@ -133,7 +194,7 @@ const AnalyticsPage = () => {
               <SelectItem value="1y">Last year</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="icon" onClick={refetch}>
+          <Button variant="outline" size="icon" onClick={refetch} className="hover:bg-primary/10">
             <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
@@ -147,6 +208,8 @@ const AnalyticsPage = () => {
           change={12}
           trend="up"
           icon={DollarSign}
+          gradientFrom={CHART_GRADIENTS.success.start}
+          gradientTo={CHART_GRADIENTS.success.end}
         />
         <StatCard
           title="Total Followers"
@@ -154,6 +217,8 @@ const AnalyticsPage = () => {
           change={8}
           trend="up"
           icon={Users}
+          gradientFrom={CHART_GRADIENTS.primary.start}
+          gradientTo={CHART_GRADIENTS.primary.end}
         />
         <StatCard
           title="Profile Views"
@@ -161,32 +226,39 @@ const AnalyticsPage = () => {
           change={-3}
           trend="down"
           icon={Eye}
+          gradientFrom={CHART_GRADIENTS.info.start}
+          gradientTo={CHART_GRADIENTS.info.end}
         />
         <StatCard
           title="Engagement Score"
           value={analytics?.engagementScore?.toFixed(0) || '0'}
           suffix="/100"
           icon={TrendingUp}
+          gradientFrom={CHART_GRADIENTS.pink.start}
+          gradientTo={CHART_GRADIENTS.pink.end}
         />
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="bg-muted p-1 rounded-lg flex-wrap">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="visitors">Visitors</TabsTrigger>
-          <TabsTrigger value="products">Products</TabsTrigger>
-          <TabsTrigger value="engagement">Engagement</TabsTrigger>
-          <TabsTrigger value="followers">Followers</TabsTrigger>
-          <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
-          <TabsTrigger value="collaborations">Collaborations</TabsTrigger>
+        <TabsList className="bg-muted/50 p-1.5 rounded-xl flex-wrap backdrop-blur-sm">
+          <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Overview</TabsTrigger>
+          <TabsTrigger value="visitors" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Visitors</TabsTrigger>
+          <TabsTrigger value="products" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Products</TabsTrigger>
+          <TabsTrigger value="engagement" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Engagement</TabsTrigger>
+          <TabsTrigger value="followers" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Followers</TabsTrigger>
+          <TabsTrigger value="subscriptions" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Subscriptions</TabsTrigger>
+          <TabsTrigger value="collaborations" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Collaborations</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
           {/* Earnings Chart */}
-          <Card className="bg-card">
-            <CardHeader>
-              <CardTitle className="text-foreground">Earnings Overview</CardTitle>
+          <Card className="bg-card border-border overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-foreground flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500" />
+                Earnings Overview
+              </CardTitle>
               <CardDescription>Total earnings breakdown over time</CardDescription>
             </CardHeader>
             <CardContent>
@@ -194,33 +266,65 @@ const AnalyticsPage = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={analytics?.earningsTrend || []}>
                     <defs>
-                      <linearGradient id="colorProducts" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                      <linearGradient id="gradientProducts" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={CHART_GRADIENTS.primary.start} stopOpacity={0.4}/>
+                        <stop offset="50%" stopColor={CHART_GRADIENTS.primary.end} stopOpacity={0.15}/>
+                        <stop offset="100%" stopColor={CHART_GRADIENTS.primary.end} stopOpacity={0}/>
                       </linearGradient>
-                      <linearGradient id="colorSubs" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                      <linearGradient id="gradientSubs" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={CHART_GRADIENTS.success.start} stopOpacity={0.4}/>
+                        <stop offset="50%" stopColor={CHART_GRADIENTS.success.end} stopOpacity={0.15}/>
+                        <stop offset="100%" stopColor={CHART_GRADIENTS.success.end} stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="strokeProducts" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor={CHART_GRADIENTS.primary.start}/>
+                        <stop offset="100%" stopColor={CHART_GRADIENTS.primary.end}/>
+                      </linearGradient>
+                      <linearGradient id="strokeSubs" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor={CHART_GRADIENTS.success.start}/>
+                        <stop offset="100%" stopColor={CHART_GRADIENTS.success.end}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
                     <XAxis 
                       dataKey="date" 
                       tickFormatter={(date) => format(new Date(date), 'MMM d')}
                       stroke="hsl(var(--muted-foreground))"
+                      tick={{ fontSize: 12 }}
+                      axisLine={{ stroke: 'hsl(var(--border))' }}
                     />
                     <YAxis 
                       tickFormatter={(value) => `₹${formatNumber(value)}`}
                       stroke="hsl(var(--muted-foreground))"
+                      tick={{ fontSize: 12 }}
+                      axisLine={{ stroke: 'hsl(var(--border))' }}
                     />
                     <Tooltip 
-                      formatter={(value: number) => formatCurrency(value)}
+                      content={<CustomTooltip formatter={formatCurrency} />}
                       labelFormatter={(label) => format(new Date(label), 'MMM d, yyyy')}
-                      contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
                     />
-                    <Legend />
-                    <Area type="monotone" dataKey="products" name="Products" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorProducts)" />
-                    <Area type="monotone" dataKey="subscriptions" name="Subscriptions" stroke="#10b981" fillOpacity={1} fill="url(#colorSubs)" />
+                    <Legend 
+                      wrapperStyle={{ paddingTop: 20 }}
+                      formatter={(value) => <span className="text-foreground text-sm">{value}</span>}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="products" 
+                      name="Products" 
+                      stroke="url(#strokeProducts)" 
+                      strokeWidth={3}
+                      fillOpacity={1} 
+                      fill="url(#gradientProducts)" 
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="subscriptions" 
+                      name="Subscriptions" 
+                      stroke="url(#strokeSubs)" 
+                      strokeWidth={3}
+                      fillOpacity={1} 
+                      fill="url(#gradientSubs)" 
+                    />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -229,24 +333,56 @@ const AnalyticsPage = () => {
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard title="Products Sold" value={formatNumber(analytics?.totalProductSales || 0)} icon={ShoppingCart} />
-            <StatCard title="Subscribers" value={formatNumber(analytics?.totalSubscribers || 0)} icon={Users} />
-            <StatCard title="Total Posts" value={formatNumber(analytics?.totalPosts || 0)} icon={MessageSquare} />
-            <StatCard title="Total Likes" value={formatNumber(analytics?.totalPostLikes || 0)} icon={Heart} />
+            <StatCard 
+              title="Products Sold" 
+              value={formatNumber(analytics?.totalProductSales || 0)} 
+              icon={ShoppingCart} 
+              gradientFrom={CHART_GRADIENTS.warning.start}
+              gradientTo={CHART_GRADIENTS.warning.end}
+            />
+            <StatCard 
+              title="Subscribers" 
+              value={formatNumber(analytics?.totalSubscribers || 0)} 
+              icon={Users} 
+              gradientFrom={CHART_GRADIENTS.purple.start}
+              gradientTo={CHART_GRADIENTS.purple.end}
+            />
+            <StatCard 
+              title="Total Posts" 
+              value={formatNumber(analytics?.totalPosts || 0)} 
+              icon={MessageSquare} 
+              gradientFrom={CHART_GRADIENTS.info.start}
+              gradientTo={CHART_GRADIENTS.info.end}
+            />
+            <StatCard 
+              title="Total Likes" 
+              value={formatNumber(analytics?.totalPostLikes || 0)} 
+              icon={Heart} 
+              gradientFrom={CHART_GRADIENTS.danger.start}
+              gradientTo={CHART_GRADIENTS.danger.end}
+            />
           </div>
 
           {/* Top Products */}
-          <Card className="bg-card">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-foreground">Top Performing Products</CardTitle>
+              <CardTitle className="text-foreground flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-500" />
+                Top Performing Products
+              </CardTitle>
               <CardDescription>Your best selling products</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {analytics?.topProducts.slice(0, 5).map((product, index) => (
-                  <div key={product.id} className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                  <div key={product.id} className="flex items-center justify-between p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-4">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                      <div 
+                        className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm"
+                        style={{ 
+                          background: `linear-gradient(135deg, ${PIE_COLORS[index % PIE_COLORS.length]}, ${PIE_COLORS[(index + 1) % PIE_COLORS.length]})`
+                        }}
+                      >
                         {index + 1}
                       </div>
                       <div>
@@ -270,16 +406,19 @@ const AnalyticsPage = () => {
         {/* Visitors Tab */}
         <TabsContent value="visitors" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard title="Profile Views" value={formatNumber(analytics?.profileViews || 0)} icon={Eye} />
-            <StatCard title="Product Views" value={formatNumber(analytics?.totalProductViews || 0)} icon={Package} />
-            <StatCard title="Post Views" value={formatNumber(analytics?.totalPostViews || 0)} icon={MessageSquare} />
-            <StatCard title="Total Conversations" value={formatNumber(analytics?.totalConversations || 0)} icon={Users} />
+            <StatCard title="Profile Views" value={formatNumber(analytics?.profileViews || 0)} icon={Eye} gradientFrom={CHART_GRADIENTS.primary.start} gradientTo={CHART_GRADIENTS.primary.end} />
+            <StatCard title="Product Views" value={formatNumber(analytics?.totalProductViews || 0)} icon={Package} gradientFrom={CHART_GRADIENTS.success.start} gradientTo={CHART_GRADIENTS.success.end} />
+            <StatCard title="Post Views" value={formatNumber(analytics?.totalPostViews || 0)} icon={MessageSquare} gradientFrom={CHART_GRADIENTS.info.start} gradientTo={CHART_GRADIENTS.info.end} />
+            <StatCard title="Total Conversations" value={formatNumber(analytics?.totalConversations || 0)} icon={Users} gradientFrom={CHART_GRADIENTS.purple.start} gradientTo={CHART_GRADIENTS.purple.end} />
           </div>
 
           {/* Profile Views Trend */}
-          <Card className="bg-card">
-            <CardHeader>
-              <CardTitle className="text-foreground">Visitor Trend</CardTitle>
+          <Card className="bg-card border-border overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-foreground flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500" />
+                Visitor Trend
+              </CardTitle>
               <CardDescription>Profile views over time (3s+ duration)</CardDescription>
             </CardHeader>
             <CardContent>
@@ -287,17 +426,22 @@ const AnalyticsPage = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={analytics?.engagementTrend || []}>
                     <defs>
-                      <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                      <linearGradient id="gradientViews" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={CHART_GRADIENTS.info.start} stopOpacity={0.4}/>
+                        <stop offset="50%" stopColor={CHART_GRADIENTS.info.end} stopOpacity={0.15}/>
+                        <stop offset="100%" stopColor={CHART_GRADIENTS.info.end} stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="strokeViews" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor={CHART_GRADIENTS.info.start}/>
+                        <stop offset="100%" stopColor={CHART_GRADIENTS.info.end}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="date" tickFormatter={(date) => format(new Date(date), 'MMM d')} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
-                    <Legend />
-                    <Area type="monotone" dataKey="views" name="Profile Views" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorViews)" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+                    <XAxis dataKey="date" tickFormatter={(date) => format(new Date(date), 'MMM d')} stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend wrapperStyle={{ paddingTop: 20 }} formatter={(value) => <span className="text-foreground text-sm">{value}</span>} />
+                    <Area type="monotone" dataKey="views" name="Profile Views" stroke="url(#strokeViews)" strokeWidth={3} fillOpacity={1} fill="url(#gradientViews)" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -306,28 +450,39 @@ const AnalyticsPage = () => {
 
           {/* Views by Location */}
           {analytics?.viewsByLocation && analytics.viewsByLocation.length > 0 && (
-            <Card className="bg-card">
+            <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="text-foreground">Visitors by Location</CardTitle>
+                <CardTitle className="text-foreground flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500" />
+                  Visitors by Location
+                </CardTitle>
                 <CardDescription>Geographic distribution of your profile visitors</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {analytics.viewsByLocation.map((location, index) => (
-                    <div key={location.country} className="flex items-center justify-between">
+                    <div key={location.country} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/30 transition-colors">
                       <div className="flex items-center gap-3">
-                        <span className="text-muted-foreground">{index + 1}.</span>
+                        <span 
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                          style={{ background: `linear-gradient(135deg, ${PIE_COLORS[index % PIE_COLORS.length]}, ${PIE_COLORS[(index + 1) % PIE_COLORS.length]})` }}
+                        >
+                          {index + 1}
+                        </span>
                         <Globe className="w-4 h-4 text-muted-foreground" />
                         <span className="font-medium text-foreground">{location.country}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 h-2 rounded-full bg-muted overflow-hidden">
+                      <div className="flex items-center gap-3">
+                        <div className="w-32 h-2 rounded-full bg-muted overflow-hidden">
                           <div 
-                            className="h-full bg-primary rounded-full" 
-                            style={{ width: `${(location.views / analytics.viewsByLocation[0].views) * 100}%` }}
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{ 
+                              width: `${(location.views / analytics.viewsByLocation[0].views) * 100}%`,
+                              background: `linear-gradient(90deg, ${PIE_COLORS[index % PIE_COLORS.length]}, ${PIE_COLORS[(index + 1) % PIE_COLORS.length]})`
+                            }}
                           />
                         </div>
-                        <span className="text-sm text-muted-foreground w-12 text-right">{location.views}</span>
+                        <span className="text-sm font-medium text-foreground w-12 text-right">{location.views}</span>
                       </div>
                     </div>
                   ))}
@@ -338,15 +493,32 @@ const AnalyticsPage = () => {
 
           {/* View Analytics Summary */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="bg-card">
+            <Card className="bg-card border-border overflow-hidden">
               <CardHeader>
-                <CardTitle className="text-foreground">View Distribution</CardTitle>
+                <CardTitle className="text-foreground flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-gradient-to-r from-violet-500 to-purple-500" />
+                  View Distribution
+                </CardTitle>
                 <CardDescription>Breakdown of views across different content types</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
+                      <defs>
+                        <linearGradient id="pieGrad0" x1="0" y1="0" x2="1" y2="1">
+                          <stop offset="0%" stopColor={CHART_GRADIENTS.primary.start}/>
+                          <stop offset="100%" stopColor={CHART_GRADIENTS.primary.end}/>
+                        </linearGradient>
+                        <linearGradient id="pieGrad1" x1="0" y1="0" x2="1" y2="1">
+                          <stop offset="0%" stopColor={CHART_GRADIENTS.success.start}/>
+                          <stop offset="100%" stopColor={CHART_GRADIENTS.success.end}/>
+                        </linearGradient>
+                        <linearGradient id="pieGrad2" x1="0" y1="0" x2="1" y2="1">
+                          <stop offset="0%" stopColor={CHART_GRADIENTS.info.start}/>
+                          <stop offset="100%" stopColor={CHART_GRADIENTS.info.end}/>
+                        </linearGradient>
+                      </defs>
                       <Pie
                         data={[
                           { name: 'Profile Views', value: analytics?.profileViews || 0 },
@@ -356,56 +528,72 @@ const AnalyticsPage = () => {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, percent }) => percent > 0 ? `${name} ${(percent * 100).toFixed(0)}%` : ''}
+                        label={({ name, percent }) => percent > 0 ? `${(percent * 100).toFixed(0)}%` : ''}
                         outerRadius={80}
-                        fill="#8884d8"
+                        innerRadius={50}
+                        strokeWidth={0}
                         dataKey="value"
                       >
-                        {[0, 1, 2].map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
+                        <Cell fill="url(#pieGrad0)" />
+                        <Cell fill="url(#pieGrad1)" />
+                        <Cell fill="url(#pieGrad2)" />
                       </Pie>
-                      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend 
+                        wrapperStyle={{ paddingTop: 20 }}
+                        formatter={(value) => <span className="text-foreground text-sm">{value}</span>}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-card">
+            <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="text-foreground">Engagement Metrics</CardTitle>
+                <CardTitle className="text-foreground flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-gradient-to-r from-pink-500 to-rose-500" />
+                  Engagement Metrics
+                </CardTitle>
                 <CardDescription>How visitors interact with your content</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-violet-500/10 to-indigo-500/10 border border-violet-500/20">
                     <div className="flex items-center gap-3">
-                      <Eye className="w-5 h-5 text-primary" />
+                      <div className="p-2 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-500">
+                        <Eye className="w-4 h-4 text-white" />
+                      </div>
                       <span className="font-medium text-foreground">Profile Views</span>
                     </div>
-                    <span className="text-xl font-bold text-primary">{formatNumber(analytics?.profileViews || 0)}</span>
+                    <span className="text-xl font-bold" style={{ color: CHART_GRADIENTS.primary.start }}>{formatNumber(analytics?.profileViews || 0)}</span>
                   </div>
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20">
                     <div className="flex items-center gap-3">
-                      <Package className="w-5 h-5 text-green-500" />
+                      <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500">
+                        <Package className="w-4 h-4 text-white" />
+                      </div>
                       <span className="font-medium text-foreground">Product Views</span>
                     </div>
-                    <span className="text-xl font-bold text-green-500">{formatNumber(analytics?.totalProductViews || 0)}</span>
+                    <span className="text-xl font-bold" style={{ color: CHART_GRADIENTS.success.start }}>{formatNumber(analytics?.totalProductViews || 0)}</span>
                   </div>
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20">
                     <div className="flex items-center gap-3">
-                      <MessageSquare className="w-5 h-5 text-blue-500" />
+                      <div className="p-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500">
+                        <MessageSquare className="w-4 h-4 text-white" />
+                      </div>
                       <span className="font-medium text-foreground">Post Views</span>
                     </div>
-                    <span className="text-xl font-bold text-blue-500">{formatNumber(analytics?.totalPostViews || 0)}</span>
+                    <span className="text-xl font-bold" style={{ color: CHART_GRADIENTS.info.start }}>{formatNumber(analytics?.totalPostViews || 0)}</span>
                   </div>
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20">
                     <div className="flex items-center gap-3">
-                      <TrendingUp className="w-5 h-5 text-purple-500" />
+                      <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500">
+                        <TrendingUp className="w-4 h-4 text-white" />
+                      </div>
                       <span className="font-medium text-foreground">Engagement Score</span>
                     </div>
-                    <span className="text-xl font-bold text-purple-500">{analytics?.engagementScore?.toFixed(0) || '0'}/100</span>
+                    <span className="text-xl font-bold" style={{ color: CHART_GRADIENTS.purple.start }}>{analytics?.engagementScore?.toFixed(0) || '0'}/100</span>
                   </div>
                 </div>
               </CardContent>
@@ -416,28 +604,45 @@ const AnalyticsPage = () => {
         {/* Products Tab */}
         <TabsContent value="products" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard title="Total Products" value={formatNumber(analytics?.totalProducts || 0)} icon={Package} />
-            <StatCard title="Product Views" value={formatNumber(analytics?.totalProductViews || 0)} icon={Eye} />
-            <StatCard title="Total Sales" value={formatNumber(analytics?.totalProductSales || 0)} icon={ShoppingCart} />
-            <StatCard title="Product Earnings" value={formatCurrency(analytics?.totalProductEarnings || 0)} icon={DollarSign} />
+            <StatCard title="Total Products" value={formatNumber(analytics?.totalProducts || 0)} icon={Package} gradientFrom={CHART_GRADIENTS.indigo.start} gradientTo={CHART_GRADIENTS.indigo.end} />
+            <StatCard title="Product Views" value={formatNumber(analytics?.totalProductViews || 0)} icon={Eye} gradientFrom={CHART_GRADIENTS.info.start} gradientTo={CHART_GRADIENTS.info.end} />
+            <StatCard title="Total Sales" value={formatNumber(analytics?.totalProductSales || 0)} icon={ShoppingCart} gradientFrom={CHART_GRADIENTS.warning.start} gradientTo={CHART_GRADIENTS.warning.end} />
+            <StatCard title="Product Earnings" value={formatCurrency(analytics?.totalProductEarnings || 0)} icon={DollarSign} gradientFrom={CHART_GRADIENTS.success.start} gradientTo={CHART_GRADIENTS.success.end} />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Sales Trend */}
-            <Card className="bg-card">
-              <CardHeader>
-                <CardTitle className="text-foreground">Sales Trend</CardTitle>
+            <Card className="bg-card border-border overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-foreground flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500" />
+                  Sales Trend
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={analytics?.productSalesTrend || []}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="date" tickFormatter={(date) => format(new Date(date), 'MMM d')} stroke="hsl(var(--muted-foreground))" />
-                      <YAxis stroke="hsl(var(--muted-foreground))" />
-                      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
-                      <Legend />
-                      <Line type="monotone" dataKey="sales" name="Sales" stroke="hsl(var(--primary))" strokeWidth={2} />
+                      <defs>
+                        <linearGradient id="strokeSales" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor={CHART_GRADIENTS.indigo.start}/>
+                          <stop offset="100%" stopColor={CHART_GRADIENTS.purple.end}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+                      <XAxis dataKey="date" tickFormatter={(date) => format(new Date(date), 'MMM d')} stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} />
+                      <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend wrapperStyle={{ paddingTop: 20 }} formatter={(value) => <span className="text-foreground text-sm">{value}</span>} />
+                      <Line 
+                        type="monotone" 
+                        dataKey="sales" 
+                        name="Sales" 
+                        stroke="url(#strokeSales)" 
+                        strokeWidth={3}
+                        dot={{ fill: CHART_GRADIENTS.indigo.start, strokeWidth: 0, r: 4 }}
+                        activeDot={{ fill: CHART_GRADIENTS.purple.end, strokeWidth: 0, r: 6 }}
+                      />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -445,14 +650,27 @@ const AnalyticsPage = () => {
             </Card>
 
             {/* Product Type Distribution */}
-            <Card className="bg-card">
-              <CardHeader>
-                <CardTitle className="text-foreground">Sales by Type</CardTitle>
+            <Card className="bg-card border-border overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-foreground flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-500" />
+                  Sales by Type
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
+                      <defs>
+                        <linearGradient id="piePhysical" x1="0" y1="0" x2="1" y2="1">
+                          <stop offset="0%" stopColor={CHART_GRADIENTS.warning.start}/>
+                          <stop offset="100%" stopColor={CHART_GRADIENTS.warning.end}/>
+                        </linearGradient>
+                        <linearGradient id="pieDigital" x1="0" y1="0" x2="1" y2="1">
+                          <stop offset="0%" stopColor={CHART_GRADIENTS.info.start}/>
+                          <stop offset="100%" stopColor={CHART_GRADIENTS.info.end}/>
+                        </linearGradient>
+                      </defs>
                       <Pie
                         data={[
                           { name: 'Physical', value: analytics?.physicalProductSales || 0 },
@@ -463,14 +681,14 @@ const AnalyticsPage = () => {
                         labelLine={false}
                         label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                         outerRadius={80}
-                        fill="#8884d8"
+                        innerRadius={50}
+                        strokeWidth={0}
                         dataKey="value"
                       >
-                        {[0, 1].map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
+                        <Cell fill="url(#piePhysical)" />
+                        <Cell fill="url(#pieDigital)" />
                       </Pie>
-                      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
+                      <Tooltip content={<CustomTooltip />} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -482,27 +700,40 @@ const AnalyticsPage = () => {
         {/* Engagement Tab */}
         <TabsContent value="engagement" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard title="Post Views" value={formatNumber(analytics?.totalPostViews || 0)} icon={Eye} />
-            <StatCard title="Total Likes" value={formatNumber(analytics?.totalPostLikes || 0)} icon={Heart} />
-            <StatCard title="Total Comments" value={formatNumber(analytics?.totalPostComments || 0)} icon={MessageSquare} />
-            <StatCard title="Conversations" value={formatNumber(analytics?.totalConversations || 0)} icon={MessageSquare} />
+            <StatCard title="Post Views" value={formatNumber(analytics?.totalPostViews || 0)} icon={Eye} gradientFrom={CHART_GRADIENTS.info.start} gradientTo={CHART_GRADIENTS.info.end} />
+            <StatCard title="Total Likes" value={formatNumber(analytics?.totalPostLikes || 0)} icon={Heart} gradientFrom={CHART_GRADIENTS.danger.start} gradientTo={CHART_GRADIENTS.danger.end} />
+            <StatCard title="Total Comments" value={formatNumber(analytics?.totalPostComments || 0)} icon={MessageSquare} gradientFrom={CHART_GRADIENTS.success.start} gradientTo={CHART_GRADIENTS.success.end} />
+            <StatCard title="Conversations" value={formatNumber(analytics?.totalConversations || 0)} icon={MessageSquare} gradientFrom={CHART_GRADIENTS.purple.start} gradientTo={CHART_GRADIENTS.purple.end} />
           </div>
 
-          <Card className="bg-card">
-            <CardHeader>
-              <CardTitle className="text-foreground">Engagement Over Time</CardTitle>
+          <Card className="bg-card border-border overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-foreground flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-gradient-to-r from-rose-500 to-pink-500" />
+                Engagement Over Time
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={analytics?.postEngagementTrend || []}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="date" tickFormatter={(date) => format(new Date(date), 'MMM d')} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
-                    <Legend />
-                    <Bar dataKey="likes" name="Likes" fill="hsl(var(--primary))" />
-                    <Bar dataKey="comments" name="Comments" fill="#10b981" />
+                    <defs>
+                      <linearGradient id="barLikes" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={CHART_GRADIENTS.danger.start}/>
+                        <stop offset="100%" stopColor={CHART_GRADIENTS.danger.end}/>
+                      </linearGradient>
+                      <linearGradient id="barComments" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={CHART_GRADIENTS.success.start}/>
+                        <stop offset="100%" stopColor={CHART_GRADIENTS.success.end}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+                    <XAxis dataKey="date" tickFormatter={(date) => format(new Date(date), 'MMM d')} stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend wrapperStyle={{ paddingTop: 20 }} formatter={(value) => <span className="text-foreground text-sm">{value}</span>} />
+                    <Bar dataKey="likes" name="Likes" fill="url(#barLikes)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="comments" name="Comments" fill="url(#barComments)" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -513,34 +744,50 @@ const AnalyticsPage = () => {
         {/* Followers Tab */}
         <TabsContent value="followers" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard title="Total Followers" value={formatNumber(analytics?.totalFollowers || 0)} icon={Users} />
-            <StatCard title="Following" value={formatNumber(analytics?.totalFollowing || 0)} icon={Users} />
-            <StatCard title="Profile Views" value={formatNumber(analytics?.profileViews || 0)} icon={Eye} />
-            <StatCard title="Link Clicks" value={formatNumber(analytics?.linkClicks || 0)} icon={Globe} />
+            <StatCard title="Total Followers" value={formatNumber(analytics?.totalFollowers || 0)} icon={Users} gradientFrom={CHART_GRADIENTS.primary.start} gradientTo={CHART_GRADIENTS.primary.end} />
+            <StatCard title="Following" value={formatNumber(analytics?.totalFollowing || 0)} icon={Users} gradientFrom={CHART_GRADIENTS.info.start} gradientTo={CHART_GRADIENTS.info.end} />
+            <StatCard title="Profile Views" value={formatNumber(analytics?.profileViews || 0)} icon={Eye} gradientFrom={CHART_GRADIENTS.success.start} gradientTo={CHART_GRADIENTS.success.end} />
+            <StatCard title="Link Clicks" value={formatNumber(analytics?.linkClicks || 0)} icon={Globe} gradientFrom={CHART_GRADIENTS.warning.start} gradientTo={CHART_GRADIENTS.warning.end} />
           </div>
 
-          <Card className="bg-card">
-            <CardHeader>
-              <CardTitle className="text-foreground">Follower Growth</CardTitle>
+          <Card className="bg-card border-border overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-foreground flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-gradient-to-r from-violet-500 to-purple-500" />
+                Follower Growth
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={analytics?.followerGrowthTrend || []}>
                     <defs>
-                      <linearGradient id="colorFollowers" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                      <linearGradient id="gradientFollowers" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={CHART_GRADIENTS.primary.start} stopOpacity={0.4}/>
+                        <stop offset="50%" stopColor={CHART_GRADIENTS.primary.end} stopOpacity={0.15}/>
+                        <stop offset="100%" stopColor={CHART_GRADIENTS.primary.end} stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="strokeFollowers" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor={CHART_GRADIENTS.primary.start}/>
+                        <stop offset="100%" stopColor={CHART_GRADIENTS.primary.end}/>
+                      </linearGradient>
+                      <linearGradient id="strokeGained" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor={CHART_GRADIENTS.success.start}/>
+                        <stop offset="100%" stopColor={CHART_GRADIENTS.success.end}/>
+                      </linearGradient>
+                      <linearGradient id="strokeLost" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor={CHART_GRADIENTS.danger.start}/>
+                        <stop offset="100%" stopColor={CHART_GRADIENTS.danger.end}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="date" tickFormatter={(date) => format(new Date(date), 'MMM d')} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
-                    <Legend />
-                    <Area type="monotone" dataKey="followers" name="Total Followers" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorFollowers)" />
-                    <Line type="monotone" dataKey="gained" name="Gained" stroke="#10b981" strokeWidth={2} />
-                    <Line type="monotone" dataKey="lost" name="Lost" stroke="#ef4444" strokeWidth={2} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+                    <XAxis dataKey="date" tickFormatter={(date) => format(new Date(date), 'MMM d')} stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend wrapperStyle={{ paddingTop: 20 }} formatter={(value) => <span className="text-foreground text-sm">{value}</span>} />
+                    <Area type="monotone" dataKey="followers" name="Total Followers" stroke="url(#strokeFollowers)" strokeWidth={3} fillOpacity={1} fill="url(#gradientFollowers)" />
+                    <Line type="monotone" dataKey="gained" name="Gained" stroke="url(#strokeGained)" strokeWidth={2} dot={{ fill: CHART_GRADIENTS.success.start, strokeWidth: 0, r: 3 }} />
+                    <Line type="monotone" dataKey="lost" name="Lost" stroke="url(#strokeLost)" strokeWidth={2} dot={{ fill: CHART_GRADIENTS.danger.start, strokeWidth: 0, r: 3 }} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -549,26 +796,37 @@ const AnalyticsPage = () => {
 
           {/* Views by Location */}
           {analytics?.viewsByLocation && analytics.viewsByLocation.length > 0 && (
-            <Card className="bg-card">
+            <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="text-foreground">Views by Location</CardTitle>
+                <CardTitle className="text-foreground flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-gradient-to-r from-teal-500 to-emerald-500" />
+                  Views by Location
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {analytics.viewsByLocation.map((location, index) => (
-                    <div key={location.country} className="flex items-center justify-between">
+                    <div key={location.country} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/30 transition-colors">
                       <div className="flex items-center gap-3">
-                        <span className="text-muted-foreground">{index + 1}.</span>
+                        <span 
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                          style={{ background: `linear-gradient(135deg, ${PIE_COLORS[index % PIE_COLORS.length]}, ${PIE_COLORS[(index + 1) % PIE_COLORS.length]})` }}
+                        >
+                          {index + 1}
+                        </span>
                         <span className="font-medium text-foreground">{location.country}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 h-2 rounded-full bg-muted overflow-hidden">
+                      <div className="flex items-center gap-3">
+                        <div className="w-32 h-2 rounded-full bg-muted overflow-hidden">
                           <div 
-                            className="h-full bg-primary rounded-full" 
-                            style={{ width: `${(location.views / analytics.viewsByLocation[0].views) * 100}%` }}
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{ 
+                              width: `${(location.views / analytics.viewsByLocation[0].views) * 100}%`,
+                              background: `linear-gradient(90deg, ${PIE_COLORS[index % PIE_COLORS.length]}, ${PIE_COLORS[(index + 1) % PIE_COLORS.length]})`
+                            }}
                           />
                         </div>
-                        <span className="text-sm text-muted-foreground w-12 text-right">{location.views}</span>
+                        <span className="text-sm font-medium text-foreground w-12 text-right">{location.views}</span>
                       </div>
                     </div>
                   ))}
@@ -581,26 +839,55 @@ const AnalyticsPage = () => {
         {/* Subscriptions Tab */}
         <TabsContent value="subscriptions" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard title="Active Subscribers" value={formatNumber(analytics?.totalSubscribers || 0)} icon={Users} />
-            <StatCard title="Subscription Earnings" value={formatCurrency(analytics?.totalSubscriptionEarnings || 0)} icon={DollarSign} />
+            <StatCard title="Active Subscribers" value={formatNumber(analytics?.totalSubscribers || 0)} icon={Users} gradientFrom={CHART_GRADIENTS.purple.start} gradientTo={CHART_GRADIENTS.purple.end} />
+            <StatCard title="Subscription Earnings" value={formatCurrency(analytics?.totalSubscriptionEarnings || 0)} icon={DollarSign} gradientFrom={CHART_GRADIENTS.success.start} gradientTo={CHART_GRADIENTS.success.end} />
           </div>
 
-          <Card className="bg-card">
-            <CardHeader>
-              <CardTitle className="text-foreground">Subscription Growth</CardTitle>
+          <Card className="bg-card border-border overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-foreground flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-gradient-to-r from-purple-500 to-violet-500" />
+                Subscription Growth
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={analytics?.subscriptionTrend || []}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="date" tickFormatter={(date) => format(new Date(date), 'MMM d')} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis yAxisId="left" stroke="hsl(var(--muted-foreground))" />
-                    <YAxis yAxisId="right" orientation="right" stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
-                    <Legend />
-                    <Line yAxisId="left" type="monotone" dataKey="subscribers" name="New Subscribers" stroke="hsl(var(--primary))" strokeWidth={2} />
-                    <Line yAxisId="right" type="monotone" dataKey="earnings" name="Earnings (₹)" stroke="#10b981" strokeWidth={2} />
+                    <defs>
+                      <linearGradient id="strokeSubscribers" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor={CHART_GRADIENTS.purple.start}/>
+                        <stop offset="100%" stopColor={CHART_GRADIENTS.purple.end}/>
+                      </linearGradient>
+                      <linearGradient id="strokeSubEarnings" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor={CHART_GRADIENTS.success.start}/>
+                        <stop offset="100%" stopColor={CHART_GRADIENTS.success.end}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+                    <XAxis dataKey="date" tickFormatter={(date) => format(new Date(date), 'MMM d')} stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} />
+                    <YAxis yAxisId="left" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} />
+                    <YAxis yAxisId="right" orientation="right" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend wrapperStyle={{ paddingTop: 20 }} formatter={(value) => <span className="text-foreground text-sm">{value}</span>} />
+                    <Line 
+                      yAxisId="left" 
+                      type="monotone" 
+                      dataKey="subscribers" 
+                      name="New Subscribers" 
+                      stroke="url(#strokeSubscribers)" 
+                      strokeWidth={3}
+                      dot={{ fill: CHART_GRADIENTS.purple.start, strokeWidth: 0, r: 4 }}
+                    />
+                    <Line 
+                      yAxisId="right" 
+                      type="monotone" 
+                      dataKey="earnings" 
+                      name="Earnings (₹)" 
+                      stroke="url(#strokeSubEarnings)" 
+                      strokeWidth={3}
+                      dot={{ fill: CHART_GRADIENTS.success.start, strokeWidth: 0, r: 4 }}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -611,25 +898,34 @@ const AnalyticsPage = () => {
         {/* Collaborations Tab */}
         <TabsContent value="collaborations" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard title="Total Events" value={formatNumber(analytics?.totalCollaborations || 0)} icon={Video} />
-            <StatCard title="Total Bookings" value={formatNumber(analytics?.totalBookings || 0)} icon={CalendarIcon} />
-            <StatCard title="Collaboration Earnings" value={formatCurrency(analytics?.totalCollaborationEarnings || 0)} icon={DollarSign} />
+            <StatCard title="Total Events" value={formatNumber(analytics?.totalCollaborations || 0)} icon={Video} gradientFrom={CHART_GRADIENTS.pink.start} gradientTo={CHART_GRADIENTS.pink.end} />
+            <StatCard title="Total Bookings" value={formatNumber(analytics?.totalBookings || 0)} icon={CalendarIcon} gradientFrom={CHART_GRADIENTS.info.start} gradientTo={CHART_GRADIENTS.info.end} />
+            <StatCard title="Collaboration Earnings" value={formatCurrency(analytics?.totalCollaborationEarnings || 0)} icon={DollarSign} gradientFrom={CHART_GRADIENTS.success.start} gradientTo={CHART_GRADIENTS.success.end} />
           </div>
 
-          <Card className="bg-card">
-            <CardHeader>
-              <CardTitle className="text-foreground">Virtual Collaboration Trend</CardTitle>
+          <Card className="bg-card border-border overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-foreground flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-gradient-to-r from-pink-500 to-rose-500" />
+                Virtual Collaboration Trend
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={analytics?.collaborationTrend || []}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="date" tickFormatter={(date) => format(new Date(date), 'MMM d')} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
-                    <Legend />
-                    <Bar dataKey="bookings" name="Bookings" fill="hsl(var(--primary))" />
+                    <defs>
+                      <linearGradient id="barBookings" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={CHART_GRADIENTS.pink.start}/>
+                        <stop offset="100%" stopColor={CHART_GRADIENTS.pink.end}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+                    <XAxis dataKey="date" tickFormatter={(date) => format(new Date(date), 'MMM d')} stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend wrapperStyle={{ paddingTop: 20 }} formatter={(value) => <span className="text-foreground text-sm">{value}</span>} />
+                    <Bar dataKey="bookings" name="Bookings" fill="url(#barBookings)" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
