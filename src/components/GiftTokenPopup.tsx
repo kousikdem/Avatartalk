@@ -148,7 +148,7 @@ const GiftTokenPopup: React.FC<GiftTokenPopupProps> = ({
             senderId: user?.id || null, // Can be null for anonymous
             receiverId,
             amount: calculatedTokens,
-            amountPaid: Math.ceil(finalAmount * 100), // paise
+            amountPaid: finalAmount, // Send in rupees, edge function converts to paise
             message
           }
         });
