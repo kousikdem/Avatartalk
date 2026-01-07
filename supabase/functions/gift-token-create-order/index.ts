@@ -1,12 +1,11 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -14,7 +13,6 @@ serve(async (req) => {
   try {
     const { senderId, receiverId, amount, amountPaid, message } = await req.json();
 
-    // Only receiverId, amount, and amountPaid are required - senderId can be null for anonymous gifting
     if (!receiverId || !amount || !amountPaid) {
       return new Response(
         JSON.stringify({ success: false, error: "Missing required fields" }),
@@ -22,7 +20,7 @@ serve(async (req) => {
       );
     }
 
-    if (amountPaid < 10) { // amountPaid is in rupees, minimum ₹10
+    if (amountPaid < 10) {
       return new Response(
         JSON.stringify({ success: false, error: "Minimum amount is ₹10" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -43,7 +41,6 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get sender info if senderId is provided (optional for anonymous gifting)
     let senderName = "Anonymous";
     if (senderId) {
       const { data: senderProfile } = await supabase
@@ -57,7 +54,6 @@ serve(async (req) => {
       }
     }
 
-    // Verify receiver exists
     const { data: receiverProfile, error: receiverError } = await supabase
       .from("profiles")
       .select("id, display_name, username")
@@ -71,7 +67,6 @@ serve(async (req) => {
       );
     }
 
-    // Create Razorpay order - convert rupees to paise for Razorpay
     const amountInPaise = Math.round(amountPaid * 100);
     const razorpayAuth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
     
@@ -95,8 +90,7 @@ serve(async (req) => {
     });
 
     if (!orderResponse.ok) {
-      const errorData = await orderResponse.text();
-      console.error("Razorpay order creation failed:", errorData);
+      console.error("Razorpay error:", await orderResponse.text());
       return new Response(
         JSON.stringify({ success: false, error: "Failed to create payment order" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -105,7 +99,6 @@ serve(async (req) => {
 
     const orderData = await orderResponse.json();
 
-    // Create gift record in database
     const { data: giftRecord, error: giftError } = await supabase
       .from("token_gifts")
       .insert({
@@ -122,7 +115,7 @@ serve(async (req) => {
       .single();
 
     if (giftError) {
-      console.error("Failed to create gift record:", giftError);
+      console.error("Gift record error:", giftError);
       return new Response(
         JSON.stringify({ success: false, error: "Failed to create gift record" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
