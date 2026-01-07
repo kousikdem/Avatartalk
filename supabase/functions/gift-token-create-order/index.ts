@@ -22,7 +22,7 @@ serve(async (req) => {
       );
     }
 
-    if (amountPaid < 1000) { // amountPaid is in paise, so 1000 paise = ₹10
+    if (amountPaid < 10) { // amountPaid is in rupees, minimum ₹10
       return new Response(
         JSON.stringify({ success: false, error: "Minimum amount is ₹10" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -71,8 +71,8 @@ serve(async (req) => {
       );
     }
 
-    // Create Razorpay order - amountPaid is already in paise from frontend
-    const amountInPaise = Math.round(amountPaid);
+    // Create Razorpay order - convert rupees to paise for Razorpay
+    const amountInPaise = Math.round(amountPaid * 100);
     const razorpayAuth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
     
     const orderResponse = await fetch("https://api.razorpay.com/v1/orders", {
