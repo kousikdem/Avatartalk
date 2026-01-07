@@ -63,15 +63,60 @@ Deno.serve(async (req) => {
 
     console.log(`Package found: ${packageData.name}, price: ₹${packageData.price_inr}`);
 
-    // Verify user exists
-    const { data: userData, error: userError } = await supabase
+    // Ensure user profile exists (some environments may miss signup triggers)
+    let userData: { id: string; email: string | null } | null = null;
+
+    const { data: existingProfile, error: profileError } = await supabase
       .from('profiles')
       .select('id, email')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
-    if (userError || !userData) {
-      console.error('User not found:', userError);
+    if (profileError) {
+      console.error('Error checking profile:', profileError);
+    }
+
+    if (!existingProfile) {
+      console.log(`Profile missing for user ${userId}. Attempting to create a minimal profile row...`);
+
+      // Try to fetch auth user details (best-effort)
+      const { data: authUserData, error: authUserError } = await supabase.auth.admin.getUserById(userId);
+      if (authUserError) {
+        console.warn('Could not fetch auth user for profile creation:', authUserError);
+      }
+
+      const email = authUserData?.user?.email ?? null;
+      const meta = (authUserData?.user?.user_metadata ?? {}) as Record<string, unknown>;
+      const fullName = (meta.full_name as string | undefined) || (meta.name as string | undefined) || null;
+
+      const { data: createdProfile, error: createProfileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          email,
+          full_name: fullName,
+          display_name: fullName,
+        })
+        .select('id, email')
+        .single();
+
+      if (createProfileError) {
+        console.error('Failed to create profile:', createProfileError);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'User profile not initialized. Please log out and log in again.'
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      userData = createdProfile;
+    } else {
+      userData = existingProfile;
+    }
+
+    if (!userData) {
       return new Response(JSON.stringify({
         success: false,
         error: 'User not found'

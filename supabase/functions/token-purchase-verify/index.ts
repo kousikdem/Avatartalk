@@ -65,7 +65,9 @@ Deno.serve(async (req) => {
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
 
-    if (expectedSignature !== razorpay_signature) {
+    const providedSignature = String(razorpay_signature).trim().toLowerCase();
+
+    if (expectedSignature !== providedSignature) {
       console.error('Signature verification failed');
       return new Response(JSON.stringify({
         success: false,

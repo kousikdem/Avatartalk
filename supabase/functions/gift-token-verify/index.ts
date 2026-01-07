@@ -57,8 +57,13 @@ Deno.serve(async (req) => {
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
 
-    if (expectedSignature !== razorpay_signature) {
-      console.error("Signature verification failed");
+    const providedSignature = String(razorpay_signature).trim().toLowerCase();
+
+    if (expectedSignature !== providedSignature) {
+      console.error("Signature verification failed", {
+        expected_prefix: expectedSignature.slice(0, 8),
+        provided_prefix: providedSignature.slice(0, 8)
+      });
       return new Response(
         JSON.stringify({ success: false, error: "Invalid payment signature" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -68,6 +73,50 @@ Deno.serve(async (req) => {
     console.log("Signature verified successfully");
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Validate gift exists and order_id matches (and add idempotency)
+    const { data: giftRow, error: giftError } = await supabase
+      .from("token_gifts")
+      .select("id, status, razorpay_order_id, amount, receiver_id")
+      .eq("id", gift_id)
+      .single();
+
+    if (giftError || !giftRow) {
+      console.error("Gift not found:", giftError);
+      return new Response(
+        JSON.stringify({ success: false, error: "Gift not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (giftRow.razorpay_order_id && giftRow.razorpay_order_id !== razorpay_order_id) {
+      console.error("Order ID mismatch for gift", {
+        gift_id,
+        expected: giftRow.razorpay_order_id,
+        got: razorpay_order_id,
+      });
+      return new Response(
+        JSON.stringify({ success: false, error: "Order ID mismatch" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (giftRow.status === "completed") {
+      const { data: receiverProfile } = await supabase
+        .from("profiles")
+        .select("token_balance")
+        .eq("id", giftRow.receiver_id)
+        .maybeSingle();
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          tokens_credited: giftRow.amount,
+          new_balance: receiverProfile?.token_balance ?? null,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Process the gift using the database function
     const { data, error } = await supabase.rpc("process_token_gift", {
@@ -85,6 +134,24 @@ Deno.serve(async (req) => {
     }
 
     if (!data.success) {
+      // Treat idempotency as success
+      if (data.error === 'Gift already processed') {
+        const { data: receiverProfile } = await supabase
+          .from("profiles")
+          .select("token_balance")
+          .eq("id", giftRow.receiver_id)
+          .maybeSingle();
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            tokens_credited: giftRow.amount,
+            new_balance: receiverProfile?.token_balance ?? null,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       return new Response(
         JSON.stringify({ success: false, error: data.error }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
