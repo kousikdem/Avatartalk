@@ -12,10 +12,11 @@ Deno.serve(async (req) => {
 
   try {
     const { senderId, receiverId, amount, amountPaid, message } = await req.json();
+    console.log(`Gift token order request: receiver=${receiverId}, tokens=${amount}, amountPaid=₹${amountPaid}`);
 
     if (!receiverId || !amount || !amountPaid) {
       return new Response(
-        JSON.stringify({ success: false, error: "Missing required fields" }),
+        JSON.stringify({ success: false, error: "Missing required fields: receiverId, amount, amountPaid" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -33,8 +34,9 @@ Deno.serve(async (req) => {
     const razorpayKeySecret = Deno.env.get("RAZORPAY_KEY_SECRET");
 
     if (!razorpayKeyId || !razorpayKeySecret) {
+      console.error("Razorpay credentials not configured");
       return new Response(
-        JSON.stringify({ success: false, error: "Payment gateway not configured" }),
+        JSON.stringify({ success: false, error: "Payment gateway not configured. Please contact support." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -61,13 +63,18 @@ Deno.serve(async (req) => {
       .single();
 
     if (receiverError || !receiverProfile) {
+      console.error("Receiver not found:", receiverError);
       return new Response(
         JSON.stringify({ success: false, error: "Receiver not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    // Convert rupees to paise for Razorpay (₹1 = 100 paise)
+    // amountPaid is already in rupees from frontend
     const amountInPaise = Math.round(amountPaid * 100);
+    console.log(`Amount conversion: ₹${amountPaid} = ${amountInPaise} paise`);
+
     const razorpayAuth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
     
     const orderResponse = await fetch("https://api.razorpay.com/v1/orders", {
@@ -81,7 +88,7 @@ Deno.serve(async (req) => {
         currency: "INR",
         receipt: `gift_${Date.now()}`,
         notes: {
-          sender_id: senderId,
+          sender_id: senderId || "anonymous",
           receiver_id: receiverId,
           token_amount: amount,
           type: "token_gift"
@@ -90,14 +97,16 @@ Deno.serve(async (req) => {
     });
 
     if (!orderResponse.ok) {
-      console.error("Razorpay error:", await orderResponse.text());
+      const errorText = await orderResponse.text();
+      console.error("Razorpay order creation failed:", errorText);
       return new Response(
-        JSON.stringify({ success: false, error: "Failed to create payment order" }),
+        JSON.stringify({ success: false, error: "Failed to create payment order. Please try again." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const orderData = await orderResponse.json();
+    console.log(`Razorpay order created: ${orderData.id}, amount: ${orderData.amount} paise`);
 
     const { data: giftRecord, error: giftError } = await supabase
       .from("token_gifts")
@@ -122,12 +131,14 @@ Deno.serve(async (req) => {
       );
     }
 
+    console.log(`Gift order created successfully: gift_id=${giftRecord.id}, order_id=${orderData.id}`);
+
     return new Response(
       JSON.stringify({
         success: true,
         order_id: orderData.id,
         gift_id: giftRecord.id,
-        amount: amountInPaise,
+        amount: amountInPaise, // Return paise for Razorpay checkout
         currency: "INR",
         key_id: razorpayKeyId,
         receiver_name: receiverProfile.display_name || receiverProfile.username,
@@ -138,7 +149,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error("Gift token order error:", error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: error.message || "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

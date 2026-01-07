@@ -1,13 +1,11 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.1';
-import { createHmac } from "https://deno.land/std@0.168.0/crypto/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.1?target=deno&pin=v135";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -20,6 +18,8 @@ serve(async (req) => {
       package_id,
       user_id 
     } = await req.json();
+
+    console.log(`Token purchase verification: order=${razorpay_order_id}, user=${user_id}`);
 
     if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature || !user_id) {
       return new Response(JSON.stringify({
@@ -46,7 +46,7 @@ serve(async (req) => {
       });
     }
 
-    // Verify signature
+    // Verify signature using Web Crypto API
     const payload = `${razorpay_order_id}|${razorpay_payment_id}`;
     const encoder = new TextEncoder();
     const keyData = encoder.encode(razorpayKeySecret);
@@ -75,6 +75,8 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
+    console.log('Signature verified successfully');
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -110,6 +112,7 @@ serve(async (req) => {
     }
 
     const tokensToCredit = purchaseData.tokens_purchased;
+    console.log(`Crediting ${tokensToCredit} tokens to user ${user_id}`);
 
     // Credit tokens to user using the database function
     const { data: creditResult, error: creditError } = await supabase
@@ -144,7 +147,7 @@ serve(async (req) => {
       console.error('Failed to update purchase record:', updateError);
     }
 
-    console.log(`Token purchase verified: ${tokensToCredit} tokens credited to user ${user_id}`);
+    console.log(`Token purchase verified: ${tokensToCredit} tokens credited to user ${user_id}, new balance: ${creditResult.balance}`);
 
     return new Response(JSON.stringify({
       success: true,
@@ -159,7 +162,7 @@ serve(async (req) => {
     console.error('Error in token-purchase-verify:', error);
     return new Response(JSON.stringify({
       success: false,
-      error: 'Internal server error'
+      error: error.message || 'Internal server error'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
