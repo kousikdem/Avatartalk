@@ -142,10 +142,20 @@ const GiftTokenPopup: React.FC<GiftTokenPopupProps> = ({
         });
         onOpenChange(false);
       } else {
-        // Gift via Razorpay payment - works for anyone (even visitors with no tokens)
+        // Gift via Razorpay payment - requires login (token_gifts.sender_id is NOT NULL)
+        if (!user) {
+          toast({
+            title: 'Login Required',
+            description: 'Please login to send token gifts',
+            variant: 'destructive'
+          });
+          setProcessing(false);
+          return;
+        }
+
         const { data: orderData, error: orderError } = await supabase.functions.invoke('gift-token-create-order', {
           body: {
-            senderId: user?.id || null, // Can be null for anonymous
+            senderId: user.id,
             receiverId,
             amount: calculatedTokens,
             amountPaid: finalAmount, // Send in rupees, edge function converts to paise
@@ -181,19 +191,23 @@ const GiftTokenPopup: React.FC<GiftTokenPopupProps> = ({
                 }
               });
 
-              if (verifyError || !verifyData?.success) {
-                throw new Error(verifyData?.error || 'Verification failed');
-              }
+               if (verifyError || !verifyData?.success) {
+                 throw new Error(verifyData?.error || verifyError?.message || 'Verification failed');
+               }
 
-              toast({
-                title: 'Gift Sent! 🎁',
-                description: `${receiverName} received ${calculatedTokens.toLocaleString()} tokens!`,
-              });
-              onOpenChange(false);
-            } catch (error) {
-              console.error('Verification error:', error);
-              toast({ title: 'Error', description: 'Payment verification failed', variant: 'destructive' });
-            }
+               toast({
+                 title: 'Gift Sent! 🎁',
+                 description: `${receiverName} received ${calculatedTokens.toLocaleString()} tokens!`,
+               });
+               onOpenChange(false);
+             } catch (error) {
+               console.error('Verification error:', error);
+               toast({
+                 title: 'Error',
+                 description: error instanceof Error ? error.message : 'Payment verification failed',
+                 variant: 'destructive'
+               });
+             }
             setProcessing(false);
           },
           theme: { color: '#ec4899' },

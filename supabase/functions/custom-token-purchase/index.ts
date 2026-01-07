@@ -71,22 +71,48 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify user exists
-    const { data: userData, error: userError } = await supabase
+    // Ensure user profile exists (some environments may miss signup triggers)
+    const { data: existingProfile, error: profileError } = await supabase
       .from('profiles')
       .select('id, email')
       .eq('id', user_id)
-      .single();
+      .maybeSingle();
 
-    if (userError || !userData) {
-      console.error('User not found:', userError);
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'User not found'
-      }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    if (profileError) {
+      console.error('Error checking profile:', profileError);
+    }
+
+    if (!existingProfile) {
+      console.log(`Profile missing for user ${user_id}. Attempting to create a minimal profile row...`);
+
+      const { data: authUserData, error: authUserError } = await supabase.auth.admin.getUserById(user_id);
+      if (authUserError) {
+        console.warn('Could not fetch auth user for profile creation:', authUserError);
+      }
+
+      const email = authUserData?.user?.email ?? null;
+      const meta = (authUserData?.user?.user_metadata ?? {}) as Record<string, unknown>;
+      const fullName = (meta.full_name as string | undefined) || (meta.name as string | undefined) || null;
+
+      const { error: createProfileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: user_id,
+          email,
+          full_name: fullName,
+          display_name: fullName,
+        });
+
+      if (createProfileError) {
+        console.error('Failed to create profile:', createProfileError);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'User profile not initialized. Please log out and log in again.'
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
     }
 
     // Convert price to paise (minimum 100 paise = ₹1)
