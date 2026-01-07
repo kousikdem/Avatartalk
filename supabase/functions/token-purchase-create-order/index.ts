@@ -1,23 +1,23 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.1';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.1?target=deno&pin=v135";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { packageId, userId } = await req.json();
+    console.log(`Token purchase order request: packageId=${packageId}, userId=${userId}`);
 
     if (!packageId || !userId) {
       return new Response(JSON.stringify({
         success: false,
-        error: 'Missing required fields'
+        error: 'Missing required fields: packageId and userId are required'
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -33,7 +33,7 @@ serve(async (req) => {
       console.error('Razorpay credentials not configured');
       return new Response(JSON.stringify({
         success: false,
-        error: 'Payment system not configured'
+        error: 'Payment system not configured. Please contact support.'
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -54,12 +54,14 @@ serve(async (req) => {
       console.error('Package not found:', packageError);
       return new Response(JSON.stringify({
         success: false,
-        error: 'Token package not found'
+        error: 'Token package not found or inactive'
       }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
+    console.log(`Package found: ${packageData.name}, price: ₹${packageData.price_inr}`);
 
     // Verify user exists
     const { data: userData, error: userError } = await supabase
@@ -79,8 +81,9 @@ serve(async (req) => {
       });
     }
 
-    // Convert price to paise (minimum 100 paise = ₹1)
+    // Convert price to paise for Razorpay (₹1 = 100 paise)
     const amountInPaise = Math.max(Math.round(packageData.price_inr * 100), 100);
+    console.log(`Amount in paise for Razorpay: ${amountInPaise} (₹${packageData.price_inr})`);
 
     // Create Razorpay order
     const razorpayAuth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
@@ -94,13 +97,14 @@ serve(async (req) => {
       body: JSON.stringify({
         amount: amountInPaise,
         currency: 'INR',
-        receipt: `token_${packageId}_${Date.now()}`,
+        receipt: `token_${packageId.substring(0, 8)}_${Date.now()}`,
         notes: {
           package_id: packageId,
           user_id: userId,
           tokens: packageData.tokens,
           bonus_tokens: packageData.bonus_tokens,
-          package_name: packageData.name
+          package_name: packageData.name,
+          type: 'token_purchase'
         }
       }),
     });
@@ -110,7 +114,7 @@ serve(async (req) => {
       console.error('Razorpay order creation failed:', errorText);
       return new Response(JSON.stringify({
         success: false,
-        error: 'Failed to create payment order'
+        error: 'Failed to create payment order. Please try again.'
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -118,6 +122,7 @@ serve(async (req) => {
     }
 
     const razorpayOrder = await razorpayResponse.json();
+    console.log(`Razorpay order created: ${razorpayOrder.id}`);
 
     // Create token purchase record
     const { error: purchaseError } = await supabase
@@ -134,14 +139,15 @@ serve(async (req) => {
 
     if (purchaseError) {
       console.error('Failed to create purchase record:', purchaseError);
+      // Don't fail the request - order was created in Razorpay
     }
 
-    console.log(`Created token purchase order: ${razorpayOrder.id} for user ${userId}`);
+    console.log(`Token purchase order created successfully: order_id=${razorpayOrder.id}, amount=₹${packageData.price_inr}`);
 
     return new Response(JSON.stringify({
       success: true,
       order_id: razorpayOrder.id,
-      amount: amountInPaise,
+      amount: amountInPaise, // Razorpay expects paise
       currency: 'INR',
       key_id: razorpayKeyId,
       package: {
@@ -157,7 +163,7 @@ serve(async (req) => {
     console.error('Error in token-purchase-create-order:', error);
     return new Response(JSON.stringify({
       success: false,
-      error: 'Internal server error'
+      error: error.message || 'Internal server error'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

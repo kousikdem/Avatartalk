@@ -1,5 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.1';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.1?target=deno&pin=v135";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,7 +11,7 @@ const MIN_TOKENS = 100000;
 const MAX_TOKENS = 100000000;
 const MIN_AMOUNT_PAISE = 4200; // ₹42 minimum
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }

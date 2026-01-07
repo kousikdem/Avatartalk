@@ -1,13 +1,11 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { createHmac } from "https://deno.land/std@0.177.0/node/crypto.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.1?target=deno&pin=v135";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -24,11 +22,24 @@ serve(async (req) => {
       throw new Error('Razorpay secret not configured');
     }
 
-    // Verify signature using HMAC SHA256
-    const text = `${razorpay_order_id}|${razorpay_payment_id}`;
-    const hmac = createHmac('sha256', RAZORPAY_KEY_SECRET);
-    hmac.update(text);
-    const generatedSignature = hmac.digest('hex');
+    // Verify signature using Web Crypto API
+    const payload = `${razorpay_order_id}|${razorpay_payment_id}`;
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(RAZORPAY_KEY_SECRET);
+    const messageData = encoder.encode(payload);
+    
+    const cryptoKey = await crypto.subtle.importKey(
+      "raw",
+      keyData,
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    
+    const signatureBuffer = await crypto.subtle.sign("HMAC", cryptoKey, messageData);
+    const generatedSignature = Array.from(new Uint8Array(signatureBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
 
     console.log('Signature verification:', { 
       received: razorpay_signature, 
