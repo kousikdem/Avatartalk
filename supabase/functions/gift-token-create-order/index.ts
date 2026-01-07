@@ -71,8 +71,8 @@ serve(async (req) => {
       );
     }
 
-    // Create Razorpay order
-    const amountInPaise = Math.round(amountPaid * 100);
+    // Create Razorpay order - amountPaid is already in paise from frontend
+    const amountInPaise = Math.round(amountPaid);
     const razorpayAuth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
     
     const orderResponse = await fetch("https://api.razorpay.com/v1/orders", {
