@@ -213,6 +213,18 @@ const VirtualCollaborationPage = () => {
     }
   };
 
+  // Promo settings state
+  const [showPromoModal, setShowPromoModal] = useState(false);
+  const [editingPromo, setEditingPromo] = useState<any>(null);
+
+  // Lazy import PromoForm to avoid circular deps
+  const [PromoFormComponent, setPromoFormComponent] = useState<any>(null);
+  useEffect(() => {
+    import('./PromoForm').then(module => {
+      setPromoFormComponent(() => module.PromoForm);
+    });
+  }, []);
+
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -279,6 +291,48 @@ const VirtualCollaborationPage = () => {
           </div>
         </div>
 
+        {/* Promo Settings Card */}
+        <Card className="border-2 bg-gradient-to-r from-orange-50/50 via-yellow-50/50 to-amber-50/50 dark:from-orange-950/20 dark:via-yellow-950/20 dark:to-amber-950/20">
+          <CardContent className="p-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-br from-orange-500 to-amber-500 rounded-lg">
+                  <Percent className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Promo Codes</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Create discount codes for your virtual collaborations
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/dashboard/promos')}
+                  className="gap-2"
+                >
+                  <Settings className="w-4 h-4" />
+                  Manage All Promos
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setEditingPromo(null);
+                    setShowPromoModal(true);
+                  }}
+                  className="gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
+                >
+                  <Plus className="w-4 h-4" />
+                  Create Promo
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Limit Reached Banner */}
         <LimitReachedBanner
           currentCount={myProducts.length}
@@ -286,6 +340,18 @@ const VirtualCollaborationPage = () => {
           itemName="Collaborations"
           planForMore={effectivePlanKey === 'pro' ? 'business' : 'pro'}
         />
+
+        {/* Promo Modal */}
+        {PromoFormComponent && (
+          <PromoFormComponent
+            open={showPromoModal}
+            onClose={() => {
+              setShowPromoModal(false);
+              setEditingPromo(null);
+            }}
+            promo={editingPromo}
+          />
+        )}
 
         {/* Integration Bar */}
         <Card className="border-2 bg-gradient-to-r from-blue-50/50 via-purple-50/50 to-pink-50/50 dark:from-blue-950/20 dark:via-purple-950/20 dark:to-pink-950/20">
