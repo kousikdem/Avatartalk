@@ -45,6 +45,9 @@ import { supabase } from '@/integrations/supabase/client';
 const AvatarPage: React.FC = () => {
   const navigate = useNavigate();
   const { saveConfiguration } = useAvatarConfigurations();
+  const { hasFeature } = usePlanFeatures();
+  const canUploadAvatar = hasFeature('avatar_upload_enabled');
+
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [creationMode, setCreationMode] = useState<'manual' | 'image' | 'text' | 'preset'>('manual');
@@ -112,12 +115,8 @@ const AvatarPage: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // saveConfiguration handles profile sync via DB trigger
       await saveConfiguration(avatarConfig);
-      
-      await supabase
-        .from('profiles')
-        .update({ avatar_url: avatarConfig.model_url || avatarConfig.thumbnail_url })
-        .eq('id', user.id);
 
       toast.success('Avatar saved and linked across all previews!');
     } catch (error) {
@@ -132,13 +131,21 @@ const AvatarPage: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Check plan for non-JSON uploads (actual avatar file uploads)
+    const isJsonImport = file.name.endsWith('.json');
+    if (!isJsonImport && !canUploadAvatar) {
+      toast.error('Avatar upload requires Creator plan or higher');
+      navigate('/pricing');
+      return;
+    }
+
     if (!file.name.match(/\.(glb|fbx|gltf|gif|png|jpg|jpeg|json)$/i)) {
       toast.error('Please upload .glb, .fbx, .gltf, .gif, .png, .jpg, or .json file');
       return;
     }
 
-    // Handle JSON configuration import
-    if (file.name.endsWith('.json')) {
+    // Handle JSON configuration import (allowed for all plans)
+    if (isJsonImport) {
       const reader = new FileReader();
       reader.onload = async (e) => {
         try {
@@ -206,38 +213,13 @@ const AvatarPage: React.FC = () => {
       const isModel = file.name.match(/\.(glb|fbx|gltf)$/i);
       const updatedConfig = {
         ...avatarConfig,
-        [isModel ? 'model_url' : 'thumbnail_url']: publicUrl,
-        configuration_data: avatarConfig
+        model_url: isModel ? publicUrl : avatarConfig.model_url,
+        thumbnail_url: isModel ? avatarConfig.thumbnail_url : publicUrl,
       };
       
       setAvatarConfig(updatedConfig);
+      // saveConfiguration handles DB trigger sync to profiles
       await saveConfiguration(updatedConfig);
-      
-      await supabase
-        .from('profiles')
-        .update({ 
-          avatar_url: publicUrl,
-          profile_pic_url: isModel ? avatarConfig.thumbnail_url : publicUrl
-        })
-        .eq('id', user.id);
-
-      const { data: configs } = await supabase
-        .from('avatar_configurations')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .single();
-
-      if (configs) {
-        await supabase
-          .from('avatar_configurations')
-          .update({
-            model_url: isModel ? publicUrl : updatedConfig.model_url,
-            thumbnail_url: isModel ? updatedConfig.thumbnail_url : publicUrl,
-            configuration_data: updatedConfig
-          })
-          .eq('id', configs.id);
-      }
       
       toast.success('Avatar uploaded and linked to all previews!');
     } catch (error) {
@@ -710,12 +692,25 @@ const AvatarPage: React.FC = () => {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => document.getElementById('avatar-file-upload')?.click()}
+                    onClick={() => {
+                      if (!canUploadAvatar) {
+                        toast.error('Avatar upload requires Creator plan or higher');
+                        navigate('/pricing');
+                        return;
+                      }
+                      document.getElementById('avatar-file-upload')?.click();
+                    }}
                     disabled={uploading}
                   >
                     <Upload className="w-4 h-4 mr-2" />
                     {uploading ? 'Uploading...' : 'Upload'}
+                    {!canUploadAvatar && <Lock className="w-3 h-3 ml-1" />}
                   </Button>
+                  {!canUploadAvatar && (
+                    <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
+                      Creator+
+                    </Badge>
+                  )}
                   <input
                     id="avatar-file-upload"
                     type="file"
