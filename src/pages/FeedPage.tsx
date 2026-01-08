@@ -160,9 +160,10 @@ const FeedPage = () => {
           {/* Main Feed */}
           <div className="lg:col-span-2">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-muted">
+              <TabsList className="grid w-full grid-cols-3 bg-muted">
                 <TabsTrigger value="my-posts">My Posts</TabsTrigger>
                 <TabsTrigger value="following">Following</TabsTrigger>
+                <TabsTrigger value="paid-posts">Paid Posts</TabsTrigger>
               </TabsList>
 
               <TabsContent value="my-posts" className="mt-6">
@@ -171,6 +172,7 @@ const FeedPage = () => {
                   showCreatePost={true}
                   feedType="user"
                   showLinkClicks={true}
+                  showEditOption={true}
                 />
               </TabsContent>
 
@@ -179,6 +181,15 @@ const FeedPage = () => {
                   userId={currentUser?.id}
                   showCreatePost={false}
                   feedType="following"
+                  showLinkClicks={false}
+                />
+              </TabsContent>
+
+              <TabsContent value="paid-posts" className="mt-6">
+                <SocialFeed 
+                  userId={currentUser?.id}
+                  showCreatePost={false}
+                  feedType="paid"
                   showLinkClicks={false}
                 />
               </TabsContent>
