@@ -8,13 +8,14 @@ import { Progress } from '@/components/ui/progress';
 import { 
   Heart, MessageCircle, Share2, Send, MoreVertical, 
   Lock, Crown, ExternalLink, MousePointerClick, Eye,
-  FileText, Image as ImageIcon, Video, BarChart3
+  FileText, Image as ImageIcon, Video, BarChart3, Pencil, DollarSign
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLikes } from '@/hooks/useLikes';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import EditPostModal from './EditPostModal';
 
 interface Post {
   id: string;
@@ -67,6 +68,7 @@ interface EnhancedPostCardWithLocksProps {
   showLinkClicks?: boolean;
   onSubscribeClick?: () => void;
   profileUsername?: string;
+  showEditOption?: boolean;
 }
 
 const EnhancedPostCardWithLocks: React.FC<EnhancedPostCardWithLocksProps> = ({ 
@@ -77,7 +79,8 @@ const EnhancedPostCardWithLocks: React.FC<EnhancedPostCardWithLocksProps> = ({
   isSubscriber = false,
   showLinkClicks = false,
   onSubscribeClick,
-  profileUsername
+  profileUsername,
+  showEditOption = false
 }) => {
   const [showCommentsSection, setShowCommentsSection] = useState(false);
   const [newComment, setNewComment] = useState('');
@@ -87,6 +90,7 @@ const EnhancedPostCardWithLocks: React.FC<EnhancedPostCardWithLocksProps> = ({
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [selectedPollOption, setSelectedPollOption] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   
   const { toast } = useToast();
   const { likesCount, isLiked, toggleLike, loading: likesLoading } = useLikes(post.id, 'post');
@@ -388,11 +392,19 @@ const EnhancedPostCardWithLocks: React.FC<EnhancedPostCardWithLocksProps> = ({
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h4 className="font-semibold text-foreground">
                   {post.profile?.display_name || post.profile?.username || 'Anonymous'}
                 </h4>
                 {getPostTypeIcon()}
+                {/* Show paid badge for own posts */}
+                {isPaidContent && isOwnPost && (
+                  <Badge className="gap-1 text-xs bg-gradient-to-r from-emerald-500 to-green-600 text-white border-0">
+                    <DollarSign className="w-3 h-3" />
+                    Paid • {formatPrice(post.price || 0, post.currency)}
+                  </Badge>
+                )}
+                {/* Show locked badge for others' paid posts */}
                 {isPaidContent && !isUnlocked && !isOwnPost && (
                   <Badge variant="secondary" className="gap-1 text-xs">
                     <Lock className="w-3 h-3" />
@@ -410,9 +422,22 @@ const EnhancedPostCardWithLocks: React.FC<EnhancedPostCardWithLocksProps> = ({
                 @{post.profile?.username || 'unknown'} • {formatDistanceToNow(new Date(post.created_at))} ago
               </p>
             </div>
-            <Button variant="ghost" size="sm">
-              <MoreVertical className="w-4 h-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              {/* Edit button for own posts */}
+              {showEditOption && isOwnPost && (
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setShowEditModal(true)}
+                  className="text-muted-foreground hover:text-primary"
+                >
+                  <Pencil className="w-4 h-4" />
+                </Button>
+              )}
+              <Button variant="ghost" size="sm">
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </CardHeader>
         
@@ -702,6 +727,19 @@ const EnhancedPostCardWithLocks: React.FC<EnhancedPostCardWithLocksProps> = ({
           </AnimatePresence>
         </CardContent>
       </Card>
+
+      {/* Edit Post Modal */}
+      <EditPostModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        post={post}
+        onPostUpdated={(updatedPost) => {
+          if (onPostUpdate) {
+            onPostUpdate({ ...post, ...updatedPost });
+          }
+          setShowEditModal(false);
+        }}
+      />
     </motion.div>
   );
 };

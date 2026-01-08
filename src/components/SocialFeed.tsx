@@ -42,15 +42,17 @@ interface ExtendedPost {
 interface SocialFeedProps {
   userId?: string;
   showCreatePost?: boolean;
-  feedType?: 'user' | 'following' | 'public';
+  feedType?: 'user' | 'following' | 'public' | 'paid';
   showLinkClicks?: boolean;
+  showEditOption?: boolean;
 }
 
 const SocialFeed: React.FC<SocialFeedProps> = ({ 
   userId, 
   showCreatePost = true,
   feedType = 'user',
-  showLinkClicks = false
+  showLinkClicks = false,
+  showEditOption = false
 }) => {
   const [posts, setPosts] = useState<ExtendedPost[]>([]);
   const [loading, setLoading] = useState(false);
@@ -161,6 +163,12 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
               return;
             }
           }
+          break;
+        case 'paid':
+          // Show paid posts from other users that the current user can purchase
+          query = query
+            .eq('is_paid', true)
+            .neq('user_id', userId || '');
           break;
         case 'public':
           break;
@@ -273,6 +281,7 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
                 isSubscriber={isSubscriber}
                 showLinkClicks={showLinkClicks}
                 profileUsername={post.profile?.username}
+                showEditOption={showEditOption && post.user_id === currentUser?.id}
               />
             ))}
           </motion.div>
@@ -288,7 +297,9 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
                   ? "Share your first post to get started!" 
                   : feedType === 'following'
                     ? "Follow some users to see their posts here"
-                    : "Be the first to share something interesting!"
+                    : feedType === 'paid'
+                      ? "No paid posts available to purchase right now"
+                      : "Be the first to share something interesting!"
                 }
               </p>
               {showCreatePost && currentUser && (
