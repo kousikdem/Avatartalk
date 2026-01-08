@@ -263,29 +263,28 @@ const VirtualCollaborationPage = () => {
               </SelectContent>
             </Select>
             
-            {/* Create Collaboration - Locked based on plan */}
+            {/* Create Collaboration - Available in all plans with limits */}
             <Button 
               onClick={() => {
-                if (!canHostVirtualMeetings) {
-                  navigate('/pricing');
-                  return;
-                }
                 if (!canAddCollaboration(myProducts.length)) {
                   toast({
                     title: "Collaboration Limit Reached",
-                    description: `Upgrade to add more collaborations. Current limit: ${limits.collaborations}`,
+                    description: `Upgrade to add more collaborations. Current limit: ${limits.collaborations === -1 ? 'unlimited' : limits.collaborations}`,
                     variant: "destructive",
                   });
+                  navigate('/pricing');
                   return;
                 }
                 setIsAddModalOpen(true);
               }}
-              className={`bg-primary ${!canHostVirtualMeetings ? 'opacity-60' : ''}`}
+              className="bg-primary"
             >
-              {!canHostVirtualMeetings ? <Lock className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+              <Plus className="w-4 h-4 mr-2" />
               Create Virtual Collaboration
-              {!canHostVirtualMeetings && (
-                <Badge variant="secondary" className="ml-2 text-xs bg-white/20">Pro+</Badge>
+              {limits.collaborations !== -1 && (
+                <Badge variant="secondary" className="ml-2 text-xs bg-white/20">
+                  {myProducts.length}/{limits.collaborations}
+                </Badge>
               )}
             </Button>
           </div>

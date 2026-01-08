@@ -218,16 +218,14 @@ const ProductsPageEnhanced = () => {
     : 'business';
 
   const handleAddProduct = () => {
-    if (!canSellProducts) {
-      navigate('/pricing');
-      return;
-    }
+    // Allow adding products in all plans according to plan limits
     if (!canAddProduct(myProducts.length)) {
       toast({
         title: "Product Limit Reached",
-        description: `Upgrade to add more products. Current limit: ${limits.products}`,
+        description: `Upgrade to add more products. Current limit: ${limits.products === -1 ? 'unlimited' : limits.products}`,
         variant: "destructive",
       });
+      navigate('/pricing');
       return;
     }
     setIsAddModalOpen(true);
@@ -311,15 +309,17 @@ const ProductsPageEnhanced = () => {
               <Badge variant="secondary" className="ml-2">Soon</Badge>
             </Button>
             
-            {/* Add Product - Locked based on plan */}
+            {/* Add Product - Available in all plans with limits */}
             <Button 
               onClick={handleAddProduct}
-              className={`bg-primary ${!canSellProducts ? 'opacity-60' : ''}`}
+              className="bg-primary"
             >
-              {!canSellProducts ? <Lock className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+              <Plus className="w-4 h-4 mr-2" />
               Add Product
-              {!canSellProducts && (
-                <Badge variant="secondary" className="ml-2 text-xs bg-white/20">Creator+</Badge>
+              {limits.products !== -1 && (
+                <Badge variant="secondary" className="ml-2 text-xs bg-white/20">
+                  {myProducts.length}/{limits.products}
+                </Badge>
               )}
             </Button>
           </div>
