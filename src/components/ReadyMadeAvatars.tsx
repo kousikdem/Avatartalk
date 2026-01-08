@@ -143,7 +143,7 @@ const ReadyMadeAvatars: React.FC<ReadyMadeAvatarsProps> = ({ onAvatarSelected })
 
       const avatarUrl = data.publicUrl;
 
-      // Create avatar configuration with uploaded image
+      // Create avatar configuration with uploaded image (use correct keys for DB)
       const avatarConfig = {
         avatarName: 'Uploaded Avatar',
         gender: 'male',
@@ -182,20 +182,12 @@ const ReadyMadeAvatars: React.FC<ReadyMadeAvatarsProps> = ({ onAvatarSelected })
         accessories: [],
         currentPose: 'standing',
         currentExpression: 'neutral',
-        thumbnailUrl: avatarUrl
+        thumbnail_url: avatarUrl,  // Use snake_case for DB compatibility
+        model_url: avatarUrl,
       };
 
-      // Save configuration to database
+      // Save configuration to database (DB trigger handles profile sync)
       await saveConfiguration(avatarConfig);
-
-      // Update profile with new avatar
-      await supabase
-        .from('profiles')
-        .update({ 
-          profile_pic_url: avatarUrl,
-          avatar_url: avatarUrl
-        })
-        .eq('id', user.id);
 
       onAvatarSelected(avatarConfig);
       toast.success('Avatar uploaded and saved successfully!');

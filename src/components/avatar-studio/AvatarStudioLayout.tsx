@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Save, Download, RotateCcw, User, Eye, Palette, 
   Shirt, Smile, Camera, Type, Users, Sliders,
-  Upload, Sparkles, Home
+  Upload, Sparkles, Home, Lock
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -23,6 +23,7 @@ import ReadyMadeAvatarGallery from '../ReadyMadeAvatarGallery';
 import M3CharacterStudioIntegration from './M3CharacterStudioIntegration';
 import AvatarBoothIntegration from './AvatarBoothIntegration';
 import { useAvatarConfigurations } from '@/hooks/useAvatarConfigurations';
+import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AvatarStudioLayoutProps {
@@ -32,6 +33,8 @@ interface AvatarStudioLayoutProps {
 const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }) => {
   const navigate = useNavigate();
   const { saveConfiguration, loading: configLoading, saving: configSaving } = useAvatarConfigurations();
+  const { hasFeature } = usePlanFeatures();
+  const canUploadAvatar = hasFeature('avatar_upload_enabled');
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [creationMode, setCreationMode] = useState<'manual' | 'image' | 'text' | 'preset'>('manual');
@@ -167,6 +170,13 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Check Creator plan for avatar uploads
+    if (!canUploadAvatar) {
+      toast.error('Avatar upload requires Creator plan or higher');
+      navigate('/pricing');
+      return;
+    }
 
     // Only accept .glb files for avatar upload (3D avatar preview)
     const fileExt = file.name.split('.').pop()?.toLowerCase();
@@ -493,12 +503,25 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
                     variant="outline" 
                     size="sm"
                     disabled={uploading}
-                    onClick={() => document.getElementById('avatar-file-upload')?.click()}
+                    onClick={() => {
+                      if (!canUploadAvatar) {
+                        toast.error('Avatar upload requires Creator plan or higher');
+                        navigate('/pricing');
+                        return;
+                      }
+                      document.getElementById('avatar-file-upload')?.click();
+                    }}
                     title="Upload .glb avatar file (3D avatar preview only, not profile picture)"
                   >
                     <Upload className="w-4 h-4 mr-2" />
                     {uploading ? 'Uploading...' : 'Upload .glb'}
+                    {!canUploadAvatar && <Lock className="w-3 h-3 ml-1" />}
                   </Button>
+                  {!canUploadAvatar && (
+                    <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
+                      Creator+
+                    </Badge>
+                  )}
                   <Button size="sm" onClick={handleSave} disabled={saving || configSaving}>
                     <Save className="w-4 h-4 mr-2" />
                     {saving || configSaving ? 'Saving...' : 'Save Avatar'}
