@@ -5,11 +5,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Users, Briefcase, Stethoscope, GraduationCap, Palette, Shield, Flame, Upload, Camera } from 'lucide-react';
+import { Users, Briefcase, Stethoscope, GraduationCap, Palette, Shield, Flame, Upload, Camera, Lock } from 'lucide-react';
 import { avatarPresets } from '@/data/avatarPresets';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAvatarConfigurations } from '@/hooks/useAvatarConfigurations';
+import { usePlanFeatures } from '@/hooks/usePlanFeatures';
+import { useNavigate } from 'react-router-dom';
 
 interface ReadyMadeAvatarsProps {
   onAvatarSelected: (config: any) => void;
@@ -96,12 +98,22 @@ const ReadyMadeAvatars: React.FC<ReadyMadeAvatarsProps> = ({ onAvatarSelected })
   const [selectedCategory, setSelectedCategory] = useState<'male' | 'female' | 'profession' | 'upload'>('male');
   const [uploading, setUploading] = useState(false);
   const { saveConfiguration } = useAvatarConfigurations();
+  const { hasFeature } = usePlanFeatures();
+  const navigate = useNavigate();
+  
+  const canUploadAvatar = hasFeature('avatar_upload_enabled');
 
   const handlePresetSelect = (preset: any) => {
     onAvatarSelected(preset.config || preset);
   };
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!canUploadAvatar) {
+      toast.error('Avatar upload requires Creator plan or higher');
+      navigate('/pricing');
+      return;
+    }
+    
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -317,15 +329,30 @@ const ReadyMadeAvatars: React.FC<ReadyMadeAvatarsProps> = ({ onAvatarSelected })
           </TabsContent>
 
           <TabsContent value="upload" className="space-y-4 mt-6">
-            <Card className="border-2 border-dashed border-primary/30 hover:border-primary transition-colors">
+            <Card className={`border-2 border-dashed transition-colors ${canUploadAvatar ? 'border-primary/30 hover:border-primary' : 'border-muted'}`}>
               <CardContent className="p-12">
                 <div className="text-center space-y-6">
-                  <div className="w-24 h-24 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+                  <div className="w-24 h-24 mx-auto bg-primary/10 rounded-full flex items-center justify-center relative">
                     <Upload className="w-12 h-12 text-primary" />
+                    {!canUploadAvatar && (
+                      <div className="absolute -top-2 -right-2">
+                        <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
+                          <Lock className="w-3 h-3 mr-1" />
+                          Creator+
+                        </Badge>
+                      </div>
+                    )}
                   </div>
                   
                   <div className="space-y-2">
-                    <h3 className="text-xl font-semibold">Upload Your Avatar</h3>
+                    <h3 className="text-xl font-semibold flex items-center justify-center gap-2">
+                      Upload Your Avatar
+                      {!canUploadAvatar && (
+                        <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
+                          Creator+
+                        </Badge>
+                      )}
+                    </h3>
                     <p className="text-sm text-muted-foreground max-w-md mx-auto">
                       Upload a custom 3D avatar or profile picture. Supported formats: Images (JPG, PNG, WebP) and 3D models (GLB, GLTF, FBX, OBJ, Blender, DAE, STL, PLY, 3DS)
                     </p>
@@ -338,15 +365,22 @@ const ReadyMadeAvatars: React.FC<ReadyMadeAvatarsProps> = ({ onAvatarSelected })
                       accept="image/*,.glb,.gltf,.fbx,.obj,.blend,.dae,.stl,.ply,.3ds"
                       onChange={handleAvatarUpload}
                       className="hidden"
-                      disabled={uploading}
+                      disabled={uploading || !canUploadAvatar}
                     />
                     <Button
                       asChild
                       size="lg"
-                      disabled={uploading}
+                      disabled={uploading || !canUploadAvatar}
                       className="cursor-pointer"
+                      onClick={(e) => {
+                        if (!canUploadAvatar) {
+                          e.preventDefault();
+                          toast.error('Avatar upload requires Creator plan or higher');
+                          navigate('/pricing');
+                        }
+                      }}
                     >
-                      <label htmlFor="avatar-upload" className="cursor-pointer flex items-center gap-2">
+                      <label htmlFor="avatar-upload" className={`flex items-center gap-2 ${canUploadAvatar ? 'cursor-pointer' : 'cursor-not-allowed'}`}>
                         {uploading ? (
                           <>
                             <Upload className="w-5 h-5 animate-spin" />
@@ -356,6 +390,7 @@ const ReadyMadeAvatars: React.FC<ReadyMadeAvatarsProps> = ({ onAvatarSelected })
                           <>
                             <Camera className="w-5 h-5" />
                             Choose File to Upload
+                            {!canUploadAvatar && <Lock className="w-4 h-4 ml-1" />}
                           </>
                         )}
                       </label>
@@ -364,6 +399,16 @@ const ReadyMadeAvatars: React.FC<ReadyMadeAvatarsProps> = ({ onAvatarSelected })
                     <p className="text-xs text-muted-foreground">
                       Max file size: 10MB
                     </p>
+                    
+                    {!canUploadAvatar && (
+                      <Button 
+                        variant="outline" 
+                        onClick={() => navigate('/pricing')}
+                        className="mt-2"
+                      >
+                        Upgrade to Creator Plan
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>

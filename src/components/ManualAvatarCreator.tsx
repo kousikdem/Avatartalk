@@ -6,7 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Save, Download, RotateCcw, User, Eye, Shirt, Smile, Upload, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Save, Download, RotateCcw, User, Eye, Shirt, Smile, Upload, X, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 import AdvancedAvatarPreview from './AdvancedAvatarPreview';
@@ -16,7 +17,9 @@ import ComprehensiveClothingControls from './ComprehensiveClothingControls';
 import PoseAndExpressionLibrary from './PoseAndExpressionLibrary';
 import { useAvatarConfigurations } from '@/hooks/useAvatarConfigurations';
 import { useCustomAvatarUpload } from '@/hooks/useCustomAvatarUpload';
+import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 interface ManualAvatarCreatorProps {
   initialConfig?: any;
@@ -29,8 +32,12 @@ const ManualAvatarCreator: React.FC<ManualAvatarCreatorProps> = ({
 }) => {
   const { saveConfiguration } = useAvatarConfigurations();
   const { uploading, progress, uploadCustomAvatar } = useCustomAvatarUpload();
+  const { hasFeature } = usePlanFeatures();
+  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [customAvatarUploaded, setCustomAvatarUploaded] = useState(false);
+  
+  const canUploadAvatar = hasFeature('avatar_upload_enabled');
   const [avatarConfig, setAvatarConfig] = useState({
     gender: 'male',
     age: 25,
@@ -198,6 +205,12 @@ const ManualAvatarCreator: React.FC<ManualAvatarCreatorProps> = ({
   };
 
   const handleCustomAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!canUploadAvatar) {
+      toast.error('Avatar upload requires Creator plan or higher');
+      navigate('/pricing');
+      return;
+    }
+    
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -277,9 +290,17 @@ const ManualAvatarCreator: React.FC<ManualAvatarCreatorProps> = ({
         <div className="space-y-2">
           {/* Upload Custom Avatar */}
           <div className="space-y-2">
-            <Label htmlFor="custom-avatar-upload" className="text-sm font-medium">
-              Upload Custom Avatar (GLB, GLTF, FBX, OBJ)
-            </Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="custom-avatar-upload" className="text-sm font-medium">
+                Upload Custom Avatar (GLB, GLTF, FBX, OBJ)
+              </Label>
+              {!canUploadAvatar && (
+                <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
+                  <Lock className="w-3 h-3 mr-1" />
+                  Creator+
+                </Badge>
+              )}
+            </div>
             <div className="flex gap-2">
               <Input
                 ref={fileInputRef}
@@ -287,16 +308,24 @@ const ManualAvatarCreator: React.FC<ManualAvatarCreatorProps> = ({
                 type="file"
                 accept=".glb,.gltf,.fbx,.obj"
                 onChange={handleCustomAvatarUpload}
-                disabled={uploading}
+                disabled={uploading || !canUploadAvatar}
                 className="flex-1"
               />
               <Button
                 variant="outline"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => {
+                  if (!canUploadAvatar) {
+                    toast.error('Avatar upload requires Creator plan or higher');
+                    navigate('/pricing');
+                    return;
+                  }
+                  fileInputRef.current?.click();
+                }}
                 disabled={uploading}
               >
                 <Upload className="w-4 h-4 mr-2" />
                 Browse
+                {!canUploadAvatar && <Lock className="w-3 h-3 ml-1" />}
               </Button>
             </div>
             {uploading && (
