@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,8 +10,12 @@ import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { CreatePromoData, usePromos } from '@/hooks/usePromos';
-import { Sparkles, RefreshCw, Calendar, Users, Package, Target, Zap } from 'lucide-react';
+import { useProducts, Product } from '@/hooks/useProducts';
+import { useVirtualCollaborations, VirtualProduct } from '@/hooks/useVirtualCollaborations';
+import { Sparkles, RefreshCw, Calendar, Users, Package, Target, Zap, Video, ShoppingBag } from 'lucide-react';
 
 interface PromoFormProps {
   open: boolean;
@@ -21,7 +25,10 @@ interface PromoFormProps {
 
 export const PromoForm = ({ open, onClose, promo }: PromoFormProps) => {
   const { createPromo, updatePromo, generatePromoCode } = usePromos();
+  const { products } = useProducts();
+  const { products: virtualCollaborations } = useVirtualCollaborations();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>(promo?.applicable_product_ids || []);
 
   const [formData, setFormData] = useState<CreatePromoData>({
     code: promo?.code || '',
@@ -43,17 +50,29 @@ export const PromoForm = ({ open, onClose, promo }: PromoFormProps) => {
     free_shipping: promo?.free_shipping ?? false,
     flash_sale: promo?.flash_sale ?? false,
     scope: promo?.scope || 'store',
+    applicable_product_ids: promo?.applicable_product_ids || null,
   });
+
+  useEffect(() => {
+    if (promo?.applicable_product_ids) {
+      setSelectedProductIds(promo.applicable_product_ids);
+    }
+  }, [promo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
+      const submitData = {
+        ...formData,
+        applicable_product_ids: formData.scope === 'product' ? selectedProductIds : null,
+      };
+      
       if (promo) {
-        await updatePromo(promo.id, formData);
+        await updatePromo(promo.id, submitData);
       } else {
-        await createPromo(formData);
+        await createPromo(submitData);
       }
       onClose();
     } catch (error) {
@@ -65,6 +84,23 @@ export const PromoForm = ({ open, onClose, promo }: PromoFormProps) => {
 
   const handleGenerateCode = () => {
     setFormData(prev => ({ ...prev, code: generatePromoCode() }));
+  };
+
+  const toggleProductSelection = (productId: string) => {
+    setSelectedProductIds(prev => 
+      prev.includes(productId) 
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
+  const selectAllProducts = () => {
+    const allIds = [...products.map(p => p.id), ...virtualCollaborations.map(v => v.id)];
+    setSelectedProductIds(allIds);
+  };
+
+  const clearAllProducts = () => {
+    setSelectedProductIds([]);
   };
 
   return (
@@ -241,11 +277,153 @@ export const PromoForm = ({ open, onClose, promo }: PromoFormProps) => {
                         <SelectItem value="all">All Products</SelectItem>
                         <SelectItem value="digital">Digital Products Only</SelectItem>
                         <SelectItem value="physical">Physical Products Only</SelectItem>
+                        <SelectItem value="virtual">Virtual Collaborations Only</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Specific Products Selection */}
+              {formData.scope === 'product' && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <ShoppingBag className="w-4 h-4" />
+                        Select Specific Products & Collaborations
+                      </span>
+                      <div className="flex gap-2">
+                        <Button type="button" variant="outline" size="sm" onClick={selectAllProducts}>
+                          Select All
+                        </Button>
+                        <Button type="button" variant="outline" size="sm" onClick={clearAllProducts}>
+                          Clear All
+                        </Button>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Products Section */}
+                    {products.length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2 text-sm font-medium">
+                          <ShoppingBag className="w-4 h-4 text-primary" />
+                          Products ({products.length})
+                        </Label>
+                        <ScrollArea className="h-[150px] border rounded-md p-2">
+                          <div className="space-y-2">
+                            {products.map((product) => (
+                              <div
+                                key={product.id}
+                                className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
+                                  selectedProductIds.includes(product.id)
+                                    ? 'bg-primary/10 border border-primary/30'
+                                    : 'hover:bg-muted'
+                                }`}
+                                onClick={() => toggleProductSelection(product.id)}
+                              >
+                                <Checkbox
+                                  checked={selectedProductIds.includes(product.id)}
+                                  onCheckedChange={() => toggleProductSelection(product.id)}
+                                />
+                                {product.thumbnail_url && (
+                                  <img
+                                    src={product.thumbnail_url}
+                                    alt={product.title}
+                                    className="w-10 h-10 rounded object-cover"
+                                  />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium truncate">{product.title}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {product.product_type} • ₹{product.price || 0}
+                                  </p>
+                                </div>
+                                <Badge variant="outline" className="text-xs">
+                                  {product.status}
+                                </Badge>
+                              </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </div>
+                    )}
+
+                    {/* Virtual Collaborations Section */}
+                    {virtualCollaborations.length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2 text-sm font-medium">
+                          <Video className="w-4 h-4 text-blue-500" />
+                          Virtual Collaborations ({virtualCollaborations.length})
+                        </Label>
+                        <ScrollArea className="h-[150px] border rounded-md p-2">
+                          <div className="space-y-2">
+                            {virtualCollaborations.map((collab) => (
+                              <div
+                                key={collab.id}
+                                className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
+                                  selectedProductIds.includes(collab.id)
+                                    ? 'bg-blue-500/10 border border-blue-500/30'
+                                    : 'hover:bg-muted'
+                                }`}
+                                onClick={() => toggleProductSelection(collab.id)}
+                              >
+                                <Checkbox
+                                  checked={selectedProductIds.includes(collab.id)}
+                                  onCheckedChange={() => toggleProductSelection(collab.id)}
+                                />
+                                {collab.thumbnail_url && (
+                                  <img
+                                    src={collab.thumbnail_url}
+                                    alt={collab.title}
+                                    className="w-10 h-10 rounded object-cover"
+                                  />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium truncate">{collab.title}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {collab.product_type} • ₹{collab.price || 0}
+                                  </p>
+                                </div>
+                                <Badge variant="secondary" className="text-xs bg-blue-500/10 text-blue-600">
+                                  Virtual
+                                </Badge>
+                              </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </div>
+                    )}
+
+                    {/* Selected Summary */}
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <p className="text-sm text-muted-foreground">
+                        {selectedProductIds.length} item(s) selected
+                      </p>
+                      {selectedProductIds.length > 0 && (
+                        <div className="flex gap-1 flex-wrap max-w-[300px]">
+                          {selectedProductIds.slice(0, 3).map((id) => {
+                            const product = products.find(p => p.id === id);
+                            const collab = virtualCollaborations.find(v => v.id === id);
+                            const item = product || collab;
+                            return item ? (
+                              <Badge key={id} variant="secondary" className="text-xs truncate max-w-[100px]">
+                                {item.title}
+                              </Badge>
+                            ) : null;
+                          })}
+                          {selectedProductIds.length > 3 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{selectedProductIds.length - 3} more
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             {/* Limits Tab */}
