@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, PerspectiveCamera } from '@react-three/drei';
 import { Card } from '@/components/ui/card';
@@ -6,10 +6,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Save, Download, RotateCcw, User, Eye, Palette, 
-  Shirt, Smile, Camera, Type, Users, Sliders,
-  Upload, Sparkles, Home, Zap, Activity, Brain
+import {
+  Save,
+  Download,
+  RotateCcw,
+  User,
+  Eye,
+  Palette,
+  Shirt,
+  Smile,
+  Camera,
+  Type,
+  Users,
+  Sliders,
+  Upload,
+  Sparkles,
+  Home,
+  Zap,
+  Activity,
+  Brain,
+  Lock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -23,6 +39,7 @@ import PoseExpressionPanel from '@/components/avatar-studio/PoseExpressionPanel'
 import ReadyMadeAvatarGallery from '@/components/ReadyMadeAvatarGallery';
 import ImageToAvatarConverter from '@/components/ImageToAvatarConverter';
 import { useAvatarConfigurations } from '@/hooks/useAvatarConfigurations';
+import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { supabase } from '@/integrations/supabase/client';
 
 const AvatarPage: React.FC = () => {
