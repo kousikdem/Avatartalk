@@ -25,7 +25,8 @@ export type PlanFeatureKey =
   | 'events_enabled'
   | 'brand_collaborations'
   | 'paid_events_enabled'
-  | 'visitors_list';
+  | 'visitors_list'
+  | 'avatar_upload_enabled';
 
 // Define which plan unlocks each feature
 const featurePlanRequirements: Record<PlanFeatureKey, string> = {
@@ -35,6 +36,7 @@ const featurePlanRequirements: Record<PlanFeatureKey, string> = {
   subscription_button_enabled: 'creator',
   zoom_integration: 'creator',
   google_calendar_readonly: 'creator',
+  avatar_upload_enabled: 'creator',
   voice_clone_enabled: 'pro',
   virtual_meetings_enabled: 'pro',
   advanced_analytics: 'pro',
