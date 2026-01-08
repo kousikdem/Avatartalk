@@ -291,43 +291,67 @@ const VirtualCollaborationPage = () => {
           </div>
         </div>
 
-        {/* Promo Settings Card */}
-        <Card className="border-2 bg-gradient-to-r from-orange-50/50 via-yellow-50/50 to-amber-50/50 dark:from-orange-950/20 dark:via-yellow-950/20 dark:to-amber-950/20">
+        {/* Promo Settings Card - Locked for Free plan */}
+        <Card className={`border-2 bg-gradient-to-r from-orange-50/50 via-yellow-50/50 to-amber-50/50 dark:from-orange-950/20 dark:via-yellow-950/20 dark:to-amber-950/20 ${!hasFeature('promo_codes_enabled') ? 'opacity-70' : ''}`}>
           <CardContent className="p-4">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-br from-orange-500 to-amber-500 rounded-lg">
-                  <Percent className="w-5 h-5 text-white" />
+                <div className={`p-2 rounded-lg ${hasFeature('promo_codes_enabled') ? 'bg-gradient-to-br from-orange-500 to-amber-500' : 'bg-muted'}`}>
+                  {hasFeature('promo_codes_enabled') ? (
+                    <Percent className="w-5 h-5 text-white" />
+                  ) : (
+                    <Lock className="w-5 h-5 text-muted-foreground" />
+                  )}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-foreground">Promo Codes</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-foreground">Promo Codes</h3>
+                    {!hasFeature('promo_codes_enabled') && (
+                      <Badge variant="secondary" className="text-xs">Creator+</Badge>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground">
-                    Create discount codes for your virtual collaborations
+                    {hasFeature('promo_codes_enabled') 
+                      ? 'Create discount codes for your virtual collaborations' 
+                      : 'Upgrade to Creator plan to create promo codes'}
                   </p>
                 </div>
               </div>
               
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/dashboard/promos')}
-                  className="gap-2"
-                >
-                  <Settings className="w-4 h-4" />
-                  Manage All Promos
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setEditingPromo(null);
-                    setShowPromoModal(true);
-                  }}
-                  className="gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
-                >
-                  <Plus className="w-4 h-4" />
-                  Create Promo
-                </Button>
+                {hasFeature('promo_codes_enabled') ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate('/dashboard/promos')}
+                      className="gap-2"
+                    >
+                      <Settings className="w-4 h-4" />
+                      Manage All Promos
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setEditingPromo(null);
+                        setShowPromoModal(true);
+                      }}
+                      className="gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Create Promo
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={() => navigate('/pricing')}
+                    className="gap-2"
+                  >
+                    <Zap className="w-4 h-4" />
+                    Upgrade to Creator
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>

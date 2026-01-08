@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,19 +9,57 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { 
   Plus, Search, Edit, Trash2, Power, Copy, BarChart3,
   TrendingUp, Users, ShoppingCart, Percent, AlertCircle,
-  Sparkles, Calendar, Target
+  Sparkles, Calendar, Target, Lock, Zap
 } from 'lucide-react';
 import { usePromos, PromoCode } from '@/hooks/usePromos';
 import { PromoForm } from './PromoForm';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
+import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 
 export const PromoSettingsPage = () => {
+  const navigate = useNavigate();
   const { promos, isLoading, deletePromo, togglePromoStatus } = usePromos();
   const { toast } = useToast();
+  const { hasFeature } = usePlanFeatures();
   const [searchQuery, setSearchQuery] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingPromo, setEditingPromo] = useState<PromoCode | null>(null);
+
+  // Check if user has promo code feature
+  const canUsePromos = hasFeature('promo_codes_enabled');
+
+  // Show upgrade prompt if feature is locked
+  if (!canUsePromos) {
+    return (
+      <div className="min-h-screen bg-background p-4 sm:p-6">
+        <div className="max-w-7xl mx-auto">
+          <Card className="border-2 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/20">
+            <CardContent className="p-12 text-center space-y-6">
+              <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                <Lock className="w-10 h-10 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold mb-2">Promo Codes - Creator Plan Feature</h2>
+                <p className="text-muted-foreground max-w-md mx-auto">
+                  Create discount codes and promotions for your products and virtual collaborations. 
+                  Upgrade to Creator plan or higher to unlock this feature.
+                </p>
+              </div>
+              <Button 
+                size="lg" 
+                onClick={() => navigate('/pricing')}
+                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+              >
+                <Zap className="w-5 h-5 mr-2" />
+                Upgrade to Creator
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   const filteredPromos = promos.filter(promo =>
     promo.code.toLowerCase().includes(searchQuery.toLowerCase())
