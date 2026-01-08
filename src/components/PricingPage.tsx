@@ -434,13 +434,13 @@ const PricingPage = () => {
           <h2 className="text-3xl font-bold text-center mb-8">Plan Features at a Glance</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { icon: ShoppingBag, label: 'Sell Products', plan: 'Creator+' },
+              { icon: ShoppingBag, label: 'Products', plan: 'Free: 2, Creator: 20, Pro: 50, Business: ∞' },
+              { icon: Video, label: 'Collaborations', plan: 'Free: 2, Creator: 20, Pro: 50, Business: ∞' },
+              { icon: Tag, label: 'Promo Codes', plan: 'Creator+' },
               { icon: CreditCard, label: 'Paid Posts', plan: 'Creator+' },
               { icon: Mic2, label: 'Voice Clone', plan: 'Pro+' },
-              { icon: Video, label: 'Virtual Meetings', plan: 'Pro+' },
               { icon: BarChart3, label: 'Advanced Analytics', plan: 'Pro+' },
               { icon: Eye, label: 'Visitors List', plan: 'Business' },
-              { icon: Code, label: 'API Access', plan: 'Business' },
               { icon: Users2, label: 'Team System', plan: 'Business' },
             ].map(({ icon: Icon, label, plan }) => (
               <Card key={label} className="bg-card/60 p-4 text-center">

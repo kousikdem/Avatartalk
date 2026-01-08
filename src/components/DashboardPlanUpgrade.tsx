@@ -155,22 +155,37 @@ const DashboardPlanUpgrade = () => {
 
         {/* Plan Features Preview */}
         {currentPlan && (
-          <div className="flex flex-wrap gap-1">
-            {currentPlan.payments_enabled && (
-              <Badge variant="outline" className="text-xs bg-white/50">Payments</Badge>
-            )}
-            {currentPlan.voice_clone_enabled && (
-              <Badge variant="outline" className="text-xs bg-white/50">Voice Clone</Badge>
-            )}
-            {currentPlan.virtual_meetings_enabled && (
-              <Badge variant="outline" className="text-xs bg-white/50">Meetings</Badge>
-            )}
-            {currentPlan.advanced_analytics && (
-              <Badge variant="outline" className="text-xs bg-white/50">Analytics</Badge>
-            )}
-            {currentPlan.api_access && (
-              <Badge variant="outline" className="text-xs bg-white/50">API</Badge>
-            )}
+          <div className="space-y-2">
+            {/* Limits Display */}
+            <div className="flex flex-wrap gap-1 text-xs">
+              <Badge variant="outline" className="bg-white/50">
+                {effectivePlanKey === 'free' ? '2' : effectivePlanKey === 'creator' ? '20' : effectivePlanKey === 'pro' ? '50' : '∞'} Products
+              </Badge>
+              <Badge variant="outline" className="bg-white/50">
+                {effectivePlanKey === 'free' ? '2' : effectivePlanKey === 'creator' ? '20' : effectivePlanKey === 'pro' ? '50' : '∞'} Collaborations
+              </Badge>
+            </div>
+            {/* Feature Badges */}
+            <div className="flex flex-wrap gap-1">
+              {currentPlan.promo_codes_enabled && (
+                <Badge variant="outline" className="text-xs bg-white/50">Promo Codes</Badge>
+              )}
+              {currentPlan.payments_enabled && (
+                <Badge variant="outline" className="text-xs bg-white/50">Payments</Badge>
+              )}
+              {currentPlan.voice_clone_enabled && (
+                <Badge variant="outline" className="text-xs bg-white/50">Voice Clone</Badge>
+              )}
+              {currentPlan.virtual_meetings_enabled && (
+                <Badge variant="outline" className="text-xs bg-white/50">Meetings</Badge>
+              )}
+              {currentPlan.advanced_analytics && (
+                <Badge variant="outline" className="text-xs bg-white/50">Analytics</Badge>
+              )}
+              {currentPlan.api_access && (
+                <Badge variant="outline" className="text-xs bg-white/50">API</Badge>
+              )}
+            </div>
           </div>
         )}
 
