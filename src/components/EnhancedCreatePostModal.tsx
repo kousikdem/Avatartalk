@@ -27,7 +27,9 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useSubscriptionPlans } from '@/hooks/useSubscriptionPlans';
+import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 interface EnhancedCreatePostModalProps {
   isOpen: boolean;
@@ -76,6 +78,11 @@ const EnhancedCreatePostModal: React.FC<EnhancedCreatePostModalProps> = ({
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { hasFeature, effectivePlanKey } = usePlanFeatures();
+  
+  // Check if user can create paid/subscriber posts (Creator plan and above)
+  const canCreatePaidPosts = hasFeature('payments_enabled');
   
   const { plans, loading: plansLoading } = useSubscriptionPlans(currentUser?.id);
 
@@ -549,20 +556,38 @@ const EnhancedCreatePostModal: React.FC<EnhancedCreatePostModalProps> = ({
                 <Label className="text-sm font-semibold text-foreground">Access Type</Label>
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { type: 'free', icon: Users, label: 'Free', desc: 'Available to everyone' },
-                    { type: 'paid', icon: Lock, label: 'Paid', desc: 'Unlock with payment' },
-                    { type: 'subscriber_only', icon: Crown, label: 'Subscribers', desc: 'Exclusive content' },
-                  ].map(({ type, icon: Icon, label, desc }) => (
+                    { type: 'free', icon: Users, label: 'Free', desc: 'Available to everyone', locked: false },
+                    { type: 'paid', icon: Lock, label: 'Paid', desc: 'Unlock with payment', locked: !canCreatePaidPosts },
+                    { type: 'subscriber_only', icon: Crown, label: 'Subscribers', desc: 'Exclusive content', locked: !canCreatePaidPosts },
+                  ].map(({ type, icon: Icon, label, desc, locked }) => (
                     <button
                       key={type}
-                      onClick={() => setAccessType(type as AccessType)}
-                      className={`p-4 rounded-xl border-2 text-left transition-all ${
-                        accessType === type 
-                          ? 'border-primary bg-primary/10' 
-                          : 'border-border hover:border-primary/50 bg-muted/30'
+                      onClick={() => {
+                        if (locked) {
+                          toast({
+                            title: "Creator Plan Required",
+                            description: "Upgrade to Creator plan to create paid and subscriber-only posts.",
+                            variant: "destructive",
+                          });
+                          navigate('/pricing');
+                          return;
+                        }
+                        setAccessType(type as AccessType);
+                      }}
+                      className={`p-4 rounded-xl border-2 text-left transition-all relative ${
+                        locked
+                          ? 'border-border bg-muted/50 opacity-60 cursor-not-allowed'
+                          : accessType === type 
+                            ? 'border-primary bg-primary/10' 
+                            : 'border-border hover:border-primary/50 bg-muted/30'
                       }`}
                     >
-                      <Icon className={`w-5 h-5 mb-2 ${accessType === type ? 'text-primary' : 'text-muted-foreground'}`} />
+                      {locked && (
+                        <Badge variant="secondary" className="absolute top-2 right-2 text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                          Creator+
+                        </Badge>
+                      )}
+                      <Icon className={`w-5 h-5 mb-2 ${locked ? 'text-muted-foreground' : accessType === type ? 'text-primary' : 'text-muted-foreground'}`} />
                       <p className="font-semibold text-sm text-foreground">{label}</p>
                       <p className="text-xs text-muted-foreground">{desc}</p>
                     </button>

@@ -139,13 +139,13 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
             <div className="mb-4">
               <Button
                 onClick={onCreatePost}
-                className={`w-full transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-[1.02] bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 hover:from-blue-600 hover:via-purple-600 hover:to-indigo-700 text-white border-0 ${
-                  isCollapsed ? 'px-2 py-2' : 'px-4 py-2.5'
+                className={`w-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 hover:from-blue-600 hover:via-purple-600 hover:to-indigo-700 text-white border-0 ${
+                  isCollapsed ? 'px-3 py-4' : 'px-4 py-3'
                 }`}
                 size={isCollapsed ? "icon" : "default"}
               >
-                <Plus className="w-4 h-4 flex-shrink-0" />
-                {!isCollapsed && <span className="ml-2 text-sm font-medium">Create Post</span>}
+                <Plus className={`flex-shrink-0 ${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`} strokeWidth={2.5} />
+                {!isCollapsed && <span className="ml-2 text-sm font-semibold">Create Post</span>}
               </Button>
             </div>
 
