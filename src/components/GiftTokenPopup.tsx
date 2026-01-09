@@ -127,19 +127,31 @@ const GiftTokenPopup: React.FC<GiftTokenPopupProps> = ({
         }
 
         // Gift from own tokens - direct transfer
-        const { data, error } = await supabase.rpc('transfer_tokens' as any, {
+        const { data, error } = await supabase.rpc('transfer_tokens', {
           p_sender_id: user.id,
           p_receiver_id: receiverId,
           p_amount: calculatedTokens,
           p_message: message || null
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Transfer tokens error:', error);
+          throw new Error(error.message || 'Failed to transfer tokens');
+        }
+
+        // Check if the RPC returned an error in the response
+        const result = data as { success: boolean; error?: string; gift_id?: string } | null;
+        if (result && !result.success) {
+          throw new Error(result.error || 'Transfer failed');
+        }
 
         toast({
           title: 'Gift Sent! 🎁',
           description: `You gifted ${calculatedTokens.toLocaleString()} tokens to ${receiverName}`,
         });
+        
+        // Update sender balance locally
+        setSenderBalance(prev => prev !== null ? prev - calculatedTokens : null);
         onOpenChange(false);
       } else {
         // Gift via Razorpay payment - requires login (token_gifts.sender_id is NOT NULL)
