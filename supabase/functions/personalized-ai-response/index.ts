@@ -476,9 +476,19 @@ ${selectedFollowUp.choices && selectedFollowUp.choices.length > 0 ? `Offer these
       
       qaPairs.forEach((qa: any) => {
         const questionWords = qa.question.toLowerCase().split(' ').filter((w: string) => w.length > 3);
-        const matchScore = questionWords.filter((word: string) => 
+        const tagsArray = qa.tags || [];
+        
+        // Match by question words
+        let matchScore = questionWords.filter((word: string) => 
           userMessageLower.includes(word) || responseMessageLower.includes(word)
         ).length;
+        
+        // Boost score if any tag matches user message
+        tagsArray.forEach((tag: string) => {
+          if (userMessageLower.includes(tag.toLowerCase())) {
+            matchScore += 3; // Strong boost for tag match
+          }
+        });
         
         // Add button if there's a link and good match
         if (matchScore >= 2 && qa.custom_link_url) {

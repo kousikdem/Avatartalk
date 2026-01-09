@@ -11,7 +11,7 @@ import {
   Package, CreditCard, Tag, BarChart3, Video, Calendar, Globe, MessageSquare,
   Mic2, AudioLines, CalendarDays, Link2, TrendingUp, DollarSign, UserCog,
   Shield, Infinity, Code, Users2, Building2, Handshake, Ticket, Receipt,
-  ShoppingBag, Loader2, Eye, Lock, ChevronRight
+  ShoppingBag, Loader2, Eye, Lock, ChevronRight, Upload, BookOpen, HelpCircle
 } from 'lucide-react';
 import { usePlatformPricingPlans, useUserPlatformSubscription, PlatformFeature } from '@/hooks/usePlatformPricingPlans';
 import { supabase } from '@/integrations/supabase/client';
@@ -611,12 +611,16 @@ const PricingPage = () => {
             {[
               { icon: ShoppingBag, label: 'Products', plan: 'Free: 2, Creator: 20, Pro: 50, Business: ∞' },
               { icon: Video, label: 'Collaborations', plan: 'Free: 2, Creator: 20, Pro: 50, Business: ∞' },
+              { icon: FileText, label: 'Q&A Pairs', plan: 'Free: 10, Creator: 100, Pro: 200, Business: ∞' },
+              { icon: Upload, label: 'Documents', plan: 'Free: 2, Creator: 10, Pro: 50, Business: ∞' },
+              { icon: Globe, label: 'Web Scraper', plan: 'Pro: 10, Business: 40' },
+              { icon: BookOpen, label: 'AI Topics', plan: 'Creator+' },
+              { icon: HelpCircle, label: 'Follow-ups', plan: 'Pro+' },
+              { icon: Mic2, label: 'Voice Training', plan: 'Pro+' },
               { icon: Tag, label: 'Promo Codes', plan: 'Creator+' },
               { icon: CreditCard, label: 'Paid Posts', plan: 'Creator+' },
-              { icon: Mic2, label: 'Voice Clone', plan: 'Pro+' },
               { icon: BarChart3, label: 'Advanced Analytics', plan: 'Pro+' },
               { icon: Eye, label: 'Visitors List', plan: 'Business' },
-              { icon: Users2, label: 'Team System', plan: 'Business' },
             ].map(({ icon: Icon, label, plan }) => (
               <Card key={label} className="bg-card/60 p-4 text-center">
                 <Icon className="w-8 h-8 mx-auto mb-2 text-primary" />

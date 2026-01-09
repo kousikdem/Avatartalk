@@ -26,7 +26,11 @@ export type PlanFeatureKey =
   | 'brand_collaborations'
   | 'paid_events_enabled'
   | 'visitors_list'
-  | 'avatar_upload_enabled';
+  | 'avatar_upload_enabled'
+  | 'ai_topics_enabled'
+  | 'ai_followups_enabled'
+  | 'ai_voice_training_enabled'
+  | 'ai_webscraper_enabled';
 
 // Define which plan unlocks each feature
 const featurePlanRequirements: Record<PlanFeatureKey, string> = {
@@ -37,6 +41,7 @@ const featurePlanRequirements: Record<PlanFeatureKey, string> = {
   zoom_integration: 'creator',
   google_calendar_readonly: 'creator',
   avatar_upload_enabled: 'creator',
+  ai_topics_enabled: 'creator',
   voice_clone_enabled: 'pro',
   virtual_meetings_enabled: 'pro',
   advanced_analytics: 'pro',
@@ -44,6 +49,9 @@ const featurePlanRequirements: Record<PlanFeatureKey, string> = {
   google_calendar_full: 'pro',
   events_enabled: 'pro',
   multilingual_ai: 'pro',
+  ai_followups_enabled: 'pro',
+  ai_voice_training_enabled: 'pro',
+  ai_webscraper_enabled: 'pro',
   physical_products_enabled: 'business',
   multi_currency_enabled: 'business',
   api_access: 'business',
@@ -64,12 +72,19 @@ const planHierarchy: Record<string, number> = {
   business: 3,
 };
 
-// Plan limits for products and collaborations
-export const planLimits: Record<string, { products: number; collaborations: number; tokens: number }> = {
-  free: { products: 2, collaborations: 2, tokens: 10000 },
-  creator: { products: 20, collaborations: 20, tokens: 1000000 },
-  pro: { products: 50, collaborations: 50, tokens: 2000000 },
-  business: { products: -1, collaborations: -1, tokens: 5000000 }, // -1 = unlimited
+// Plan limits for products, collaborations, and AI training features
+export const planLimits: Record<string, { 
+  products: number; 
+  collaborations: number; 
+  tokens: number;
+  qa_pairs: number;
+  documents: number;
+  web_scraper: number;
+}> = {
+  free: { products: 2, collaborations: 2, tokens: 10000, qa_pairs: 10, documents: 2, web_scraper: 0 },
+  creator: { products: 20, collaborations: 20, tokens: 1000000, qa_pairs: 100, documents: 10, web_scraper: 0 },
+  pro: { products: 50, collaborations: 50, tokens: 2000000, qa_pairs: 200, documents: 50, web_scraper: 10 },
+  business: { products: -1, collaborations: -1, tokens: 5000000, qa_pairs: -1, documents: -1, web_scraper: 40 }, // -1 = unlimited
 };
 
 export const usePlanFeatures = () => {
@@ -107,6 +122,21 @@ export const usePlanFeatures = () => {
     return currentCount < limits.collaborations;
   };
 
+  const canAddQAPair = (currentCount: number): boolean => {
+    if (limits.qa_pairs === -1) return true; // Unlimited
+    return currentCount < limits.qa_pairs;
+  };
+
+  const canAddDocument = (currentCount: number): boolean => {
+    if (limits.documents === -1) return true; // Unlimited
+    return currentCount < limits.documents;
+  };
+
+  const canAddWebScraper = (currentCount: number): boolean => {
+    if (limits.web_scraper === -1) return true; // Unlimited
+    return currentCount < limits.web_scraper;
+  };
+
   const getRemainingProducts = (currentCount: number): number | 'unlimited' => {
     if (limits.products === -1) return 'unlimited';
     return Math.max(0, limits.products - currentCount);
@@ -115,6 +145,21 @@ export const usePlanFeatures = () => {
   const getRemainingCollaborations = (currentCount: number): number | 'unlimited' => {
     if (limits.collaborations === -1) return 'unlimited';
     return Math.max(0, limits.collaborations - currentCount);
+  };
+
+  const getRemainingQAPairs = (currentCount: number): number | 'unlimited' => {
+    if (limits.qa_pairs === -1) return 'unlimited';
+    return Math.max(0, limits.qa_pairs - currentCount);
+  };
+
+  const getRemainingDocuments = (currentCount: number): number | 'unlimited' => {
+    if (limits.documents === -1) return 'unlimited';
+    return Math.max(0, limits.documents - currentCount);
+  };
+
+  const getRemainingWebScrapers = (currentCount: number): number | 'unlimited' => {
+    if (limits.web_scraper === -1) return 'unlimited';
+    return Math.max(0, limits.web_scraper - currentCount);
   };
 
   const canSellProducts = useMemo(() => hasFeature('payments_enabled'), [planLevel, loading]);
@@ -128,6 +173,10 @@ export const usePlanFeatures = () => {
   const canViewVisitorsList = useMemo(() => hasFeature('visitors_list'), [planLevel, loading]);
   const canCreateEvents = useMemo(() => hasFeature('events_enabled'), [planLevel, loading]);
   const canCreatePaidEvents = useMemo(() => hasFeature('paid_events_enabled'), [planLevel, loading]);
+  const canUseAITopics = useMemo(() => hasFeature('ai_topics_enabled'), [planLevel, loading]);
+  const canUseAIFollowups = useMemo(() => hasFeature('ai_followups_enabled'), [planLevel, loading]);
+  const canUseAIVoiceTraining = useMemo(() => hasFeature('ai_voice_training_enabled'), [planLevel, loading]);
+  const canUseWebScraper = useMemo(() => hasFeature('ai_webscraper_enabled'), [planLevel, loading]);
 
   return {
     loading,
@@ -142,8 +191,14 @@ export const usePlanFeatures = () => {
     limits,
     canAddProduct,
     canAddCollaboration,
+    canAddQAPair,
+    canAddDocument,
+    canAddWebScraper,
     getRemainingProducts,
     getRemainingCollaborations,
+    getRemainingQAPairs,
+    getRemainingDocuments,
+    getRemainingWebScrapers,
     // Convenient boolean checks
     canSellProducts,
     canSellDigitalProducts,
@@ -156,6 +211,10 @@ export const usePlanFeatures = () => {
     canViewVisitorsList,
     canCreateEvents,
     canCreatePaidEvents,
+    canUseAITopics,
+    canUseAIFollowups,
+    canUseAIVoiceTraining,
+    canUseWebScraper,
   };
 };
 

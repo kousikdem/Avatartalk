@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   Upload, Brain, Mic, FileText, Globe, Bot, Loader2, Plus, Trash2, 
   CheckCircle, AlertCircle, Link as LinkIcon, Play, Download, MessageCircle,
-  BookOpen, HelpCircle, Sparkles, ExternalLink, Settings, Database
+  BookOpen, HelpCircle, Sparkles, ExternalLink, Settings, Database, Lock, Crown
 } from "lucide-react";
 
 import { usePersonalizedAI } from "@/hooks/usePersonalizedAI";
@@ -25,10 +26,29 @@ import { TopicRulesPanel } from "@/components/ai-training/TopicRulesPanel";
 import { FollowUpQuestionsPanel } from "@/components/ai-training/FollowUpQuestionsPanel";
 import { AIResponsePerspective } from "@/components/ai-training/AIResponsePerspective";
 import TokenDisplay from "@/components/TokenDisplay";
+import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 
 const AITrainingDashboard = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [mainSection, setMainSection] = useState<'training' | 'settings'>('training');
+  
+  // Plan features
+  const {
+    effectivePlanKey,
+    limits,
+    canAddQAPair,
+    canAddDocument,
+    canAddWebScraper,
+    getRemainingQAPairs,
+    getRemainingDocuments,
+    getRemainingWebScrapers,
+    canUseAITopics,
+    canUseAIFollowups,
+    canUseAIVoiceTraining,
+    canUseWebScraper,
+    getRequiredPlanForFeature
+  } = usePlanFeatures();
   
   const {
     trainings,
@@ -383,12 +403,40 @@ const AITrainingDashboard = () => {
             <TabsContent value="qa" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Question & Answer Pairs</CardTitle>
-                  <CardDescription>
-                    Add Q&A pairs with optional custom link buttons for automated responses
-                  </CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Question & Answer Pairs</CardTitle>
+                      <CardDescription>
+                        Add Q&A pairs with keywords and custom link buttons for automated responses
+                      </CardDescription>
+                    </div>
+                    <Badge variant="outline" className="text-sm">
+                      {qaPairs?.length || 0} / {limits.qa_pairs === -1 ? '∞' : limits.qa_pairs}
+                    </Badge>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {!canAddQAPair(qaPairs?.length || 0) && (
+                    <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                      <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                        <Lock className="w-4 h-4" />
+                        <span className="font-medium">Q&A limit reached</span>
+                      </div>
+                      <p className="text-sm text-amber-600 dark:text-amber-500 mt-1">
+                        Upgrade your plan to add more Q&A pairs.
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-2"
+                        onClick={() => navigate('/pricing')}
+                      >
+                        <Crown className="w-4 h-4 mr-2" />
+                        Upgrade Plan
+                      </Button>
+                    </div>
+                  )}
+                  
                   <div className="grid gap-4">
                     <div>
                       <Label htmlFor="question">Question</Label>
@@ -397,6 +445,7 @@ const AITrainingDashboard = () => {
                         value={newQA.question}
                         onChange={(e) => setNewQA({...newQA, question: e.target.value})}
                         placeholder="What is your question?"
+                        disabled={!canAddQAPair(qaPairs?.length || 0)}
                       />
                     </div>
                     <div>
@@ -407,6 +456,7 @@ const AITrainingDashboard = () => {
                         onChange={(e) => setNewQA({...newQA, answer: e.target.value})}
                         placeholder="Provide the answer..."
                         rows={4}
+                        disabled={!canAddQAPair(qaPairs?.length || 0)}
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -417,30 +467,23 @@ const AITrainingDashboard = () => {
                           value={newQA.category}
                           onChange={(e) => setNewQA({...newQA, category: e.target.value})}
                           placeholder="e.g., General, Support"
+                          disabled={!canAddQAPair(qaPairs?.length || 0)}
                         />
                       </div>
                       <div>
-                        <Label htmlFor="link-button">Link Button Name (Optional)</Label>
+                        <Label htmlFor="tags">Keywords/Tags</Label>
                         <Input
-                          id="link-button"
-                          value={newQA.custom_link_button_name}
-                          onChange={(e) => setNewQA({...newQA, custom_link_button_name: e.target.value})}
-                          placeholder="e.g., Learn More, Sign Up"
+                          id="tags"
+                          value={newQA.tags}
+                          onChange={(e) => setNewQA({...newQA, tags: e.target.value})}
+                          placeholder="pricing, support, features (comma separated)"
+                          disabled={!canAddQAPair(qaPairs?.length || 0)}
                         />
                       </div>
                     </div>
-                    <div>
-                      <Label htmlFor="tags">Keywords/Tags (Optional)</Label>
-                      <Input
-                        id="tags"
-                        value={newQA.tags}
-                        onChange={(e) => setNewQA({...newQA, tags: e.target.value})}
-                        placeholder="e.g., pricing, support, features (comma separated)"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        When visitors ask questions containing these keywords, this Q&A will be used to respond.
-                      </p>
-                    </div>
+                    <p className="text-xs text-muted-foreground -mt-2">
+                      Keywords help match visitor questions to this Q&A for automatic responses.
+                    </p>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="link-url">Link URL (Optional)</Label>
@@ -449,19 +492,24 @@ const AITrainingDashboard = () => {
                           value={newQA.custom_link_url}
                           onChange={(e) => setNewQA({...newQA, custom_link_url: e.target.value})}
                           placeholder="https://example.com"
+                          disabled={!canAddQAPair(qaPairs?.length || 0)}
                         />
                       </div>
                       <div>
-                        <Label htmlFor="link-button">Link Button Name</Label>
+                        <Label htmlFor="link-button">Button Text</Label>
                         <Input
-                          id="link-button-2"
+                          id="link-button"
                           value={newQA.custom_link_button_name}
                           onChange={(e) => setNewQA({...newQA, custom_link_button_name: e.target.value})}
                           placeholder="e.g., Learn More"
+                          disabled={!canAddQAPair(qaPairs?.length || 0)}
                         />
                       </div>
                     </div>
-                    <Button onClick={handleAddQA} disabled={isQALoading}>
+                    <Button 
+                      onClick={handleAddQA} 
+                      disabled={isQALoading || !canAddQAPair(qaPairs?.length || 0)}
+                    >
                       <Plus className="w-4 h-4 mr-2" />
                       Add Q&A Pair
                     </Button>
@@ -487,12 +535,12 @@ const AITrainingDashboard = () => {
                             </div>
                             {qa.custom_link_url && (
                               <Button
-                                variant="outline"
+                                variant="default"
                                 size="sm"
                                 className="mt-2 gap-2"
                                 onClick={() => window.open(qa.custom_link_url!, '_blank', 'noopener,noreferrer')}
                               >
-                                {qa.custom_link_button_name || 'View Link'}
+                                {qa.custom_link_button_name || 'Learn More'}
                                 <ExternalLink className="w-3 h-3" />
                               </Button>
                             )}
@@ -516,12 +564,40 @@ const AITrainingDashboard = () => {
             <TabsContent value="documents">
               <Card>
                 <CardHeader>
-                  <CardTitle>Training Documents</CardTitle>
-                  <CardDescription>
-                    Upload documents (PDF, TXT, DOC, etc.) to train your AI
-                  </CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Training Documents</CardTitle>
+                      <CardDescription>
+                        Upload documents (PDF, TXT, DOC, etc.) to train your AI
+                      </CardDescription>
+                    </div>
+                    <Badge variant="outline" className="text-sm">
+                      {documents?.length || 0} / {limits.documents === -1 ? '∞' : limits.documents}
+                    </Badge>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {!canAddDocument(documents?.length || 0) && (
+                    <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                      <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                        <Lock className="w-4 h-4" />
+                        <span className="font-medium">Document limit reached</span>
+                      </div>
+                      <p className="text-sm text-amber-600 dark:text-amber-500 mt-1">
+                        Upgrade your plan to upload more documents.
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-2"
+                        onClick={() => navigate('/pricing')}
+                      >
+                        <Crown className="w-4 h-4 mr-2" />
+                        Upgrade Plan
+                      </Button>
+                    </div>
+                  )}
+                  
                   <div className="flex gap-4">
                     <Input
                       type="file"
@@ -529,6 +605,7 @@ const AITrainingDashboard = () => {
                       accept=".pdf,.txt,.doc,.docx,.md,.csv"
                       onChange={(e) => handleDocumentUpload(e.target.files)}
                       className="flex-1"
+                      disabled={!canAddDocument(documents?.length || 0)}
                     />
                   </div>
 
@@ -565,52 +642,110 @@ const AITrainingDashboard = () => {
             <TabsContent value="web">
               <Card>
                 <CardHeader>
-                  <CardTitle>Web Data Scraper</CardTitle>
-                  <CardDescription>
-                    Extract content from web pages to train your AI
-                  </CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        Web Data Scraper
+                        {!canUseWebScraper && (
+                          <Badge variant="secondary" className="gap-1">
+                            <Lock className="w-3 h-3" />
+                            Pro+
+                          </Badge>
+                        )}
+                      </CardTitle>
+                      <CardDescription>
+                        Extract content from web pages to train your AI
+                      </CardDescription>
+                    </div>
+                    {canUseWebScraper && (
+                      <Badge variant="outline" className="text-sm">
+                        {webData?.length || 0} / {limits.web_scraper === -1 ? '∞' : limits.web_scraper}
+                      </Badge>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex gap-4">
-                    <Input
-                      value={urlToScrape}
-                      onChange={(e) => setUrlToScrape(e.target.value)}
-                      placeholder="https://example.com"
-                      className="flex-1"
-                    />
-                    <Button onClick={handleWebScrape} disabled={isScraping}>
-                      {isScraping ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Globe className="w-4 h-4" />
-                      )}
-                    </Button>
-                  </div>
-
-                  <div className="grid gap-2">
-                    {webData?.map((data) => (
-                      <Card key={data.id} className="p-4">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <p className="font-medium text-sm truncate">{data.url}</p>
-                            <Badge variant={
-                              data.scraping_status === 'completed' ? 'default' :
-                              data.scraping_status === 'processing' ? 'secondary' : 'destructive'
-                            } className="mt-1">
-                              {data.scraping_status}
-                            </Badge>
+                  {!canUseWebScraper ? (
+                    <div className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border border-purple-200 dark:border-purple-800 rounded-lg text-center">
+                      <Lock className="w-8 h-8 mx-auto text-purple-500 mb-3" />
+                      <h3 className="font-semibold text-lg mb-1">Web Scraper - Pro Feature</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Upgrade to Pro to scrape web content for AI training.
+                      </p>
+                      <Button onClick={() => navigate('/pricing')}>
+                        <Crown className="w-4 h-4 mr-2" />
+                        Upgrade to Pro
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      {!canAddWebScraper(webData?.length || 0) && (
+                        <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                          <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                            <Lock className="w-4 h-4" />
+                            <span className="font-medium">Web scraper limit reached</span>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteWebData(data.id)}
+                          <p className="text-sm text-amber-600 dark:text-amber-500 mt-1">
+                            Upgrade to Business for more web scraping capacity.
+                          </p>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="mt-2"
+                            onClick={() => navigate('/pricing')}
                           >
-                            <Trash2 className="w-4 h-4 text-destructive" />
+                            <Crown className="w-4 h-4 mr-2" />
+                            Upgrade Plan
                           </Button>
                         </div>
-                      </Card>
-                    ))}
-                  </div>
+                      )}
+                      
+                      <div className="flex gap-4">
+                        <Input
+                          value={urlToScrape}
+                          onChange={(e) => setUrlToScrape(e.target.value)}
+                          placeholder="https://example.com"
+                          className="flex-1"
+                          disabled={!canAddWebScraper(webData?.length || 0)}
+                        />
+                        <Button 
+                          onClick={handleWebScrape} 
+                          disabled={isScraping || !canAddWebScraper(webData?.length || 0)}
+                        >
+                          {isScraping ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Globe className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
+
+                      <div className="grid gap-2">
+                        {webData?.map((data) => (
+                          <Card key={data.id} className="p-4">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <p className="font-medium text-sm truncate">{data.url}</p>
+                                <Badge variant={
+                                  data.scraping_status === 'completed' ? 'default' :
+                                  data.scraping_status === 'processing' ? 'secondary' : 'destructive'
+                                } className="mt-1">
+                                  {data.scraping_status}
+                                </Badge>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteWebData(data.id)}
+                              >
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -619,43 +754,67 @@ const AITrainingDashboard = () => {
             <TabsContent value="voice">
               <Card>
                 <CardHeader>
-                  <CardTitle>Voice Training</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    Voice Training
+                    {!canUseAIVoiceTraining && (
+                      <Badge variant="secondary" className="gap-1">
+                        <Lock className="w-3 h-3" />
+                        Pro+
+                      </Badge>
+                    )}
+                  </CardTitle>
                   <CardDescription>
                     Upload voice recordings to train custom voice responses
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div>
-                    <Input
-                      type="file"
-                      accept="audio/*"
-                      onChange={(e) => e.target.files?.[0] && handleVoiceUpload(e.target.files[0])}
-                    />
-                  </div>
+                  {!canUseAIVoiceTraining ? (
+                    <div className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border border-purple-200 dark:border-purple-800 rounded-lg text-center">
+                      <Mic className="w-8 h-8 mx-auto text-purple-500 mb-3" />
+                      <h3 className="font-semibold text-lg mb-1">Voice Training - Pro Feature</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Upgrade to Pro to train your AI with custom voice responses.
+                      </p>
+                      <Button onClick={() => navigate('/pricing')}>
+                        <Crown className="w-4 h-4 mr-2" />
+                        Upgrade to Pro
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <div>
+                        <Input
+                          type="file"
+                          accept="audio/*"
+                          onChange={(e) => e.target.files?.[0] && handleVoiceUpload(e.target.files[0])}
+                        />
+                      </div>
 
-                  <div className="grid gap-2">
-                    {recordings?.map((recording) => (
-                      <Card key={recording.id} className="p-4">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="font-medium text-sm">{recording.filename}</p>
-                            {recording.transcription && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {recording.transcription.substring(0, 100)}...
-                              </p>
-                            )}
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteRecording(recording.id, recording.file_path)}
-                          >
-                            <Trash2 className="w-4 h-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
+                      <div className="grid gap-2">
+                        {recordings?.map((recording) => (
+                          <Card key={recording.id} className="p-4">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <p className="font-medium text-sm">{recording.filename}</p>
+                                {recording.transcription && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {recording.transcription.substring(0, 100)}...
+                                  </p>
+                                )}
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteRecording(recording.id, recording.file_path)}
+                              >
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -674,13 +833,15 @@ const AITrainingDashboard = () => {
                 <MessageCircle className="w-4 h-4 mr-2" />
                 Welcome
               </TabsTrigger>
-              <TabsTrigger value="topics">
+              <TabsTrigger value="topics" className="relative">
                 <BookOpen className="w-4 h-4 mr-2" />
                 Topics
+                {!canUseAITopics && <Lock className="w-3 h-3 ml-1 text-muted-foreground" />}
               </TabsTrigger>
-              <TabsTrigger value="followups">
+              <TabsTrigger value="followups" className="relative">
                 <HelpCircle className="w-4 h-4 mr-2" />
                 Follow-ups
+                {!canUseAIFollowups && <Lock className="w-3 h-3 ml-1 text-muted-foreground" />}
               </TabsTrigger>
             </TabsList>
 
@@ -708,25 +869,65 @@ const AITrainingDashboard = () => {
 
             {/* Topics Tab */}
             <TabsContent value="topics" className="space-y-4">
-              <TopicRulesPanel
-                topics={topics}
-                onAdd={addTopic}
-                onUpdate={updateTopic}
-                onDelete={deleteTopic}
-                isLoading={isSettingsLoading}
-              />
+              {!canUseAITopics ? (
+                <Card className="p-6 text-center">
+                  <BookOpen className="w-10 h-10 mx-auto text-purple-500 mb-4" />
+                  <h3 className="font-semibold text-xl mb-2">AI Topics - Creator Feature</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Create custom topic rules to guide your AI's responses.
+                  </p>
+                  <Badge variant="secondary" className="mb-4 gap-1">
+                    <Lock className="w-3 h-3" />
+                    Available from Creator plan
+                  </Badge>
+                  <div>
+                    <Button onClick={() => navigate('/pricing')}>
+                      <Crown className="w-4 h-4 mr-2" />
+                      Upgrade to Creator
+                    </Button>
+                  </div>
+                </Card>
+              ) : (
+                <TopicRulesPanel
+                  topics={topics}
+                  onAdd={addTopic}
+                  onUpdate={updateTopic}
+                  onDelete={deleteTopic}
+                  isLoading={isSettingsLoading}
+                />
+              )}
             </TabsContent>
 
             {/* Follow-ups Tab */}
             <TabsContent value="followups" className="space-y-4">
-              <FollowUpQuestionsPanel
-                followUps={followUps}
-                topics={topics}
-                onAdd={addFollowUp}
-                onUpdate={updateFollowUp}
-                onDelete={deleteFollowUp}
-                isLoading={isSettingsLoading}
-              />
+              {!canUseAIFollowups ? (
+                <Card className="p-6 text-center">
+                  <HelpCircle className="w-10 h-10 mx-auto text-purple-500 mb-4" />
+                  <h3 className="font-semibold text-xl mb-2">Follow-up Questions - Pro Feature</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Create intelligent follow-up questions to engage your visitors.
+                  </p>
+                  <Badge variant="secondary" className="mb-4 gap-1">
+                    <Lock className="w-3 h-3" />
+                    Available from Pro plan
+                  </Badge>
+                  <div>
+                    <Button onClick={() => navigate('/pricing')}>
+                      <Crown className="w-4 h-4 mr-2" />
+                      Upgrade to Pro
+                    </Button>
+                  </div>
+                </Card>
+              ) : (
+                <FollowUpQuestionsPanel
+                  followUps={followUps}
+                  topics={topics}
+                  onAdd={addFollowUp}
+                  onUpdate={updateFollowUp}
+                  onDelete={deleteFollowUp}
+                  isLoading={isSettingsLoading}
+                />
+              )}
             </TabsContent>
           </Tabs>
         )}
