@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Slider } from '@/components/ui/slider';
 import { 
   Check, Star, Zap, Crown, Rocket, User, Bot, UserCircle, Coins, FileText, 
   BarChart2, Link, Users, Gift, Sparkles, MessageCircle, Mic, Brain, FileUp,
@@ -15,6 +16,7 @@ import {
 import { usePlatformPricingPlans, useUserPlatformSubscription, PlatformFeature } from '@/hooks/usePlatformPricingPlans';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useTokenPrice } from '@/hooks/useTokenPrice';
 import MainAuth from './MainAuth';
 import ShareModal from './ShareModal';
 import {
@@ -70,6 +72,168 @@ const durationDiscounts: Record<number, number> = {
   6: 15,
   12: 20,
   24: 30,
+};
+
+// Token Purchase Add-on Component
+const TokenPurchaseAddon = ({ currSymbol }: { currSymbol: string }) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { pricePerMillion, tokensPerRupee } = useTokenPrice();
+  const { formatPrice, convertFromINR } = useCurrency();
+  const [tokenAmount, setTokenAmount] = useState(1000000);
+  const [processing, setProcessing] = useState(false);
+
+  const MIN_AMOUNT_INR = 10;
+  const MAX_TOKENS = 50000000;
+  const MIN_TOKENS = Math.floor(MIN_AMOUNT_INR * tokensPerRupee);
+  
+  const priceInINR = (tokenAmount / 1000000) * pricePerMillion;
+
+  const formatTokens = (tokens: number) => {
+    if (tokens >= 1000000) return `${(tokens / 1000000).toFixed(1)}M`;
+    if (tokens >= 1000) return `${(tokens / 1000).toFixed(0)}K`;
+    return tokens.toLocaleString();
+  };
+
+  const quickOptions = [
+    { tokens: Math.floor(50 * tokensPerRupee), label: '50' },
+    { tokens: Math.floor(100 * tokensPerRupee), label: '100' },
+    { tokens: Math.floor(500 * tokensPerRupee), label: '500' },
+    { tokens: 1000000, label: '1M tokens' },
+    { tokens: 5000000, label: '5M tokens' },
+  ];
+
+  const handlePurchase = async () => {
+    if (processing || priceInINR < MIN_AMOUNT_INR) return;
+    setProcessing(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({ title: "Login Required", description: "Please log in to purchase tokens", variant: "destructive" });
+        setProcessing(false);
+        return;
+      }
+
+      const { data: orderData, error: orderError } = await supabase.functions.invoke('custom-token-purchase', {
+        body: { tokens: tokenAmount, amount_inr: priceInINR, user_id: user.id }
+      });
+
+      if (orderError || !orderData?.success) throw new Error(orderData?.error || 'Failed to create order');
+      
+      if (!window.Razorpay) {
+        toast({ title: "Error", description: "Payment system not loaded", variant: "destructive" });
+        setProcessing(false);
+        return;
+      }
+
+      const razorpay = new window.Razorpay({
+        key: orderData.key_id,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "AvatarTalk.Co",
+        description: `${formatTokens(tokenAmount)} AI Tokens`,
+        order_id: orderData.order_id,
+        handler: async (response: any) => {
+          const { data: verifyData, error: verifyError } = await supabase.functions.invoke('custom-token-verify', {
+            body: { 
+              razorpay_payment_id: response.razorpay_payment_id, 
+              razorpay_order_id: response.razorpay_order_id, 
+              razorpay_signature: response.razorpay_signature, 
+              user_id: user.id, 
+              purchase_id: orderData.purchase_id 
+            }
+          });
+          if (!verifyError && verifyData?.success) {
+            toast({ title: "🎉 Success!", description: `${formatTokens(verifyData.tokens_credited)} tokens added to your account!` });
+          } else {
+            toast({ title: "Verification Failed", variant: "destructive" });
+          }
+          setProcessing(false);
+        },
+        theme: { color: "#f59e0b" },
+        modal: { ondismiss: () => setProcessing(false) }
+      });
+      razorpay.open();
+    } catch (error) {
+      toast({ title: "Error", description: error instanceof Error ? error.message : "Failed", variant: "destructive" });
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <Card className="max-w-2xl mx-auto border-2 border-amber-200/50 bg-gradient-to-br from-amber-50/50 to-yellow-50/50 dark:from-amber-950/30 dark:to-yellow-950/30 shadow-xl">
+      <CardContent className="p-6 space-y-6">
+        {/* Token Display */}
+        <div className="text-center py-4 bg-gradient-to-br from-amber-100/50 to-yellow-100/50 dark:from-amber-900/30 dark:to-yellow-900/30 rounded-xl border border-amber-200/50">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Coins className="w-8 h-8 text-amber-500" />
+            <span className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-amber-600 to-yellow-600 bg-clip-text text-transparent">
+              {formatTokens(tokenAmount)}
+            </span>
+          </div>
+          <p className="text-muted-foreground">{tokenAmount.toLocaleString()} tokens</p>
+        </div>
+
+        {/* Slider */}
+        <div className="px-2">
+          <Slider 
+            value={[tokenAmount]} 
+            onValueChange={(v) => setTokenAmount(v[0])} 
+            min={MIN_TOKENS} 
+            max={MAX_TOKENS} 
+            step={100000}
+            className="w-full"
+          />
+        </div>
+
+        {/* Quick Options */}
+        <div className="flex flex-wrap gap-2 justify-center">
+          {quickOptions.map((opt) => (
+            <Button 
+              key={opt.label} 
+              variant={tokenAmount === opt.tokens ? "default" : "outline"} 
+              size="sm"
+              onClick={() => setTokenAmount(opt.tokens)}
+              className={tokenAmount === opt.tokens ? "bg-gradient-to-r from-amber-500 to-yellow-500 border-0" : "border-amber-300 hover:border-amber-500"}
+            >
+              {opt.label.includes('M') ? opt.label : `${currSymbol}${opt.label}`}
+            </Button>
+          ))}
+        </div>
+
+        {/* Price & Buy Button */}
+        <div className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-card rounded-xl border">
+          <div className="flex-1 text-center sm:text-left">
+            <p className="text-sm text-muted-foreground">Total Price</p>
+            <p className="text-3xl font-bold text-amber-600">
+              {formatPrice(priceInINR)}
+            </p>
+            <p className="text-xs text-muted-foreground">1M tokens = {formatPrice(pricePerMillion)}</p>
+          </div>
+          <Button 
+            onClick={handlePurchase} 
+            disabled={processing || priceInINR < MIN_AMOUNT_INR}
+            size="lg"
+            className="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-semibold px-8"
+          >
+            {processing ? (
+              <><Loader2 className="w-4 h-4 animate-spin mr-2" />Processing...</>
+            ) : (
+              <><CreditCard className="w-5 h-5 mr-2" />Buy Now</>
+            )}
+          </Button>
+        </div>
+
+        {/* View More Link */}
+        <div className="text-center">
+          <Button variant="link" onClick={() => navigate('/settings/buy-tokens')} className="text-amber-600 hover:text-amber-700">
+            View full token dashboard <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
 };
 
 const PricingPage = () => {
@@ -351,16 +515,22 @@ const PricingPage = () => {
                   
                   <div className="mt-4">
                     {plan.plan_key === 'free' ? (
-                      <div className="text-4xl font-bold">
-                        {currSymbol}0
-                        <span className="text-base font-normal text-muted-foreground">/forever</span>
+                      <div>
+                        <div className="text-5xl md:text-6xl font-extrabold text-primary">
+                          {currSymbol}0
+                        </div>
+                        <div className="text-lg font-medium text-muted-foreground mt-1">forever free</div>
                       </div>
                     ) : (
                       <div>
-                        <div className="text-4xl font-bold">{currSymbol}{price}</div>
-                        <div className="text-sm text-muted-foreground">for {durationLabels[billingCycle]}</div>
+                        <div className="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                          {currSymbol}{monthlyPrice}
+                        </div>
+                        <div className="text-lg font-medium text-muted-foreground mt-1">/month</div>
                         {billingCycle > 1 && (
-                          <div className="text-xs text-primary mt-1">≈ {currSymbol}{monthlyPrice}/month</div>
+                          <div className="text-sm text-primary font-semibold mt-2 p-2 bg-primary/10 rounded-lg">
+                            {currSymbol}{price} billed for {durationLabels[billingCycle]}
+                          </div>
                         )}
                       </div>
                     )}
@@ -421,13 +591,18 @@ const PricingPage = () => {
           })}
         </div>
 
-        <div className="mt-16 text-center">
-          <h2 className="text-3xl font-bold mb-4">Need More AI Tokens?</h2>
-          <p className="text-muted-foreground mb-6">Buy additional tokens anytime. Works with all plans.</p>
-          <Button size="lg" variant="outline" onClick={() => navigate('/settings/buy-tokens')}>
-            <Coins className="w-5 h-5 mr-2" />
-            Buy Token Pack
-          </Button>
+        {/* Add-on Token Purchase Section */}
+        <div className="mt-16">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold mb-2">
+              <span className="bg-gradient-to-r from-amber-500 to-yellow-500 bg-clip-text text-transparent">
+                Need More AI Tokens?
+              </span>
+            </h2>
+            <p className="text-muted-foreground">Buy additional tokens anytime. Works with all plans.</p>
+          </div>
+          
+          <TokenPurchaseAddon currSymbol={currSymbol} />
         </div>
 
         <div className="mt-20">
