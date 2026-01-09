@@ -119,7 +119,8 @@ const AITrainingDashboard = () => {
     question: '',
     answer: '',
     category: '',
-    tags: '' as string,
+    tags: [] as string[],
+    tagInput: '',
     custom_link_url: '',
     custom_link_button_name: ''
   });
@@ -202,20 +203,20 @@ const AITrainingDashboard = () => {
     }
 
     try {
-      // Convert comma-separated tags string to array
-      const tagsArray = newQA.tags
-        ? newQA.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
-        : [];
-      
       await addQAPair({
-        ...newQA,
-        tags: tagsArray
+        question: newQA.question,
+        answer: newQA.answer,
+        category: newQA.category,
+        tags: newQA.tags,
+        custom_link_url: newQA.custom_link_url,
+        custom_link_button_name: newQA.custom_link_button_name
       });
       setNewQA({
         question: '',
         answer: '',
         category: '',
-        tags: '',
+        tags: [],
+        tagInput: '',
         custom_link_url: '',
         custom_link_button_name: ''
       });
@@ -227,6 +228,32 @@ const AITrainingDashboard = () => {
       console.error('Failed to add Q&A:', error);
     }
   }, [newQA, addQAPair, toast]);
+
+  // Keyword/Tag handlers
+  const handleAddTag = useCallback(() => {
+    const tag = newQA.tagInput.trim();
+    if (tag && !newQA.tags.includes(tag)) {
+      setNewQA(prev => ({
+        ...prev,
+        tags: [...prev.tags, tag],
+        tagInput: ''
+      }));
+    }
+  }, [newQA.tagInput, newQA.tags]);
+
+  const handleRemoveTag = useCallback((tagToRemove: string) => {
+    setNewQA(prev => ({
+      ...prev,
+      tags: prev.tags.filter(tag => tag !== tagToRemove)
+    }));
+  }, []);
+
+  const handleTagKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      handleAddTag();
+    }
+  }, [handleAddTag]);
 
   // Document upload
   const handleDocumentUpload = useCallback(async (files: FileList | null) => {
@@ -472,17 +499,48 @@ const AITrainingDashboard = () => {
                       </div>
                       <div>
                         <Label htmlFor="tags">Keywords/Tags</Label>
-                        <Input
-                          id="tags"
-                          value={newQA.tags}
-                          onChange={(e) => setNewQA({...newQA, tags: e.target.value})}
-                          placeholder="pricing, support, features (comma separated)"
-                          disabled={!canAddQAPair(qaPairs?.length || 0)}
-                        />
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {newQA.tags.map((tag, index) => (
+                            <Badge 
+                              key={index} 
+                              variant="secondary" 
+                              className="flex items-center gap-1 px-2 py-1"
+                            >
+                              {tag}
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveTag(tag)}
+                                className="ml-1 hover:text-destructive"
+                                disabled={!canAddQAPair(qaPairs?.length || 0)}
+                              >
+                                ×
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <Input
+                            id="tags"
+                            value={newQA.tagInput}
+                            onChange={(e) => setNewQA({...newQA, tagInput: e.target.value})}
+                            onKeyDown={handleTagKeyDown}
+                            placeholder="Type keyword and press Enter"
+                            disabled={!canAddQAPair(qaPairs?.length || 0)}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleAddTag}
+                            disabled={!newQA.tagInput.trim() || !canAddQAPair(qaPairs?.length || 0)}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground -mt-2">
-                      Keywords help match visitor questions to this Q&A for automatic responses.
+                      Add multiple keywords to help match visitor questions to this Q&A for automatic responses.
                     </p>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
