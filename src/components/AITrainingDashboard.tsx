@@ -99,6 +99,7 @@ const AITrainingDashboard = () => {
     question: '',
     answer: '',
     category: '',
+    tags: '' as string,
     custom_link_url: '',
     custom_link_button_name: ''
   });
@@ -181,11 +182,20 @@ const AITrainingDashboard = () => {
     }
 
     try {
-      await addQAPair(newQA);
+      // Convert comma-separated tags string to array
+      const tagsArray = newQA.tags
+        ? newQA.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+        : [];
+      
+      await addQAPair({
+        ...newQA,
+        tags: tagsArray
+      });
       setNewQA({
         question: '',
         answer: '',
         category: '',
+        tags: '',
         custom_link_url: '',
         custom_link_button_name: ''
       });
@@ -420,13 +430,36 @@ const AITrainingDashboard = () => {
                       </div>
                     </div>
                     <div>
-                      <Label htmlFor="link-url">Link URL (Optional)</Label>
+                      <Label htmlFor="tags">Keywords/Tags (Optional)</Label>
                       <Input
-                        id="link-url"
-                        value={newQA.custom_link_url}
-                        onChange={(e) => setNewQA({...newQA, custom_link_url: e.target.value})}
-                        placeholder="https://example.com"
+                        id="tags"
+                        value={newQA.tags}
+                        onChange={(e) => setNewQA({...newQA, tags: e.target.value})}
+                        placeholder="e.g., pricing, support, features (comma separated)"
                       />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        When visitors ask questions containing these keywords, this Q&A will be used to respond.
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="link-url">Link URL (Optional)</Label>
+                        <Input
+                          id="link-url"
+                          value={newQA.custom_link_url}
+                          onChange={(e) => setNewQA({...newQA, custom_link_url: e.target.value})}
+                          placeholder="https://example.com"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="link-button">Link Button Name</Label>
+                        <Input
+                          id="link-button-2"
+                          value={newQA.custom_link_button_name}
+                          onChange={(e) => setNewQA({...newQA, custom_link_button_name: e.target.value})}
+                          placeholder="e.g., Learn More"
+                        />
+                      </div>
                     </div>
                     <Button onClick={handleAddQA} disabled={isQALoading}>
                       <Plus className="w-4 h-4 mr-2" />
@@ -442,9 +475,16 @@ const AITrainingDashboard = () => {
                           <div className="flex-1">
                             <p className="font-semibold text-sm">{qa.question}</p>
                             <p className="text-sm text-muted-foreground mt-1">{qa.answer}</p>
-                            {qa.category && (
-                              <Badge variant="outline" className="mt-2">{qa.category}</Badge>
-                            )}
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {qa.category && (
+                                <Badge variant="outline">{qa.category}</Badge>
+                              )}
+                              {qa.tags && qa.tags.length > 0 && qa.tags.map((tag, idx) => (
+                                <Badge key={idx} variant="secondary" className="text-xs">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
                             {qa.custom_link_url && (
                               <Button
                                 variant="outline"
