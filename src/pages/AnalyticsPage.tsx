@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -12,11 +14,12 @@ import {
 import { 
   TrendingUp, TrendingDown, DollarSign, Eye, ShoppingCart, Users, 
   Heart, MessageSquare, Calendar as CalendarIcon, Package, Video,
-  BarChart3, RefreshCw, ArrowUpRight, ArrowDownRight, Globe
+  BarChart3, RefreshCw, ArrowUpRight, ArrowDownRight, Globe, Lock, Zap
 } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import TokenDisplay from '@/components/TokenDisplay';
+import PlanBadge, { planColors } from '@/components/PlanBadge';
 
 // Modern gradient color palette
 const CHART_GRADIENTS = {
@@ -35,6 +38,7 @@ const PIE_COLORS = [
 ];
 
 const AnalyticsPage = () => {
+  const navigate = useNavigate();
   const [dateRange, setDateRange] = useState({
     start: subDays(new Date(), 30),
     end: new Date()
@@ -42,6 +46,8 @@ const AnalyticsPage = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('30d');
   
   const { analytics, loading, refetch } = useAnalytics(dateRange);
+  const { canAccessAnalytics } = usePlanFeatures();
+  const creatorPlanConfig = planColors.creator;
 
   const handlePeriodChange = (period: string) => {
     setSelectedPeriod(period);
@@ -239,19 +245,68 @@ const AnalyticsPage = () => {
         />
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="bg-muted/50 p-1.5 rounded-xl flex-wrap backdrop-blur-sm">
-          <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Overview</TabsTrigger>
-          <TabsTrigger value="visitors" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Visitors</TabsTrigger>
-          <TabsTrigger value="products" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Products</TabsTrigger>
-          <TabsTrigger value="engagement" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Engagement</TabsTrigger>
-          <TabsTrigger value="followers" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Followers</TabsTrigger>
-          <TabsTrigger value="subscriptions" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Subscriptions</TabsTrigger>
-          <TabsTrigger value="collaborations" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Collaborations</TabsTrigger>
-        </TabsList>
+      {/* Locked Content Component */}
+      {!canAccessAnalytics ? (
+        <Card className={`${creatorPlanConfig.bgClass} ${creatorPlanConfig.borderClass} border`}>
+          <CardContent className="flex flex-col items-center justify-center py-16 gap-4">
+            <div className={`p-4 rounded-full bg-gradient-to-r ${creatorPlanConfig.gradient}`}>
+              <Lock className="w-8 h-8 text-white" />
+            </div>
+            <div className="text-center space-y-2">
+              <div className="flex items-center justify-center gap-2">
+                <h3 className={`text-xl font-semibold ${creatorPlanConfig.textClass}`}>
+                  Analytics Dashboard
+                </h3>
+                <PlanBadge planKey="creator" size="sm" />
+              </div>
+              <p className="text-muted-foreground max-w-md">
+                Unlock detailed analytics to track your performance, monitor engagement, and grow your audience with actionable insights.
+              </p>
+            </div>
+            <Button 
+              onClick={() => navigate('/pricing')}
+              className={`bg-gradient-to-r ${creatorPlanConfig.gradient} text-white hover:opacity-90`}
+            >
+              <Zap className="w-4 h-4 mr-2" />
+              Upgrade to Creator
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="bg-muted/50 p-1.5 rounded-xl flex-wrap backdrop-blur-sm">
+            <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-1.5">
+              <PlanBadge planKey="creator" size="sm" showIcon={false} />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="visitors" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-1.5">
+              <PlanBadge planKey="creator" size="sm" showIcon={false} />
+              Visitors
+            </TabsTrigger>
+            <TabsTrigger value="products" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-1.5">
+              <PlanBadge planKey="creator" size="sm" showIcon={false} />
+              Products
+            </TabsTrigger>
+            <TabsTrigger value="engagement" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-1.5">
+              <PlanBadge planKey="creator" size="sm" showIcon={false} />
+              Engagement
+            </TabsTrigger>
+            <TabsTrigger value="followers" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-1.5">
+              <PlanBadge planKey="creator" size="sm" showIcon={false} />
+              Followers
+            </TabsTrigger>
+            <TabsTrigger value="subscriptions" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-1.5">
+              <PlanBadge planKey="creator" size="sm" showIcon={false} />
+              Subscriptions
+            </TabsTrigger>
+            <TabsTrigger value="collaborations" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-1.5">
+              <PlanBadge planKey="creator" size="sm" showIcon={false} />
+              Collaborations
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
           {/* Earnings Chart */}
           <Card className="bg-card border-border overflow-hidden">
             <CardHeader className="pb-2">
@@ -932,7 +987,8 @@ const AnalyticsPage = () => {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+        </Tabs>
+      )}
     </div>
   );
 };

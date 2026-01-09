@@ -30,7 +30,8 @@ export type PlanFeatureKey =
   | 'ai_topics_enabled'
   | 'ai_followups_enabled'
   | 'ai_voice_training_enabled'
-  | 'ai_webscraper_enabled';
+  | 'ai_webscraper_enabled'
+  | 'analytics_enabled';
 
 // Define which plan unlocks each feature
 const featurePlanRequirements: Record<PlanFeatureKey, string> = {
@@ -42,6 +43,7 @@ const featurePlanRequirements: Record<PlanFeatureKey, string> = {
   google_calendar_readonly: 'creator',
   avatar_upload_enabled: 'creator',
   ai_topics_enabled: 'creator',
+  analytics_enabled: 'creator',
   voice_clone_enabled: 'pro',
   virtual_meetings_enabled: 'pro',
   advanced_analytics: 'pro',
@@ -177,6 +179,7 @@ export const usePlanFeatures = () => {
   const canUseAIFollowups = useMemo(() => hasFeature('ai_followups_enabled'), [planLevel, loading]);
   const canUseAIVoiceTraining = useMemo(() => hasFeature('ai_voice_training_enabled'), [planLevel, loading]);
   const canUseWebScraper = useMemo(() => hasFeature('ai_webscraper_enabled'), [planLevel, loading]);
+  const canAccessAnalytics = useMemo(() => hasFeature('analytics_enabled'), [planLevel, loading]);
 
   return {
     loading,
@@ -215,6 +218,7 @@ export const usePlanFeatures = () => {
     canUseAIFollowups,
     canUseAIVoiceTraining,
     canUseWebScraper,
+    canAccessAnalytics,
   };
 };
 
