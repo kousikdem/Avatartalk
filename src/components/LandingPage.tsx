@@ -54,6 +54,9 @@ import MainAuth from './MainAuth';
 import VisitorAuth from './VisitorAuth';
 import RealisticDemoAvatar3D from './RealisticDemoAvatar3D';
 import { usePlatformPricingPlans, PlatformFeature } from '@/hooks/usePlatformPricingPlans';
+import DemoPostCard from './landing/DemoPostCard';
+import DemoProductCard from './landing/DemoProductCard';
+import { demoPosts, demoProducts, demoVirtualCollabProducts } from './landing/demoData';
 
 const planIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   free: Star,
@@ -414,31 +417,10 @@ const LandingPage = () => {
 
               {/* Posts Tab Content */}
               {demoActiveTab === 'posts' && (
-                <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
-                  <Card className="bg-slate-800/30 border-slate-700/30 p-3">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0"></div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-slate-200 mb-2">Check out my latest AI project! 🚀</p>
-                        <div className="flex gap-4 text-xs text-slate-400">
-                          <span>❤️ 124</span>
-                          <span>💬 23</span>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                  <Card className="bg-slate-800/30 border-slate-700/30 p-3">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0"></div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-slate-200 mb-2">New tutorial on AI training coming soon! 🎯</p>
-                        <div className="flex gap-4 text-xs text-slate-400">
-                          <span>❤️ 89</span>
-                          <span>💬 15</span>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
+                <div className="space-y-3 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
+                  {demoPosts.map((post) => (
+                    <DemoPostCard key={post.id} post={post} isDarkMode={true} />
+                  ))}
                 </div>
               )}
 
@@ -538,27 +520,16 @@ const LandingPage = () => {
 
               {/* Product Tab Content */}
               {demoActiveTab === 'product' && (
-                <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
-                  <Card className="bg-gradient-to-br from-slate-800/50 to-slate-700/30 border-slate-600/30 p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0"></div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-bold text-white mb-1">AI Consultation Package</h4>
-                        <p className="text-xs text-slate-400 mb-2">60-min personalized AI strategy session</p>
-                        <p className="text-lg font-bold text-blue-400">$199</p>
-                      </div>
-                    </div>
-                  </Card>
-                  <Card className="bg-gradient-to-br from-slate-800/50 to-slate-700/30 border-slate-600/30 p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex-shrink-0"></div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-bold text-white mb-1">Avatar Design Course</h4>
-                        <p className="text-xs text-slate-400 mb-2">Complete guide to 3D avatar creation</p>
-                        <p className="text-lg font-bold text-purple-400">$299</p>
-                      </div>
-                    </div>
-                  </Card>
+                <div className="space-y-3 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
+                  {/* Digital Products */}
+                  {demoProducts.slice(0, 2).map((product) => (
+                    <DemoProductCard key={product.id} product={product} isDarkMode={true} compact={true} />
+                  ))}
+                  
+                  {/* Virtual Collaboration Product */}
+                  {demoVirtualCollabProducts.slice(0, 1).map((product) => (
+                    <DemoProductCard key={product.id} product={product} isDarkMode={true} compact={true} />
+                  ))}
                 </div>
               )}
             </div>
