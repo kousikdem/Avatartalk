@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, UserPlus, UserMinus, Search, Eye, MessageSquare, Trash2, Filter, Clock, SortAsc, CircleDot, Crown, IndianRupee, Gem, Star } from 'lucide-react';
+import { Users, UserPlus, UserMinus, Search, Eye, MessageSquare, Trash2, Filter, Clock, SortAsc, CircleDot, Crown, IndianRupee, Gem, Star, Lock } from 'lucide-react';
 import { useFollows } from '@/hooks/useFollows';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,6 +17,8 @@ import FollowButton from '@/components/FollowButton';
 import LoyaltyBadge from '@/components/LoyaltyBadge';
 import { useLoyalUsers } from '@/hooks/useLoyalUsers';
 import TokenDisplay from '@/components/TokenDisplay';
+import PlanBadge, { planColors } from '@/components/PlanBadge';
+import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 
 interface FollowerStats {
   followersCount: number;
@@ -60,6 +62,11 @@ const FollowersPage = () => {
   });
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // Plan features for visitors tab
+  const { hasFeature, getRequiredPlanForFeature } = usePlanFeatures();
+  const canViewVisitors = hasFeature('visitors_list');
+  const requiredPlanForVisitors = getRequiredPlanForFeature('visitors_list');
   
   // Fetch loyal users with the current limit
   const { loyalUsers, loading: loyalUsersLoading, refetch: refetchLoyalUsers } = useLoyalUsers(currentUserId, loyalUsersLimit);
@@ -628,9 +635,13 @@ const FollowersPage = () => {
               >
                 <Eye className="h-4 w-4" />
                 <span className="font-semibold">Visitors</span>
-                <Badge variant="secondary" className="ml-1 bg-primary/20 text-primary border-0">
-                  {visitors.length}
-                </Badge>
+                {canViewVisitors ? (
+                  <Badge variant="secondary" className="ml-1 bg-primary/20 text-primary border-0">
+                    {visitors.length}
+                  </Badge>
+                ) : (
+                  <PlanBadge planKey={requiredPlanForVisitors} size="sm" showIcon={false} className="ml-1" />
+                )}
               </TabsTrigger>
               <TabsTrigger 
                 value="loyal" 
@@ -710,35 +721,60 @@ const FollowersPage = () => {
 
             {/* Visitors Tab */}
             <TabsContent value="visitors" className="mt-0">
-              <div className="flex items-center justify-between mb-6 p-4 bg-muted/30 rounded-lg border border-border/50">
-                <p className="text-sm text-muted-foreground flex items-center gap-2">
-                  <Eye className="h-4 w-4" />
-                  Real-time profile visitors • Unregistered visitors shown as Anonymous
-                </p>
-              </div>
-
-              {filteredVisitors.length === 0 ? (
+              {!canViewVisitors ? (
                 <div className="text-center py-16">
-                  <div className="p-6 rounded-full bg-primary/10 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
-                    <Eye className="h-12 w-12 text-primary" />
+                  <div className="p-6 rounded-full bg-gradient-to-br from-orange-100 to-red-100 dark:from-orange-900/30 dark:to-red-900/30 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+                    <Lock className="h-12 w-12 text-orange-600 dark:text-orange-400" />
                   </div>
-                  <h3 className="text-2xl font-bold text-foreground mb-2">No Profile Visitors</h3>
-                  <p className="text-muted-foreground max-w-md mx-auto">
-                    {searchTerm ? "No visitors match your search criteria" : "When people visit your profile, they'll show up here with visit counts and timestamps"}
+                  <h3 className="text-2xl font-bold text-foreground mb-2">Profile Visitors</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto mb-4">
+                    See who visits your profile with detailed analytics and visit history
                   </p>
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <span className="text-sm text-muted-foreground">Available on</span>
+                    <PlanBadge planKey={requiredPlanForVisitors} size="md" />
+                  </div>
+                  <Button 
+                    onClick={() => navigate('/pricing')}
+                    className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                  >
+                    <Crown className="w-4 h-4 mr-2" />
+                    Upgrade to {planColors[requiredPlanForVisitors]?.label || 'Business'}
+                  </Button>
                 </div>
               ) : (
-                <AnimatePresence mode="popLayout">
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
-                    {filteredVisitors.map((visitor) => (
-                      <UserCard
-                        key={visitor.id}
-                        user={visitor}
-                        type="visitor"
-                      />
-                    ))}
+                <>
+                  <div className="flex items-center justify-between mb-6 p-4 bg-muted/30 rounded-lg border border-border/50">
+                    <p className="text-sm text-muted-foreground flex items-center gap-2">
+                      <Eye className="h-4 w-4" />
+                      Real-time profile visitors • Unregistered visitors shown as Anonymous
+                    </p>
                   </div>
-                </AnimatePresence>
+
+                  {filteredVisitors.length === 0 ? (
+                    <div className="text-center py-16">
+                      <div className="p-6 rounded-full bg-primary/10 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+                        <Eye className="h-12 w-12 text-primary" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-foreground mb-2">No Profile Visitors</h3>
+                      <p className="text-muted-foreground max-w-md mx-auto">
+                        {searchTerm ? "No visitors match your search criteria" : "When people visit your profile, they'll show up here with visit counts and timestamps"}
+                      </p>
+                    </div>
+                  ) : (
+                    <AnimatePresence mode="popLayout">
+                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+                        {filteredVisitors.map((visitor) => (
+                          <UserCard
+                            key={visitor.id}
+                            user={visitor}
+                            type="visitor"
+                          />
+                        ))}
+                      </div>
+                    </AnimatePresence>
+                  )}
+                </>
               )}
             </TabsContent>
 
