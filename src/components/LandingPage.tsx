@@ -419,7 +419,7 @@ const LandingPage = () => {
               {demoActiveTab === 'posts' && (
                 <div className="space-y-3 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
                   {demoPosts.map((post) => (
-                    <DemoPostCard key={post.id} post={post} isDarkMode={true} />
+                    <DemoPostCard key={post.id} post={post} />
                   ))}
                 </div>
               )}
@@ -523,12 +523,12 @@ const LandingPage = () => {
                 <div className="space-y-3 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
                   {/* Digital Products */}
                   {demoProducts.slice(0, 2).map((product) => (
-                    <DemoProductCard key={product.id} product={product} isDarkMode={true} compact={true} />
+                    <DemoProductCard key={product.id} product={product} />
                   ))}
                   
                   {/* Virtual Collaboration Product */}
                   {demoVirtualCollabProducts.slice(0, 1).map((product) => (
-                    <DemoProductCard key={product.id} product={product} isDarkMode={true} compact={true} />
+                    <DemoProductCard key={product.id} product={product} />
                   ))}
                 </div>
               )}

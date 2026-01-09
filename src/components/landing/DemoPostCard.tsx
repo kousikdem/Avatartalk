@@ -2,7 +2,8 @@ import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Heart, MessageCircle, Share2, MoreVertical, Eye } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Heart, MessageCircle, Share2, MoreVertical, Eye, Lock, Crown } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface DemoPost {
@@ -14,6 +15,7 @@ interface DemoPost {
   comments_count: number;
   views_count: number;
   created_at: string;
+  is_subscriber_only?: boolean;
   profile: {
     username: string;
     display_name: string;
@@ -23,10 +25,9 @@ interface DemoPost {
 
 interface DemoPostCardProps {
   post: DemoPost;
-  isDarkMode?: boolean;
 }
 
-const DemoPostCard: React.FC<DemoPostCardProps> = ({ post, isDarkMode = true }) => {
+const DemoPostCard: React.FC<DemoPostCardProps> = ({ post }) => {
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -39,102 +40,6 @@ const DemoPostCard: React.FC<DemoPostCardProps> = ({ post, isDarkMode = true }) 
     return `${Math.floor(diffInDays / 7)}w ago`;
   };
 
-  if (isDarkMode) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <Card className="bg-slate-800/40 border-slate-700/40 overflow-hidden hover:bg-slate-800/60 transition-colors">
-          <CardHeader className="pb-2 p-3">
-            <div className="flex items-center space-x-2">
-              <Avatar className="w-8 h-8 ring-2 ring-blue-500/30">
-                <AvatarImage src={post.profile.avatar_url} />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs">
-                  {post.profile.display_name[0].toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-white text-sm truncate">
-                  {post.profile.display_name}
-                </h4>
-                <p className="text-xs text-slate-400">
-                  @{post.profile.username} • {formatTimeAgo(post.created_at)}
-                </p>
-              </div>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-slate-400 hover:text-white hover:bg-slate-700">
-                <MoreVertical className="w-3 h-3" />
-              </Button>
-            </div>
-          </CardHeader>
-          
-          <CardContent className="pt-0 p-3">
-            {/* Post Content */}
-            <p className="text-slate-200 text-sm leading-relaxed mb-2">{post.content}</p>
-            
-            {/* Media */}
-            {post.media_url && (
-              <div className="mt-2 rounded-lg overflow-hidden">
-                <img
-                  src={post.media_url}
-                  alt="Post media"
-                  className="w-full h-32 object-cover"
-                />
-              </div>
-            )}
-
-            {/* Engagement Stats */}
-            <div className="flex items-center justify-between text-xs text-slate-400 mt-3 mb-2">
-              <div className="flex items-center gap-3">
-                <span className="flex items-center gap-1">
-                  <Heart className="w-3 h-3 text-red-400 fill-red-400" />
-                  {post.likes_count}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Eye className="w-3 h-3" />
-                  {post.views_count}
-                </span>
-              </div>
-              <span>{post.comments_count} comments</span>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center justify-between border-t border-slate-700/50 pt-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-1 h-7 text-red-400 hover:text-red-300 hover:bg-red-500/10"
-              >
-                <Heart className="w-3.5 h-3.5 fill-current mr-1" />
-                <span className="text-xs">Like</span>
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-1 h-7 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
-              >
-                <MessageCircle className="w-3.5 h-3.5 mr-1" />
-                <span className="text-xs">Comment</span>
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-1 h-7 text-green-400 hover:text-green-300 hover:bg-green-500/10"
-              >
-                <Share2 className="w-3.5 h-3.5 mr-1" />
-                <span className="text-xs">Share</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-    );
-  }
-
-  // Light mode version
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -142,60 +47,113 @@ const DemoPostCard: React.FC<DemoPostCardProps> = ({ post, isDarkMode = true }) 
       transition={{ duration: 0.3 }}
     >
       <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-        <CardHeader className="pb-2">
-          <div className="flex items-center space-x-3">
-            <Avatar className="w-10 h-10">
-              <AvatarImage src={post.profile.avatar_url} />
-              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                {post.profile.display_name[0].toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <h4 className="font-semibold text-gray-900">
-                {post.profile.display_name}
-              </h4>
-              <p className="text-sm text-gray-500">
-                @{post.profile.username} • {formatTimeAgo(post.created_at)}
-              </p>
+        <CardHeader className="pb-2 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Avatar className="w-10 h-10 ring-2 ring-blue-500/30">
+                <AvatarImage src={post.profile.avatar_url} />
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                  {post.profile.display_name[0].toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="font-semibold text-gray-900">
+                    {post.profile.display_name}
+                  </h4>
+                  {post.is_subscriber_only && (
+                    <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] px-1.5 py-0 border-0">
+                      <Crown className="w-2.5 h-2.5 mr-0.5" />
+                      Exclusive
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-sm text-gray-500">
+                  @{post.profile.username} • {formatTimeAgo(post.created_at)}
+                </p>
+              </div>
             </div>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100">
+              <MoreVertical className="w-4 h-4" />
+            </Button>
           </div>
         </CardHeader>
         
-        <CardContent className="pt-0">
-          <p className="text-gray-800 leading-relaxed mb-3">{post.content}</p>
+        <CardContent className="pt-0 p-4">
+          {/* Post Content */}
+          {post.is_subscriber_only ? (
+            <div className="relative">
+              <p className="text-gray-800 leading-relaxed mb-3 blur-sm select-none">
+                {post.content}
+              </p>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg">
+                  <Lock className="w-4 h-4" />
+                  <span className="font-medium">Subscribe to unlock</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-gray-800 leading-relaxed mb-3">{post.content}</p>
+          )}
           
+          {/* Media */}
           {post.media_url && (
-            <div className="mt-3 rounded-lg overflow-hidden">
+            <div className="mt-3 rounded-lg overflow-hidden relative">
               <img
                 src={post.media_url}
                 alt="Post media"
-                className="w-full h-auto max-h-48 object-cover"
+                className={`w-full h-auto max-h-48 object-cover ${post.is_subscriber_only ? 'blur-md' : ''}`}
               />
+              {post.is_subscriber_only && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                  <Lock className="w-8 h-8 text-white" />
+                </div>
+              )}
             </div>
           )}
 
+          {/* Engagement Stats */}
           <div className="flex items-center justify-between text-sm text-gray-500 my-3">
             <div className="flex items-center gap-4">
-              <span>{post.likes_count} likes</span>
               <span className="flex items-center gap-1">
-                <Eye className="w-3 h-3" />
-                {post.views_count} views
+                <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+                {post.likes_count}
+              </span>
+              <span className="flex items-center gap-1">
+                <Eye className="w-4 h-4" />
+                {post.views_count}
               </span>
             </div>
             <span>{post.comments_count} comments</span>
           </div>
 
-          <div className="flex items-center justify-between border-t pt-3">
-            <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-600">
-              <Heart className="w-5 h-5 fill-current mr-2" />
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-1 h-9 text-red-500 hover:text-red-600 hover:bg-red-50"
+            >
+              <Heart className="w-4 h-4 fill-current mr-2" />
               Like
             </Button>
-            <Button variant="ghost" size="sm" className="text-gray-500 hover:text-blue-500">
-              <MessageCircle className="w-5 h-5 mr-2" />
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-1 h-9 text-gray-500 hover:text-blue-500 hover:bg-blue-50"
+            >
+              <MessageCircle className="w-4 h-4 mr-2" />
               Comment
             </Button>
-            <Button variant="ghost" size="sm" className="text-gray-500 hover:text-green-500">
-              <Share2 className="w-5 h-5 mr-2" />
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-1 h-9 text-gray-500 hover:text-green-500 hover:bg-green-50"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
               Share
             </Button>
           </div>
