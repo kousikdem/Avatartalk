@@ -5,11 +5,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Pricing: 1M tokens = ₹420 INR
-const PRICE_PER_MILLION_TOKENS_INR = 420;
+// Default pricing: 1M tokens = ₹1000 INR (will be fetched from DB)
+const DEFAULT_PRICE_PER_MILLION_INR = 1000;
 const MIN_TOKENS = 100000;
 const MAX_TOKENS = 100000000;
-const MIN_AMOUNT_PAISE = 4200; // ₹42 minimum
+const MIN_AMOUNT_INR = 10; // ₹10 minimum
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -18,6 +18,8 @@ Deno.serve(async (req) => {
 
   try {
     const { tokens, amount_inr, user_id } = await req.json();
+
+    console.log(`Token purchase request: user=${user_id}, tokens=${tokens}, amount_inr=${amount_inr}`);
 
     if (!tokens || !amount_inr || !user_id) {
       return new Response(JSON.stringify({
@@ -33,20 +35,7 @@ Deno.serve(async (req) => {
     if (tokens < MIN_TOKENS || tokens > MAX_TOKENS) {
       return new Response(JSON.stringify({
         success: false,
-        error: `Token amount must be between ${MIN_TOKENS} and ${MAX_TOKENS}`
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Validate price matches tokens (with small tolerance for rounding)
-    const expectedPrice = (tokens / 1000000) * PRICE_PER_MILLION_TOKENS_INR;
-    const priceDiff = Math.abs(amount_inr - expectedPrice);
-    if (priceDiff > 1) { // Allow ₹1 tolerance for rounding
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Price does not match token amount'
+        error: `Token amount must be between ${MIN_TOKENS.toLocaleString()} and ${MAX_TOKENS.toLocaleString()}`
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -55,6 +44,52 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Fetch price per million from database (same source as frontend)
+    let pricePerMillionINR = DEFAULT_PRICE_PER_MILLION_INR;
+    const { data: priceRow } = await supabase
+      .from('ai_system_limits')
+      .select('limit_value')
+      .eq('limit_key', 'gift_token_price_per_million')
+      .maybeSingle();
+
+    if (priceRow?.limit_value && typeof priceRow.limit_value === 'object') {
+      const limit = (priceRow.limit_value as { limit?: number }).limit;
+      if (typeof limit === 'number' && Number.isFinite(limit) && limit > 0) {
+        pricePerMillionINR = limit;
+      }
+    }
+
+    console.log(`Using price per million: ₹${pricePerMillionINR}`);
+
+    // Validate price matches tokens (with tolerance for rounding)
+    const expectedPrice = (tokens / 1000000) * pricePerMillionINR;
+    const priceDiff = Math.abs(amount_inr - expectedPrice);
+    const tolerance = Math.max(expectedPrice * 0.05, 1); // 5% tolerance or ₹1 minimum
+    
+    if (priceDiff > tolerance) {
+      console.log(`Price mismatch: expected=${expectedPrice.toFixed(2)}, got=${amount_inr}, diff=${priceDiff.toFixed(2)}, tolerance=${tolerance.toFixed(2)}`);
+      return new Response(JSON.stringify({
+        success: false,
+        error: `Price mismatch. Expected ~₹${expectedPrice.toFixed(0)} for ${tokens.toLocaleString()} tokens`
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Validate minimum amount
+    if (amount_inr < MIN_AMOUNT_INR) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: `Minimum purchase is ₹${MIN_AMOUNT_INR}`
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID');
     const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
 
@@ -62,14 +97,12 @@ Deno.serve(async (req) => {
       console.error('Razorpay credentials not configured');
       return new Response(JSON.stringify({
         success: false,
-        error: 'Payment system not configured'
+        error: 'Payment system not configured. Please contact support.'
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Ensure user profile exists (some environments may miss signup triggers)
     const { data: existingProfile, error: profileError } = await supabase
@@ -115,8 +148,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Convert price to paise (minimum 100 paise = ₹1)
-    const amountInPaise = Math.max(Math.round(amount_inr * 100), MIN_AMOUNT_PAISE);
+    // Convert price to paise (minimum ₹10 = 1000 paise)
+    const amountInPaise = Math.round(amount_inr * 100);
 
     // Create Razorpay order
     const razorpayAuth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
