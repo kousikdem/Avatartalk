@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -25,19 +26,24 @@ import {
   Youtube,
   Globe,
   CreditCard,
-  MessageSquare
+  MessageSquare,
+  Lock,
+  Zap
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAvatarSettings } from '@/hooks/useAvatarSettings';
 import { useSubscriptionPlans } from '@/hooks/useSubscriptionPlans';
+import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import ProfilePictureUpload from '@/components/ProfilePictureUpload';
 import SocialLinksManager from '@/components/SocialLinksManager';
 import { OrdersDashboard } from '@/components/OrdersDashboard';
 import TokenDisplay from '@/components/TokenDisplay';
 import UserChatSettingsPanel from '@/components/UserChatSettingsPanel';
+import PlanBadge, { planColors } from '@/components/PlanBadge';
 
 const SettingsPage = () => {
+  const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
@@ -48,6 +54,9 @@ const SettingsPage = () => {
   const { toast } = useToast();
   const { settings: avatarSettings, updateSetting, loading: avatarLoading } = useAvatarSettings();
   const { plans, createPlan, updatePlan, deletePlan } = useSubscriptionPlans(currentUser?.id);
+  const { hasFeature } = usePlanFeatures();
+  const canAccessSubscriptionPlans = hasFeature('subscription_button_enabled');
+  const creatorPlanConfig = planColors.creator;
   const [selectedCurrency, setSelectedCurrency] = useState('INR');
   const [newPlan, setNewPlan] = useState({
     title: '',
@@ -324,6 +333,7 @@ const SettingsPage = () => {
             <TabsTrigger value="payment" className="flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
               Subscription
+              <PlanBadge planKey="creator" size="sm" showIcon={false} />
             </TabsTrigger>
             <TabsTrigger value="orders" className="flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
@@ -620,6 +630,33 @@ const SettingsPage = () => {
 
           {/* Payment Settings */}
           <TabsContent value="payment" className="space-y-6">
+            {!canAccessSubscriptionPlans ? (
+              <Card className={`${creatorPlanConfig.bgClass} ${creatorPlanConfig.borderClass} border`}>
+                <CardContent className="flex flex-col items-center justify-center py-16 gap-4">
+                  <div className={`p-4 rounded-full bg-gradient-to-r ${creatorPlanConfig.gradient}`}>
+                    <Lock className="w-8 h-8 text-white" />
+                  </div>
+                  <div className="text-center space-y-2">
+                    <div className="flex items-center justify-center gap-2">
+                      <h3 className={`text-xl font-semibold ${creatorPlanConfig.textClass}`}>
+                        Subscription Plans
+                      </h3>
+                      <PlanBadge planKey="creator" size="sm" />
+                    </div>
+                    <p className="text-muted-foreground max-w-md">
+                      Create subscription plans to monetize your content and build recurring revenue from your audience.
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => navigate('/pricing')}
+                    className={`bg-gradient-to-r ${creatorPlanConfig.gradient} text-white hover:opacity-90`}
+                  >
+                    <Zap className="w-4 h-4 mr-2" />
+                    Upgrade to Creator
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
             <Card className="bg-white border border-slate-200">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -850,6 +887,7 @@ const SettingsPage = () => {
                 </div>
               </CardContent>
             </Card>
+            )}
           </TabsContent>
 
           {/* Orders Dashboard */}
