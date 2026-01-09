@@ -9,7 +9,8 @@ export const demoPosts = [
     likes_count: 247,
     comments_count: 43,
     views_count: 1892,
-    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    is_subscriber_only: false,
     profile: {
       username: 'demouser',
       display_name: 'Demo Avatar',
@@ -18,11 +19,14 @@ export const demoPosts = [
   },
   {
     id: 'demo-post-2',
-    content: "New tutorial on AI training coming soon! 🎯 Learn how to create a personal AI that truly represents your brand. Drop a 🔥 if you're interested!",
-    likes_count: 156,
-    comments_count: 28,
-    views_count: 1247,
-    created_at: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(), // 8 hours ago
+    content: "🔐 EXCLUSIVE: Behind-the-scenes look at my AI training process! Learn the secret prompts and techniques I use to make my avatar sound exactly like me...",
+    media_url: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=400&h=300&fit=crop',
+    media_type: 'image/jpeg',
+    likes_count: 412,
+    comments_count: 89,
+    views_count: 3241,
+    created_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+    is_subscriber_only: true,
     profile: {
       username: 'demouser',
       display_name: 'Demo Avatar',
@@ -31,13 +35,28 @@ export const demoPosts = [
   },
   {
     id: 'demo-post-3',
+    content: "New tutorial on AI training coming soon! 🎯 Learn how to create a personal AI that truly represents your brand. Drop a 🔥 if you're interested!",
+    likes_count: 156,
+    comments_count: 28,
+    views_count: 1247,
+    created_at: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
+    is_subscriber_only: false,
+    profile: {
+      username: 'demouser',
+      display_name: 'Demo Avatar',
+      avatar_url: undefined
+    }
+  },
+  {
+    id: 'demo-post-4',
     content: "The future of personal branding is here! 💡 Your AI avatar can handle customer inquiries, book appointments, and share your content - all while you sleep.",
-    media_url: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=400&h=300&fit=crop',
+    media_url: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=300&fit=crop',
     media_type: 'image/jpeg',
     likes_count: 312,
     comments_count: 67,
     views_count: 2543,
-    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    is_subscriber_only: false,
     profile: {
       username: 'demouser',
       display_name: 'Demo Avatar',
@@ -56,6 +75,7 @@ export const demoProducts = [
     thumbnail_url: 'https://images.unsplash.com/photo-1553877522-43269d4ea984?w=400&h=300&fit=crop',
     product_type: 'digital' as const,
     is_free: false,
+    is_paid: true,
     rating: 4.9,
     reviews_count: 127,
     views_count: 2341,
@@ -70,6 +90,7 @@ export const demoProducts = [
     thumbnail_url: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=300&fit=crop',
     product_type: 'digital' as const,
     is_free: false,
+    is_paid: true,
     rating: 4.8,
     reviews_count: 89,
     views_count: 1876,
@@ -100,6 +121,7 @@ export const demoVirtualCollabProducts = [
     thumbnail_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=300&fit=crop',
     product_type: 'virtual_meeting' as const,
     is_free: false,
+    is_paid: true,
     rating: 5.0,
     reviews_count: 45,
     views_count: 892,
