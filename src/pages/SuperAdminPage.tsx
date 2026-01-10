@@ -14,7 +14,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { 
   Shield, Settings, Users, Activity, Coins, Brain, 
   RefreshCw, Plus, AlertTriangle, CheckCircle, BarChart3,
-  Key, CreditCard, Globe, MessageSquare, Package
+  Key, CreditCard, Globe, MessageSquare, Package, Bell
 } from 'lucide-react';
 import { useState } from 'react';
 import { format } from 'date-fns';
@@ -26,6 +26,7 @@ import { SiteSettingsManager } from '@/components/super-admin/SiteSettingsManage
 import { UserSearchManager } from '@/components/super-admin/UserSearchManager';
 import ChatSettingsManager from '@/components/super-admin/ChatSettingsManager';
 import PlanManagement from '@/components/super-admin/PlanManagement';
+import NotificationManager from '@/components/super-admin/NotificationManager';
 
 const SuperAdminPage = () => {
   const {
@@ -117,6 +118,10 @@ const SuperAdminPage = () => {
             <TabsTrigger value="chat" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
               Chat Settings
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="flex items-center gap-2">
+              <Bell className="h-4 w-4" />
+              Notifications
             </TabsTrigger>
             <TabsTrigger value="ai" className="flex items-center gap-2">
               <Brain className="h-4 w-4" />
@@ -260,6 +265,11 @@ const SuperAdminPage = () => {
         {/* Chat Settings Tab */}
         <TabsContent value="chat" className="space-y-4">
           <ChatSettingsManager />
+        </TabsContent>
+
+        {/* Notifications Management Tab */}
+        <TabsContent value="notifications" className="space-y-4">
+          <NotificationManager />
         </TabsContent>
 
         {/* AI Limits Tab */}
