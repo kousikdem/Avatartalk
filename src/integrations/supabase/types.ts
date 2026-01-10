@@ -93,10 +93,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "ai_chat_history_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "ai_chat_history_visitor_id_fkey"
             columns: ["visitor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_chat_history_visitor_id_fkey"
+            columns: ["visitor_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -168,6 +182,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_chat_memory_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -624,6 +645,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "avatar_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       behavior_learning_data: {
@@ -725,6 +753,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -895,6 +930,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "comments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       country_payment_rules: {
@@ -993,6 +1035,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "custom_token_purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       daily_token_usage: {
@@ -1032,6 +1081,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_token_usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1179,6 +1235,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discount_usage_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "seller_orders_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -1435,10 +1498,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "follows_following_id_fkey"
             columns: ["following_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follows_following_id_fkey"
+            columns: ["following_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1687,6 +1764,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "likes_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       notifications: {
@@ -1726,6 +1810,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1897,6 +1988,13 @@ export type Database = {
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "payment_failure_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "seller_orders_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       payment_settings: {
@@ -1955,6 +2053,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_settings_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2497,6 +2602,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       product_reviews: {
@@ -2545,6 +2657,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "seller_orders_safe"
             referencedColumns: ["id"]
           },
           {
@@ -2728,10 +2847,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "profile_visitors_visited_profile_id_fkey"
+            columns: ["visited_profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "profile_visitors_visitor_id_fkey"
             columns: ["visitor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_visitors_visitor_id_fkey"
+            columns: ["visitor_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2900,6 +3033,13 @@ export type Database = {
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "refund_overrides_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "seller_orders_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       scenario_templates: {
@@ -2935,6 +3075,39 @@ export type Database = {
           training_prompts?: Json | null
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      sensitive_data_access_log: {
+        Row: {
+          access_type: string
+          accessed_at: string
+          data_type: string
+          id: string
+          ip_address: string | null
+          record_id: string | null
+          table_name: string
+          user_id: string
+        }
+        Insert: {
+          access_type: string
+          accessed_at?: string
+          data_type: string
+          id?: string
+          ip_address?: string | null
+          record_id?: string | null
+          table_name: string
+          user_id: string
+        }
+        Update: {
+          access_type?: string
+          accessed_at?: string
+          data_type?: string
+          id?: string
+          ip_address?: string | null
+          record_id?: string | null
+          table_name?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -3082,6 +3255,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "social_links_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       subscription_plans: {
@@ -3142,6 +3322,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_plans_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -3214,6 +3401,13 @@ export type Database = {
             columns: ["subscribed_to_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_subscribed_to_id_fkey"
+            columns: ["subscribed_to_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -3341,6 +3535,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "token_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       token_gifts: {
@@ -3398,10 +3599,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "token_gifts_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "token_gifts_sender_id_fkey"
             columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "token_gifts_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -3495,6 +3710,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "token_purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -3632,6 +3854,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "transactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "transactions_subscription_id_fkey"
             columns: ["subscription_id"]
             isOneToOne: false
@@ -3683,6 +3912,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_analytics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -3900,6 +4136,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_stats_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -4412,7 +4655,206 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          display_name: string | null
+          followers_count: number | null
+          following_count: number | null
+          id: string | null
+          profession: string | null
+          profile_pic_url: string | null
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          followers_count?: number | null
+          following_count?: number | null
+          id?: string | null
+          profession?: string | null
+          profile_pic_url?: string | null
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          followers_count?: number | null
+          following_count?: number | null
+          id?: string | null
+          profession?: string | null
+          profile_pic_url?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
+      safe_chat_memory: {
+        Row: {
+          created_at: string | null
+          engagement_score: number | null
+          first_visit_at: string | null
+          id: string | null
+          last_topics: Json | null
+          last_visit_at: string | null
+          preferences: Json | null
+          profile_id: string | null
+          session_count: number | null
+          total_messages: number | null
+          updated_at: string | null
+          visitor_email: string | null
+          visitor_id: string | null
+          visitor_name: string | null
+          welcome_shown: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          engagement_score?: number | null
+          first_visit_at?: string | null
+          id?: string | null
+          last_topics?: Json | null
+          last_visit_at?: string | null
+          preferences?: Json | null
+          profile_id?: string | null
+          session_count?: number | null
+          total_messages?: number | null
+          updated_at?: string | null
+          visitor_email?: never
+          visitor_id?: string | null
+          visitor_name?: never
+          welcome_shown?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          engagement_score?: number | null
+          first_visit_at?: string | null
+          id?: string | null
+          last_topics?: Json | null
+          last_visit_at?: string | null
+          preferences?: Json | null
+          profile_id?: string | null
+          session_count?: number | null
+          total_messages?: number | null
+          updated_at?: string | null
+          visitor_email?: never
+          visitor_id?: string | null
+          visitor_name?: never
+          welcome_shown?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_chat_memory_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_chat_memory_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_orders_safe: {
+        Row: {
+          amount: number | null
+          buyer_id: string | null
+          completed_at: string | null
+          created_at: string | null
+          currency: string | null
+          discount_amount: number | null
+          fulfillment_status: string | null
+          id: string | null
+          order_notes: string | null
+          order_status: string | null
+          payment_method: string | null
+          payment_status: string | null
+          platform_fee: number | null
+          product_id: string | null
+          quantity: number | null
+          seller_earnings: number | null
+          seller_id: string | null
+          shipping_address: Json | null
+          shipping_amount: number | null
+          shipping_method: string | null
+          tax_amount: number | null
+          total_amount: number | null
+          tracking_number: string | null
+          updated_at: string | null
+          variant_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          buyer_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          discount_amount?: number | null
+          fulfillment_status?: string | null
+          id?: string | null
+          order_notes?: string | null
+          order_status?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          platform_fee?: number | null
+          product_id?: string | null
+          quantity?: number | null
+          seller_earnings?: number | null
+          seller_id?: string | null
+          shipping_address?: never
+          shipping_amount?: number | null
+          shipping_method?: string | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          tracking_number?: string | null
+          updated_at?: string | null
+          variant_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          buyer_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          discount_amount?: number | null
+          fulfillment_status?: string | null
+          id?: string | null
+          order_notes?: string | null
+          order_status?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          platform_fee?: number | null
+          product_id?: string | null
+          quantity?: number | null
+          seller_earnings?: number | null
+          seller_id?: string | null
+          shipping_address?: never
+          shipping_amount?: number | null
+          shipping_method?: string | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          tracking_number?: string | null
+          updated_at?: string | null
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       calculate_user_engagement_score: {
@@ -4486,6 +4928,7 @@ export type Database = {
         Args: { post_id_param: string }
         Returns: undefined
       }
+      is_own_profile: { Args: { profile_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       log_admin_action: {
         Args: {
@@ -4497,6 +4940,7 @@ export type Database = {
         }
         Returns: string
       }
+      mask_shipping_address: { Args: { address: Json }; Returns: Json }
       process_token_gift: {
         Args: {
           p_gift_id: string
