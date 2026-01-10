@@ -27,6 +27,9 @@ import SuperAdminPage from "./pages/SuperAdminPage";
 import BuyTokensPage from "./pages/BuyTokensPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import PricingPage from "./components/PricingPage";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import RefundPolicyPage from "./pages/RefundPolicyPage";
 import { supabase } from "@/integrations/supabase/client";
 import { CurrencyProvider } from "@/hooks/useCurrency";
 
@@ -147,6 +150,9 @@ const App = () => {
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/pricing" element={<PricingPage />} />
+                    <Route path="/terms" element={<TermsPage />} />
+                    <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                    <Route path="/refund-policy" element={<RefundPolicyPage />} />
                     <Route path="/:username" element={<UsernameRedirect />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
