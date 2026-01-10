@@ -514,13 +514,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
 
         <p className="text-center text-sm text-gray-600">
           By continuing, you agree to our{' '}
-          <Button variant="link" className="text-blue-500 hover:text-blue-600 p-0 h-auto text-sm">
+          <a href="/terms" className="text-blue-500 hover:text-blue-600 underline">
             Terms of Service
-          </Button>{' '}
+          </a>{' '}
           and{' '}
-          <Button variant="link" className="text-blue-500 hover:text-blue-600 p-0 h-auto text-sm">
+          <a href="/privacy-policy" className="text-blue-500 hover:text-blue-600 underline">
             Privacy Policy
-          </Button>
+          </a>
         </p>
       </DialogContent>
     </Dialog>

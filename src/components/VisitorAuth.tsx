@@ -514,7 +514,9 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
         </div>
 
         <p className="text-center text-xs text-blue-300">
-          By continuing, you agree to our Terms and Privacy Policy
+          By continuing, you agree to our{' '}
+          <a href="/terms" className="underline hover:text-white">Terms</a> and{' '}
+          <a href="/privacy-policy" className="underline hover:text-white">Privacy Policy</a>
         </p>
       </DialogContent>
     </Dialog>

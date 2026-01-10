@@ -1139,20 +1139,19 @@ const LandingPage = () => {
             <div>
               <h3 className="font-bold mb-4">Product</h3>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white">Features</a></li>
-                <li><a href="#" className="hover:text-white">Pricing</a></li>
+                <li><a href="#features" className="hover:text-white">Features</a></li>
+                <li><a href="/pricing" className="hover:text-white">Pricing</a></li>
                 <li><a href="#" className="hover:text-white">Templates</a></li>
                 <li><a href="#" className="hover:text-white">API</a></li>
               </ul>
             </div>
             
             <div>
-              <h3 className="font-bold mb-4">Support</h3>
+              <h3 className="font-bold mb-4">Legal</h3>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white">Help Center</a></li>
-                <li><a href="#" className="hover:text-white">Contact</a></li>
-                <li><a href="#" className="hover:text-white">Status</a></li>
-                <li><a href="#" className="hover:text-white">Community</a></li>
+                <li><a href="/terms" className="hover:text-white">Terms & Conditions</a></li>
+                <li><a href="/privacy-policy" className="hover:text-white">Privacy Policy</a></li>
+                <li><a href="/refund-policy" className="hover:text-white">Refund Policy</a></li>
               </ul>
             </div>
             
@@ -1169,9 +1168,16 @@ const LandingPage = () => {
           </div>
           
           <div className="border-t border-gray-800 pt-8 text-center">
-            <p className="text-gray-400 text-sm">
+            <p className="text-gray-400 text-sm mb-2">
               © 2024 All rights reserved by AvatarTalk.Co
             </p>
+            <div className="flex justify-center gap-4 text-xs text-gray-500">
+              <a href="/terms" className="hover:text-white">Terms</a>
+              <span>•</span>
+              <a href="/privacy-policy" className="hover:text-white">Privacy</a>
+              <span>•</span>
+              <a href="/refund-policy" className="hover:text-white">Refunds</a>
+            </div>
           </div>
         </div>
       </footer>
