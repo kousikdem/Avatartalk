@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { UserCircle, Settings, Home, LogIn, Users } from 'lucide-react';
 import MainAuth from './MainAuth';
 import VisitorAuth from './VisitorAuth';
 import Logo from './Logo';
+import NotificationBell from './NotificationBell';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
@@ -93,6 +93,10 @@ const Navbar: React.FC<NavbarProps> = ({ showAuth = false }) => {
                     Visit Profile
                   </Button>
                 </>
+              )}
+              
+              {currentUser && (
+                <NotificationBell variant="dark" />
               )}
               
               {!currentUser && (

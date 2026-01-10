@@ -8,6 +8,7 @@ import TokenDisplay from './TokenDisplay';
 import PlanBadge from './PlanBadge';
 import Logo from './Logo';
 import ShareModal from './ShareModal';
+import NotificationBell from './NotificationBell';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -107,6 +108,8 @@ const DashboardHeaderStrip: React.FC = () => {
             </div>
             
             <TokenDisplay compact />
+            
+            <NotificationBell variant="light" compact />
             
             <Button
               variant="ghost"
