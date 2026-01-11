@@ -30,10 +30,14 @@ export const useAIChatHistory = (profileId: string | null, visitorId: string | n
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [sessionId] = useState(() => {
-    // Generate or retrieve session ID for anonymous users
+    // Generate or retrieve session ID for anonymous users (min 32 chars required)
     const stored = sessionStorage.getItem('chat_session_id');
-    if (stored) return stored;
-    const newId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    if (stored && stored.length >= 32) return stored;
+    // Generate a secure session ID with at least 32 characters
+    const timestamp = Date.now().toString(36);
+    const randomPart1 = Math.random().toString(36).substring(2, 15);
+    const randomPart2 = Math.random().toString(36).substring(2, 15);
+    const newId = `session_${timestamp}_${randomPart1}${randomPart2}`;
     sessionStorage.setItem('chat_session_id', newId);
     return newId;
   });
