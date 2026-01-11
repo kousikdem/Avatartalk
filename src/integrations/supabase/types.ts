@@ -4655,6 +4655,51 @@ export type Database = {
       }
     }
     Views: {
+      public_chat_settings: {
+        Row: {
+          ai_responses_enabled: boolean | null
+          allow_direct_chat: boolean | null
+          direct_chat_free: boolean | null
+          enable_daily_limit: boolean | null
+          enable_gift_popup: boolean | null
+          enable_rich_responses: boolean | null
+          enable_voice_responses: boolean | null
+          free_messages_per_day: number | null
+          gift_popup_after_messages: number | null
+          max_message_length: number | null
+          show_gift_button: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          ai_responses_enabled?: boolean | null
+          allow_direct_chat?: boolean | null
+          direct_chat_free?: boolean | null
+          enable_daily_limit?: boolean | null
+          enable_gift_popup?: boolean | null
+          enable_rich_responses?: boolean | null
+          enable_voice_responses?: boolean | null
+          free_messages_per_day?: number | null
+          gift_popup_after_messages?: number | null
+          max_message_length?: number | null
+          show_gift_button?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          ai_responses_enabled?: boolean | null
+          allow_direct_chat?: boolean | null
+          direct_chat_free?: boolean | null
+          enable_daily_limit?: boolean | null
+          enable_gift_popup?: boolean | null
+          enable_rich_responses?: boolean | null
+          enable_voice_responses?: boolean | null
+          free_messages_per_day?: number | null
+          gift_popup_after_messages?: number | null
+          max_message_length?: number | null
+          show_gift_button?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       public_profiles: {
         Row: {
           avatar_url: string | null
