@@ -48,7 +48,10 @@ import {
   MicOff,
   VolumeX,
   Loader2,
-  Coins
+  Coins,
+  Sun,
+  Moon,
+  Gift
 } from 'lucide-react';
 import MainAuth from './MainAuth';
 import VisitorAuth from './VisitorAuth';
@@ -72,6 +75,7 @@ const LandingPage = () => {
   const [demoActiveTab, setDemoActiveTab] = useState<'posts' | 'chat' | 'product'>('chat');
   const [demoMessage, setDemoMessage] = useState('');
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [isDemoThemeDark, setIsDemoThemeDark] = useState(true);
   
   const { plans, loading: plansLoading } = usePlatformPricingPlans();
 
@@ -286,43 +290,61 @@ const LandingPage = () => {
           </div>
 
           {/* Demo User Profile - Half Size 3D Floating Display */}
-          <div className="max-w-xs mx-auto mt-96 mb-40 bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl shadow-2xl overflow-hidden border border-slate-700/50 animate-[float_10s_ease-in-out_infinite] hover:scale-105 transition-transform duration-500" style={{ transform: 'perspective(1200px) rotateX(5deg) rotateY(-2deg)', transformStyle: 'preserve-3d' }}>
+          <div className={`max-w-xs mx-auto mt-96 mb-40 ${isDemoThemeDark ? 'bg-gradient-to-br from-slate-900 to-slate-800 border-slate-700/50' : 'bg-gradient-to-br from-white to-gray-100 border-gray-200'} rounded-3xl shadow-2xl overflow-hidden border animate-[float_10s_ease-in-out_infinite] hover:scale-105 transition-all duration-500`} style={{ transform: 'perspective(1200px) rotateX(5deg) rotateY(-2deg)', transformStyle: 'preserve-3d' }}>
             {/* Profile Header */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4">
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
-                    <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center">
-                      <span className="text-lg font-bold text-white">DA</span>
+                    <div className={`w-full h-full rounded-full ${isDemoThemeDark ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center`}>
+                      <span className={`text-lg font-bold ${isDemoThemeDark ? 'text-white' : 'text-gray-900'}`}>DA</span>
                     </div>
                   </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 shadow-sm" />
+                  <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 ${isDemoThemeDark ? 'border-slate-900' : 'border-white'} shadow-sm`} />
                 </div>
               </div>
               
               <div className="flex-1 min-w-0 text-left ml-3">
-                <h3 className="text-xl font-bold text-white leading-tight mb-0.5 truncate">Demo Avatar</h3>
-                <p className="text-slate-400 text-sm">@demouser</p>
+                <h3 className={`text-xl font-bold leading-tight mb-0.5 truncate ${isDemoThemeDark ? 'text-white' : 'text-gray-900'}`}>Demo Avatar</h3>
+                <p className={`text-sm ${isDemoThemeDark ? 'text-slate-400' : 'text-gray-600'}`}>@demouser</p>
               </div>
               
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-slate-400 hover:text-white p-2 rounded-full bg-slate-800/30"
-              >
-                <UserCircle className="h-4 w-4" />
-              </Button>
+              {/* Right Side: Theme Toggle and Profile Button */}
+              <div className="flex items-center gap-2">
+                {/* Theme Toggle */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsDemoThemeDark(!isDemoThemeDark)}
+                  className={`${isDemoThemeDark ? 'text-slate-400 hover:text-white bg-slate-800/30 hover:bg-slate-700/50' : 'text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200'} p-2 rounded-full transition-all duration-200`}
+                >
+                  {isDemoThemeDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                </Button>
+                
+                {/* Profile Button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`p-0 rounded-full ${isDemoThemeDark ? 'bg-slate-800/30 hover:bg-slate-700/50' : 'bg-gray-100 hover:bg-gray-200'} transition-all duration-200`}
+                >
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[1px]">
+                    <div className={`w-full h-full rounded-full ${isDemoThemeDark ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center`}>
+                      <UserCircle className="h-4 w-4 text-blue-500" />
+                    </div>
+                  </div>
+                </Button>
+              </div>
             </div>
 
             <div className="px-6 pb-4">
-              <p className="text-slate-300 text-sm leading-relaxed">
+              <p className={`text-sm leading-relaxed ${isDemoThemeDark ? 'text-slate-300' : 'text-gray-600'}`}>
                 Increase Your Brand value to 10X Through AvatarTalk's Clone Avatar.
               </p>
             </div>
 
             {/* 3D Avatar Preview - Realistic Avatar */}
             <div className="px-6 pb-6">
-              <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-800/40 via-blue-900/20 to-slate-800/40 border border-slate-600/30 shadow-inner">
+              <div className={`relative rounded-3xl overflow-hidden ${isDemoThemeDark ? 'bg-gradient-to-br from-slate-800/40 via-blue-900/20 to-slate-800/40 border-slate-600/30' : 'bg-gradient-to-br from-blue-50/40 via-purple-50/20 to-white border-gray-200'} border shadow-inner`}>
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent_50%)]"></div>
                 
                 {/* Realistic 3D Avatar with React Three Fiber */}
@@ -333,13 +355,24 @@ const LandingPage = () => {
                 <div className="absolute inset-2 rounded-3xl border border-purple-400/20 pointer-events-none animate-pulse" style={{animationDelay: '0.5s'}}></div>
                 <div className="absolute -inset-1 rounded-3xl border border-cyan-400/20 pointer-events-none animate-pulse" style={{animationDelay: '1s'}}></div>
                 
-                {/* Floating Talk Button */}
+                {/* Gift Button - Bottom Left */}
+                <div className="absolute bottom-3 left-4 z-10">
+                  <Button
+                    size="icon"
+                    className="rounded-full w-10 h-10 bg-gradient-to-r from-pink-500 via-rose-500 to-purple-500 hover:from-pink-600 hover:via-rose-600 hover:to-purple-600 text-white shadow-xl hover:shadow-2xl animate-pulse hover:animate-none transition-all border-2 border-white/30"
+                  >
+                    <Gift className="w-5 h-5" />
+                  </Button>
+                </div>
+                
+                {/* Floating Talk Button - Center */}
                 <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2">
                   <Button
                     size="sm"
-                    className="bg-gradient-to-r from-blue-600/90 to-cyan-600/90 text-white rounded-full w-10 h-10 p-0 backdrop-blur-sm border border-blue-400/30 shadow-lg hover:scale-110 transition-transform"
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-full px-4 py-2 backdrop-blur-sm border border-blue-400/30 shadow-lg hover:scale-110 transition-transform flex items-center gap-2"
                   >
                     <MessageSquare className="h-4 w-4" />
+                    <span className="text-xs font-medium">Talk to Me</span>
                   </Button>
                 </div>
               </div>
@@ -350,7 +383,7 @@ const LandingPage = () => {
               <div className="grid grid-cols-5 gap-2">
                 <Button
                   size="sm"
-                  className="col-span-3 bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 text-white py-3 rounded-xl text-sm font-semibold"
+                  className="col-span-3 bg-gradient-to-r from-blue-500 via-purple-500 to-purple-600 hover:from-blue-600 hover:via-purple-600 hover:to-purple-700 text-white py-3 rounded-xl text-sm font-semibold shadow-lg"
                 >
                   <Sparkles className="h-4 w-4 mr-1" />
                   Subscribe - $9.99/mo
@@ -359,7 +392,7 @@ const LandingPage = () => {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="col-span-2 border-blue-500 text-blue-400 hover:bg-blue-600 hover:text-white py-3 rounded-xl text-sm font-semibold"
+                  className={`col-span-2 ${isDemoThemeDark ? 'border-blue-500 text-blue-400 hover:bg-blue-600' : 'border-purple-500 text-purple-600 hover:bg-purple-600'} hover:text-white py-3 rounded-xl text-sm font-semibold`}
                 >
                   Follow
                 </Button>
@@ -369,29 +402,31 @@ const LandingPage = () => {
             {/* Stats */}
             <div className="px-6 pb-4">
               <div className="grid grid-cols-3 gap-2">
-                <div className="text-center bg-slate-800/30 rounded-xl py-2 backdrop-blur-sm border border-slate-700/20">
-                  <div className="text-lg font-bold text-white mb-0.5">847</div>
-                  <div className="text-xs text-slate-400 font-medium">Conversations</div>
+                <div className={`text-center rounded-xl py-2 backdrop-blur-sm border ${isDemoThemeDark ? 'bg-slate-800/30 border-slate-700/20' : 'bg-gradient-to-br from-blue-50 to-purple-50 border-gray-200'}`}>
+                  <div className={`text-lg font-bold mb-0.5 ${isDemoThemeDark ? 'text-white' : 'text-gray-900'}`}>847</div>
+                  <div className={`text-xs font-medium ${isDemoThemeDark ? 'text-slate-400' : 'text-gray-600'}`}>Conversations</div>
                 </div>
-                <div className="text-center bg-slate-800/30 rounded-xl py-2 backdrop-blur-sm border border-slate-700/20">
-                  <div className="text-lg font-bold text-white mb-0.5">1.2K</div>
-                  <div className="text-xs text-slate-400 font-medium">Followers</div>
+                <div className={`text-center rounded-xl py-2 backdrop-blur-sm border ${isDemoThemeDark ? 'bg-slate-800/30 border-slate-700/20' : 'bg-gradient-to-br from-blue-50 to-purple-50 border-gray-200'}`}>
+                  <div className={`text-lg font-bold mb-0.5 ${isDemoThemeDark ? 'text-white' : 'text-gray-900'}`}>1.2K</div>
+                  <div className={`text-xs font-medium ${isDemoThemeDark ? 'text-slate-400' : 'text-gray-600'}`}>Followers</div>
                 </div>
-                <div className="text-center bg-slate-800/30 rounded-xl py-2 backdrop-blur-sm border border-slate-700/20">
-                  <div className="text-lg font-bold text-white mb-0.5">94</div>
-                  <div className="text-xs text-slate-400 font-medium">Loyalty</div>
+                <div className={`text-center rounded-xl py-2 backdrop-blur-sm border ${isDemoThemeDark ? 'bg-slate-800/30 border-slate-700/20' : 'bg-gradient-to-br from-blue-50 to-purple-50 border-gray-200'}`}>
+                  <div className={`text-lg font-bold mb-0.5 ${isDemoThemeDark ? 'text-white' : 'text-gray-900'}`}>94</div>
+                  <div className={`text-xs font-medium ${isDemoThemeDark ? 'text-slate-400' : 'text-gray-600'}`}>Loyalty</div>
                 </div>
               </div>
             </div>
 
             {/* Content Tabs */}
             <div className="px-6 pb-4">
-              <div className="border-b border-slate-700/30 mb-4">
+              <div className={`border-b mb-4 ${isDemoThemeDark ? 'border-slate-700/30' : 'border-gray-200'}`}>
                 <div className="flex">
                   <button 
                     onClick={() => setDemoActiveTab('posts')}
                     className={`flex-1 px-4 py-3 font-medium text-sm flex items-center justify-center gap-2 transition-colors ${
-                      demoActiveTab === 'posts' ? 'text-white border-b-2 border-blue-500' : 'text-slate-400 hover:text-white'
+                      demoActiveTab === 'posts' 
+                        ? `${isDemoThemeDark ? 'text-white' : 'text-gray-900'} border-b-2 border-blue-500` 
+                        : `${isDemoThemeDark ? 'text-slate-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`
                     }`}
                   >
                     <FileText className="w-4 h-4" /> Posts
@@ -399,7 +434,9 @@ const LandingPage = () => {
                   <button 
                     onClick={() => setDemoActiveTab('chat')}
                     className={`flex-1 px-4 py-3 font-medium text-sm flex items-center justify-center gap-2 transition-colors ${
-                      demoActiveTab === 'chat' ? 'text-white border-b-2 border-blue-500' : 'text-slate-400 hover:text-white'
+                      demoActiveTab === 'chat' 
+                        ? `${isDemoThemeDark ? 'text-white' : 'text-gray-900'} border-b-2 border-blue-500` 
+                        : `${isDemoThemeDark ? 'text-slate-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`
                     }`}
                   >
                     <MessageSquare className="w-4 h-4" /> Chat
@@ -407,7 +444,9 @@ const LandingPage = () => {
                   <button 
                     onClick={() => setDemoActiveTab('product')}
                     className={`flex-1 px-4 py-3 font-medium text-sm flex items-center justify-center gap-2 transition-colors ${
-                      demoActiveTab === 'product' ? 'text-white border-b-2 border-blue-500' : 'text-slate-400 hover:text-white'
+                      demoActiveTab === 'product' 
+                        ? `${isDemoThemeDark ? 'text-white' : 'text-gray-900'} border-b-2 border-blue-500` 
+                        : `${isDemoThemeDark ? 'text-slate-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`
                     }`}
                   >
                     <Rocket className="w-4 h-4" /> Product
