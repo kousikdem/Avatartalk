@@ -7,7 +7,6 @@ import {
   MessageSquare, 
   Settings, 
   BarChart3,
-  Bell,
   Calendar,
   Brain,
   User,
@@ -58,7 +57,6 @@ const navigationItems: NavItem[] = [
   { title: "Social Links", icon: Share2, url: "/settings/social-links", gradient: "from-sky-500 to-blue-500", requiredPlan: 'free' },
   { title: "Analytics", icon: BarChart3, url: "/settings/analytics", gradient: "from-indigo-500 to-violet-500", requiredPlan: 'pro', featureKey: 'advanced_analytics' },
   { title: "Followers", icon: Users, url: "/settings/followers", gradient: "from-green-500 to-emerald-500", requiredPlan: 'free' },
-  { title: "Notifications", icon: Bell, url: "/settings/notifications", gradient: "from-red-500 to-orange-500", requiredPlan: 'free' },
   { title: "Settings", icon: Settings, url: "/settings/account", gradient: "from-slate-500 to-gray-600", requiredPlan: 'free' },
 ];
 
