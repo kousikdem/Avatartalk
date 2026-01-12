@@ -1110,10 +1110,10 @@ const LandingPage = () => {
           </p>
           <Button 
             size="lg"
-            className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg font-bold"
+            className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white hover:from-amber-600 hover:via-orange-600 hover:to-rose-600 px-10 py-6 text-xl font-bold shadow-2xl shadow-orange-500/40 border-2 border-white/20 animate-pulse hover:animate-none hover:scale-105 transition-all duration-300"
             onClick={() => setIsMainAuthOpen(true)}
           >
-            <Rocket className="w-5 h-5 mr-2" />
+            <Rocket className="w-6 h-6 mr-3" />
             Start Building Your Avatar
           </Button>
         </div>
