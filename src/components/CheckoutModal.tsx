@@ -12,6 +12,7 @@ import { Product } from '@/hooks/useProducts';
 import { useOrders } from '@/hooks/useOrders';
 import { Loader2, Package, CreditCard, MapPin } from 'lucide-react';
 import { getShortTaxLabel, calculateTax, getTaxLabel } from '@/utils/taxCalculation';
+import { notificationService } from '@/utils/notificationService';
 
 declare global {
   interface Window {
@@ -159,7 +160,7 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
       const totalPrice = (product.price || 0) * quantity;
       if (product.is_free || totalPrice === 0) {
         // Create order directly without payment
-        const { error: orderError } = await supabase
+        const { data: orderData, error: orderError } = await supabase
           .from('orders')
           .insert({
             buyer_id: user.id,
@@ -180,11 +181,34 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
               product_type: product.product_type,
               is_free: true
             }
-          });
+          })
+          .select()
+          .single();
 
         if (orderError) {
           console.error('Free order creation error:', orderError);
           throw new Error(orderError.message || 'Failed to create order');
+        }
+
+        // Send notification to seller
+        try {
+          const { data: buyerProfile } = await supabase
+            .from('profiles')
+            .select('username, display_name')
+            .eq('id', user.id)
+            .single();
+          
+          const buyerName = buyerProfile?.display_name || buyerProfile?.username || 'A customer';
+          await notificationService.notifyProductSale(
+            product.user_id,
+            product.title || 'Product',
+            buyerName,
+            0,
+            currency,
+            orderData?.id
+          );
+        } catch (notifError) {
+          console.error('Error sending sale notification:', notifError);
         }
 
         onClose();

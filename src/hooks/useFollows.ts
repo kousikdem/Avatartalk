@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { notificationService } from '@/utils/notificationService';
 
 interface Follow {
   id: string;
@@ -109,6 +110,20 @@ export const useFollows = (userId?: string): UseFollowsReturn => {
       // Revert on error
       setFollowing(prev => prev.filter(f => f.id !== optimisticFollow.id));
       throw error;
+    }
+
+    // Send notification to the followed user
+    try {
+      const { data: followerProfile } = await supabase
+        .from('profiles')
+        .select('username, display_name')
+        .eq('id', currentUser.user.id)
+        .single();
+      
+      const followerName = followerProfile?.display_name || followerProfile?.username || 'Someone';
+      await notificationService.notifyNewFollower(followingId, followerName, currentUser.user.id);
+    } catch (notifError) {
+      console.error('Error sending follow notification:', notifError);
     }
     
     // Silent background refresh

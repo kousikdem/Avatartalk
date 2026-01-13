@@ -3,16 +3,22 @@ import { supabase } from '@/integrations/supabase/client';
 export type NotificationType = 
   | 'product_sale'
   | 'virtual_collab_sale'
+  | 'meeting_booking'
   | 'post_like'
   | 'post_comment'
   | 'follow'
+  | 'unfollow'
   | 'message'
   | 'subscription'
   | 'token_gift'
   | 'order_update'
   | 'system'
   | 'promotion'
-  | 'reminder';
+  | 'reminder'
+  | 'profile_visit'
+  | 'product_view'
+  | 'post_view'
+  | 'activity';
 
 interface CreateNotificationParams {
   userId: string;
@@ -46,24 +52,35 @@ export const notificationService = {
   },
 
   // Product sale notification
-  async notifyProductSale(sellerId: string, productName: string, buyerName: string, amount: number, currency: string) {
+  async notifyProductSale(sellerId: string, productName: string, buyerName: string, amount: number, currency: string, orderId?: string) {
     return this.create({
       userId: sellerId,
       type: 'product_sale',
       title: 'New Product Sale! 🎉',
       message: `${buyerName} purchased "${productName}" for ${currency} ${amount}`,
-      data: { productName, buyerName, amount, currency }
+      data: { productName, buyerName, amount, currency, orderId }
     });
   },
 
   // Virtual collaboration sale notification
-  async notifyCollabSale(sellerId: string, collabTitle: string, buyerName: string, amount: number, currency: string) {
+  async notifyCollabSale(sellerId: string, collabTitle: string, buyerName: string, amount: number, currency: string, orderId?: string) {
     return this.create({
       userId: sellerId,
       type: 'virtual_collab_sale',
       title: 'Virtual Collaboration Booked! 📅',
       message: `${buyerName} booked "${collabTitle}" for ${currency} ${amount}`,
-      data: { collabTitle, buyerName, amount, currency }
+      data: { collabTitle, buyerName, amount, currency, orderId }
+    });
+  },
+
+  // Meeting booking notification
+  async notifyMeetingBooking(sellerId: string, meetingTitle: string, buyerName: string, eventDate?: string, orderId?: string) {
+    return this.create({
+      userId: sellerId,
+      type: 'meeting_booking',
+      title: 'New Meeting Booking! 📅',
+      message: `${buyerName} booked a meeting: "${meetingTitle}"${eventDate ? ` on ${new Date(eventDate).toLocaleDateString()}` : ''}`,
+      data: { meetingTitle, buyerName, eventDate, orderId }
     });
   },
 
@@ -100,6 +117,17 @@ export const notificationService = {
     });
   },
 
+  // Unfollow notification (optional - some users may want this)
+  async notifyUnfollow(unfollowedUserId: string, unfollowerName: string, unfollowerId: string) {
+    return this.create({
+      userId: unfollowedUserId,
+      type: 'unfollow',
+      title: 'Lost a Follower',
+      message: `${unfollowerName} unfollowed you`,
+      data: { unfollowerName, unfollowerId }
+    });
+  },
+
   // New message notification
   async notifyNewMessage(receiverId: string, senderName: string, messagePreview: string, conversationId: string) {
     return this.create({
@@ -112,13 +140,13 @@ export const notificationService = {
   },
 
   // New subscription notification
-  async notifyNewSubscription(creatorId: string, subscriberName: string, planName: string) {
+  async notifyNewSubscription(creatorId: string, subscriberName: string, planName: string, amount?: number, currency?: string) {
     return this.create({
       userId: creatorId,
       type: 'subscription',
       title: 'New Subscriber! 🌟',
-      message: `${subscriberName} subscribed to your ${planName} plan`,
-      data: { subscriberName, planName }
+      message: `${subscriberName} subscribed to your ${planName} plan${amount ? ` for ${currency || 'INR'} ${amount}` : ''}`,
+      data: { subscriberName, planName, amount, currency }
     });
   },
 
@@ -141,6 +169,50 @@ export const notificationService = {
       title: `Order Update: ${status}`,
       message: `Your order for "${productName}" is now ${status}`,
       data: { productName, status, orderId }
+    });
+  },
+
+  // Profile visit notification (for milestones like every 10, 50, 100 visits)
+  async notifyProfileVisitMilestone(userId: string, totalViews: number) {
+    return this.create({
+      userId,
+      type: 'profile_visit',
+      title: 'Profile Views Milestone! 👀',
+      message: `Your profile has reached ${totalViews} views!`,
+      data: { totalViews }
+    });
+  },
+
+  // Product view milestone notification
+  async notifyProductViewMilestone(userId: string, productName: string, totalViews: number) {
+    return this.create({
+      userId,
+      type: 'product_view',
+      title: 'Product Views Milestone! 📈',
+      message: `"${productName}" has reached ${totalViews} views!`,
+      data: { productName, totalViews }
+    });
+  },
+
+  // Post view milestone notification
+  async notifyPostViewMilestone(userId: string, postTitle: string, totalViews: number) {
+    return this.create({
+      userId,
+      type: 'post_view',
+      title: 'Post Views Milestone! 🔥',
+      message: `"${postTitle}" has reached ${totalViews} views!`,
+      data: { postTitle, totalViews }
+    });
+  },
+
+  // Generic activity notification
+  async notifyActivity(userId: string, title: string, message: string, data = {}) {
+    return this.create({
+      userId,
+      type: 'activity',
+      title,
+      message,
+      data
     });
   },
 
