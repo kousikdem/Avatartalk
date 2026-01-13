@@ -16,16 +16,22 @@ export interface Notification {
 export type NotificationType = 
   | 'product_sale'
   | 'virtual_collab_sale'
+  | 'meeting_booking'
   | 'post_like'
   | 'post_comment'
   | 'follow'
+  | 'unfollow'
   | 'message'
   | 'subscription'
   | 'token_gift'
   | 'order_update'
   | 'system'
   | 'promotion'
-  | 'reminder';
+  | 'reminder'
+  | 'profile_visit'
+  | 'product_view'
+  | 'post_view'
+  | 'activity';
 
 export const useNotifications = (userId?: string) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -227,15 +233,19 @@ export const useNotifications = (userId?: string) => {
   }, [notifications]);
 
   const getSalesNotifications = useCallback(() => {
-    return notifications.filter(n => ['product_sale', 'virtual_collab_sale', 'subscription'].includes(n.type));
+    return notifications.filter(n => ['product_sale', 'virtual_collab_sale', 'subscription', 'meeting_booking'].includes(n.type));
   }, [notifications]);
 
   const getActivityNotifications = useCallback(() => {
-    return notifications.filter(n => ['post_like', 'post_comment', 'follow'].includes(n.type));
+    return notifications.filter(n => ['post_like', 'post_comment', 'follow', 'unfollow', 'profile_visit', 'product_view', 'post_view', 'activity'].includes(n.type));
   }, [notifications]);
 
   const getMessageNotifications = useCallback(() => {
     return notifications.filter(n => n.type === 'message');
+  }, [notifications]);
+
+  const getViewNotifications = useCallback(() => {
+    return notifications.filter(n => ['profile_visit', 'product_view', 'post_view'].includes(n.type));
   }, [notifications]);
 
   return {
@@ -251,6 +261,7 @@ export const useNotifications = (userId?: string) => {
     getUnreadNotifications,
     getSalesNotifications,
     getActivityNotifications,
-    getMessageNotifications
+    getMessageNotifications,
+    getViewNotifications
   };
 };

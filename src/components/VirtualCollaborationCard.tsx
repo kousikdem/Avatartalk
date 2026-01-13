@@ -14,6 +14,7 @@ import {
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { notificationService } from '@/utils/notificationService';
 
 interface VirtualProduct {
   id: string;
@@ -146,7 +147,7 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
       // Handle FREE products without Razorpay
       if (product.price === 0) {
         // Create order directly without payment - product_id is nullable for virtual collaborations
-        const { error: orderError } = await supabase
+        const { data: orderData, error: orderError } = await supabase
           .from('orders')
           .insert({
             buyer_id: currentUserId,
@@ -169,11 +170,35 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
               join_url: product.join_url,
               title: product.title
             }
-          });
+          })
+          .select()
+          .single();
 
         if (orderError) {
           console.error('Order creation error:', orderError);
           throw new Error(orderError.message || 'Failed to create booking');
+        }
+
+        // Send notification to seller
+        try {
+          const buyerName = bookingForm.full_name || 'A customer';
+          await notificationService.notifyMeetingBooking(
+            product.user_id,
+            product.title || 'Virtual Collaboration',
+            buyerName,
+            product.event_date,
+            orderData?.id
+          );
+          await notificationService.notifyCollabSale(
+            product.user_id,
+            product.title || 'Virtual Collaboration',
+            buyerName,
+            0,
+            product.currency || 'INR',
+            orderData?.id
+          );
+        } catch (notifError) {
+          console.error('Error sending booking notification:', notifError);
         }
 
         toast({

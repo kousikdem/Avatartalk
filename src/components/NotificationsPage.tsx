@@ -5,9 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { 
-  Bell, Check, CheckCheck, MessageSquare, UserPlus, Heart, Calendar, 
+  Bell, Check, CheckCheck, MessageSquare, UserPlus, UserMinus, Heart, Calendar, 
   Settings, Trash2, Search, ShoppingCart, Gift, Star, Package, 
-  Megaphone, Clock, Filter, X
+  Megaphone, Clock, Filter, X, Eye, Activity
 } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
@@ -54,6 +54,8 @@ const NotificationsPage = () => {
         return MessageSquare;
       case 'follow':
         return UserPlus;
+      case 'unfollow':
+        return UserMinus;
       case 'post_like':
       case 'like':
         return Heart;
@@ -62,6 +64,7 @@ const NotificationsPage = () => {
       case 'product_sale':
         return ShoppingCart;
       case 'virtual_collab_sale':
+      case 'meeting_booking':
         return Calendar;
       case 'subscription':
         return Star;
@@ -77,6 +80,12 @@ const NotificationsPage = () => {
         return Settings;
       case 'appointment':
         return Calendar;
+      case 'profile_visit':
+      case 'product_view':
+      case 'post_view':
+        return Eye;
+      case 'activity':
+        return Activity;
       default:
         return Bell;
     }
@@ -88,6 +97,8 @@ const NotificationsPage = () => {
         return 'bg-blue-50 text-blue-700 border-blue-200';
       case 'follow':
         return 'bg-green-50 text-green-700 border-green-200';
+      case 'unfollow':
+        return 'bg-gray-50 text-gray-600 border-gray-200';
       case 'post_like':
       case 'like':
         return 'bg-red-50 text-red-700 border-red-200';
@@ -95,6 +106,7 @@ const NotificationsPage = () => {
         return 'bg-indigo-50 text-indigo-700 border-indigo-200';
       case 'product_sale':
       case 'virtual_collab_sale':
+      case 'meeting_booking':
         return 'bg-emerald-50 text-emerald-700 border-emerald-200';
       case 'subscription':
         return 'bg-amber-50 text-amber-700 border-amber-200';
@@ -108,6 +120,14 @@ const NotificationsPage = () => {
         return 'bg-orange-50 text-orange-700 border-orange-200';
       case 'appointment':
         return 'bg-purple-50 text-purple-700 border-purple-200';
+      case 'profile_visit':
+        return 'bg-violet-50 text-violet-700 border-violet-200';
+      case 'product_view':
+        return 'bg-teal-50 text-teal-700 border-teal-200';
+      case 'post_view':
+        return 'bg-sky-50 text-sky-700 border-sky-200';
+      case 'activity':
+        return 'bg-lime-50 text-lime-700 border-lime-200';
       default:
         return 'bg-gray-50 text-gray-700 border-gray-200';
     }
@@ -119,12 +139,16 @@ const NotificationsPage = () => {
         return 'Product Sale';
       case 'virtual_collab_sale':
         return 'Collab Sale';
+      case 'meeting_booking':
+        return 'Meeting Booking';
       case 'post_like':
         return 'Like';
       case 'post_comment':
         return 'Comment';
       case 'follow':
         return 'Follower';
+      case 'unfollow':
+        return 'Unfollowed';
       case 'message':
         return 'Message';
       case 'subscription':
@@ -139,6 +163,14 @@ const NotificationsPage = () => {
         return 'Promotion';
       case 'reminder':
         return 'Reminder';
+      case 'profile_visit':
+        return 'Profile Views';
+      case 'product_view':
+        return 'Product Views';
+      case 'post_view':
+        return 'Post Views';
+      case 'activity':
+        return 'Activity';
       default:
         return type;
     }
