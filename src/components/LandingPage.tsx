@@ -58,6 +58,7 @@ import VisitorAuth from './VisitorAuth';
 import RealisticDemoAvatar3D from './RealisticDemoAvatar3D';
 import { usePlatformPricingPlans, PlatformFeature } from '@/hooks/usePlatformPricingPlans';
 import DemoPostCard from './landing/DemoPostCard';
+import demoAvatarImage from '@/assets/demo-avatar.png';
 import DemoProductCard from './landing/DemoProductCard';
 import { demoPosts, demoProducts, demoVirtualCollabProducts } from './landing/demoData';
 
@@ -296,9 +297,11 @@ const LandingPage = () => {
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
-                    <div className={`w-full h-full rounded-full ${isDemoThemeDark ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center`}>
-                      <span className={`text-lg font-bold ${isDemoThemeDark ? 'text-white' : 'text-gray-900'}`}>DA</span>
-                    </div>
+                    <img 
+                      src={demoAvatarImage} 
+                      alt="Demo Avatar" 
+                      className="w-full h-full rounded-full object-cover"
+                    />
                   </div>
                   <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 ${isDemoThemeDark ? 'border-slate-900' : 'border-white'} shadow-sm`} />
                 </div>
@@ -347,8 +350,16 @@ const LandingPage = () => {
               <div className={`relative rounded-3xl overflow-hidden ${isDemoThemeDark ? 'bg-gradient-to-br from-slate-800/40 via-blue-900/20 to-slate-800/40 border-slate-600/30' : 'bg-gradient-to-br from-blue-50/40 via-purple-50/20 to-white border-gray-200'} border shadow-inner`}>
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent_50%)]"></div>
                 
-                {/* Realistic 3D Avatar with React Three Fiber */}
-                <RealisticDemoAvatar3D isTalking={true} />
+                {/* Avatar Preview with Uploaded Image */}
+                <div className="relative h-64 flex items-center justify-center">
+                  <img 
+                    src={demoAvatarImage} 
+                    alt="Demo Avatar Preview" 
+                    className="h-full w-auto object-contain drop-shadow-2xl"
+                  />
+                  {/* Animated glow effect behind avatar */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-blue-500/20 via-transparent to-purple-500/20 pointer-events-none"></div>
+                </div>
                 
                 {/* 3D Animated Rings */}
                 <div className="absolute inset-0 rounded-3xl border-2 border-blue-400/30 pointer-events-none animate-pulse"></div>
