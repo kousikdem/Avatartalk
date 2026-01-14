@@ -1,7 +1,9 @@
 import React, { useRef, useMemo } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
+import { TextureLoader } from 'three';
+import demoAvatarImage from '@/assets/demo-avatar.png';
 
 interface AvatarBodyProps {
   isTalking?: boolean;
@@ -16,14 +18,27 @@ const AvatarBody: React.FC<AvatarBodyProps> = ({ isTalking = true }) => {
   const leftEyeRef = useRef<THREE.Mesh>(null);
   const rightEyeRef = useRef<THREE.Mesh>(null);
 
-  // Realistic skin tones and colors
-  const skinColor = useMemo(() => new THREE.Color('#DEB896'), []);
-  const skinDarkColor = useMemo(() => new THREE.Color('#C9A882'), []);
-  const hairColor = useMemo(() => new THREE.Color('#1a0f0a'), []);
-  const shirtColor = useMemo(() => new THREE.Color('#1E40AF'), []);
-  const eyeColor = useMemo(() => new THREE.Color('#2E5A4C'), []);
-  const lipColor = useMemo(() => new THREE.Color('#C07070'), []);
-  const eyebrowColor = useMemo(() => new THREE.Color('#3D2817'), []);
+  // Load the avatar face texture
+  const faceTexture = useLoader(TextureLoader, demoAvatarImage);
+
+  // Configure texture for better quality
+  useMemo(() => {
+    faceTexture.colorSpace = THREE.SRGBColorSpace;
+    faceTexture.minFilter = THREE.LinearFilter;
+    faceTexture.magFilter = THREE.LinearFilter;
+    faceTexture.wrapS = THREE.ClampToEdgeWrapping;
+    faceTexture.wrapT = THREE.ClampToEdgeWrapping;
+  }, [faceTexture]);
+
+  // Realistic skin tones matching the uploaded image (Indian male)
+  const skinColor = useMemo(() => new THREE.Color('#C9A882'), []);
+  const skinDarkColor = useMemo(() => new THREE.Color('#B8956E'), []);
+  const hairColor = useMemo(() => new THREE.Color('#0a0505'), []); // Very dark black hair
+  const shirtColor = useMemo(() => new THREE.Color('#1a365d'), []); // Navy blue shirt matching image
+  const eyeColor = useMemo(() => new THREE.Color('#3D2817'), []); // Dark brown eyes
+  const lipColor = useMemo(() => new THREE.Color('#A86060'), []);
+  const eyebrowColor = useMemo(() => new THREE.Color('#1a0a05'), []); // Very dark eyebrows
+  const beardColor = useMemo(() => new THREE.Color('#1a0a05'), []); // Light stubble
 
   useFrame((state) => {
     const t = state.clock.elapsedTime;
@@ -79,10 +94,16 @@ const AvatarBody: React.FC<AvatarBodyProps> = ({ isTalking = true }) => {
         <meshStandardMaterial color={shirtColor} roughness={0.6} metalness={0.1} />
       </mesh>
       
-      {/* Collar detail */}
+      {/* Collar detail - matching the image's shirt style */}
       <mesh position={[0, 0.38, 0.08]}>
         <boxGeometry args={[0.25, 0.08, 0.12]} />
         <meshStandardMaterial color={shirtColor} roughness={0.6} />
+      </mesh>
+      
+      {/* Shirt collar V-neck detail */}
+      <mesh position={[0, 0.35, 0.12]} rotation={[0.3, 0, 0]}>
+        <boxGeometry args={[0.12, 0.06, 0.02]} />
+        <meshStandardMaterial color={shirtColor} roughness={0.5} />
       </mesh>
 
       {/* Neck - more realistic proportions */}
@@ -93,7 +114,18 @@ const AvatarBody: React.FC<AvatarBodyProps> = ({ isTalking = true }) => {
 
       {/* Head Group */}
       <group ref={headRef} position={[0, 0.92, 0]}>
-        {/* Main Head - oval shape */}
+        {/* Face plane with texture from uploaded image */}
+        <mesh position={[0, 0, 0.27]} rotation={[0, 0, 0]}>
+          <planeGeometry args={[0.52, 0.65]} />
+          <meshBasicMaterial 
+            map={faceTexture} 
+            transparent 
+            alphaTest={0.1}
+            side={THREE.FrontSide}
+          />
+        </mesh>
+
+        {/* Main Head - oval shape (behind the texture) */}
         <mesh>
           <sphereGeometry args={[0.28, 48, 48]} />
           <meshStandardMaterial color={skinColor} roughness={0.65} />
@@ -111,138 +143,50 @@ const AvatarBody: React.FC<AvatarBodyProps> = ({ isTalking = true }) => {
           <meshStandardMaterial color={skinColor} roughness={0.65} />
         </mesh>
 
-        {/* Hair - more realistic style */}
-        <mesh position={[0, 0.12, -0.02]}>
-          <sphereGeometry args={[0.3, 48, 48, 0, Math.PI * 2, 0, Math.PI / 2]} />
-          <meshStandardMaterial color={hairColor} roughness={0.85} />
+        {/* Hair - styled like the image (short sides, volume on top) */}
+        <mesh position={[0, 0.14, -0.02]}>
+          <sphereGeometry args={[0.3, 48, 48, 0, Math.PI * 2, 0, Math.PI / 2.5]} />
+          <meshStandardMaterial color={hairColor} roughness={0.9} />
         </mesh>
         
-        {/* Side hair */}
-        <mesh position={[-0.22, 0.05, -0.05]}>
-          <sphereGeometry args={[0.12, 24, 24]} />
-          <meshStandardMaterial color={hairColor} roughness={0.85} />
+        {/* Top hair with more volume - swept style */}
+        <mesh position={[0, 0.2, 0.05]} rotation={[-0.2, 0, 0]}>
+          <boxGeometry args={[0.25, 0.08, 0.18]} />
+          <meshStandardMaterial color={hairColor} roughness={0.9} />
         </mesh>
-        <mesh position={[0.22, 0.05, -0.05]}>
-          <sphereGeometry args={[0.12, 24, 24]} />
-          <meshStandardMaterial color={hairColor} roughness={0.85} />
+        
+        {/* Hair front wave */}
+        <mesh position={[0.05, 0.18, 0.12]} rotation={[-0.3, 0.1, 0]}>
+          <boxGeometry args={[0.15, 0.06, 0.1]} />
+          <meshStandardMaterial color={hairColor} roughness={0.9} />
+        </mesh>
+        
+        {/* Side hair - trimmed short */}
+        <mesh position={[-0.24, 0.02, -0.03]}>
+          <sphereGeometry args={[0.08, 24, 24]} />
+          <meshStandardMaterial color={hairColor} roughness={0.9} />
+        </mesh>
+        <mesh position={[0.24, 0.02, -0.03]}>
+          <sphereGeometry args={[0.08, 24, 24]} />
+          <meshStandardMaterial color={hairColor} roughness={0.9} />
         </mesh>
         
         {/* Back hair */}
-        <mesh position={[0, 0, -0.15]}>
+        <mesh position={[0, 0.02, -0.16]}>
           <sphereGeometry args={[0.25, 32, 32]} />
-          <meshStandardMaterial color={hairColor} roughness={0.85} />
+          <meshStandardMaterial color={hairColor} roughness={0.9} />
+        </mesh>
+
+        {/* Light stubble/facial hair - matching the image */}
+        <mesh position={[0, -0.18, 0.2]} scale={[1.1, 0.6, 0.3]}>
+          <sphereGeometry args={[0.1, 16, 16]} />
+          <meshStandardMaterial color={beardColor} roughness={0.95} transparent opacity={0.3} />
         </mesh>
         
-        {/* Left Eye socket area */}
-        <mesh position={[-0.09, 0.04, 0.22]}>
-          <sphereGeometry args={[0.06, 24, 24]} />
-          <meshStandardMaterial color={skinDarkColor} roughness={0.7} />
-        </mesh>
-        
-        {/* Right Eye socket area */}
-        <mesh position={[0.09, 0.04, 0.22]}>
-          <sphereGeometry args={[0.06, 24, 24]} />
-          <meshStandardMaterial color={skinDarkColor} roughness={0.7} />
-        </mesh>
-
-        {/* Left Eye */}
-        <group position={[-0.09, 0.04, 0.25]}>
-          <mesh ref={leftEyeRef}>
-            <sphereGeometry args={[0.04, 24, 24]} />
-            <meshStandardMaterial color="white" roughness={0.3} />
-          </mesh>
-          <mesh position={[0, 0, 0.025]}>
-            <sphereGeometry args={[0.022, 24, 24]} />
-            <meshStandardMaterial color={eyeColor} roughness={0.4} />
-          </mesh>
-          <mesh position={[0, 0, 0.035]}>
-            <sphereGeometry args={[0.012, 16, 16]} />
-            <meshStandardMaterial color="#0a0a0a" roughness={0.2} />
-          </mesh>
-          <mesh position={[0.005, 0.005, 0.04]}>
-            <sphereGeometry args={[0.004, 8, 8]} />
-            <meshStandardMaterial color="white" emissive="white" emissiveIntensity={0.3} />
-          </mesh>
-        </group>
-
-        {/* Right Eye */}
-        <group position={[0.09, 0.04, 0.25]}>
-          <mesh ref={rightEyeRef}>
-            <sphereGeometry args={[0.04, 24, 24]} />
-            <meshStandardMaterial color="white" roughness={0.3} />
-          </mesh>
-          <mesh position={[0, 0, 0.025]}>
-            <sphereGeometry args={[0.022, 24, 24]} />
-            <meshStandardMaterial color={eyeColor} roughness={0.4} />
-          </mesh>
-          <mesh position={[0, 0, 0.035]}>
-            <sphereGeometry args={[0.012, 16, 16]} />
-            <meshStandardMaterial color="#0a0a0a" roughness={0.2} />
-          </mesh>
-          <mesh position={[0.005, 0.005, 0.04]}>
-            <sphereGeometry args={[0.004, 8, 8]} />
-            <meshStandardMaterial color="white" emissive="white" emissiveIntensity={0.3} />
-          </mesh>
-        </group>
-
-        {/* Eyebrows - more natural */}
-        <mesh position={[-0.09, 0.1, 0.25]} rotation={[0.1, 0, 0.08]}>
-          <capsuleGeometry args={[0.008, 0.06, 4, 8]} />
-          <meshStandardMaterial color={eyebrowColor} roughness={0.9} />
-        </mesh>
-        <mesh position={[0.09, 0.1, 0.25]} rotation={[0.1, 0, -0.08]}>
-          <capsuleGeometry args={[0.008, 0.06, 4, 8]} />
-          <meshStandardMaterial color={eyebrowColor} roughness={0.9} />
-        </mesh>
-
-        {/* Nose - more detailed */}
-        <group position={[0, -0.02, 0.26]}>
-          <mesh>
-            <coneGeometry args={[0.022, 0.06, 12]} />
-            <meshStandardMaterial color={skinColor} roughness={0.65} />
-          </mesh>
-          <mesh position={[0, -0.02, 0.01]}>
-            <sphereGeometry args={[0.025, 16, 16]} />
-            <meshStandardMaterial color={skinColor} roughness={0.65} />
-          </mesh>
-          {/* Nostrils */}
-          <mesh position={[-0.012, -0.025, 0.015]}>
-            <sphereGeometry args={[0.008, 8, 8]} />
-            <meshStandardMaterial color={skinDarkColor} roughness={0.8} />
-          </mesh>
-          <mesh position={[0.012, -0.025, 0.015]}>
-            <sphereGeometry args={[0.008, 8, 8]} />
-            <meshStandardMaterial color={skinDarkColor} roughness={0.8} />
-          </mesh>
-        </group>
-
-        {/* Lips and Mouth */}
-        <group position={[0, -0.12, 0.24]}>
-          {/* Upper lip */}
-          <mesh position={[0, 0.015, 0]}>
-            <capsuleGeometry args={[0.015, 0.05, 4, 8]} />
-            <meshStandardMaterial color={lipColor} roughness={0.5} />
-          </mesh>
-          {/* Lower lip */}
-          <mesh position={[0, -0.01, 0.005]}>
-            <capsuleGeometry args={[0.018, 0.045, 4, 8]} />
-            <meshStandardMaterial color={lipColor} roughness={0.5} />
-          </mesh>
-          {/* Mouth opening */}
-          <mesh ref={mouthRef} position={[0, 0, 0.01]}>
-            <capsuleGeometry args={[0.012, 0.04, 4, 8]} />
-            <meshStandardMaterial color="#4a2020" roughness={0.8} />
-          </mesh>
-        </group>
-
-        {/* Cheeks - subtle */}
-        <mesh position={[-0.18, -0.05, 0.12]}>
-          <sphereGeometry args={[0.08, 16, 16]} />
-          <meshStandardMaterial color={skinColor} roughness={0.65} transparent opacity={0.9} />
-        </mesh>
-        <mesh position={[0.18, -0.05, 0.12]}>
-          <sphereGeometry args={[0.08, 16, 16]} />
-          <meshStandardMaterial color={skinColor} roughness={0.65} transparent opacity={0.9} />
+        {/* Mustache area */}
+        <mesh position={[0, -0.08, 0.24]} scale={[1.2, 0.4, 0.2]}>
+          <sphereGeometry args={[0.05, 12, 12]} />
+          <meshStandardMaterial color={beardColor} roughness={0.95} transparent opacity={0.35} />
         </mesh>
 
         {/* Ears */}
@@ -364,7 +308,9 @@ const RealisticDemoAvatar3D: React.FC<RealisticDemoAvatar3DProps> = ({
         <pointLight position={[-2, 0, 2]} intensity={0.3} color="#ffd4b8" />
 
         {/* Avatar */}
-        <AvatarBody isTalking={isTalking} />
+        <React.Suspense fallback={null}>
+          <AvatarBody isTalking={isTalking} />
+        </React.Suspense>
 
         {/* Controls */}
         <OrbitControls
