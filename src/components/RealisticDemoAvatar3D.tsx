@@ -303,9 +303,9 @@ const RealisticDemoAvatar3D: React.FC<RealisticDemoAvatar3DProps> = ({
   isTalking = true 
 }) => {
   return (
-    <div className={`w-full h-80 relative ${className}`}>
+    <div className={`w-full h-48 relative ${className}`}>
       <Canvas
-        camera={{ position: [0, 0.3, 2.8], fov: 40 }}
+        camera={{ position: [0, 0, 4.5], fov: 35 }}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
         style={{ background: 'transparent' }}
         dpr={[1, 2]}
@@ -318,9 +318,11 @@ const RealisticDemoAvatar3D: React.FC<RealisticDemoAvatar3DProps> = ({
         <pointLight position={[-2, -1, 3]} intensity={0.3} color="#ffe8d4" />
         <hemisphereLight args={['#ffeedd', '#aabbcc', 0.3]} />
 
-        {/* Avatar */}
+        {/* Avatar - scaled down */}
         <React.Suspense fallback={null}>
-          <AvatarBody isTalking={isTalking} />
+          <group scale={0.7}>
+            <AvatarBody isTalking={isTalking} />
+          </group>
         </React.Suspense>
 
         {/* Subtle auto-rotation */}
