@@ -51,7 +51,8 @@ import {
   Coins,
   Sun,
   Moon,
-  Gift
+  Gift,
+  Tag
 } from 'lucide-react';
 import MainAuth from './MainAuth';
 import VisitorAuth from './VisitorAuth';
@@ -236,13 +237,23 @@ const LandingPage = () => {
   ];
 
   // Dynamic pricing plans from database - show all features
+  // Discount percentages for different billing cycles
+  const yearlyDiscountPercent = 20;
+  
   const dynamicPricingPlans = plans.map(plan => {
     const PlanIcon = planIcons[plan.plan_key] || Star;
     const features = (plan.features_list || []) as PlatformFeature[];
+    const originalPrice = plan.price_inr;
+    const discountedPrice = Math.round(originalPrice * (1 - yearlyDiscountPercent / 100));
+    const saveAmount = originalPrice - discountedPrice;
+    
     return {
       id: plan.id,
       name: plan.plan_name,
-      price: plan.plan_key === 'free' ? 'Free' : `₹${plan.price_inr}`,
+      originalPrice: plan.plan_key === 'free' ? 0 : originalPrice,
+      price: plan.plan_key === 'free' ? 'Free' : `₹${discountedPrice}`,
+      saveAmount: plan.plan_key === 'free' ? 0 : saveAmount,
+      discountPercent: plan.plan_key === 'free' ? 0 : yearlyDiscountPercent,
       period: plan.plan_key === 'free' ? '' : '/month',
       description: plan.tagline || '',
       icon: PlanIcon,
@@ -1046,10 +1057,28 @@ const LandingPage = () => {
                       <h3 className="text-xl font-bold text-gray-900 mb-2">
                         {plan.name}
                       </h3>
-                      <div className="text-2xl font-bold text-gray-900 mb-1">
-                        {plan.price}
-                        {plan.period && <span className="text-sm text-gray-600">{plan.period}</span>}
+                      
+                      {/* Pricing with Original, Discounted & Save */}
+                      <div className="mb-2">
+                        {plan.originalPrice > 0 && (
+                          <div className="text-sm text-gray-400 line-through">
+                            ₹{plan.originalPrice}/mo
+                          </div>
+                        )}
+                        <div className="text-3xl font-extrabold text-gray-900">
+                          {plan.price}
+                          {plan.period && <span className="text-sm font-normal text-gray-600">{plan.period}</span>}
+                        </div>
+                        {plan.saveAmount > 0 && (
+                          <div className="inline-flex items-center gap-1 mt-2 px-3 py-1 bg-green-100 border border-green-200 rounded-full">
+                            <Tag className="w-3 h-3 text-green-600" />
+                            <span className="text-sm font-bold text-green-600">
+                              Save ₹{plan.saveAmount}/mo ({plan.discountPercent}% off)
+                            </span>
+                          </div>
+                        )}
                       </div>
+                      
                       <p className="text-gray-600 text-sm mb-4">
                         {plan.description}
                       </p>

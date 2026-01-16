@@ -286,6 +286,13 @@ const PricingPage = () => {
     };
   }, []);
 
+  const getOriginalPrice = (plan: any) => {
+    const isINR = selectedCurrency === 'INR';
+    const months = billingCycle;
+    const baseMonthly = isINR ? plan.price_inr : plan.price_usd;
+    return baseMonthly * months;
+  };
+
   const getPrice = (plan: any) => {
     const isINR = selectedCurrency === 'INR';
     const months = billingCycle;
@@ -307,9 +314,20 @@ const PricingPage = () => {
     return Math.round(total * (1 - discount / 100));
   };
 
+  const getSaveAmount = (plan: any) => {
+    const original = getOriginalPrice(plan);
+    const discounted = getPrice(plan);
+    return Math.round(original - discounted);
+  };
+
   const getMonthlyPrice = (plan: any) => {
     const totalPrice = getPrice(plan);
     return Math.round(totalPrice / billingCycle);
+  };
+
+  const getOriginalMonthlyPrice = (plan: any) => {
+    const isINR = selectedCurrency === 'INR';
+    return isINR ? plan.price_inr : plan.price_usd;
   };
 
   const formatTokens = (tokens: number) => {
@@ -522,16 +540,46 @@ const PricingPage = () => {
                         <div className="text-lg font-medium text-muted-foreground mt-1">forever free</div>
                       </div>
                     ) : (
-                      <div>
+                      <div className="space-y-2">
+                        {/* Original Price (struck through) */}
+                        {billingCycle > 1 && (
+                          <div className="text-lg text-muted-foreground line-through">
+                            {currSymbol}{getOriginalMonthlyPrice(plan)}/mo
+                          </div>
+                        )}
+                        
+                        {/* Discounted Monthly Price - BIG */}
                         <div className="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
                           {currSymbol}{monthlyPrice}
                         </div>
-                        <div className="text-lg font-medium text-muted-foreground mt-1">/month</div>
-                        {billingCycle > 1 && (
-                          <div className="text-sm text-primary font-semibold mt-2 p-2 bg-primary/10 rounded-lg">
-                            {currSymbol}{price} billed for {durationLabels[billingCycle]}
+                        <div className="text-lg font-medium text-muted-foreground">/month</div>
+                        
+                        {/* Save Amount Badge - Prominent */}
+                        {billingCycle > 1 && getSaveAmount(plan) > 0 && (
+                          <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/20 border border-green-500/30 rounded-full">
+                            <Tag className="w-4 h-4 text-green-600" />
+                            <span className="text-lg font-bold text-green-600">
+                              Save {currSymbol}{getSaveAmount(plan)}
+                            </span>
                           </div>
                         )}
+                        
+                        {/* Total Billed */}
+                        <div className="text-sm text-primary font-semibold mt-2 p-2 bg-primary/10 rounded-lg">
+                          {billingCycle > 1 ? (
+                            <>
+                              <span className="line-through text-muted-foreground mr-2">
+                                {currSymbol}{getOriginalPrice(plan)}
+                              </span>
+                              <span className="text-primary font-bold">
+                                {currSymbol}{price}
+                              </span>
+                              <span className="text-muted-foreground"> for {durationLabels[billingCycle]}</span>
+                            </>
+                          ) : (
+                            <>{currSymbol}{price} billed monthly</>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
