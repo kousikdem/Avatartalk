@@ -19,7 +19,7 @@ const RealisticDemoAvatar3D: React.FC<RealisticDemoAvatar3DProps> = ({
       onMouseLeave={() => setIsHovered(false)}
       style={{
         perspective: '1000px',
-        background: 'transparent',
+        background: 'linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--muted)) 100%)',
       }}
     >
       {/* 3D Avatar Container */}
@@ -39,14 +39,13 @@ const RealisticDemoAvatar3D: React.FC<RealisticDemoAvatar3DProps> = ({
             animation: 'float 4s ease-in-out infinite',
           }}
         >
-          {/* Avatar Image with white background removed */}
+          {/* Avatar Image */}
           <img 
             src={demoAvatar3D} 
             alt="Demo Avatar"
             className="h-48 w-auto object-contain relative z-10"
             style={{
               filter: 'drop-shadow(0 20px 40px rgba(0, 0, 0, 0.3)) drop-shadow(0 8px 16px rgba(0, 0, 0, 0.2))',
-              mixBlendMode: 'multiply',
             }}
           />
           
