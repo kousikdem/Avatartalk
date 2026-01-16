@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import demoAvatar3D from '@/assets/demo-avatar-3d.png';
-import { removeBackground, loadImage } from '@/lib/imageProcessing';
 
 interface RealisticDemoAvatar3DProps {
   className?: string;
@@ -11,81 +10,89 @@ const RealisticDemoAvatar3D: React.FC<RealisticDemoAvatar3DProps> = ({
   className = '',
   isTalking = true 
 }) => {
-  const [processedImageUrl, setProcessedImageUrl] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(true);
-
-  useEffect(() => {
-    const processImage = async () => {
-      try {
-        setIsProcessing(true);
-        // Fetch the image and convert to blob
-        const response = await fetch(demoAvatar3D);
-        const blob = await response.blob();
-        
-        // Load as HTMLImageElement
-        const imageElement = await loadImage(blob);
-        
-        // Remove background
-        const processedBlob = await removeBackground(imageElement);
-        
-        // Create object URL for the processed image
-        const url = URL.createObjectURL(processedBlob);
-        setProcessedImageUrl(url);
-      } catch (error) {
-        console.error('Error processing avatar image:', error);
-        // Fallback to original image
-        setProcessedImageUrl(demoAvatar3D);
-      } finally {
-        setIsProcessing(false);
-      }
-    };
-
-    processImage();
-
-    // Cleanup
-    return () => {
-      if (processedImageUrl && processedImageUrl !== demoAvatar3D) {
-        URL.revokeObjectURL(processedImageUrl);
-      }
-    };
-  }, []);
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <div className={`w-full h-56 relative flex items-center justify-center overflow-hidden rounded-2xl ${className}`}
-         style={{
-           background: 'linear-gradient(135deg, hsl(var(--primary) / 0.1) 0%, hsl(var(--accent) / 0.15) 50%, hsl(var(--secondary) / 0.1) 100%)',
-         }}>
-      {/* Avatar Image */}
-      <div className="relative flex items-center justify-center h-full w-full">
-        {isProcessing ? (
-          <div className="flex flex-col items-center justify-center gap-2">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <span className="text-xs text-muted-foreground">Loading avatar...</span>
-          </div>
-        ) : (
+    <div 
+      className={`w-full h-56 relative flex items-center justify-center overflow-hidden rounded-2xl ${className}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{
+        perspective: '1000px',
+        background: 'transparent',
+      }}
+    >
+      {/* 3D Avatar Container */}
+      <div 
+        className="relative flex items-center justify-center h-full w-full transition-transform duration-500 ease-out"
+        style={{
+          transformStyle: 'preserve-3d',
+          transform: isHovered 
+            ? 'rotateY(5deg) rotateX(-2deg) scale(1.02)' 
+            : 'rotateY(0deg) rotateX(0deg) scale(1)',
+        }}
+      >
+        {/* Floating animation wrapper */}
+        <div 
+          className="relative"
+          style={{
+            animation: 'float 4s ease-in-out infinite',
+          }}
+        >
+          {/* Avatar Image with white background removed */}
           <img 
-            src={processedImageUrl || demoAvatar3D} 
+            src={demoAvatar3D} 
             alt="Demo Avatar"
-            className="h-full w-auto max-w-full object-contain"
+            className="h-48 w-auto object-contain relative z-10"
             style={{
-              filter: 'drop-shadow(0 8px 24px rgba(0, 0, 0, 0.2))',
+              filter: 'drop-shadow(0 20px 40px rgba(0, 0, 0, 0.3)) drop-shadow(0 8px 16px rgba(0, 0, 0, 0.2))',
+              mixBlendMode: 'multiply',
             }}
           />
-        )}
+          
+          {/* 3D depth shadow layer */}
+          <div 
+            className="absolute inset-0 z-0"
+            style={{
+              transform: 'translateZ(-20px) scale(0.95)',
+              filter: 'blur(8px)',
+              opacity: 0.3,
+            }}
+          >
+            <img 
+              src={demoAvatar3D} 
+              alt=""
+              className="h-48 w-auto object-contain opacity-50"
+              style={{
+                mixBlendMode: 'multiply',
+              }}
+            />
+          </div>
+        </div>
         
-        {/* Subtle talking animation overlay when talking */}
-        {isTalking && !isProcessing && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="absolute bottom-[22%] left-1/2 -translate-x-1/2 w-3 h-1 bg-black/20 rounded-full animate-pulse" 
-                 style={{ animationDuration: '0.3s' }} />
+        {/* Talking animation indicator */}
+        {isTalking && (
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-1 z-20">
+            <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-pulse" style={{ animationDelay: '0s', animationDuration: '0.4s' }} />
+            <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-pulse" style={{ animationDelay: '0.1s', animationDuration: '0.4s' }} />
+            <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-pulse" style={{ animationDelay: '0.2s', animationDuration: '0.4s' }} />
           </div>
         )}
       </div>
 
-      {/* Ambient glow effect */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-t from-primary/10 via-transparent to-accent/10 rounded-2xl" />
+      {/* Ambient lighting effects */}
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <div className="absolute top-0 left-1/4 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-24 h-24 bg-accent/10 rounded-full blur-2xl" />
       </div>
+
+      {/* Subtle rim light effect */}
+      <div 
+        className="absolute inset-0 pointer-events-none rounded-2xl z-30"
+        style={{
+          background: 'linear-gradient(135deg, transparent 40%, hsl(var(--primary) / 0.05) 100%)',
+        }}
+      />
     </div>
   );
 };
