@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import VisitorAuth from './VisitorAuth';
 import MainAuth from './MainAuth';
@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { ProfileLoadingScreen, ProfilePageSkeleton } from './ProfileLoadingScreen';
 import { useFollows } from '@/hooks/useFollows';
 import { usePersonalizedAI } from '@/hooks/usePersonalizedAI';
 import { usePosts } from '@/hooks/usePosts';
@@ -1117,12 +1118,13 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  // Show loading text briefly
+  // Fast loading screen with hi-fi animation
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-4">
-        <p className="text-white/80 text-lg">Loading profile...</p>
-      </div>
+      <>
+        <ProfileLoadingScreen isLoading={loading} maxDuration={2500} />
+        <ProfilePageSkeleton />
+      </>
     );
   }
 
