@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import TokenDisplay from '@/components/TokenDisplay';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { LimitReachedBanner } from '@/components/LockedFeatureOverlay';
+import { FastPageLoader, DashboardPageSkeleton, PriorityLoader, StatCardSkeleton, ProductCardSkeleton } from '@/components/ui/fast-loading';
 
 type ViewMode = 'grid' | 'list';
 type Currency = 'INR' | 'USD' | 'EUR' | 'GBP';
@@ -239,7 +240,17 @@ const ProductsPageEnhanced = () => {
     window.location.href = '/settings/promo';
   };
 
+  // Fast loading with priority content
+  if (isLoading && !currentUserId) {
+    return <DashboardPageSkeleton showStats statsCount={7} showTabs tabCount={3} />;
+  }
+
   return (
+    <FastPageLoader 
+      isLoading={isLoading} 
+      loadingMessage="Loading products..."
+      skeleton={<DashboardPageSkeleton showStats statsCount={7} showTabs tabCount={3} />}
+    >
     <div className="min-h-screen bg-background p-4 sm:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Limit Reached Banner */}
@@ -608,6 +619,7 @@ const ProductsPageEnhanced = () => {
         />
       </div>
     </div>
+    </FastPageLoader>
   );
 };
 
