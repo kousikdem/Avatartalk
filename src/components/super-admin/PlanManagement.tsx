@@ -28,6 +28,14 @@ interface UserWithSubscription {
   expires_at: string | null;
 }
 
+const BILLING_DURATIONS = [
+  { value: 1, label: '1 Month' },
+  { value: 3, label: '3 Months' },
+  { value: 6, label: '6 Months' },
+  { value: 12, label: '12 Months' },
+  { value: 24, label: '24 Months' },
+];
+
 const PlanManagement = () => {
   const { toast } = useToast();
   const { updatePlan, getAllPlans } = usePlatformPlanManagement();
@@ -42,7 +50,9 @@ const PlanManagement = () => {
   const [searchResults, setSearchResults] = useState<UserWithSubscription[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserWithSubscription | null>(null);
   const [selectedNewPlan, setSelectedNewPlan] = useState<string>('');
+  const [selectedDuration, setSelectedDuration] = useState<number>(1);
   const [upgrading, setUpgrading] = useState(false);
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
   const fetchPlans = async () => {
     setLoading(true);
@@ -113,6 +123,7 @@ const PlanManagement = () => {
         body: {
           targetUserId: selectedUser.id,
           planId: plan.id,
+          billingCycleMonths: selectedDuration,
         },
       });
 
@@ -120,17 +131,37 @@ const PlanManagement = () => {
 
       toast({
         title: 'Success',
-        description: `User upgraded to ${selectedNewPlan}. Tokens updated${data?.tokenDelta ? ` (+${data.tokenDelta})` : ''}.`,
+        description: `User upgraded to ${selectedNewPlan} for ${selectedDuration} month(s). Tokens updated${data?.tokenDelta ? ` (+${data.tokenDelta})` : ''}.`,
       });
 
       setSelectedUser(null);
       setSelectedNewPlan('');
+      setSelectedDuration(1);
+      setShowUpgradeDialog(false);
       handleSearchUsers(); // Refresh search results
     } catch (error) {
       console.error('Error upgrading user:', error);
       toast({ title: 'Error', description: 'Failed to change user plan', variant: 'destructive' });
     } finally {
       setUpgrading(false);
+    }
+  };
+
+  const getCalculatedPrice = (plan: PlatformPricingPlan, months: number) => {
+    switch (months) {
+      case 3:
+        return { inr: plan.price_3_month_inr, usd: plan.price_3_month_usd };
+      case 6:
+        return { inr: plan.price_6_month_inr, usd: plan.price_6_month_usd };
+      case 12:
+        return { inr: plan.price_12_month_inr, usd: plan.price_12_month_usd };
+      case 24:
+        // For 24 months, calculate as 2x 12-month price with potential discount
+        const yearPrice = plan.price_12_month_inr || plan.price_inr * 12;
+        const yearPriceUsd = plan.price_12_month_usd || plan.price_usd * 12;
+        return { inr: yearPrice * 2, usd: yearPriceUsd * 2 };
+      default:
+        return { inr: plan.price_inr, usd: plan.price_usd };
     }
   };
 
@@ -324,7 +355,10 @@ const PlanManagement = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => setSelectedUser(user)}
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowUpgradeDialog(true);
+                            }}
                           >
                             <ChevronUp className="w-4 h-4 mr-1" />
                             Upgrade
@@ -334,58 +368,6 @@ const PlanManagement = () => {
                     ))}
                   </TableBody>
                 </Table>
-              )}
-
-              {selectedUser && (
-                <Card className="border-primary">
-                  <CardHeader>
-                    <CardTitle className="text-lg">
-                      Upgrade {selectedUser.full_name || selectedUser.username}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <div>
-                        <Label>Current Plan</Label>
-                        <Badge variant="secondary" className="capitalize block mt-1">
-                          {selectedUser.plan_key}
-                        </Badge>
-                      </div>
-                      <div className="text-2xl">→</div>
-                      <div className="flex-1">
-                        <Label>New Plan</Label>
-                        <Select value={selectedNewPlan} onValueChange={setSelectedNewPlan}>
-                          <SelectTrigger className="mt-1">
-                            <SelectValue placeholder="Select plan..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {plans.map((plan) => (
-                              <SelectItem key={plan.id} value={plan.plan_key}>
-                                {plan.plan_name} - ₹{plan.price_inr}/mo
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={handleUpgradeUser}
-                        disabled={!selectedNewPlan || upgrading}
-                      >
-                        {upgrading ? (
-                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <ChevronUp className="w-4 h-4 mr-2" />
-                        )}
-                        Confirm Upgrade
-                      </Button>
-                      <Button variant="outline" onClick={() => setSelectedUser(null)}>
-                        Cancel
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
               )}
             </CardContent>
           </Card>
@@ -556,6 +538,139 @@ const PlanManagement = () => {
                 <Button onClick={handleSavePlan}>
                   <Save className="w-4 h-4 mr-2" />
                   Save Changes
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Upgrade User Popup Dialog */}
+      <Dialog open={showUpgradeDialog} onOpenChange={(open) => {
+        setShowUpgradeDialog(open);
+        if (!open) {
+          setSelectedUser(null);
+          setSelectedNewPlan('');
+          setSelectedDuration(1);
+        }
+      }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ChevronUp className="w-5 h-5 text-primary" />
+              Upgrade User Plan
+            </DialogTitle>
+            <DialogDescription>
+              Select a plan and billing duration for {selectedUser?.full_name || selectedUser?.username}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedUser && (
+            <div className="space-y-6">
+              {/* User Info */}
+              <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
+                <div className="flex-1">
+                  <p className="font-medium">{selectedUser.full_name || selectedUser.username}</p>
+                  <p className="text-sm text-muted-foreground">@{selectedUser.username}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground">Current Plan</p>
+                  <Badge variant="secondary" className="capitalize">
+                    {selectedUser.plan_key}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Plan Selection */}
+              <div className="space-y-2">
+                <Label>Select New Plan</Label>
+                <Select value={selectedNewPlan} onValueChange={setSelectedNewPlan}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a plan..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {plans.filter(p => p.is_active).map((plan) => (
+                      <SelectItem key={plan.id} value={plan.plan_key}>
+                        <div className="flex items-center gap-2">
+                          <Crown className="w-4 h-4 text-primary" />
+                          <span>{plan.plan_name}</span>
+                          <span className="text-muted-foreground">- ₹{plan.price_inr}/mo</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Duration Selection */}
+              <div className="space-y-2">
+                <Label>Billing Duration</Label>
+                <div className="grid grid-cols-5 gap-2">
+                  {BILLING_DURATIONS.map((duration) => (
+                    <Button
+                      key={duration.value}
+                      type="button"
+                      variant={selectedDuration === duration.value ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedDuration(duration.value)}
+                      className="text-xs"
+                    >
+                      {duration.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Price Preview */}
+              {selectedNewPlan && (
+                <div className="p-4 border rounded-lg bg-muted/50">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Estimated Price</span>
+                    <div className="text-right">
+                      {(() => {
+                        const plan = plans.find(p => p.plan_key === selectedNewPlan);
+                        if (!plan) return null;
+                        const price = getCalculatedPrice(plan, selectedDuration);
+                        return (
+                          <>
+                            <p className="font-bold text-lg">₹{price.inr?.toLocaleString() || (plan.price_inr * selectedDuration).toLocaleString()}</p>
+                            <p className="text-xs text-muted-foreground">≈ ${price.usd?.toLocaleString() || (plan.price_usd * selectedDuration).toLocaleString()}</p>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    For {selectedDuration} month{selectedDuration > 1 ? 's' : ''} subscription
+                  </p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-4 border-t">
+                <Button
+                  className="flex-1"
+                  onClick={handleUpgradeUser}
+                  disabled={!selectedNewPlan || upgrading}
+                >
+                  {upgrading ? (
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <ChevronUp className="w-4 h-4 mr-2" />
+                  )}
+                  Confirm Upgrade
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowUpgradeDialog(false);
+                    setSelectedUser(null);
+                    setSelectedNewPlan('');
+                    setSelectedDuration(1);
+                  }}
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Cancel
                 </Button>
               </div>
             </div>

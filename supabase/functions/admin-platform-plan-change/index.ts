@@ -59,15 +59,21 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const targetUserId = body?.targetUserId as string | undefined;
     const planId = body?.planId as string | undefined;
+    const billingCycleMonths = (body?.billingCycleMonths as number) || 1;
 
     if (!targetUserId || !planId) {
       throw new Error("Missing targetUserId or planId");
     }
 
+    // Validate billing cycle months
+    const validCycles = [1, 3, 6, 12, 24];
+    const validatedBillingCycle = validCycles.includes(billingCycleMonths) ? billingCycleMonths : 1;
+
     console.log("Admin plan change request", {
       adminUserId: user.id,
       targetUserId,
       planId,
+      billingCycleMonths: validatedBillingCycle,
     });
 
     const { data: plan, error: planError } = await supabase
@@ -93,7 +99,7 @@ Deno.serve(async (req) => {
     const expiresAt = (() => {
       if (plan.plan_key === "free") return null;
       const d = new Date();
-      d.setMonth(d.getMonth() + 1);
+      d.setMonth(d.getMonth() + validatedBillingCycle);
       return d.toISOString();
     })();
 
@@ -102,7 +108,7 @@ Deno.serve(async (req) => {
       plan_id: plan.id,
       plan_key: plan.plan_key,
       status: "active",
-      billing_cycle_months: 1,
+      billing_cycle_months: validatedBillingCycle,
       price_paid: 0,
       currency: "INR",
       starts_at: nowIso,
@@ -111,6 +117,7 @@ Deno.serve(async (req) => {
         upgraded_by_admin: true,
         previous_plan: previousPlanKey,
         changed_by: user.id,
+        billing_duration_months: validatedBillingCycle,
       },
     };
 
