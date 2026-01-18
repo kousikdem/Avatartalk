@@ -25,7 +25,7 @@ const messageSchema = z.object({
   visitorName: z.string().optional()
 });
 
-const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -264,8 +264,8 @@ After your response, ask this follow-up question: "${selectedFollowUp.question_t
 ${selectedFollowUp.choices && selectedFollowUp.choices.length > 0 ? `Offer these options: ${JSON.stringify(selectedFollowUp.choices)}` : ''}`;
     }
 
-    if (!lovableApiKey) {
-      console.error('LOVABLE_API_KEY is not configured');
+    if (!geminiApiKey) {
+      console.error('GEMINI_API_KEY is not configured');
       return new Response(JSON.stringify({ 
         success: false,
         error_code: ERROR_CODES.SERVICE_UNAVAILABLE,
@@ -346,20 +346,25 @@ ${selectedFollowUp.choices && selectedFollowUp.choices.length > 0 ? `Offer these
       });
     }
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    // Use Google Gemini API directly with user's own API key
+    const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
+    
+    const response = await fetch(geminiEndpoint, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage }
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: `${systemPrompt}\n\nUser message: ${userMessage}` }]
+          }
         ],
-        max_tokens: 400,
-        temperature: 0.8,
+        generationConfig: {
+          maxOutputTokens: 400,
+          temperature: 0.8,
+        },
       }),
     });
 
@@ -401,7 +406,9 @@ ${selectedFollowUp.choices && selectedFollowUp.choices.length > 0 ? `Offer these
     }
 
     const data = await response.json();
-    const aiResponse = data.choices[0].message.content;
+    
+    // Parse Gemini API response format
+    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "I couldn't generate a response. Please try again.";
 
     // Calculate actual tokens used
     const actualOutputTokens = estimateTokens(aiResponse);
