@@ -248,7 +248,7 @@ const ProductsPageEnhanced = () => {
   return (
     <FastPageLoader 
       isLoading={isLoading} 
-      loadingMessage="Loading products..."
+      message="Loading products..."
       skeleton={<DashboardPageSkeleton showStats statsCount={7} showTabs tabCount={3} />}
     >
     <div className="min-h-screen bg-background p-4 sm:p-6">
