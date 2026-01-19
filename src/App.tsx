@@ -1,39 +1,216 @@
-
+import { Suspense, lazy, useState, useEffect, memo } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import DashboardSidebar from "@/components/DashboardSidebar";
-import DashboardPageLayout from "@/components/DashboardPageLayout";
-import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import AvatarPage from "./pages/AvatarPage";
-import FeedPage from "./pages/FeedPage";
-import VirtualCollaborationPage from "./components/VirtualCollaborationPage";
-import ProductsPage from "./pages/ProductsPage";
-import SettingsPage from "./pages/SettingsPage";
-import SocialLinksPage from "./pages/SocialLinksPage";
-import EnhancedCreatePostModal from "./components/EnhancedCreatePostModal";  
-import ProfilePage from "./components/ProfilePage";
-import UsernameRedirect from "./components/UsernameRedirect";
-import FollowersPage from "./pages/FollowersPage";
-import AITrainingDashboard from "./components/AITrainingDashboard";
-import PromoSettingsPage from "./pages/PromoSettingsPage";
-import SuperAdminPage from "./pages/SuperAdminPage";
-import BuyTokensPage from "./pages/BuyTokensPage";
-import AnalyticsPage from "./pages/AnalyticsPage";
-import PricingPage from "./components/PricingPage";
-import TermsPage from "./pages/TermsPage";
-import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
-import RefundPolicyPage from "./pages/RefundPolicyPage";
 import { supabase } from "@/integrations/supabase/client";
 import { CurrencyProvider } from "@/hooks/useCurrency";
+import { DashboardPageSkeleton, ProfileSkeleton, FastLoadingScreen } from "@/components/ui/fast-loading";
 
-const queryClient = new QueryClient();
+// Lazy load all page components for code splitting
+const DashboardSidebar = lazy(() => import("@/components/DashboardSidebar"));
+const DashboardPageLayout = lazy(() => import("@/components/DashboardPageLayout"));
+const Index = lazy(() => import("./pages/Index"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const AvatarPage = lazy(() => import("./pages/AvatarPage"));
+const FeedPage = lazy(() => import("./pages/FeedPage"));
+const VirtualCollaborationPage = lazy(() => import("./components/VirtualCollaborationPage"));
+const ProductsPage = lazy(() => import("./pages/ProductsPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const SocialLinksPage = lazy(() => import("./pages/SocialLinksPage"));
+const EnhancedCreatePostModal = lazy(() => import("./components/EnhancedCreatePostModal"));
+const ProfilePage = lazy(() => import("./components/ProfilePage"));
+const UsernameRedirect = lazy(() => import("./components/UsernameRedirect"));
+const FollowersPage = lazy(() => import("./pages/FollowersPage"));
+const AITrainingDashboard = lazy(() => import("./components/AITrainingDashboard"));
+const PromoSettingsPage = lazy(() => import("./pages/PromoSettingsPage"));
+const SuperAdminPage = lazy(() => import("./pages/SuperAdminPage"));
+const BuyTokensPage = lazy(() => import("./pages/BuyTokensPage"));
+const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
+const PricingPage = lazy(() => import("./components/PricingPage"));
+const TermsPage = lazy(() => import("./pages/TermsPage"));
+const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
+const RefundPolicyPage = lazy(() => import("./pages/RefundPolicyPage"));
+
+// Optimized QueryClient with better caching
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 30, // 30 minutes (formerly cacheTime)
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+
+// Minimal loading fallback
+const PageFallback = memo(() => <DashboardPageSkeleton showStats showTabs />);
+PageFallback.displayName = 'PageFallback';
+
+const ProfileFallback = memo(() => <ProfileSkeleton />);
+ProfileFallback.displayName = 'ProfileFallback';
+
+// App loading screen
+const AppLoadingScreen = memo(() => (
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="flex flex-col items-center gap-3">
+      <div className="relative w-10 h-10">
+        <div className="absolute inset-0 rounded-full border-2 border-primary/20" />
+        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary animate-spin" />
+      </div>
+      <p className="text-xs text-muted-foreground">Loading...</p>
+    </div>
+  </div>
+));
+AppLoadingScreen.displayName = 'AppLoadingScreen';
+
+// Memoized authenticated routes
+const AuthenticatedRoutes = memo(({ 
+  sidebarOpen, 
+  setSidebarOpen, 
+  setIsCreatePostOpen, 
+  isMobile 
+}: {
+  sidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+  setIsCreatePostOpen: (open: boolean) => void;
+  isMobile: boolean;
+}) => (
+  <SidebarProvider 
+    defaultOpen={!isMobile}
+    open={sidebarOpen}
+    onOpenChange={setSidebarOpen}
+  >
+    <div className="flex min-h-screen w-full bg-background">
+      <Suspense fallback={null}>
+        <DashboardSidebar onCreatePost={() => setIsCreatePostOpen(true)} />
+      </Suspense>
+      
+      <main className="flex-1 min-w-0 transition-all duration-200 bg-background">
+        <Suspense fallback={<PageFallback />}>
+          <Routes>
+            <Route path="/settings/dashboard" element={
+              <Suspense fallback={<PageFallback />}>
+                <DashboardPageLayout><Index /></DashboardPageLayout>
+              </Suspense>
+            } />
+            <Route path="/settings/avatar" element={
+              <Suspense fallback={<PageFallback />}>
+                <DashboardPageLayout><AvatarPage /></DashboardPageLayout>
+              </Suspense>
+            } />
+            <Route path="/settings/virtual-collaboration" element={
+              <Suspense fallback={<PageFallback />}>
+                <DashboardPageLayout><VirtualCollaborationPage /></DashboardPageLayout>
+              </Suspense>
+            } />
+            <Route path="/settings/products" element={
+              <Suspense fallback={<PageFallback />}>
+                <DashboardPageLayout><ProductsPage /></DashboardPageLayout>
+              </Suspense>
+            } />
+            <Route path="/settings/promo" element={
+              <Suspense fallback={<PageFallback />}>
+                <DashboardPageLayout><PromoSettingsPage /></DashboardPageLayout>
+              </Suspense>
+            } />
+            <Route path="/settings/account" element={
+              <Suspense fallback={<PageFallback />}>
+                <DashboardPageLayout><SettingsPage /></DashboardPageLayout>
+              </Suspense>
+            } />
+            <Route path="/settings/social-links" element={
+              <Suspense fallback={<PageFallback />}>
+                <DashboardPageLayout><SocialLinksPage /></DashboardPageLayout>
+              </Suspense>
+            } />
+            <Route path="/settings/feed" element={
+              <Suspense fallback={<PageFallback />}>
+                <DashboardPageLayout><FeedPage /></DashboardPageLayout>
+              </Suspense>
+            } />
+            <Route path="/settings/followers" element={
+              <Suspense fallback={<PageFallback />}>
+                <DashboardPageLayout><FollowersPage /></DashboardPageLayout>
+              </Suspense>
+            } />
+            <Route path="/settings/ai-training" element={
+              <Suspense fallback={<PageFallback />}>
+                <DashboardPageLayout><AITrainingDashboard /></DashboardPageLayout>
+              </Suspense>
+            } />
+            <Route path="/settings/analytics" element={
+              <Suspense fallback={<PageFallback />}>
+                <DashboardPageLayout><AnalyticsPage /></DashboardPageLayout>
+              </Suspense>
+            } />
+            <Route path="/settings/super-admin" element={
+              <Suspense fallback={<PageFallback />}>
+                <DashboardPageLayout><SuperAdminPage /></DashboardPageLayout>
+              </Suspense>
+            } />
+            <Route path="/settings/buy-tokens" element={
+              <Suspense fallback={<PageFallback />}>
+                <DashboardPageLayout><BuyTokensPage /></DashboardPageLayout>
+              </Suspense>
+            } />
+            <Route path="/pricing" element={
+              <Suspense fallback={<PageFallback />}>
+                <DashboardPageLayout><PricingPage /></DashboardPageLayout>
+              </Suspense>
+            } />
+            <Route path="/settings/notifications" element={
+              <Suspense fallback={<PageFallback />}>
+                <DashboardPageLayout><Index /></DashboardPageLayout>
+              </Suspense>
+            } />
+            <Route path="/:username" element={
+              <Suspense fallback={<ProfileFallback />}>
+                <UsernameRedirect />
+              </Suspense>
+            } />
+            <Route path="*" element={
+              <Suspense fallback={<PageFallback />}>
+                <NotFound />
+              </Suspense>
+            } />
+          </Routes>
+        </Suspense>
+      </main>
+    </div>
+  </SidebarProvider>
+));
+
+AuthenticatedRoutes.displayName = 'AuthenticatedRoutes';
+
+// Memoized public routes
+const PublicRoutes = memo(() => (
+  <SidebarProvider defaultOpen={false}>
+    <div className="min-h-screen w-full bg-background">
+      <Suspense fallback={<PageFallback />}>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="/refund-policy" element={<RefundPolicyPage />} />
+          <Route path="/:username" element={
+            <Suspense fallback={<ProfileFallback />}>
+              <UsernameRedirect />
+            </Suspense>
+          } />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
+    </div>
+  </SidebarProvider>
+));
+
+PublicRoutes.displayName = 'PublicRoutes';
 
 const App = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -43,16 +220,22 @@ const App = () => {
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    // Get initial session with optimized timing
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setUser(session?.user ?? null);
+      } catch (error) {
+        console.error('Auth error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initAuth();
 
     // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });
@@ -60,104 +243,48 @@ const App = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Redirect authenticated users to dashboard
-  const shouldRedirectToDashboard = () => {
-    if (loading) return false;
-    if (user && window.location.pathname === '/') {
-      return true;
+  // Fast redirect for authenticated users
+  useEffect(() => {
+    if (!loading && user && window.location.pathname === '/') {
+      window.location.href = '/settings/dashboard';
     }
-    return false;
-  };
-
-  if (shouldRedirectToDashboard()) {
-    window.location.href = '/settings/dashboard';
-    return null;
-  }
+  }, [loading, user]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <AppLoadingScreen />;
   }
 
-  // For authenticated users, always show dashboard with sidebar
-  if (user) {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <CurrencyProvider>
-          <TooltipProvider>
-            <div className="min-h-screen bg-white text-black">
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <SidebarProvider 
-                  defaultOpen={!isMobile}
-                  open={sidebarOpen}
-                  onOpenChange={setSidebarOpen}
-                >
-                  <div className="flex min-h-screen w-full bg-white">
-                    <DashboardSidebar onCreatePost={() => setIsCreatePostOpen(true)} />
-                    
-                    <main className="flex-1 min-w-0 transition-all duration-300 bg-white">
-                      <Routes>
-                        <Route path="/settings/dashboard" element={<DashboardPageLayout><Index /></DashboardPageLayout>} />
-                        <Route path="/settings/avatar" element={<DashboardPageLayout><AvatarPage /></DashboardPageLayout>} />
-                        <Route path="/settings/virtual-collaboration" element={<DashboardPageLayout><VirtualCollaborationPage /></DashboardPageLayout>} />
-                        <Route path="/settings/products" element={<DashboardPageLayout><ProductsPage /></DashboardPageLayout>} />
-                        <Route path="/settings/promo" element={<DashboardPageLayout><PromoSettingsPage /></DashboardPageLayout>} />
-                        <Route path="/settings/account" element={<DashboardPageLayout><SettingsPage /></DashboardPageLayout>} />
-                        <Route path="/settings/social-links" element={<DashboardPageLayout><SocialLinksPage /></DashboardPageLayout>} />
-                        <Route path="/settings/feed" element={<DashboardPageLayout><FeedPage /></DashboardPageLayout>} />
-                        <Route path="/settings/followers" element={<DashboardPageLayout><FollowersPage /></DashboardPageLayout>} />
-                        <Route path="/settings/ai-training" element={<DashboardPageLayout><AITrainingDashboard /></DashboardPageLayout>} />
-                        <Route path="/settings/analytics" element={<DashboardPageLayout><AnalyticsPage /></DashboardPageLayout>} />
-                        <Route path="/settings/super-admin" element={<DashboardPageLayout><SuperAdminPage /></DashboardPageLayout>} />
-                        <Route path="/settings/buy-tokens" element={<DashboardPageLayout><BuyTokensPage /></DashboardPageLayout>} />
-                        <Route path="/pricing" element={<DashboardPageLayout><PricingPage /></DashboardPageLayout>} />
-                        <Route path="/settings/notifications" element={<DashboardPageLayout><Index /></DashboardPageLayout>} />
-                        <Route path="/:username" element={<UsernameRedirect />} />
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                    </main>
-
-                    <EnhancedCreatePostModal 
-                      isOpen={isCreatePostOpen}
-                      onClose={() => setIsCreatePostOpen(false)}
-                    />
-                  </div>
-                </SidebarProvider>
-              </BrowserRouter>
-            </div>
-          </TooltipProvider>
-        </CurrencyProvider>
-      </QueryClientProvider>
-    );
+  // Prevent flash during redirect
+  if (user && window.location.pathname === '/') {
+    return <AppLoadingScreen />;
   }
 
-  // For non-authenticated users, show landing page without sidebar
   return (
     <QueryClientProvider client={queryClient}>
       <CurrencyProvider>
         <TooltipProvider>
-          <div className="min-h-screen bg-white text-black">
+          <div className="min-h-screen bg-background text-foreground">
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <SidebarProvider defaultOpen={false}>
-                <div className="min-h-screen w-full bg-white">
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/pricing" element={<PricingPage />} />
-                    <Route path="/terms" element={<TermsPage />} />
-                    <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-                    <Route path="/refund-policy" element={<RefundPolicyPage />} />
-                    <Route path="/:username" element={<UsernameRedirect />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </div>
-              </SidebarProvider>
+              {user ? (
+                <>
+                  <AuthenticatedRoutes
+                    sidebarOpen={sidebarOpen}
+                    setSidebarOpen={setSidebarOpen}
+                    setIsCreatePostOpen={setIsCreatePostOpen}
+                    isMobile={isMobile}
+                  />
+                  <Suspense fallback={null}>
+                    <EnhancedCreatePostModal 
+                      isOpen={isCreatePostOpen}
+                      onClose={() => setIsCreatePostOpen(false)}
+                    />
+                  </Suspense>
+                </>
+              ) : (
+                <PublicRoutes />
+              )}
             </BrowserRouter>
           </div>
         </TooltipProvider>
