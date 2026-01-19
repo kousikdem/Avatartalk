@@ -16,28 +16,42 @@ Deno.serve(async (req) => {
     const state = url.searchParams.get('state');
     const provider = url.searchParams.get('provider') || state?.split(':')[0];
     const error = url.searchParams.get('error');
+    const errorDescription = url.searchParams.get('error_description');
+
+    console.log('OAuth callback received:', { provider, hasCode: !!code, error, errorDescription });
 
     if (error) {
-      console.error('OAuth error:', error);
+      console.error('OAuth error from provider:', error, errorDescription);
+      const errorMsg = errorDescription || error;
       return new Response(
-        `<html><body><script>window.opener.postMessage({type: 'oauth_error', error: '${error}'}, '*'); window.close();</script></body></html>`,
+        `<html><body><script>window.opener.postMessage({type: 'oauth_error', error: '${errorMsg.replace(/'/g, "\\'")}'}, '*'); window.close();</script></body></html>`,
         { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
       );
     }
 
     if (!code || !provider) {
+      console.error('Missing code or provider:', { code: !!code, provider });
       return new Response(
         JSON.stringify({ error: 'Missing code or provider' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing Supabase environment variables');
+      return new Response(
+        `<html><body><script>window.opener.postMessage({type: 'oauth_error', error: 'Server configuration error'}, '*'); window.close();</script></body></html>`,
+        { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
+      );
+    }
+    
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    let tokenData;
-    let integrationName;
+    let tokenData: any;
+    let integrationName: string;
 
     switch (provider) {
       case 'google':
@@ -46,31 +60,45 @@ Deno.serve(async (req) => {
         integrationName = provider === 'google' ? 'google_meet' : provider;
         const clientId = Deno.env.get('GOOGLE_CLIENT_ID');
         const clientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET');
+        
+        if (!clientId || !clientSecret) {
+          console.error('Missing Google OAuth credentials');
+          return new Response(
+            `<html><body><script>window.opener.postMessage({type: 'oauth_error', error: 'Google OAuth not configured'}, '*'); window.close();</script></body></html>`,
+            { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
+          );
+        }
+        
         const redirectUri = `${supabaseUrl}/functions/v1/integration-oauth-callback?provider=${provider}`;
 
+        console.log('Exchanging code for Google tokens...');
         const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: new URLSearchParams({
             code,
-            client_id: clientId!,
-            client_secret: clientSecret!,
+            client_id: clientId,
+            client_secret: clientSecret,
             redirect_uri: redirectUri,
             grant_type: 'authorization_code',
           }),
         });
 
         tokenData = await tokenResponse.json();
+        console.log('Google token response status:', tokenResponse.status);
         
         if (tokenData.error) {
+          console.error('Google token error:', tokenData);
           throw new Error(tokenData.error_description || tokenData.error);
         }
 
         // Get user info
+        console.log('Fetching Google user info...');
         const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
           headers: { Authorization: `Bearer ${tokenData.access_token}` },
         });
         const userInfo = await userInfoResponse.json();
+        console.log('Google user email:', userInfo.email);
         tokenData.email = userInfo.email;
         break;
       }
@@ -79,8 +107,18 @@ Deno.serve(async (req) => {
         integrationName = 'zoom';
         const clientId = Deno.env.get('ZOOM_CLIENT_ID');
         const clientSecret = Deno.env.get('ZOOM_CLIENT_SECRET');
+        
+        if (!clientId || !clientSecret) {
+          console.error('Missing Zoom OAuth credentials');
+          return new Response(
+            `<html><body><script>window.opener.postMessage({type: 'oauth_error', error: 'Zoom OAuth not configured'}, '*'); window.close();</script></body></html>`,
+            { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
+          );
+        }
+        
         const redirectUri = `${supabaseUrl}/functions/v1/integration-oauth-callback?provider=zoom`;
 
+        console.log('Exchanging code for Zoom tokens...');
         const tokenResponse = await fetch('https://zoom.us/oauth/token', {
           method: 'POST',
           headers: {
@@ -95,22 +133,27 @@ Deno.serve(async (req) => {
         });
 
         tokenData = await tokenResponse.json();
+        console.log('Zoom token response status:', tokenResponse.status);
         
         if (tokenData.error) {
-          throw new Error(tokenData.reason || tokenData.error);
+          console.error('Zoom token error:', tokenData);
+          throw new Error(tokenData.reason || tokenData.error_description || tokenData.error);
         }
 
         // Get user info
+        console.log('Fetching Zoom user info...');
         const userResponse = await fetch('https://api.zoom.us/v2/users/me', {
           headers: { Authorization: `Bearer ${tokenData.access_token}` },
         });
         const userInfo = await userResponse.json();
+        console.log('Zoom user email:', userInfo.email);
         tokenData.email = userInfo.email;
         tokenData.account_id = userInfo.account_id;
         break;
       }
 
       default:
+        console.error('Unknown provider:', provider);
         return new Response(
           JSON.stringify({ error: 'Unknown provider' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -122,8 +165,10 @@ Deno.serve(async (req) => {
       ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString()
       : null;
 
+    console.log('Storing tokens for integration:', integrationName);
+
     // Store access token
-    await supabase
+    const { error: accessTokenError } = await supabase
       .from('platform_integration_secrets')
       .upsert({
         integration_name: integrationName,
@@ -133,11 +178,17 @@ Deno.serve(async (req) => {
         is_active: true,
         verification_status: 'verified',
         last_verified_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       }, { onConflict: 'integration_name,secret_key,environment' });
+
+    if (accessTokenError) {
+      console.error('Error storing access token:', accessTokenError);
+      throw new Error(`Failed to store access token: ${accessTokenError.message}`);
+    }
 
     // Store refresh token if available
     if (tokenData.refresh_token) {
-      await supabase
+      const { error: refreshTokenError } = await supabase
         .from('platform_integration_secrets')
         .upsert({
           integration_name: integrationName,
@@ -147,12 +198,17 @@ Deno.serve(async (req) => {
           is_active: true,
           verification_status: 'verified',
           last_verified_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         }, { onConflict: 'integration_name,secret_key,environment' });
+
+      if (refreshTokenError) {
+        console.error('Error storing refresh token:', refreshTokenError);
+      }
     }
 
     // Store token expiry
     if (expiresAt) {
-      await supabase
+      const { error: expiryError } = await supabase
         .from('platform_integration_secrets')
         .upsert({
           integration_name: integrationName,
@@ -162,12 +218,17 @@ Deno.serve(async (req) => {
           is_active: true,
           verification_status: 'verified',
           last_verified_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         }, { onConflict: 'integration_name,secret_key,environment' });
+
+      if (expiryError) {
+        console.error('Error storing token expiry:', expiryError);
+      }
     }
 
     // Store connected email
     if (tokenData.email) {
-      await supabase
+      const { error: emailError } = await supabase
         .from('platform_integration_secrets')
         .upsert({
           integration_name: integrationName,
@@ -177,10 +238,15 @@ Deno.serve(async (req) => {
           is_active: true,
           verification_status: 'verified',
           last_verified_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         }, { onConflict: 'integration_name,secret_key,environment' });
+
+      if (emailError) {
+        console.error('Error storing connected email:', emailError);
+      }
     }
 
-    console.log(`OAuth successful for ${integrationName}`);
+    console.log(`OAuth successful for ${integrationName}`, { email: tokenData.email });
 
     // Return success page that closes popup
     return new Response(
@@ -188,17 +254,18 @@ Deno.serve(async (req) => {
         window.opener.postMessage({
           type: 'oauth_success', 
           provider: '${integrationName}',
-          email: '${tokenData.email || ''}'
+          email: '${(tokenData.email || '').replace(/'/g, "\\'")}'
         }, '*'); 
         window.close();
       </script><p>Authentication successful! This window will close automatically.</p></body></html>`,
       { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
     );
 
-  } catch (error) {
-    console.error('OAuth callback error:', error);
+  } catch (error: any) {
+    console.error('OAuth callback error:', error.message, error.stack);
+    const errorMessage = error.message?.replace(/'/g, "\\'") || 'Unknown error occurred';
     return new Response(
-      `<html><body><script>window.opener.postMessage({type: 'oauth_error', error: '${error.message}'}, '*'); window.close();</script></body></html>`,
+      `<html><body><script>window.opener.postMessage({type: 'oauth_error', error: '${errorMessage}'}, '*'); window.close();</script></body></html>`,
       { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
     );
   }
