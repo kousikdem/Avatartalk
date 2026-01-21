@@ -28,7 +28,43 @@ import {
   CreditCard,
   MessageSquare,
   Lock,
-  Zap
+  Zap,
+  Phone,
+  MapPin,
+  Calendar,
+  Briefcase,
+  Stethoscope,
+  GraduationCap,
+  Code,
+  Palette as PaletteIcon,
+  Camera,
+  Music,
+  Mic,
+  PenTool,
+  Scale,
+  Calculator,
+  Building2,
+  Plane,
+  Utensils,
+  Scissors,
+  Heart,
+  Dumbbell,
+  BookOpen,
+  Lightbulb,
+  Megaphone,
+  Film,
+  Gamepad2,
+  Wrench,
+  ShoppingBag,
+  Landmark,
+  Leaf,
+  Award,
+  UserCircle,
+  Plus,
+  Check,
+  ChevronDown,
+  Mail,
+  Flag
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -116,6 +152,46 @@ const SettingsPage = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Profession options with icons
+  const professionOptions = [
+    { value: 'doctor', label: 'Doctor / Healthcare', icon: Stethoscope },
+    { value: 'engineer', label: 'Engineer', icon: Wrench },
+    { value: 'software_developer', label: 'Software Developer', icon: Code },
+    { value: 'designer', label: 'Designer / Artist', icon: PaletteIcon },
+    { value: 'teacher', label: 'Teacher / Educator', icon: GraduationCap },
+    { value: 'lawyer', label: 'Lawyer / Legal', icon: Scale },
+    { value: 'accountant', label: 'Accountant / Finance', icon: Calculator },
+    { value: 'entrepreneur', label: 'Entrepreneur / Business Owner', icon: Building2 },
+    { value: 'photographer', label: 'Photographer', icon: Camera },
+    { value: 'musician', label: 'Musician / Singer', icon: Music },
+    { value: 'content_creator', label: 'Content Creator / Influencer', icon: Mic },
+    { value: 'writer', label: 'Writer / Author', icon: PenTool },
+    { value: 'chef', label: 'Chef / Culinary', icon: Utensils },
+    { value: 'pilot', label: 'Pilot / Aviation', icon: Plane },
+    { value: 'fitness_trainer', label: 'Fitness Trainer / Coach', icon: Dumbbell },
+    { value: 'healthcare_worker', label: 'Healthcare Worker', icon: Heart },
+    { value: 'stylist', label: 'Stylist / Beauty', icon: Scissors },
+    { value: 'researcher', label: 'Researcher / Scientist', icon: BookOpen },
+    { value: 'consultant', label: 'Consultant', icon: Lightbulb },
+    { value: 'marketer', label: 'Marketing / Advertising', icon: Megaphone },
+    { value: 'filmmaker', label: 'Filmmaker / Video Creator', icon: Film },
+    { value: 'gamer', label: 'Gamer / Esports', icon: Gamepad2 },
+    { value: 'retail', label: 'Retail / E-commerce', icon: ShoppingBag },
+    { value: 'government', label: 'Government / Public Service', icon: Landmark },
+    { value: 'environmentalist', label: 'Environmental / Sustainability', icon: Leaf },
+    { value: 'student', label: 'Student', icon: Award },
+    { value: 'other', label: 'Other (Custom)', icon: UserCircle },
+  ];
+
+  // Gender options
+  const genderOptions = [
+    { value: 'male', label: 'Male', icon: User },
+    { value: 'female', label: 'Female', icon: User },
+    { value: 'non_binary', label: 'Non-binary', icon: User },
+    { value: 'prefer_not_to_say', label: 'Prefer not to say', icon: User },
+    { value: 'other', label: 'Other', icon: User },
+  ];
+
   // Profile settings
   const [profileData, setProfileData] = useState({
     full_name: '',
@@ -123,11 +199,19 @@ const SettingsPage = () => {
     username: '',
     bio: '',
     profession: '',
+    custom_profession: '',
     age: 18,
     gender: '',
     email: '',
+    phone_number: '',
+    location: '',
+    country: '',
+    website: '',
+    date_of_birth: '',
     profile_pic_url: '',
   });
+
+  const [showCustomProfession, setShowCustomProfession] = useState(false);
 
   // Notification settings
   const [notificationSettings, setNotificationSettings] = useState({
@@ -170,17 +254,28 @@ const SettingsPage = () => {
 
       if (profileData) {
         setProfile(profileData);
+        const profession = profileData.profession || '';
+        const isCustomProfession = profession && !professionOptions.some(opt => opt.value === profession || opt.label === profession);
+        
         setProfileData({
           full_name: profileData.full_name || '',
           display_name: profileData.display_name || '',
           username: profileData.username || '',
           bio: profileData.bio || '',
-          profession: profileData.profession || '',
+          profession: isCustomProfession ? 'other' : profession,
+          custom_profession: isCustomProfession ? profession : '',
           age: profileData.age || 18,
           gender: profileData.gender || '',
           email: profileData.email || '',
+          phone_number: profileData.phone_number || '',
+          location: profileData.location || '',
+          country: profileData.country || '',
+          website: profileData.website || '',
+          date_of_birth: profileData.date_of_birth || '',
           profile_pic_url: profileData.profile_pic_url || '',
         });
+        
+        setShowCustomProfession(isCustomProfession || profession === 'other');
       }
 
       // Load social links
@@ -217,11 +312,19 @@ const SettingsPage = () => {
 
     setSaving(true);
     try {
+      // Determine the actual profession value to save
+      const professionToSave = profileData.profession === 'other' 
+        ? profileData.custom_profession 
+        : profileData.profession;
+
+      const { custom_profession, ...dataToSave } = profileData;
+      
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert({
           id: currentUser.id,
-          ...profileData,
+          ...dataToSave,
+          profession: professionToSave,
           updated_at: new Date().toISOString(),
         });
 
@@ -371,7 +474,10 @@ const SettingsPage = () => {
                 {/* Basic Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="full_name">Full Name</Label>
+                    <Label htmlFor="full_name" className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-blue-500" />
+                      Full Name
+                    </Label>
                     <Input
                       id="full_name"
                       value={profileData.full_name}
@@ -380,7 +486,10 @@ const SettingsPage = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="display_name">Display Name</Label>
+                    <Label htmlFor="display_name" className="flex items-center gap-2">
+                      <UserCircle className="h-4 w-4 text-purple-500" />
+                      Display Name
+                    </Label>
                     <Input
                       id="display_name"
                       value={profileData.display_name}
@@ -389,7 +498,10 @@ const SettingsPage = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
+                    <Label htmlFor="username" className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-indigo-500" />
+                      Username
+                    </Label>
                     <Input
                       id="username"
                       value={profileData.username}
@@ -398,16 +510,48 @@ const SettingsPage = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="profession">Profession</Label>
+                    <Label htmlFor="email" className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-green-500" />
+                      Email
+                    </Label>
                     <Input
-                      id="profession"
-                      value={profileData.profession}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, profession: e.target.value }))}
-                      placeholder="Enter your profession"
+                      id="email"
+                      type="email"
+                      value={profileData.email}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="Enter your email"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="age">Age</Label>
+                    <Label htmlFor="phone_number" className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-emerald-500" />
+                      Mobile Number
+                    </Label>
+                    <Input
+                      id="phone_number"
+                      type="tel"
+                      value={profileData.phone_number}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, phone_number: e.target.value }))}
+                      placeholder="+91 9876543210"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="date_of_birth" className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-pink-500" />
+                      Date of Birth
+                    </Label>
+                    <Input
+                      id="date_of_birth"
+                      type="date"
+                      value={profileData.date_of_birth}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, date_of_birth: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="age" className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-orange-500" />
+                      Age
+                    </Label>
                     <Input
                       id="age"
                       type="number"
@@ -418,28 +562,136 @@ const SettingsPage = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="gender">Gender</Label>
-                    <Input
+                    <Label htmlFor="gender" className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-violet-500" />
+                      Gender
+                    </Label>
+                    <select
                       id="gender"
+                      className="w-full p-2 border border-gray-300 rounded-md bg-white"
                       value={profileData.gender}
                       onChange={(e) => setProfileData(prev => ({ ...prev, gender: e.target.value }))}
-                      placeholder="Enter your gender"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={profileData.email}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
-                      placeholder="Enter your email"
-                    />
+                    >
+                      <option value="">Select gender</option>
+                      {genderOptions.map(option => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
+                <Separator />
+
+                {/* Profession Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Briefcase className="h-5 w-5 text-blue-600" />
+                    Profession
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {professionOptions.map(option => {
+                      const IconComponent = option.icon;
+                      const isSelected = profileData.profession === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => {
+                            setProfileData(prev => ({ ...prev, profession: option.value }));
+                            setShowCustomProfession(option.value === 'other');
+                          }}
+                          className={`
+                            flex items-center gap-2 p-3 rounded-lg border-2 transition-all text-left text-sm
+                            ${isSelected 
+                              ? 'border-blue-500 bg-blue-50 text-blue-700' 
+                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                            }
+                          `}
+                        >
+                          <IconComponent className={`h-4 w-4 flex-shrink-0 ${isSelected ? 'text-blue-600' : 'text-gray-500'}`} />
+                          <span className="truncate">{option.label}</span>
+                          {isSelected && <Check className="h-4 w-4 ml-auto text-blue-600" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  
+                  {showCustomProfession && (
+                    <div className="space-y-2 mt-4">
+                      <Label htmlFor="custom_profession" className="flex items-center gap-2">
+                        <Plus className="h-4 w-4 text-blue-500" />
+                        Custom Profession
+                      </Label>
+                      <Input
+                        id="custom_profession"
+                        value={profileData.custom_profession}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, custom_profession: e.target.value }))}
+                        placeholder="Enter your profession"
+                        className="max-w-md"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Location & Contact Details */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-red-500" />
+                    Location & Contact
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="location" className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-red-500" />
+                        City / Location
+                      </Label>
+                      <Input
+                        id="location"
+                        value={profileData.location}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, location: e.target.value }))}
+                        placeholder="Mumbai, India"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="country" className="flex items-center gap-2">
+                        <Flag className="h-4 w-4 text-green-500" />
+                        Country
+                      </Label>
+                      <Input
+                        id="country"
+                        value={profileData.country}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, country: e.target.value }))}
+                        placeholder="India"
+                      />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                      <Label htmlFor="website" className="flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-blue-500" />
+                        Website
+                      </Label>
+                      <Input
+                        id="website"
+                        type="url"
+                        value={profileData.website}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, website: e.target.value }))}
+                        placeholder="https://yourwebsite.com"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Bio Section */}
                 <div className="space-y-2">
-                  <Label htmlFor="bio">Bio</Label>
+                  <Label htmlFor="bio" className="flex items-center gap-2">
+                    <PenTool className="h-4 w-4 text-purple-500" />
+                    Bio
+                  </Label>
                   <Textarea
                     id="bio"
                     value={profileData.bio}

@@ -2875,7 +2875,9 @@ export type Database = {
           avatar_id: string | null
           avatar_url: string | null
           bio: string | null
+          country: string | null
           created_at: string | null
+          date_of_birth: string | null
           display_name: string | null
           email: string | null
           followers_count: number | null
@@ -2883,19 +2885,24 @@ export type Database = {
           full_name: string | null
           gender: string | null
           id: string
+          location: string | null
           monthly_token_quota: number | null
+          phone_number: string | null
           profession: string | null
           profile_pic_url: string | null
           token_balance: number | null
           updated_at: string | null
           username: string | null
+          website: string | null
         }
         Insert: {
           age?: number | null
           avatar_id?: string | null
           avatar_url?: string | null
           bio?: string | null
+          country?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
           display_name?: string | null
           email?: string | null
           followers_count?: number | null
@@ -2903,19 +2910,24 @@ export type Database = {
           full_name?: string | null
           gender?: string | null
           id: string
+          location?: string | null
           monthly_token_quota?: number | null
+          phone_number?: string | null
           profession?: string | null
           profile_pic_url?: string | null
           token_balance?: number | null
           updated_at?: string | null
           username?: string | null
+          website?: string | null
         }
         Update: {
           age?: number | null
           avatar_id?: string | null
           avatar_url?: string | null
           bio?: string | null
+          country?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
           display_name?: string | null
           email?: string | null
           followers_count?: number | null
@@ -2923,12 +2935,15 @@ export type Database = {
           full_name?: string | null
           gender?: string | null
           id?: string
+          location?: string | null
           monthly_token_quota?: number | null
+          phone_number?: string | null
           profession?: string | null
           profile_pic_url?: string | null
           token_balance?: number | null
           updated_at?: string | null
           username?: string | null
+          website?: string | null
         }
         Relationships: [
           {
