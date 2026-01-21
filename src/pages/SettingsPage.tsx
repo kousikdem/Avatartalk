@@ -64,7 +64,13 @@ import {
   Check,
   ChevronDown,
   Mail,
-  Flag
+  Flag,
+  CircleUser,
+  CircleUserRound,
+  UserRound,
+  Users,
+  HelpCircle,
+  type LucideIcon
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -77,6 +83,7 @@ import { OrdersDashboard } from '@/components/OrdersDashboard';
 import TokenDisplay from '@/components/TokenDisplay';
 import UserChatSettingsPanel from '@/components/UserChatSettingsPanel';
 import PlanBadge, { planColors } from '@/components/PlanBadge';
+import { CountrySelect } from '@/components/ui/country-select';
 
 const SettingsPage = () => {
   const navigate = useNavigate();
@@ -183,13 +190,15 @@ const SettingsPage = () => {
     { value: 'other', label: 'Other (Custom)', icon: UserCircle },
   ];
 
-  // Gender options
-  const genderOptions = [
-    { value: 'male', label: 'Male', icon: User },
-    { value: 'female', label: 'Female', icon: User },
-    { value: 'non_binary', label: 'Non-binary', icon: User },
-    { value: 'prefer_not_to_say', label: 'Prefer not to say', icon: User },
-    { value: 'other', label: 'Other', icon: User },
+  // Gender options with distinct icons
+  const genderOptions: { value: string; label: string; icon: LucideIcon; color: string }[] = [
+    { value: 'male', label: 'Male', icon: UserRound, color: 'text-blue-500' },
+    { value: 'female', label: 'Female', icon: CircleUserRound, color: 'text-pink-500' },
+    { value: 'non_binary', label: 'Non-binary', icon: Users, color: 'text-purple-500' },
+    { value: 'transgender', label: 'Transgender', icon: CircleUser, color: 'text-cyan-500' },
+    { value: 'genderqueer', label: 'Genderqueer', icon: UserCircle, color: 'text-indigo-500' },
+    { value: 'prefer_not_to_say', label: 'Prefer not to say', icon: HelpCircle, color: 'text-gray-500' },
+    { value: 'other', label: 'Other', icon: User, color: 'text-orange-500' },
   ];
 
   // Profile settings
@@ -561,24 +570,35 @@ const SettingsPage = () => {
                       onChange={(e) => setProfileData(prev => ({ ...prev, age: parseInt(e.target.value) || 18 }))}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="gender" className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-violet-500" />
+                  <div className="space-y-3 md:col-span-2">
+                    <Label className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-violet-500" />
                       Gender
                     </Label>
-                    <select
-                      id="gender"
-                      className="w-full p-2 border border-gray-300 rounded-md bg-white"
-                      value={profileData.gender}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, gender: e.target.value }))}
-                    >
-                      <option value="">Select gender</option>
-                      {genderOptions.map(option => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {genderOptions.map(option => {
+                        const IconComponent = option.icon;
+                        const isSelected = profileData.gender === option.value;
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => setProfileData(prev => ({ ...prev, gender: option.value }))}
+                            className={`
+                              flex items-center gap-2 p-3 rounded-lg border-2 transition-all text-left text-sm
+                              ${isSelected 
+                                ? 'border-violet-500 bg-violet-50 text-violet-700' 
+                                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                              }
+                            `}
+                          >
+                            <IconComponent className={`h-4 w-4 flex-shrink-0 ${isSelected ? 'text-violet-600' : option.color}`} />
+                            <span className="truncate">{option.label}</span>
+                            {isSelected && <Check className="h-4 w-4 ml-auto text-violet-600" />}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
 
@@ -661,11 +681,10 @@ const SettingsPage = () => {
                         <Flag className="h-4 w-4 text-green-500" />
                         Country
                       </Label>
-                      <Input
-                        id="country"
+                      <CountrySelect
                         value={profileData.country}
-                        onChange={(e) => setProfileData(prev => ({ ...prev, country: e.target.value }))}
-                        placeholder="India"
+                        onChange={(value) => setProfileData(prev => ({ ...prev, country: value }))}
+                        placeholder="Select your country"
                       />
                     </div>
                     <div className="space-y-2 md:col-span-2">
