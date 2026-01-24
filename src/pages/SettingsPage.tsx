@@ -86,6 +86,7 @@ import PlanBadge, { planColors } from '@/components/PlanBadge';
 import { CountrySelect } from '@/components/ui/country-select';
 import { IconSelect, type IconSelectOption } from '@/components/ui/icon-select';
 import { PhoneInput } from '@/components/ui/phone-input';
+import { ProfessionSelect, type ProfessionOption } from '@/components/ui/profession-select';
 
 const SettingsPage = () => {
   const navigate = useNavigate();
@@ -162,7 +163,7 @@ const SettingsPage = () => {
   }, []);
 
   // Profession options with icons
-  const professionOptions: IconSelectOption[] = [
+  const professionOptions: ProfessionOption[] = [
     { value: 'doctor', label: 'Doctor / Healthcare', icon: Stethoscope, color: 'text-red-500' },
     { value: 'engineer', label: 'Engineer', icon: Wrench, color: 'text-gray-600' },
     { value: 'software_developer', label: 'Software Developer', icon: Code, color: 'text-blue-500' },
@@ -189,7 +190,6 @@ const SettingsPage = () => {
     { value: 'government', label: 'Government / Public Service', icon: Landmark, color: 'text-blue-700' },
     { value: 'environmentalist', label: 'Environmental / Sustainability', icon: Leaf, color: 'text-green-500' },
     { value: 'student', label: 'Student', icon: Award, color: 'text-amber-500' },
-    { value: 'other', label: 'Other (Custom)', icon: UserCircle, color: 'text-gray-500' },
   ];
 
   // Gender options with distinct icons
@@ -592,29 +592,30 @@ const SettingsPage = () => {
                     <Briefcase className="h-5 w-5 text-blue-600" />
                     Profession
                   </h3>
-                  <IconSelect
+                  <ProfessionSelect
                     options={professionOptions}
                     value={profileData.profession}
-                    onChange={(value) => {
-                      setProfileData(prev => ({ ...prev, profession: value }));
-                      setShowCustomProfession(value === 'other');
+                    customValue={profileData.custom_profession}
+                    onChange={(value, isCustom) => {
+                      setProfileData(prev => ({ 
+                        ...prev, 
+                        profession: value,
+                        custom_profession: isCustom ? prev.custom_profession : ''
+                      }));
+                      setShowCustomProfession(isCustom);
                     }}
-                    placeholder="Select your profession"
+                    onCustomValueChange={(value) => {
+                      setProfileData(prev => ({ ...prev, custom_profession: value }));
+                    }}
+                    placeholder="Search or add your profession"
                   />
                   
-                  {showCustomProfession && (
-                    <div className="space-y-2 mt-4">
-                      <Label htmlFor="custom_profession" className="flex items-center gap-2">
-                        <Plus className="h-4 w-4 text-blue-500" />
-                        Custom Profession
-                      </Label>
-                      <Input
-                        id="custom_profession"
-                        value={profileData.custom_profession}
-                        onChange={(e) => setProfileData(prev => ({ ...prev, custom_profession: e.target.value }))}
-                        placeholder="Enter your profession"
-                        className="max-w-md"
-                      />
+                  {showCustomProfession && profileData.custom_profession && (
+                    <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <Briefcase className="h-4 w-4 text-blue-500" />
+                      <span className="text-sm text-blue-700">
+                        Custom profession: <strong>{profileData.custom_profession}</strong>
+                      </span>
                     </div>
                   )}
                 </div>
