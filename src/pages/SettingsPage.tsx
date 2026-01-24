@@ -70,7 +70,6 @@ import {
   UserRound,
   Users,
   HelpCircle,
-  GripVertical,
   type LucideIcon
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -85,7 +84,8 @@ import TokenDisplay from '@/components/TokenDisplay';
 import UserChatSettingsPanel from '@/components/UserChatSettingsPanel';
 import PlanBadge, { planColors } from '@/components/PlanBadge';
 import { CountrySelect } from '@/components/ui/country-select';
-import { DraggableSelect, type DraggableOption } from '@/components/ui/draggable-select';
+import { IconSelect, type IconSelectOption } from '@/components/ui/icon-select';
+import { PhoneInput } from '@/components/ui/phone-input';
 
 const SettingsPage = () => {
   const navigate = useNavigate();
@@ -162,7 +162,7 @@ const SettingsPage = () => {
   }, []);
 
   // Profession options with icons
-  const professionOptions: DraggableOption[] = [
+  const professionOptions: IconSelectOption[] = [
     { value: 'doctor', label: 'Doctor / Healthcare', icon: Stethoscope, color: 'text-red-500' },
     { value: 'engineer', label: 'Engineer', icon: Wrench, color: 'text-gray-600' },
     { value: 'software_developer', label: 'Software Developer', icon: Code, color: 'text-blue-500' },
@@ -193,7 +193,7 @@ const SettingsPage = () => {
   ];
 
   // Gender options with distinct icons
-  const genderOptions: DraggableOption[] = [
+  const genderOptions: IconSelectOption[] = [
     { value: 'male', label: 'Male', icon: UserRound, color: 'text-blue-500' },
     { value: 'female', label: 'Female', icon: CircleUserRound, color: 'text-pink-500' },
     { value: 'non_binary', label: 'Non-binary', icon: Users, color: 'text-purple-500' },
@@ -538,12 +538,10 @@ const SettingsPage = () => {
                       <Phone className="h-4 w-4 text-emerald-500" />
                       Mobile Number
                     </Label>
-                    <Input
-                      id="phone_number"
-                      type="tel"
+                    <PhoneInput
                       value={profileData.phone_number}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, phone_number: e.target.value }))}
-                      placeholder="+91 9876543210"
+                      onChange={(value) => setProfileData(prev => ({ ...prev, phone_number: value }))}
+                      placeholder="9876543210"
                     />
                   </div>
                   <div className="space-y-2">
@@ -572,17 +570,16 @@ const SettingsPage = () => {
                       onChange={(e) => setProfileData(prev => ({ ...prev, age: parseInt(e.target.value) || 18 }))}
                     />
                   </div>
-                  <div className="space-y-3 md:col-span-2">
+                  <div className="space-y-3">
                     <Label className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-violet-500" />
                       Gender
-                      <span className="text-xs text-muted-foreground ml-2">(Drag & drop to select)</span>
                     </Label>
-                    <DraggableSelect
+                    <IconSelect
                       options={genderOptions}
                       value={profileData.gender}
                       onChange={(value) => setProfileData(prev => ({ ...prev, gender: value }))}
-                      selectedColor="border-violet-500 bg-violet-50 text-violet-700"
+                      placeholder="Select your gender"
                     />
                   </div>
                 </div>
@@ -594,16 +591,15 @@ const SettingsPage = () => {
                   <h3 className="text-lg font-semibold flex items-center gap-2">
                     <Briefcase className="h-5 w-5 text-blue-600" />
                     Profession
-                    <span className="text-xs text-muted-foreground font-normal ml-2">(Drag & drop to select)</span>
                   </h3>
-                  <DraggableSelect
+                  <IconSelect
                     options={professionOptions}
                     value={profileData.profession}
                     onChange={(value) => {
                       setProfileData(prev => ({ ...prev, profession: value }));
                       setShowCustomProfession(value === 'other');
                     }}
-                    selectedColor="border-blue-500 bg-blue-50 text-blue-700"
+                    placeholder="Select your profession"
                   />
                   
                   {showCustomProfession && (
