@@ -70,6 +70,7 @@ import {
   UserRound,
   Users,
   HelpCircle,
+  GripVertical,
   type LucideIcon
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -84,6 +85,7 @@ import TokenDisplay from '@/components/TokenDisplay';
 import UserChatSettingsPanel from '@/components/UserChatSettingsPanel';
 import PlanBadge, { planColors } from '@/components/PlanBadge';
 import { CountrySelect } from '@/components/ui/country-select';
+import { DraggableSelect, type DraggableOption } from '@/components/ui/draggable-select';
 
 const SettingsPage = () => {
   const navigate = useNavigate();
@@ -160,38 +162,38 @@ const SettingsPage = () => {
   }, []);
 
   // Profession options with icons
-  const professionOptions = [
-    { value: 'doctor', label: 'Doctor / Healthcare', icon: Stethoscope },
-    { value: 'engineer', label: 'Engineer', icon: Wrench },
-    { value: 'software_developer', label: 'Software Developer', icon: Code },
-    { value: 'designer', label: 'Designer / Artist', icon: PaletteIcon },
-    { value: 'teacher', label: 'Teacher / Educator', icon: GraduationCap },
-    { value: 'lawyer', label: 'Lawyer / Legal', icon: Scale },
-    { value: 'accountant', label: 'Accountant / Finance', icon: Calculator },
-    { value: 'entrepreneur', label: 'Entrepreneur / Business Owner', icon: Building2 },
-    { value: 'photographer', label: 'Photographer', icon: Camera },
-    { value: 'musician', label: 'Musician / Singer', icon: Music },
-    { value: 'content_creator', label: 'Content Creator / Influencer', icon: Mic },
-    { value: 'writer', label: 'Writer / Author', icon: PenTool },
-    { value: 'chef', label: 'Chef / Culinary', icon: Utensils },
-    { value: 'pilot', label: 'Pilot / Aviation', icon: Plane },
-    { value: 'fitness_trainer', label: 'Fitness Trainer / Coach', icon: Dumbbell },
-    { value: 'healthcare_worker', label: 'Healthcare Worker', icon: Heart },
-    { value: 'stylist', label: 'Stylist / Beauty', icon: Scissors },
-    { value: 'researcher', label: 'Researcher / Scientist', icon: BookOpen },
-    { value: 'consultant', label: 'Consultant', icon: Lightbulb },
-    { value: 'marketer', label: 'Marketing / Advertising', icon: Megaphone },
-    { value: 'filmmaker', label: 'Filmmaker / Video Creator', icon: Film },
-    { value: 'gamer', label: 'Gamer / Esports', icon: Gamepad2 },
-    { value: 'retail', label: 'Retail / E-commerce', icon: ShoppingBag },
-    { value: 'government', label: 'Government / Public Service', icon: Landmark },
-    { value: 'environmentalist', label: 'Environmental / Sustainability', icon: Leaf },
-    { value: 'student', label: 'Student', icon: Award },
-    { value: 'other', label: 'Other (Custom)', icon: UserCircle },
+  const professionOptions: DraggableOption[] = [
+    { value: 'doctor', label: 'Doctor / Healthcare', icon: Stethoscope, color: 'text-red-500' },
+    { value: 'engineer', label: 'Engineer', icon: Wrench, color: 'text-gray-600' },
+    { value: 'software_developer', label: 'Software Developer', icon: Code, color: 'text-blue-500' },
+    { value: 'designer', label: 'Designer / Artist', icon: PaletteIcon, color: 'text-pink-500' },
+    { value: 'teacher', label: 'Teacher / Educator', icon: GraduationCap, color: 'text-green-600' },
+    { value: 'lawyer', label: 'Lawyer / Legal', icon: Scale, color: 'text-amber-600' },
+    { value: 'accountant', label: 'Accountant / Finance', icon: Calculator, color: 'text-emerald-500' },
+    { value: 'entrepreneur', label: 'Entrepreneur / Business Owner', icon: Building2, color: 'text-indigo-500' },
+    { value: 'photographer', label: 'Photographer', icon: Camera, color: 'text-violet-500' },
+    { value: 'musician', label: 'Musician / Singer', icon: Music, color: 'text-purple-500' },
+    { value: 'content_creator', label: 'Content Creator / Influencer', icon: Mic, color: 'text-rose-500' },
+    { value: 'writer', label: 'Writer / Author', icon: PenTool, color: 'text-cyan-600' },
+    { value: 'chef', label: 'Chef / Culinary', icon: Utensils, color: 'text-orange-500' },
+    { value: 'pilot', label: 'Pilot / Aviation', icon: Plane, color: 'text-sky-500' },
+    { value: 'fitness_trainer', label: 'Fitness Trainer / Coach', icon: Dumbbell, color: 'text-lime-600' },
+    { value: 'healthcare_worker', label: 'Healthcare Worker', icon: Heart, color: 'text-red-400' },
+    { value: 'stylist', label: 'Stylist / Beauty', icon: Scissors, color: 'text-fuchsia-500' },
+    { value: 'researcher', label: 'Researcher / Scientist', icon: BookOpen, color: 'text-teal-500' },
+    { value: 'consultant', label: 'Consultant', icon: Lightbulb, color: 'text-yellow-500' },
+    { value: 'marketer', label: 'Marketing / Advertising', icon: Megaphone, color: 'text-orange-600' },
+    { value: 'filmmaker', label: 'Filmmaker / Video Creator', icon: Film, color: 'text-slate-600' },
+    { value: 'gamer', label: 'Gamer / Esports', icon: Gamepad2, color: 'text-purple-600' },
+    { value: 'retail', label: 'Retail / E-commerce', icon: ShoppingBag, color: 'text-pink-600' },
+    { value: 'government', label: 'Government / Public Service', icon: Landmark, color: 'text-blue-700' },
+    { value: 'environmentalist', label: 'Environmental / Sustainability', icon: Leaf, color: 'text-green-500' },
+    { value: 'student', label: 'Student', icon: Award, color: 'text-amber-500' },
+    { value: 'other', label: 'Other (Custom)', icon: UserCircle, color: 'text-gray-500' },
   ];
 
   // Gender options with distinct icons
-  const genderOptions: { value: string; label: string; icon: LucideIcon; color: string }[] = [
+  const genderOptions: DraggableOption[] = [
     { value: 'male', label: 'Male', icon: UserRound, color: 'text-blue-500' },
     { value: 'female', label: 'Female', icon: CircleUserRound, color: 'text-pink-500' },
     { value: 'non_binary', label: 'Non-binary', icon: Users, color: 'text-purple-500' },
@@ -574,31 +576,14 @@ const SettingsPage = () => {
                     <Label className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-violet-500" />
                       Gender
+                      <span className="text-xs text-muted-foreground ml-2">(Drag & drop to select)</span>
                     </Label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                      {genderOptions.map(option => {
-                        const IconComponent = option.icon;
-                        const isSelected = profileData.gender === option.value;
-                        return (
-                          <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => setProfileData(prev => ({ ...prev, gender: option.value }))}
-                            className={`
-                              flex items-center gap-2 p-3 rounded-lg border-2 transition-all text-left text-sm
-                              ${isSelected 
-                                ? 'border-violet-500 bg-violet-50 text-violet-700' 
-                                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                              }
-                            `}
-                          >
-                            <IconComponent className={`h-4 w-4 flex-shrink-0 ${isSelected ? 'text-violet-600' : option.color}`} />
-                            <span className="truncate">{option.label}</span>
-                            {isSelected && <Check className="h-4 w-4 ml-auto text-violet-600" />}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <DraggableSelect
+                      options={genderOptions}
+                      value={profileData.gender}
+                      onChange={(value) => setProfileData(prev => ({ ...prev, gender: value }))}
+                      selectedColor="border-violet-500 bg-violet-50 text-violet-700"
+                    />
                   </div>
                 </div>
 
@@ -609,34 +594,17 @@ const SettingsPage = () => {
                   <h3 className="text-lg font-semibold flex items-center gap-2">
                     <Briefcase className="h-5 w-5 text-blue-600" />
                     Profession
+                    <span className="text-xs text-muted-foreground font-normal ml-2">(Drag & drop to select)</span>
                   </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                    {professionOptions.map(option => {
-                      const IconComponent = option.icon;
-                      const isSelected = profileData.profession === option.value;
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() => {
-                            setProfileData(prev => ({ ...prev, profession: option.value }));
-                            setShowCustomProfession(option.value === 'other');
-                          }}
-                          className={`
-                            flex items-center gap-2 p-3 rounded-lg border-2 transition-all text-left text-sm
-                            ${isSelected 
-                              ? 'border-blue-500 bg-blue-50 text-blue-700' 
-                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                            }
-                          `}
-                        >
-                          <IconComponent className={`h-4 w-4 flex-shrink-0 ${isSelected ? 'text-blue-600' : 'text-gray-500'}`} />
-                          <span className="truncate">{option.label}</span>
-                          {isSelected && <Check className="h-4 w-4 ml-auto text-blue-600" />}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <DraggableSelect
+                    options={professionOptions}
+                    value={profileData.profession}
+                    onChange={(value) => {
+                      setProfileData(prev => ({ ...prev, profession: value }));
+                      setShowCustomProfession(value === 'other');
+                    }}
+                    selectedColor="border-blue-500 bg-blue-50 text-blue-700"
+                  />
                   
                   {showCustomProfession && (
                     <div className="space-y-2 mt-4">
