@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFollows } from '@/hooks/useFollows';
 import SocialFeed from '@/components/SocialFeed';
 import TokenDisplay from '@/components/TokenDisplay';
+import { FeedSkeleton } from '@/components/ui/page-skeletons';
 
 interface User {
   id: string;
@@ -130,12 +131,9 @@ const FeedPage = () => {
     </Card>
   );
 
+  // Show skeleton instantly while data loads
   if (authLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <FeedSkeleton />;
   }
 
   if (!currentUser) {

@@ -19,6 +19,7 @@ import { useLoyalUsers } from '@/hooks/useLoyalUsers';
 import TokenDisplay from '@/components/TokenDisplay';
 import PlanBadge, { planColors } from '@/components/PlanBadge';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
+import { FollowersSkeleton } from '@/components/ui/page-skeletons';
 
 interface FollowerStats {
   followersCount: number;
@@ -455,6 +456,11 @@ const FollowersPage = () => {
       </motion.div>
     );
   };
+
+  // Show skeleton instantly while loading
+  if (loading && !currentUserId) {
+    return <FollowersSkeleton />;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">

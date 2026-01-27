@@ -87,6 +87,7 @@ import { CountrySelect } from '@/components/ui/country-select';
 import { IconSelect, type IconSelectOption } from '@/components/ui/icon-select';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { ProfessionSelect, type ProfessionOption } from '@/components/ui/profession-select';
+import { SettingsSkeleton } from '@/components/ui/page-skeletons';
 
 const SettingsPage = () => {
   const navigate = useNavigate();
@@ -388,28 +389,13 @@ const SettingsPage = () => {
     }
   };
 
-  // Authentication and loading check
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    );
+  // Show skeleton instantly while loading - design first, then data
+  if (authLoading || loading) {
+    return <SettingsSkeleton />;
   }
 
   if (!currentUser) {
     return null; // Will redirect in useEffect
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading settings...</p>
-        </div>
-      </div>
-    );
   }
 
   return (

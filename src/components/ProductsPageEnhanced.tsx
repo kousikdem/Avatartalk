@@ -24,7 +24,8 @@ import { useToast } from '@/hooks/use-toast';
 import TokenDisplay from '@/components/TokenDisplay';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { LimitReachedBanner } from '@/components/LockedFeatureOverlay';
-import { FastPageLoader, DashboardPageSkeleton, PriorityLoader, StatCardSkeleton, ProductCardSkeleton } from '@/components/ui/fast-loading';
+import { FastPageLoader, PriorityLoader, StatCardSkeleton, ProductCardSkeleton } from '@/components/ui/fast-loading';
+import { ProductsSkeleton } from '@/components/ui/page-skeletons';
 
 type ViewMode = 'grid' | 'list';
 type Currency = 'INR' | 'USD' | 'EUR' | 'GBP';
@@ -240,16 +241,16 @@ const ProductsPageEnhanced = () => {
     window.location.href = '/settings/promo';
   };
 
-  // Fast loading with priority content
+  // Show skeleton instantly while loading - design first
   if (isLoading && !currentUserId) {
-    return <DashboardPageSkeleton showStats statsCount={7} showTabs tabCount={3} />;
+    return <ProductsSkeleton />;
   }
 
   return (
     <FastPageLoader 
       isLoading={isLoading} 
       message="Loading products..."
-      skeleton={<DashboardPageSkeleton showStats statsCount={7} showTabs tabCount={3} />}
+      skeleton={<ProductsSkeleton />}
     >
     <div className="min-h-screen bg-background p-4 sm:p-6">
       <div className="max-w-7xl mx-auto space-y-6">

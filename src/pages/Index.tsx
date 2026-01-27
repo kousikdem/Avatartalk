@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -9,6 +8,7 @@ import EnhancedAvatarStudio from '@/components/EnhancedAvatarStudio';
 import VisitorAuth from '@/components/VisitorAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect, useState } from 'react';
+import { DashboardSkeleton } from '@/components/ui/page-skeletons';
 
 const Index = () => {
   const [searchParams] = useSearchParams();
@@ -43,8 +43,9 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Show skeleton for authenticated users during initial load
   if (loading) {
-    return (
+    return user ? <DashboardSkeleton /> : (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
