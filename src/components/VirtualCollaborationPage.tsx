@@ -28,6 +28,7 @@ import VirtualBookingCard from './VirtualBookingCard';
 import TokenDisplay from './TokenDisplay';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { LimitReachedBanner } from '@/components/LockedFeatureOverlay';
+import { GenericPageSkeleton } from '@/components/ui/page-skeletons';
 
 type ViewMode = 'grid' | 'list';
 type Currency = 'INR' | 'USD' | 'EUR' | 'GBP';
@@ -224,6 +225,11 @@ const VirtualCollaborationPage = () => {
       setPromoFormComponent(() => module.PromoForm);
     });
   }, []);
+
+  // Show skeleton instantly while loading
+  if (isLoading && products.length === 0) {
+    return <GenericPageSkeleton title stats={4} tabs={3} cards={6} />;
+  }
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import AvatarStudioLayout from '@/components/avatar-studio/AvatarStudioLayout';
+import { AvatarBuilderSkeleton } from '@/components/ui/page-skeletons';
 
 const AvatarBuilderPage = () => {
   const [user, setUser] = useState<any>(null);
@@ -31,12 +32,9 @@ const AvatarBuilderPage = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Show skeleton instantly while loading
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <AvatarBuilderSkeleton />;
   }
 
   if (!user) {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +21,7 @@ import EnhancedCreatePostModal from './EnhancedCreatePostModal';
 import DashboardSidebar from './DashboardSidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { DashboardSkeleton } from '@/components/ui/page-skeletons';
 
 const Dashboard = () => {
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -108,15 +108,9 @@ const Dashboard = () => {
     }
   };
 
+  // Show skeleton instantly while data loads
   if (loading) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-sm sm:text-base">Loading your dashboard...</p>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   const mobileNavItems = [
