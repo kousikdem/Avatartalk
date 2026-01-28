@@ -337,48 +337,13 @@ export const FastPageLoader: React.FC<FastPageLoaderProps> = memo(({
   isLoading,
   skeleton,
   children,
-  message = 'Loading...',
-  maxDuration = 1500,
 }) => {
-  const [showContent, setShowContent] = useState(!isLoading);
-  const [initialLoad, setInitialLoad] = useState(true);
-
-  useEffect(() => {
-    if (!isLoading) {
-      const timer = setTimeout(() => {
-        setShowContent(true);
-        setInitialLoad(false);
-      }, initialLoad ? 100 : 0);
-      return () => clearTimeout(timer);
-    }
-    return undefined;
-  }, [isLoading, initialLoad]);
-
-  if (isLoading && initialLoad) {
-    return (
-      <>
-        <FastLoadingScreen isLoading={true} message={message} maxDuration={maxDuration} />
-        {skeleton}
-      </>
-    );
+  // Show skeleton instantly while loading, then content
+  if (isLoading) {
+    return <>{skeleton}</>;
   }
 
-  return (
-    <AnimatePresence mode="wait">
-      {showContent ? (
-        <motion.div
-          key="content"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.15 }}
-        >
-          {children}
-        </motion.div>
-      ) : (
-        skeleton
-      )}
-    </AnimatePresence>
-  );
+  return <>{children}</>;
 });
 
 FastPageLoader.displayName = 'FastPageLoader';

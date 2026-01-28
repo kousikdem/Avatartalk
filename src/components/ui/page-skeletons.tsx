@@ -3,7 +3,7 @@ import { Skeleton } from './skeleton';
 
 // Dashboard Main Skeleton - Shows design instantly with skeleton data placeholders
 export const DashboardSkeleton = memo(() => (
-  <div className="w-full max-w-7xl mx-auto bg-white p-3 sm:p-6 animate-in fade-in duration-200">
+  <div className="w-full max-w-7xl mx-auto bg-white p-3 sm:p-6">
     {/* Header Section */}
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-8">
       <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -78,7 +78,7 @@ DashboardSkeleton.displayName = 'DashboardSkeleton';
 
 // Settings Page Skeleton
 export const SettingsSkeleton = memo(() => (
-  <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 p-4 sm:p-6 animate-in fade-in duration-200">
+  <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 p-4 sm:p-6">
     <div className="max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -132,7 +132,7 @@ SettingsSkeleton.displayName = 'SettingsSkeleton';
 
 // Feed Page Skeleton
 export const FeedSkeleton = memo(() => (
-  <div className="min-h-screen bg-background p-4 sm:p-6 animate-in fade-in duration-200">
+  <div className="min-h-screen bg-background p-4 sm:p-6">
     <div className="max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -210,7 +210,7 @@ FeedSkeleton.displayName = 'FeedSkeleton';
 
 // Analytics Page Skeleton
 export const AnalyticsSkeleton = memo(() => (
-  <div className="container mx-auto p-6 space-y-8 bg-background min-h-screen animate-in fade-in duration-200">
+  <div className="container mx-auto p-6 space-y-8 bg-background min-h-screen">
     {/* Header */}
     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <div className="flex items-center gap-4">
@@ -262,7 +262,7 @@ AnalyticsSkeleton.displayName = 'AnalyticsSkeleton';
 
 // Products Page Skeleton
 export const ProductsSkeleton = memo(() => (
-  <div className="min-h-screen bg-background p-4 sm:p-6 animate-in fade-in duration-200">
+  <div className="min-h-screen bg-background p-4 sm:p-6">
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -326,7 +326,7 @@ ProductsSkeleton.displayName = 'ProductsSkeleton';
 
 // Followers Page Skeleton
 export const FollowersSkeleton = memo(() => (
-  <div className="min-h-screen bg-background p-4 sm:p-6 animate-in fade-in duration-200">
+  <div className="min-h-screen bg-background p-4 sm:p-6">
     <div className="max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -375,7 +375,7 @@ FollowersSkeleton.displayName = 'FollowersSkeleton';
 
 // Avatar Builder Skeleton
 export const AvatarBuilderSkeleton = memo(() => (
-  <div className="min-h-screen bg-background animate-in fade-in duration-200">
+  <div className="min-h-screen bg-background">
     <div className="flex h-screen">
       {/* Sidebar */}
       <div className="w-80 bg-card border-r p-4 space-y-4">
@@ -419,7 +419,7 @@ export const GenericPageSkeleton = memo(({
   tabs?: number;
   cards?: number;
 }) => (
-  <div className="min-h-screen bg-background p-4 sm:p-6 animate-in fade-in duration-200">
+  <div className="min-h-screen bg-background p-4 sm:p-6">
     <div className="max-w-6xl mx-auto space-y-6">
       {title && (
         <div className="flex justify-between items-center">

@@ -35,14 +35,15 @@ const TermsPage = lazy(() => import("./pages/TermsPage"));
 const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
 const RefundPolicyPage = lazy(() => import("./pages/RefundPolicyPage"));
 
-// Optimized QueryClient with better caching
+// Optimized QueryClient with aggressive caching for faster loads
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      gcTime: 1000 * 60 * 30, // 30 minutes (formerly cacheTime)
+      staleTime: 1000 * 60 * 10, // 10 minutes - longer cache
+      gcTime: 1000 * 60 * 60, // 1 hour cache retention
       refetchOnWindowFocus: false,
-      retry: 1,
+      refetchOnMount: false, // Don't refetch on mount for faster navigation
+      retry: 0, // No retries for faster failure handling
     },
   },
 });
@@ -54,17 +55,9 @@ PageFallback.displayName = 'PageFallback';
 const ProfileFallback = memo(() => <ProfileSkeleton />);
 ProfileFallback.displayName = 'ProfileFallback';
 
-// App loading screen
+// Minimal app loading - just shows instantly with no animation delay
 const AppLoadingScreen = memo(() => (
-  <div className="min-h-screen bg-background flex items-center justify-center">
-    <div className="flex flex-col items-center gap-3">
-      <div className="relative w-10 h-10">
-        <div className="absolute inset-0 rounded-full border-2 border-primary/20" />
-        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary animate-spin" />
-      </div>
-      <p className="text-xs text-muted-foreground">Loading...</p>
-    </div>
-  </div>
+  <div className="min-h-screen bg-background" />
 ));
 AppLoadingScreen.displayName = 'AppLoadingScreen';
 
@@ -220,19 +213,11 @@ const App = () => {
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    // Get initial session with optimized timing
-    const initAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setUser(session?.user ?? null);
-      } catch (error) {
-        console.error('Auth error:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initAuth();
+    // Ultra-fast session check - no await, immediate response
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    }).catch(() => setLoading(false));
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
