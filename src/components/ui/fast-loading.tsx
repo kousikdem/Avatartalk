@@ -1,13 +1,4 @@
 import React, { useState, useEffect, memo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-
-// Priority-based loading delays (in ms)
-const priorityDelays = {
-  critical: 0,
-  high: 50,
-  medium: 150,
-  low: 300,
-};
 
 export type LoadingPriority = 'critical' | 'high' | 'medium' | 'low';
 
@@ -26,51 +17,11 @@ export const PriorityLoader: React.FC<PriorityLoaderProps> = memo(({
   fallback,
   className,
 }) => {
-  const [shouldRender, setShouldRender] = useState(priority === 'critical');
-
-  useEffect(() => {
-    if (priority === 'critical') {
-      setShouldRender(true);
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setShouldRender(true);
-    }, priorityDelays[priority]);
-
-    return () => clearTimeout(timer);
-  }, [priority]);
-
-  if (!shouldRender) {
-    return fallback || null;
+  // Instant render - no delays, no animations
+  if (!isDataReady) {
+    return <div className={className}>{fallback}</div>;
   }
-
-  return (
-    <AnimatePresence mode="wait">
-      {isDataReady ? (
-        <motion.div
-          key="content"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.15 }}
-          className={className}
-        >
-          {children}
-        </motion.div>
-      ) : (
-        <motion.div
-          key="skeleton"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.1 }}
-          className={className}
-        >
-          {fallback}
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
+  return <div className={className}>{children}</div>;
 });
 
 PriorityLoader.displayName = 'PriorityLoader';
@@ -81,81 +32,20 @@ interface FastLoadingScreenProps {
   maxDuration?: number;
 }
 
+// Simplified loading screen - no animations for instant render
 export const FastLoadingScreen: React.FC<FastLoadingScreenProps> = memo(({
   isLoading,
   message = 'Loading...',
-  maxDuration = 1500, // Reduced to 1.5s for faster perceived load
 }) => {
-  const [progress, setProgress] = useState(0);
-  const [forceComplete, setForceComplete] = useState(false);
-
-  useEffect(() => {
-    if (!isLoading) {
-      setProgress(100);
-      return;
-    }
-
-    setProgress(0);
-    setForceComplete(false);
-
-    const startTime = Date.now();
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const progressRatio = Math.min(elapsed / maxDuration, 1);
-      
-      // Faster eased progress curve
-      const easedProgress = 1 - Math.pow(1 - progressRatio, 2);
-      setProgress(Math.min(easedProgress * 100, 99));
-
-      if (elapsed >= maxDuration) {
-        setForceComplete(true);
-        setProgress(100);
-        clearInterval(interval);
-      }
-    }, 16);
-
-    return () => clearInterval(interval);
-  }, [isLoading, maxDuration]);
-
-  const shouldShow = isLoading && !forceComplete;
+  if (!isLoading) return null;
 
   return (
-    <AnimatePresence>
-      {shouldShow && (
-        <motion.div
-          initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm"
-        >
-          <div className="flex flex-col items-center gap-4 p-6">
-            <div className="relative w-12 h-12">
-              <motion.div
-                className="absolute inset-0 rounded-full border-3 border-primary/20"
-              />
-              <motion.div
-                className="absolute inset-0 rounded-full border-3 border-transparent border-t-primary"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 0.6, repeat: Infinity, ease: 'linear' }}
-              />
-            </div>
-
-            <div className="w-40 h-1 bg-muted rounded-full overflow-hidden">
-              <motion.div
-                className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${progress}%` }}
-                transition={{ duration: 0.05 }}
-              />
-            </div>
-
-            <p className="text-xs text-muted-foreground">
-              {message}
-            </p>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-4 p-6">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs text-muted-foreground">{message}</p>
+      </div>
+    </div>
   );
 });
 

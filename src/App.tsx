@@ -209,33 +209,42 @@ const App = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [isReady, setIsReady] = useState(false);
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    // Ultra-fast session check - no await, immediate response
+    // Single auth check - set state once and mark ready
+    let mounted = true;
+    
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
+      if (mounted) {
+        setUser(session?.user ?? null);
+        setIsReady(true);
+        
+        // Immediate redirect for authenticated users on home
+        if (session?.user && window.location.pathname === '/') {
+          window.location.replace('/settings/dashboard');
+        }
+      }
+    }).catch(() => {
+      if (mounted) setIsReady(true);
     });
 
-    return () => subscription.unsubscribe();
+    // Listen for future auth changes only (not initial)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (mounted && event !== 'INITIAL_SESSION') {
+        setUser(session?.user ?? null);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  // Fast redirect for authenticated users
-  useEffect(() => {
-    if (!loading && user && window.location.pathname === '/') {
-      window.location.href = '/settings/dashboard';
-    }
-  }, [loading, user]);
-
-  if (loading) {
+  // Show empty screen only during initial load
+  if (!isReady) {
     return <AppLoadingScreen />;
   }
 
