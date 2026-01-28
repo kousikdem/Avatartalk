@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import LandingPage from '@/components/LandingPage';
@@ -7,23 +7,19 @@ import PricingPage from '@/components/PricingPage';
 import EnhancedAvatarStudio from '@/components/EnhancedAvatarStudio';
 import VisitorAuth from '@/components/VisitorAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useEffect, useState } from 'react';
-import { DashboardSkeleton } from '@/components/ui/page-skeletons';
 
 const Index = () => {
   const [searchParams] = useSearchParams();
   const view = searchParams.get('view');
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [showVisitorAuth, setShowVisitorAuth] = useState(false);
+  const [user, setUser] = useState<any>(undefined); // undefined = checking, null = no user
 
+  // Single fast check - no loading state needed since App.tsx already handles initial auth
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      setLoading(false);
       
-      // Show visitor auth popup for first-time visitors
+      // Show visitor auth popup for first-time visitors only
       if (!session?.user && !localStorage.getItem('hasSeenVisitorAuth')) {
         setTimeout(() => {
           setShowVisitorAuth(true);
@@ -31,25 +27,11 @@ const Index = () => {
         }, 2000);
       }
     });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
   }, []);
 
-  // Show skeleton for authenticated users during initial load
-  if (loading) {
-    return user ? <DashboardSkeleton /> : (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    );
+  // Show nothing briefly while checking - App.tsx handles the main loading
+  if (user === undefined) {
+    return null;
   }
 
   // Show Enhanced Avatar Studio if authenticated and view is 'avatar'
@@ -61,8 +43,7 @@ const Index = () => {
     return <Dashboard />;
   }
 
-  // For non-authenticated users
-  // Show pricing page
+  // For non-authenticated users - show pricing page
   if (view === 'pricing') {
     return (
       <>
