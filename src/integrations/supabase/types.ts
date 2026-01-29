@@ -1773,12 +1773,50 @@ export type Database = {
           },
         ]
       }
+      notification_settings: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          setting_key: string
+          setting_value: Json
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          setting_key: string
+          setting_value?: Json
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
           data: Json | null
+          expires_at: string | null
+          icon: string | null
           id: string
+          link_text: string | null
+          link_url: string | null
           message: string
+          priority: string | null
           read: boolean | null
           title: string
           type: string
@@ -1787,8 +1825,13 @@ export type Database = {
         Insert: {
           created_at?: string
           data?: Json | null
+          expires_at?: string | null
+          icon?: string | null
           id?: string
+          link_text?: string | null
+          link_url?: string | null
           message: string
+          priority?: string | null
           read?: boolean | null
           title: string
           type: string
@@ -1797,8 +1840,13 @@ export type Database = {
         Update: {
           created_at?: string
           data?: Json | null
+          expires_at?: string | null
+          icon?: string | null
           id?: string
+          link_text?: string | null
+          link_url?: string | null
           message?: string
+          priority?: string | null
           read?: boolean | null
           title?: string
           type?: string
@@ -2954,6 +3002,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      push_notifications: {
+        Row: {
+          click_count: number | null
+          created_at: string
+          created_by: string | null
+          icon: string | null
+          id: string
+          is_scheduled: boolean | null
+          link_text: string | null
+          link_url: string | null
+          message: string
+          notification_type: string
+          read_count: number | null
+          scheduled_at: string | null
+          sent_at: string | null
+          sent_count: number | null
+          status: string
+          target_audience: string
+          target_user_ids: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          click_count?: number | null
+          created_at?: string
+          created_by?: string | null
+          icon?: string | null
+          id?: string
+          is_scheduled?: boolean | null
+          link_text?: string | null
+          link_url?: string | null
+          message: string
+          notification_type?: string
+          read_count?: number | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          sent_count?: number | null
+          status?: string
+          target_audience?: string
+          target_user_ids?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          click_count?: number | null
+          created_at?: string
+          created_by?: string | null
+          icon?: string | null
+          id?: string
+          is_scheduled?: boolean | null
+          link_text?: string | null
+          link_url?: string | null
+          message?: string
+          notification_type?: string
+          read_count?: number | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          sent_count?: number | null
+          status?: string
+          target_audience?: string
+          target_user_ids?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       qa_pairs: {
         Row: {

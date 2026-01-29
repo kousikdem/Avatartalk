@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bell } from 'lucide-react';
+import { Bell, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -8,7 +8,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useNotifications } from '@/hooks/useNotifications';
+import { useNotifications, Notification } from '@/hooks/useNotifications';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { 
@@ -22,7 +22,10 @@ import {
   Package,
   Megaphone,
   Clock,
-  Settings
+  Settings,
+  CheckCircle,
+  Sparkles,
+  Eye
 } from 'lucide-react';
 
 interface NotificationBellProps {
@@ -51,6 +54,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
       case 'product_sale':
         return ShoppingCart;
       case 'virtual_collab_sale':
+      case 'meeting_booking':
         return Calendar;
       case 'subscription':
         return Star;
@@ -59,17 +63,27 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
       case 'order_update':
         return Package;
       case 'promotion':
+      case 'announcement':
         return Megaphone;
       case 'reminder':
         return Clock;
       case 'system':
         return Settings;
+      case 'feature':
+        return Sparkles;
+      case 'profile_visit':
+      case 'product_view':
+      case 'post_view':
+        return Eye;
       default:
         return Bell;
     }
   };
 
-  const getNotificationColor = (type: string) => {
+  const getNotificationColor = (type: string, priority?: string) => {
+    if (priority === 'high') {
+      return 'bg-red-100 text-red-700 ring-2 ring-red-300';
+    }
     switch (type) {
       case 'message':
         return 'bg-blue-100 text-blue-700';
@@ -82,6 +96,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
         return 'bg-indigo-100 text-indigo-700';
       case 'product_sale':
       case 'virtual_collab_sale':
+      case 'meeting_booking':
         return 'bg-emerald-100 text-emerald-700';
       case 'subscription':
         return 'bg-amber-100 text-amber-700';
@@ -90,16 +105,33 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
       case 'order_update':
         return 'bg-cyan-100 text-cyan-700';
       case 'promotion':
+      case 'announcement':
         return 'bg-pink-100 text-pink-700';
       case 'reminder':
         return 'bg-orange-100 text-orange-700';
+      case 'feature':
+        return 'bg-violet-100 text-violet-700';
+      case 'profile_visit':
+      case 'product_view':
+      case 'post_view':
+        return 'bg-sky-100 text-sky-700';
       default:
         return 'bg-gray-100 text-gray-700';
     }
   };
 
-  const handleNotificationClick = (notification: any) => {
+  const handleNotificationClick = (notification: Notification) => {
     markAsRead(notification.id);
+    
+    // If notification has a link, open it
+    if (notification.link_url) {
+      if (notification.link_url.startsWith('http')) {
+        window.open(notification.link_url, '_blank');
+      } else {
+        navigate(notification.link_url);
+      }
+      return;
+    }
     
     // Navigate based on notification type
     if (notification.data?.postId) {
@@ -110,6 +142,8 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
       navigate(`/settings/chat`);
     } else if (notification.data?.orderId) {
       navigate(`/settings/orders`);
+    } else if (notification.data?.productId) {
+      navigate(`/settings/products`);
     } else {
       navigate('/settings/notifications');
     }
@@ -168,18 +202,31 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
                     key={notification.id}
                     className={`p-3 hover:bg-accent/50 cursor-pointer transition-colors ${
                       !notification.read ? 'bg-primary/5' : ''
-                    }`}
+                    } ${notification.priority === 'high' ? 'border-l-2 border-l-red-500' : ''}`}
                     onClick={() => handleNotificationClick(notification)}
                   >
                     <div className="flex gap-3">
-                      <div className={`p-1.5 rounded-full ${getNotificationColor(notification.type)}`}>
+                      <div className={`p-1.5 rounded-full ${getNotificationColor(notification.type, notification.priority)}`}>
                         <Icon className="h-3 w-3" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{notification.title}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium truncate">{notification.title}</p>
+                          {notification.priority === 'high' && (
+                            <Badge variant="destructive" className="text-[10px] px-1 py-0">
+                              Important
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-xs text-muted-foreground line-clamp-2">
                           {notification.message}
                         </p>
+                        {notification.link_url && notification.link_text && (
+                          <div className="flex items-center gap-1 mt-1 text-xs text-primary">
+                            <ExternalLink className="h-3 w-3" />
+                            <span>{notification.link_text}</span>
+                          </div>
+                        )}
                         <p className="text-xs text-muted-foreground mt-1">
                           {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                         </p>
