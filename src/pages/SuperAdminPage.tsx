@@ -26,7 +26,7 @@ import { SiteSettingsManager } from '@/components/super-admin/SiteSettingsManage
 import { UserSearchManager } from '@/components/super-admin/UserSearchManager';
 import ChatSettingsManager from '@/components/super-admin/ChatSettingsManager';
 import PlanManagement from '@/components/super-admin/PlanManagement';
-import NotificationManager from '@/components/super-admin/NotificationManager';
+import AdvancedNotificationManager from '@/components/super-admin/AdvancedNotificationManager';
 
 const SuperAdminPage = () => {
   const {
@@ -269,7 +269,7 @@ const SuperAdminPage = () => {
 
         {/* Notifications Management Tab */}
         <TabsContent value="notifications" className="space-y-4">
-          <NotificationManager />
+          <AdvancedNotificationManager />
         </TabsContent>
 
         {/* AI Limits Tab */}

@@ -11,6 +11,11 @@ export interface Notification {
   data: any;
   read: boolean;
   created_at: string;
+  link_url?: string;
+  link_text?: string;
+  icon?: string;
+  priority?: string;
+  expires_at?: string;
 }
 
 export type NotificationType = 
@@ -31,7 +36,9 @@ export type NotificationType =
   | 'profile_visit'
   | 'product_view'
   | 'post_view'
-  | 'activity';
+  | 'activity'
+  | 'announcement'
+  | 'feature';
 
 export const useNotifications = (userId?: string) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -58,7 +65,11 @@ export const useNotifications = (userId?: string) => {
 
       if (error) throw error;
       
-      const notificationData = (data || []) as Notification[];
+      // Filter out expired notifications
+      const notificationData = (data || []).filter((n: any) => 
+        !n.expires_at || new Date(n.expires_at) > new Date()
+      ) as Notification[];
+      
       setNotifications(notificationData);
       setUnreadCount(notificationData.filter(n => !n.read).length);
     } catch (error) {

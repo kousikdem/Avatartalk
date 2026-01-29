@@ -26,11 +26,14 @@ interface CreateNotificationParams {
   title: string;
   message: string;
   data?: Record<string, any>;
+  link_url?: string;
+  link_text?: string;
+  priority?: 'normal' | 'high';
 }
 
 export const notificationService = {
   // Create a single notification
-  async create({ userId, type, title, message, data = {} }: CreateNotificationParams) {
+  async create({ userId, type, title, message, data = {}, link_url, link_text, priority = 'normal' }: CreateNotificationParams) {
     try {
       const { error } = await supabase
         .from('notifications')
@@ -40,6 +43,9 @@ export const notificationService = {
           title,
           message,
           data,
+          link_url,
+          link_text,
+          priority,
           read: false
         });
 
@@ -250,13 +256,15 @@ export const notificationService = {
   },
 
   // Bulk notification to multiple users
-  async notifyMany(userIds: string[], type: NotificationType, title: string, message: string, data = {}) {
+  async notifyMany(userIds: string[], type: NotificationType, title: string, message: string, data = {}, link_url?: string, link_text?: string) {
     const notifications = userIds.map(userId => ({
       user_id: userId,
       type,
       title,
       message,
       data,
+      link_url,
+      link_text,
       read: false
     }));
 
@@ -271,5 +279,26 @@ export const notificationService = {
       console.error('Error creating bulk notifications:', error);
       return false;
     }
+  },
+
+  // Create notification with link
+  async createWithLink(
+    userId: string, 
+    type: NotificationType, 
+    title: string, 
+    message: string, 
+    link_url: string, 
+    link_text: string,
+    priority: 'normal' | 'high' = 'normal'
+  ) {
+    return this.create({
+      userId,
+      type,
+      title,
+      message,
+      link_url,
+      link_text,
+      priority
+    });
   }
 };
