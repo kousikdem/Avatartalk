@@ -238,7 +238,7 @@ const ProductsPageEnhanced = () => {
       navigate('/pricing');
       return;
     }
-    window.location.href = '/settings/promo';
+    navigate('/settings/promo');
   };
 
   // Show skeleton instantly while loading - design first
