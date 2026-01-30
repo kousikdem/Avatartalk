@@ -35,7 +35,7 @@ const Navbar: React.FC<NavbarProps> = ({ showAuth = false }) => {
   }, []);
 
   const handleNavigation = (path: string) => {
-    window.location.href = path;
+    navigate(path);
   };
 
   const handleProfileClick = () => {

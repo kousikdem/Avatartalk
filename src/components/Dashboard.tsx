@@ -22,6 +22,7 @@ import DashboardSidebar from './DashboardSidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { DashboardSkeleton } from '@/components/ui/page-skeletons';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -33,6 +34,7 @@ const Dashboard = () => {
   const { following, refetch } = useFollows(profileData?.id);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
   // Fetch upcoming collaborations and meetings
   useEffect(() => {
@@ -97,8 +99,8 @@ const Dashboard = () => {
         title: "Logged out successfully",
         description: "See you soon!",
       });
-      
-      window.location.href = '/';
+
+      navigate('/', { replace: true });
     } catch (error) {
       toast({
         title: "Error",
@@ -216,7 +218,7 @@ const Dashboard = () => {
                 <Button 
                   variant="outline" 
                   className="h-14 sm:h-20 bg-white hover:bg-gray-50 border border-gray-200 flex flex-col items-center justify-center gap-1 sm:gap-2 p-1 sm:p-2"
-                  onClick={() => window.location.href = '/settings/avatar'}
+                  onClick={() => navigate('/settings/avatar')}
                 >
                   <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500">
                     <UserCircle className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
@@ -228,7 +230,7 @@ const Dashboard = () => {
                 <Button 
                   variant="outline" 
                   className="h-14 sm:h-20 bg-white hover:bg-gray-50 border border-gray-200 flex flex-col items-center justify-center gap-1 sm:gap-2 p-1 sm:p-2"
-                  onClick={() => window.location.href = '/settings/products'}
+                  onClick={() => navigate('/settings/products')}
                 >
                   <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-purple-400 to-pink-500">
                     <ShoppingBag className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
@@ -240,7 +242,7 @@ const Dashboard = () => {
                 <Button 
                   variant="outline" 
                   className="h-14 sm:h-20 bg-white hover:bg-gray-50 border border-gray-200 flex flex-col items-center justify-center gap-1 sm:gap-2 p-1 sm:p-2"
-                  onClick={() => window.location.href = '/settings/virtual-collaboration'}
+                  onClick={() => navigate('/settings/virtual-collaboration')}
                 >
                   <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500">
                     <Video className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
@@ -252,7 +254,7 @@ const Dashboard = () => {
                 <Button 
                   variant="outline" 
                   className="h-14 sm:h-20 bg-white hover:bg-gray-50 border border-gray-200 flex flex-col items-center justify-center gap-1 sm:gap-2 p-1 sm:p-2"
-                  onClick={() => window.location.href = '/settings/feed'}
+                  onClick={() => navigate('/settings/feed')}
                 >
                   <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-orange-400 to-red-500">
                     <Home className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
@@ -264,7 +266,7 @@ const Dashboard = () => {
                 <Button 
                   variant="outline" 
                   className="h-14 sm:h-20 bg-white hover:bg-gray-50 border border-gray-200 flex flex-col items-center justify-center gap-1 sm:gap-2 p-1 sm:p-2"
-                  onClick={() => window.location.href = '/settings/ai-training'}
+                  onClick={() => navigate('/settings/ai-training')}
                 >
                   <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-violet-400 to-purple-500">
                     <Brain className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
@@ -276,7 +278,7 @@ const Dashboard = () => {
                 <Button 
                   variant="outline" 
                   className="h-14 sm:h-20 bg-white hover:bg-gray-50 border border-gray-200 flex flex-col items-center justify-center gap-1 sm:gap-2 p-1 sm:p-2"
-                  onClick={() => window.location.href = '/settings/buy-tokens'}
+                  onClick={() => navigate('/settings/buy-tokens')}
                 >
                   <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500">
                     <Coins className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
@@ -288,7 +290,7 @@ const Dashboard = () => {
                 <Button 
                   variant="outline" 
                   className="h-14 sm:h-20 bg-white hover:bg-gray-50 border border-gray-200 flex flex-col items-center justify-center gap-1 sm:gap-2 p-1 sm:p-2"
-                  onClick={() => window.location.href = '/settings/analytics'}
+                  onClick={() => navigate('/settings/analytics')}
                 >
                   <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500">
                     <BarChart3 className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
@@ -300,7 +302,7 @@ const Dashboard = () => {
                 <Button 
                   variant="outline" 
                   className="h-14 sm:h-20 bg-white hover:bg-gray-50 border border-gray-200 flex flex-col items-center justify-center gap-1 sm:gap-2 p-1 sm:p-2"
-                  onClick={() => window.location.href = '/settings/account'}
+                  onClick={() => navigate('/settings/account')}
                 >
                   <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-slate-400 to-gray-600">
                     <Settings className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
@@ -336,7 +338,7 @@ const Dashboard = () => {
             showControls={true}
             enableVoice={true}
             isInteractive={true}
-            onAvatarClick={() => window.location.href = '/avatar'}
+            onAvatarClick={() => navigate('/avatar')}
           />
           
           {/* Real-time Social Activity Widget */}

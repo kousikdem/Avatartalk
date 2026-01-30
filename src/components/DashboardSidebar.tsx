@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   Home, 
   Plus, 
@@ -158,8 +158,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
                       }`}
                       tooltip={isCollapsed ? item.title : undefined}
                     >
-                      <a 
-                        href={item.url} 
+                      <Link 
+                        to={item.url} 
                         className={`flex items-center w-full ${
                           isCollapsed ? 'justify-center p-3' : 'gap-3 p-3'
                         }`}
@@ -175,7 +175,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
                             </span>
                           </div>
                         )}
-                      </a>
+                      </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );

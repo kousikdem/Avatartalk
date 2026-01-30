@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
@@ -86,6 +86,7 @@ const AuthenticatedRoutes = memo(({
       <main className="flex-1 min-w-0 transition-all duration-200 bg-background">
         <Suspense fallback={<PageFallback />}>
           <Routes>
+              <Route path="/" element={<Navigate to="/settings/dashboard" replace />} />
             <Route path="/settings/dashboard" element={
               <Suspense fallback={<PageFallback />}>
                 <DashboardPageLayout><Index /></DashboardPageLayout>
@@ -220,11 +221,6 @@ const App = () => {
       if (mounted) {
         setUser(session?.user ?? null);
         setIsReady(true);
-        
-        // Immediate redirect for authenticated users on home
-        if (session?.user && window.location.pathname === '/') {
-          window.location.replace('/settings/dashboard');
-        }
       }
     }).catch(() => {
       if (mounted) setIsReady(true);
@@ -245,11 +241,6 @@ const App = () => {
 
   // Show empty screen only during initial load
   if (!isReady) {
-    return <AppLoadingScreen />;
-  }
-
-  // Prevent flash during redirect
-  if (user && window.location.pathname === '/') {
     return <AppLoadingScreen />;
   }
 
