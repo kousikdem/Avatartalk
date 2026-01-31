@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,7 @@ type AvatarStyle = 'realistic' | 'cartoon' | 'anime' | 'minimal';
 type AvatarMood = 'professional' | 'friendly' | 'mysterious';
 
 const EnhancedDashboard = () => {
+  const navigate = useNavigate();
   const [isPublic, setIsPublic] = useState(true);
   const [personality, setPersonality] = useState([50]);
   const [voiceSpeed, setVoiceSpeed] = useState([50]);
@@ -265,7 +267,7 @@ const EnhancedDashboard = () => {
                   enableVoice={false}
                   isInteractive={true}
                   isTalking={isTalking}
-                  onAvatarClick={() => window.location.href = '/avatar'}
+                  onAvatarClick={() => navigate('/settings/avatar')}
                 />
                 
                 <div className="mt-6 w-full space-y-3">

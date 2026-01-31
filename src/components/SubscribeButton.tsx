@@ -136,7 +136,7 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
                 title: "Subscription Active!",
                 description: `You are now subscribed to ${targetUsername}`,
               });
-              window.location.reload();
+              // No hard reload: subscription status updates via realtime hooks
             }
           },
           prefill: {

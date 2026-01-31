@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -28,6 +29,7 @@ interface User {
 }
 
 const FeedPage = () => {
+  const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [suggestedUsers, setSuggestedUsers] = useState<User[]>([]);
@@ -43,7 +45,7 @@ const FeedPage = () => {
       setAuthLoading(false);
       
       if (!session?.user) {
-        window.location.href = '/';
+        navigate('/', { replace: true });
       }
     });
 
@@ -52,12 +54,12 @@ const FeedPage = () => {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setCurrentUser(session?.user ?? null);
       if (!session?.user) {
-        window.location.href = '/';
+        navigate('/', { replace: true });
       }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     if (currentUser) {

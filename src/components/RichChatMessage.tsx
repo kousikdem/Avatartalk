@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ExternalLink, FileText, Link2, List, Grid3X3, MessageSquare, HelpCircle, ArrowRight, User } from 'lucide-react';
@@ -63,6 +64,7 @@ export const RichChatMessage: React.FC<RichChatMessageProps> = ({
 }) => {
   const isUser = type === 'user';
   const [previewUrl, setPreviewUrl] = useState<{ url: string; title: string } | null>(null);
+  const navigate = useNavigate();
 
   const handleLinkClick = (url: string, title?: string) => {
     // Always open external links in new tab for security
@@ -346,7 +348,7 @@ export const RichChatMessage: React.FC<RichChatMessageProps> = ({
                   variant="ghost"
                   size="sm"
                   className="text-xs text-muted-foreground gap-1"
-                  onClick={() => window.location.href = `/${profileUsername}`}
+                  onClick={() => navigate(`/${profileUsername}`)}
                 >
                   <User className="h-3 w-3" />
                   Back to {displayName || profileUsername}'s Profile

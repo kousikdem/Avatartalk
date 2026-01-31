@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +33,7 @@ interface MainAuthProps {
 }
 
 const MainAuth: React.FC<MainAuthProps> = ({ isOpen, onClose, defaultTab = 'signin' }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -77,7 +79,8 @@ const MainAuth: React.FC<MainAuthProps> = ({ isOpen, onClose, defaultTab = 'sign
           description: "Signed in successfully!",
         });
         onClose();
-        window.location.href = '/?view=dashboard';
+        // SPA navigation (avoid full page reload)
+        navigate('/', { replace: true });
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -135,7 +138,8 @@ const MainAuth: React.FC<MainAuthProps> = ({ isOpen, onClose, defaultTab = 'sign
           description: "Account created! Please check your email to verify your account.",
         });
         onClose();
-        window.location.href = '/?view=dashboard';
+        // SPA navigation (avoid full page reload)
+        navigate('/', { replace: true });
       }
     } catch (error) {
       if (error instanceof z.ZodError) {

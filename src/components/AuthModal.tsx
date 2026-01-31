@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +33,7 @@ interface AuthModalProps {
 }
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'signin' }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -85,8 +87,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
           description: "Signed in successfully!",
         });
         onClose();
-        // Redirect to dashboard after successful login
-        window.location.href = '/?view=dashboard';
+        // SPA navigation (avoid full page reload)
+        navigate('/', { replace: true });
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -152,8 +154,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
           description: "Account created! Please check your email to verify your account.",
         });
         onClose();
-        // Auto-redirect new users to dashboard
-        window.location.href = '/?view=dashboard';
+        // SPA navigation (avoid full page reload)
+        navigate('/', { replace: true });
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -514,13 +516,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
 
         <p className="text-center text-sm text-gray-600">
           By continuing, you agree to our{' '}
-          <a href="/terms" className="text-blue-500 hover:text-blue-600 underline">
+          <Link to="/terms" className="text-blue-500 hover:text-blue-600 underline">
             Terms of Service
-          </a>{' '}
+          </Link>{' '}
           and{' '}
-          <a href="/privacy-policy" className="text-blue-500 hover:text-blue-600 underline">
+          <Link to="/privacy-policy" className="text-blue-500 hover:text-blue-600 underline">
             Privacy Policy
-          </a>
+          </Link>
         </p>
       </DialogContent>
     </Dialog>
