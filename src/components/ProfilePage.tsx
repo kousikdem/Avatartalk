@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import VisitorAuth from './VisitorAuth';
 import MainAuth from './MainAuth';
 import { Button } from '@/components/ui/button';
@@ -151,6 +151,7 @@ interface ChatMessage {
 
 const ProfilePage: React.FC = () => {
   const { username } = useParams<{ username: string }>();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -1254,7 +1255,7 @@ const ProfilePage: React.FC = () => {
                 showControls={currentUser?.id === profile?.id}
                 isInteractive={true}
                 isTalking={isTalking}
-                onAvatarClick={currentUser?.id === profile?.id ? () => window.location.href = '/avatar' : undefined}
+                onAvatarClick={currentUser?.id === profile?.id ? () => navigate('/settings/avatar') : undefined}
                 onTalkClick={handleTalkToMeClick}
                 showGiftButton={currentUser?.id !== profile?.id}
                 onGiftClick={() => {

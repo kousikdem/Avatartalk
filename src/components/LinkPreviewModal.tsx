@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
@@ -20,6 +21,7 @@ export const LinkPreviewModal: React.FC<LinkPreviewModalProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const navigate = useNavigate();
 
   const handleOpenExternal = () => {
     window.open(url, '_blank', 'noopener,noreferrer');
@@ -27,7 +29,7 @@ export const LinkPreviewModal: React.FC<LinkPreviewModalProps> = ({
 
   const handleBackToProfile = () => {
     if (profileUsername) {
-      window.location.href = `/${profileUsername}`;
+      navigate(`/${profileUsername}`);
     } else {
       onClose();
     }

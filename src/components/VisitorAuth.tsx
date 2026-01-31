@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -78,7 +79,7 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
           description: "Signed in successfully!",
         });
         onClose();
-        window.location.reload();
+        // No hard reload: App-level auth listener will update UI
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -160,7 +161,7 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
           description: `Welcome, ${validatedData.name}! Account created successfully.`,
         });
         onClose();
-        window.location.reload();
+        // No hard reload: App-level auth listener will update UI
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -515,8 +516,8 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
 
         <p className="text-center text-xs text-blue-300">
           By continuing, you agree to our{' '}
-          <a href="/terms" className="underline hover:text-white">Terms</a> and{' '}
-          <a href="/privacy-policy" className="underline hover:text-white">Privacy Policy</a>
+          <Link to="/terms" className="underline hover:text-white">Terms</Link> and{' '}
+          <Link to="/privacy-policy" className="underline hover:text-white">Privacy Policy</Link>
         </p>
       </DialogContent>
     </Dialog>

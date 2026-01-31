@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Settings, Play, Pause, Mic, Volume2 } from 'lucide-react';
@@ -40,6 +41,7 @@ const EnhancedAvatarPreview: React.FC<EnhancedAvatarPreviewProps> = ({
   talking = false,
   onAvatarClick
 }) => {
+  const navigate = useNavigate();
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfig | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMicActive, setIsMicActive] = useState(false);
@@ -301,7 +303,7 @@ const EnhancedAvatarPreview: React.FC<EnhancedAvatarPreviewProps> = ({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => window.location.href = '/avatar'}
+                onClick={() => (onAvatarClick ? onAvatarClick() : navigate('/settings/avatar'))}
                 className="bg-white/80 backdrop-blur-sm"
               >
                 <Settings className="w-4 h-4" />

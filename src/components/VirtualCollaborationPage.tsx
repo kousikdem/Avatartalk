@@ -813,7 +813,7 @@ const VirtualCollaborationPage = () => {
                 <p className="text-sm text-muted-foreground mb-3">
                   Apply promo codes to virtual collaborations
                 </p>
-                <Button variant="outline" className="w-full" onClick={() => window.location.href = '/settings/promo'}>
+                <Button variant="outline" className="w-full" onClick={() => navigate('/settings/promo')}>
                   <Settings className="w-4 h-4 mr-2" />
                   Manage Promos
                 </Button>
