@@ -1208,7 +1208,7 @@ const LandingPage = () => {
               <h3 className="font-bold mb-4">Product</h3>
               <ul className="space-y-2 text-sm text-gray-400">
                 <li><a href="#features" className="hover:text-white">Features</a></li>
-                <li><a href="/pricing" className="hover:text-white">Pricing</a></li>
+                <li><Link to="/pricing" className="hover:text-white">Pricing</Link></li>
                 <li><a href="#" className="hover:text-white">Templates</a></li>
                 <li><a href="#" className="hover:text-white">API</a></li>
               </ul>
@@ -1217,9 +1217,9 @@ const LandingPage = () => {
             <div>
               <h3 className="font-bold mb-4">Legal</h3>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="/terms" className="hover:text-white">Terms & Conditions</a></li>
-                <li><a href="/privacy-policy" className="hover:text-white">Privacy Policy</a></li>
-                <li><a href="/refund-policy" className="hover:text-white">Refund Policy</a></li>
+                <li><Link to="/terms" className="hover:text-white">Terms & Conditions</Link></li>
+                <li><Link to="/privacy-policy" className="hover:text-white">Privacy Policy</Link></li>
+                <li><Link to="/refund-policy" className="hover:text-white">Refund Policy</Link></li>
               </ul>
             </div>
             
@@ -1240,11 +1240,11 @@ const LandingPage = () => {
               © 2024 All rights reserved by AvatarTalk.Co
             </p>
             <div className="flex justify-center gap-4 text-xs text-gray-500">
-              <a href="/terms" className="hover:text-white">Terms</a>
+              <Link to="/terms" className="hover:text-white">Terms</Link>
               <span>•</span>
-              <a href="/privacy-policy" className="hover:text-white">Privacy</a>
+              <Link to="/privacy-policy" className="hover:text-white">Privacy</Link>
               <span>•</span>
-              <a href="/refund-policy" className="hover:text-white">Refunds</a>
+              <Link to="/refund-policy" className="hover:text-white">Refunds</Link>
             </div>
           </div>
         </div>

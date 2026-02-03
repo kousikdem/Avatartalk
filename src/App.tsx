@@ -9,6 +9,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { CurrencyProvider } from "@/hooks/useCurrency";
 import { DashboardPageSkeleton, ProfileSkeleton, FastLoadingScreen } from "@/components/ui/fast-loading";
+import type { Session, User } from "@supabase/supabase-js";
+import { AuthProvider } from "@/context/auth";
 
 // Lazy load all page components for code splitting
 const DashboardSidebar = lazy(() => import("@/components/DashboardSidebar"));
@@ -89,7 +91,7 @@ const AuthenticatedRoutes = memo(({
               <Route path="/" element={<Navigate to="/settings/dashboard" replace />} />
             <Route path="/settings/dashboard" element={
               <Suspense fallback={<PageFallback />}>
-                <DashboardPageLayout><Index /></DashboardPageLayout>
+                 <DashboardPageLayout><Index mode="authed" /></DashboardPageLayout>
               </Suspense>
             } />
             <Route path="/settings/avatar" element={
@@ -159,7 +161,7 @@ const AuthenticatedRoutes = memo(({
             } />
             <Route path="/settings/notifications" element={
               <Suspense fallback={<PageFallback />}>
-                <DashboardPageLayout><Index /></DashboardPageLayout>
+                 <DashboardPageLayout><Index mode="authed" /></DashboardPageLayout>
               </Suspense>
             } />
             <Route path="/:username" element={
@@ -187,7 +189,7 @@ const PublicRoutes = memo(() => (
     <div className="min-h-screen w-full bg-background">
       <Suspense fallback={<PageFallback />}>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<Index mode="public" />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
@@ -209,29 +211,45 @@ PublicRoutes.displayName = 'PublicRoutes';
 const App = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isReady, setIsReady] = useState(false);
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    // Single auth check - set state once and mark ready
     let mounted = true;
-    
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (mounted) {
-        setUser(session?.user ?? null);
-        setIsReady(true);
-      }
-    }).catch(() => {
-      if (mounted) setIsReady(true);
+
+    // Listen for auth changes (sync callback only)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (!mounted) return;
+      if (event === "INITIAL_SESSION") return;
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
     });
 
-    // Listen for future auth changes only (not initial)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (mounted && event !== 'INITIAL_SESSION') {
-        setUser(session?.user ?? null);
-      }
-    });
+    // Fast local session hydrate (no UI blocking beyond initial empty screen)
+    supabase.auth
+      .getSession()
+      .then(({ data: { session: initialSession } }) => {
+        if (!mounted) return;
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
+        setIsReady(true);
+
+        // Server-side verification (Auth API) in background to ensure token is valid
+        if (initialSession) {
+          supabase.auth.getUser().then(({ data, error }) => {
+            if (!mounted) return;
+            if (error || !data.user) {
+              // If token is invalid/expired, force clean state
+              supabase.auth.signOut();
+            }
+          });
+        }
+      })
+      .catch(() => {
+        if (mounted) setIsReady(true);
+      });
 
     return () => {
       mounted = false;
@@ -252,24 +270,26 @@ const App = () => {
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              {user ? (
-                <>
-                  <AuthenticatedRoutes
-                    sidebarOpen={sidebarOpen}
-                    setSidebarOpen={setSidebarOpen}
-                    setIsCreatePostOpen={setIsCreatePostOpen}
-                    isMobile={isMobile}
-                  />
-                  <Suspense fallback={null}>
-                    <EnhancedCreatePostModal 
-                      isOpen={isCreatePostOpen}
-                      onClose={() => setIsCreatePostOpen(false)}
+              <AuthProvider value={{ user, session, isReady }}>
+                {user ? (
+                  <>
+                    <AuthenticatedRoutes
+                      sidebarOpen={sidebarOpen}
+                      setSidebarOpen={setSidebarOpen}
+                      setIsCreatePostOpen={setIsCreatePostOpen}
+                      isMobile={isMobile}
                     />
-                  </Suspense>
-                </>
-              ) : (
-                <PublicRoutes />
-              )}
+                    <Suspense fallback={null}>
+                      <EnhancedCreatePostModal 
+                        isOpen={isCreatePostOpen}
+                        onClose={() => setIsCreatePostOpen(false)}
+                      />
+                    </Suspense>
+                  </>
+                ) : (
+                  <PublicRoutes />
+                )}
+              </AuthProvider>
             </BrowserRouter>
           </div>
         </TooltipProvider>
