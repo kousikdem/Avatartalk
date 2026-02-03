@@ -23,13 +23,14 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { DashboardSkeleton } from '@/components/ui/page-skeletons';
 import { useNavigate } from 'react-router-dom';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Dashboard = () => {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [upcomingCollabs, setUpcomingCollabs] = useState(0);
-  const [upcomingMeetings, setUpcomingMeetings] = useState(0);
+  const [upcomingCollabs, setUpcomingCollabs] = useState<number | null>(null);
+  const [upcomingMeetings, setUpcomingMeetings] = useState<number | null>(null);
   const { profileData, loading } = useUserProfile();
   const { following, refetch } = useFollows(profileData?.id);
   const { toast } = useToast();
@@ -110,10 +111,7 @@ const Dashboard = () => {
     }
   };
 
-  // Show skeleton instantly while data loads
-  if (loading) {
-    return <DashboardSkeleton />;
-  }
+  const showProfileSkeletons = loading && !profileData;
 
   const mobileNavItems = [
     { title: "Dashboard", icon: Home, url: "/settings/dashboard" },
@@ -150,7 +148,13 @@ const Dashboard = () => {
             <Users className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
           </CardHeader>
           <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
-            <div className="text-xl sm:text-2xl font-bold text-gray-900">{profileData?.followers_count || 0}</div>
+            <div className="text-xl sm:text-2xl font-bold text-gray-900">
+              {showProfileSkeletons ? (
+                <Skeleton className="h-7 w-12" />
+              ) : (
+                profileData?.followers_count ?? 0
+              )}
+            </div>
             <p className="text-xs text-gray-600 hidden sm:block">+20% from last month</p>
           </CardContent>
         </Card>
@@ -162,7 +166,11 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
             <div className="text-xl sm:text-2xl font-bold text-gray-900">
-              {(profileData?.analytics?.total_chats_sent || 0) + (profileData?.analytics?.total_chats_received || 0)}
+              {showProfileSkeletons ? (
+                <Skeleton className="h-7 w-14" />
+              ) : (
+                (profileData?.analytics?.total_chats_sent || 0) + (profileData?.analytics?.total_chats_received || 0)
+              )}
             </div>
             <p className="text-xs text-gray-600 hidden sm:block">
               {profileData?.analytics?.total_chats_sent || 0} sent • {profileData?.analytics?.total_chats_received || 0} received
@@ -176,7 +184,9 @@ const Dashboard = () => {
             <Video className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
           </CardHeader>
           <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
-            <div className="text-xl sm:text-2xl font-bold text-gray-900">{upcomingCollabs}</div>
+            <div className="text-xl sm:text-2xl font-bold text-gray-900">
+              {upcomingCollabs === null ? <Skeleton className="h-7 w-10" /> : upcomingCollabs}
+            </div>
             <p className="text-xs text-gray-600 hidden sm:block">Upcoming collaborations</p>
           </CardContent>
         </Card>
@@ -187,7 +197,9 @@ const Dashboard = () => {
             <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
           </CardHeader>
           <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
-            <div className="text-xl sm:text-2xl font-bold text-gray-900">{upcomingMeetings}</div>
+            <div className="text-xl sm:text-2xl font-bold text-gray-900">
+              {upcomingMeetings === null ? <Skeleton className="h-7 w-10" /> : upcomingMeetings}
+            </div>
             <p className="text-xs text-gray-600 hidden sm:block">Scheduled meetings</p>
           </CardContent>
         </Card>

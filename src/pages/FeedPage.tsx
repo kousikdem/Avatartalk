@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -17,6 +16,7 @@ import { useFollows } from '@/hooks/useFollows';
 import SocialFeed from '@/components/SocialFeed';
 import TokenDisplay from '@/components/TokenDisplay';
 import { FeedSkeleton } from '@/components/ui/page-skeletons';
+import { useAuth } from '@/context/auth';
 
 interface User {
   id: string;
@@ -29,50 +29,26 @@ interface User {
 }
 
 const FeedPage = () => {
-  const navigate = useNavigate();
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const { user } = useAuth();
   const [suggestedUsers, setSuggestedUsers] = useState<User[]>([]);
   const [activeTab, setActiveTab] = useState('my-posts');
   const { toast } = useToast();
-  
-  const { following, followUser, unfollowUser, isFollowing } = useFollows(currentUser?.id);
 
-  // Authentication check
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setCurrentUser(session?.user ?? null);
-      setAuthLoading(false);
-      
-      if (!session?.user) {
-        navigate('/', { replace: true });
-      }
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setCurrentUser(session?.user ?? null);
-      if (!session?.user) {
-        navigate('/', { replace: true });
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+  const userId = user?.id;
+  const { following, followUser, unfollowUser, isFollowing } = useFollows(userId);
 
   useEffect(() => {
-    if (currentUser) {
+    if (userId) {
       fetchSuggestedUsers();
     }
-  }, [currentUser, following]);
+  }, [userId, following]);
 
   const fetchSuggestedUsers = async () => {
-    if (!currentUser) return;
+    if (!userId) return;
     
     try {
       const followingIds = following.map(f => f.following_id);
-      const excludeIds = [...followingIds, currentUser.id];
+      const excludeIds = [...followingIds, userId];
       
       const { data: usersData, error } = await supabase
         .from('profiles')
@@ -133,14 +109,8 @@ const FeedPage = () => {
     </Card>
   );
 
-  // Show skeleton instantly while data loads
-  if (authLoading) {
-    return <FeedSkeleton />;
-  }
-
-  if (!currentUser) {
-    return null;
-  }
+  // Show skeleton shell if auth context isn't ready yet (prevents blank screen)
+  if (!userId) return <FeedSkeleton />;
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6">
@@ -168,7 +138,7 @@ const FeedPage = () => {
 
               <TabsContent value="my-posts" className="mt-6">
                 <SocialFeed 
-                  userId={currentUser?.id}
+                  userId={userId}
                   showCreatePost={true}
                   feedType="user"
                   showLinkClicks={true}
@@ -178,7 +148,7 @@ const FeedPage = () => {
 
               <TabsContent value="following" className="mt-6">
                 <SocialFeed 
-                  userId={currentUser?.id}
+                  userId={userId}
                   showCreatePost={false}
                   feedType="following"
                   showLinkClicks={false}
@@ -187,7 +157,7 @@ const FeedPage = () => {
 
               <TabsContent value="paid-posts" className="mt-6">
                 <SocialFeed 
-                  userId={currentUser?.id}
+                  userId={userId}
                   showCreatePost={false}
                   feedType="paid"
                   showLinkClicks={false}

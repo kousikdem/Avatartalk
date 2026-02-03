@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -50,11 +50,14 @@ export const useUserProfile = () => {
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const hasLoadedOnceRef = useRef(false);
   const { toast } = useToast();
 
   const loadCompleteProfile = async () => {
     try {
-      setLoading(true);
+      // Only use a full-page loading state for the *very first* load.
+      // Subsequent refreshes should not blank the page (prevents "double load" feel).
+      if (!hasLoadedOnceRef.current) setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -140,6 +143,7 @@ export const useUserProfile = () => {
       };
 
       setProfileData(completeProfile);
+      hasLoadedOnceRef.current = true;
 
     } catch (error) {
       console.error('Error loading complete profile:', error);

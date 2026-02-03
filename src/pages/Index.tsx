@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import LandingPage from '@/components/LandingPage';
@@ -6,44 +6,34 @@ import Dashboard from '@/components/Dashboard';
 import PricingPage from '@/components/PricingPage';
 import EnhancedAvatarStudio from '@/components/EnhancedAvatarStudio';
 import VisitorAuth from '@/components/VisitorAuth';
-import { supabase } from '@/integrations/supabase/client';
 
-const Index = () => {
+export type IndexMode = 'public' | 'authed';
+
+const Index: React.FC<{ mode?: IndexMode }> = ({ mode }) => {
   const [searchParams] = useSearchParams();
   const view = searchParams.get('view');
   const [showVisitorAuth, setShowVisitorAuth] = useState(false);
-  const [user, setUser] = useState<any>(undefined); // undefined = checking, null = no user
 
-  // Single fast check - no loading state needed since App.tsx already handles initial auth
+  // Public-only visitor auth popup (first visit)
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      
-      // Show visitor auth popup for first-time visitors only
-      if (!session?.user && !localStorage.getItem('hasSeenVisitorAuth')) {
-        setTimeout(() => {
-          setShowVisitorAuth(true);
-          localStorage.setItem('hasSeenVisitorAuth', 'true');
-        }, 2000);
-      }
-    });
-  }, []);
+    if (mode !== 'public') return;
+    if (localStorage.getItem('hasSeenVisitorAuth')) return;
 
-  // Show nothing briefly while checking - App.tsx handles the main loading
-  if (user === undefined) {
-    return null;
-  }
+    const t = setTimeout(() => {
+      setShowVisitorAuth(true);
+      localStorage.setItem('hasSeenVisitorAuth', 'true');
+    }, 2000);
 
-  // Show Enhanced Avatar Studio if authenticated and view is 'avatar'
-  if (user) {
-    if (view === 'avatar') {
-      return <EnhancedAvatarStudio />;
-    }
-    // Show dashboard for authenticated users by default
+    return () => clearTimeout(t);
+  }, [mode]);
+
+  // Authenticated mode: never re-check session here (App already decided).
+  if (mode === 'authed') {
+    if (view === 'avatar') return <EnhancedAvatarStudio />;
     return <Dashboard />;
   }
 
-  // For non-authenticated users - show pricing page
+  // Public mode: show pricing page via query param
   if (view === 'pricing') {
     return (
       <>

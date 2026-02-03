@@ -32,6 +32,7 @@ import DetailedFaceControls from './DetailedFaceControls';
 import { useAvatarConfigurations } from '@/hooks/useAvatarConfigurations';
 import { posePresets, expressionPresets } from '@/data/avatarPresets';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 interface RealisticAvatarBuilderProps {
   onConfigChange?: (config: any) => void;
@@ -45,6 +46,7 @@ const RealisticAvatarBuilder: React.FC<RealisticAvatarBuilderProps> = ({
   showInDashboard = false 
 }) => {
   const { saveConfiguration, loadConfigurations, currentConfig, setCurrentConfig } = useAvatarConfigurations();
+  const navigate = useNavigate();
   
   const [avatarConfig, setAvatarConfig] = useState({
     // Basic Info
@@ -203,7 +205,7 @@ const RealisticAvatarBuilder: React.FC<RealisticAvatarBuilderProps> = ({
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => window.location.href = '/avatar'}
+              onClick={() => navigate('/settings/avatar')}
               className="flex-1"
             >
               <Zap className="w-4 h-4 mr-2" />
