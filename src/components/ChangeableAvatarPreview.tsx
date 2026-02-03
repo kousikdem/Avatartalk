@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useRef, useState, useEffect, Suspense } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -6,7 +6,7 @@ import { Camera, MessageSquare, Gift } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
+import { OrbitControls, ContactShadows } from '@react-three/drei';
 import AdvancedAvatarPreview from './AdvancedAvatarPreview';
 import FuturisticAvatar3D from './FuturisticAvatar3D';
 import { useAvatarSettings } from '@/hooks/useAvatarSettings';
@@ -41,13 +41,16 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
   const [avatarData, setAvatarData] = useState<any>(null);
   const [profileData, setProfileData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const hasLoadedOnceRef = useRef(false);
   const [isChangeModalOpen, setIsChangeModalOpen] = useState(false);
   const { settings } = useAvatarSettings();
 
   // Fetch avatar configuration and profile data - works for ALL visitors
   const fetchAvatarData = async () => {
     try {
-      setLoading(true);
+      // Only show the blocking spinner on the very first load.
+      // Realtime updates should not blank/freeze the card.
+      if (!hasLoadedOnceRef.current) setLoading(true);
       
       // Use the provided userId prop directly (this is the profile owner's ID)
       // Don't rely on auth for viewing - anyone should see the avatar
@@ -97,6 +100,7 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
         if (!avatarError && avatarConfig) {
           console.log('🎭 Found avatar by avatar_id:', avatarConfig.avatar_name);
           setAvatarData(avatarConfig);
+          hasLoadedOnceRef.current = true;
           setLoading(false);
           return;
         }
@@ -128,6 +132,8 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
           setAvatarData(anyAvatar);
         }
       }
+
+      hasLoadedOnceRef.current = true;
     } catch (error) {
       console.error('Error fetching avatar data:', error);
     } finally {
@@ -149,7 +155,7 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
 
       // Subscribe to avatar_configurations changes with real-time sync
       const avatarChannel = supabase
-        .channel(`avatar-sync-${targetUserId}-${Date.now()}`)
+        .channel(`avatar-sync-${targetUserId}`)
         .on(
           'postgres_changes',
           {
@@ -178,9 +184,7 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
             fetchAvatarData();
           }
         )
-        .subscribe((status) => {
-          console.log('🔌 Real-time subscription status:', status);
-        });
+        .subscribe();
 
       return () => {
         console.log('🔌 Cleaning up real-time subscriptions');
@@ -278,7 +282,6 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
                   autoRotate={!isTalking}
                   autoRotateSpeed={0.5}
                 />
-                <Environment preset="studio" />
                 <ContactShadows position={[0, -2.5, 0]} scale={8} blur={3} far={3} />
               </Canvas>
               {isTalking && (

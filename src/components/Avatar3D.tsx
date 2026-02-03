@@ -1,7 +1,7 @@
 
 import React, { Suspense, useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Text3D, Environment, PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, Text3D, PerspectiveCamera } from '@react-three/drei';
 import { motion } from 'framer-motion';
 import * as THREE from 'three';
 
@@ -122,9 +122,6 @@ const Avatar3D: React.FC<Avatar3DProps> = ({
           <ambientLight intensity={0.5} />
           <pointLight position={[10, 10, 10]} intensity={1} />
           <spotLight position={[0, 5, 5]} angle={0.3} penumbra={1} intensity={0.8} />
-          
-          {/* Environment */}
-          <Environment preset="studio" />
           
           {/* Avatar */}
           <AvatarMesh isTalking={isTalking} avatarStyle={avatarStyle} mood={mood} />

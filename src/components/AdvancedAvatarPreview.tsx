@@ -149,22 +149,11 @@ const AdvancedAvatarPreview: React.FC<AdvancedAvatarPreviewProps> = ({ config })
     
     // Age-based skin properties
     const ageRoughness = config.age < 25 ? 0.2 : config.age < 50 ? 0.35 : 0.5;
-    const ageTransmission = config.age < 25 ? 0.8 : config.age < 50 ? 0.6 : 0.4;
     
     return {
       color: skinColor,
       roughness: ageRoughness,
-      metalness: 0.02,
-      transparent: true,
-      opacity: 0.95,
-      // Simulate subsurface scattering
-      transmission: ageTransmission,
-      thickness: 0.5,
-      // Realistic skin properties
-      clearcoat: 0.15,
-      clearcoatRoughness: 0.1,
-      // Subtle skin texture
-      normalScale: config.skinTexture === 'rough' ? new THREE.Vector2(0.3, 0.3) : new THREE.Vector2(0.1, 0.1)
+      metalness: 0.02
     };
   };
 
