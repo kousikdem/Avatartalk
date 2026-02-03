@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Environment, ContactShadows, PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, ContactShadows, PerspectiveCamera } from '@react-three/drei';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -477,7 +477,6 @@ const AvatarStudioLayout: React.FC<AvatarStudioLayoutProps> = ({ initialConfig }
                   maxDistance={10}
                   maxPolarAngle={Math.PI / 1.6}
                 />
-                <Environment preset="studio" />
                 <ContactShadows position={[0, -2.5, 0]} scale={8} blur={3} far={3} />
               </Canvas>
 
