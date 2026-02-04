@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { UserCircle, Settings, Home, LogIn, Users } from 'lucide-react';
+import { UserCircle, Settings, Home, LogIn, Users, CreditCard } from 'lucide-react';
 import MainAuth from './MainAuth';
 import VisitorAuth from './VisitorAuth';
 import Logo from './Logo';
 import NotificationBell from './NotificationBell';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 interface NavbarProps {
   showAuth?: boolean;
@@ -79,9 +79,12 @@ const Navbar: React.FC<NavbarProps> = ({ showAuth = false }) => {
                     variant="ghost" 
                     size="sm" 
                     className="text-blue-200 hover:text-white hover:bg-blue-800/50"
-                    onClick={() => handleNavigation('/?view=pricing')}
+                    asChild
                   >
-                    Pricing
+                    <Link to="/pricing">
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Pricing
+                    </Link>
                   </Button>
                   <Button 
                     variant="outline" 
