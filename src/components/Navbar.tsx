@@ -62,19 +62,28 @@ const Navbar: React.FC<NavbarProps> = ({ showAuth = false }) => {
             
             <div className="flex items-center space-x-4">
               {showAuth ? (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-blue-200 hover:text-white hover:bg-blue-800/50"
+                  onClick={() => handleNavigation('/')}
+                >
+                  <Home className="w-4 h-4 mr-2" />
+                  Home
+                </Button>
+              ) : (
                 <>
                   <Button 
                     variant="ghost" 
                     size="sm" 
                     className="text-blue-200 hover:text-white hover:bg-blue-800/50"
-                    onClick={() => handleNavigation('/')}
+                    asChild
                   >
-                    <Home className="w-4 h-4 mr-2" />
-                    Home
+                    <Link to="/">
+                      <Home className="w-4 h-4 mr-2" />
+                      Home
+                    </Link>
                   </Button>
-                </>
-              ) : (
-                <>
                   <Button 
                     variant="ghost" 
                     size="sm" 
