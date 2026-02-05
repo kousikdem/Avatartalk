@@ -10,11 +10,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { CurrencyProvider } from "@/hooks/useCurrency";
 import { DashboardPageSkeleton, ProfileSkeleton, FastLoadingScreen } from "@/components/ui/fast-loading";
 import type { Session, User } from "@supabase/supabase-js";
-import { AuthProvider } from "@/context/auth";
+import { AuthProvider, useAuth } from "@/context/auth";
 
 // Lazy load all page components for code splitting
 const DashboardSidebar = lazy(() => import("@/components/DashboardSidebar"));
 const DashboardPageLayout = lazy(() => import("@/components/DashboardPageLayout"));
+const OnboardingFlow = lazy(() => import("./components/onboarding/OnboardingFlow"));
 const Index = lazy(() => import("./pages/Index"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const AvatarPage = lazy(() => import("./pages/AvatarPage"));
@@ -74,112 +75,168 @@ const AuthenticatedRoutes = memo(({
   setSidebarOpen: (open: boolean) => void;
   setIsCreatePostOpen: (open: boolean) => void;
   isMobile: boolean;
-}) => (
-  <SidebarProvider 
-    defaultOpen={!isMobile}
-    open={sidebarOpen}
-    onOpenChange={setSidebarOpen}
-  >
-    <div className="flex min-h-screen w-full bg-background">
-      <Suspense fallback={null}>
-        <DashboardSidebar onCreatePost={() => setIsCreatePostOpen(true)} />
-      </Suspense>
+}) => {
+  const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const checkOnboarding = async () => {
+      if (!user) return;
       
-      <main className="flex-1 min-w-0 transition-all duration-200 bg-background">
-        <Suspense fallback={<PageFallback />}>
-          <Routes>
-              <Route path="/" element={<Navigate to="/settings/dashboard" replace />} />
-            <Route path="/settings/dashboard" element={
-              <Suspense fallback={<PageFallback />}>
-                 <DashboardPageLayout><Index mode="authed" /></DashboardPageLayout>
-              </Suspense>
-            } />
-            <Route path="/settings/avatar" element={
-              <Suspense fallback={<PageFallback />}>
-                <DashboardPageLayout><AvatarPage /></DashboardPageLayout>
-              </Suspense>
-            } />
-            <Route path="/settings/virtual-collaboration" element={
-              <Suspense fallback={<PageFallback />}>
-                <DashboardPageLayout><VirtualCollaborationPage /></DashboardPageLayout>
-              </Suspense>
-            } />
-            <Route path="/settings/products" element={
-              <Suspense fallback={<PageFallback />}>
-                <DashboardPageLayout><ProductsPage /></DashboardPageLayout>
-              </Suspense>
-            } />
-            <Route path="/settings/promo" element={
-              <Suspense fallback={<PageFallback />}>
-                <DashboardPageLayout><PromoSettingsPage /></DashboardPageLayout>
-              </Suspense>
-            } />
-            <Route path="/settings/account" element={
-              <Suspense fallback={<PageFallback />}>
-                <DashboardPageLayout><SettingsPage /></DashboardPageLayout>
-              </Suspense>
-            } />
-            <Route path="/settings/social-links" element={
-              <Suspense fallback={<PageFallback />}>
-                <DashboardPageLayout><SocialLinksPage /></DashboardPageLayout>
-              </Suspense>
-            } />
-            <Route path="/settings/feed" element={
-              <Suspense fallback={<PageFallback />}>
-                <DashboardPageLayout><FeedPage /></DashboardPageLayout>
-              </Suspense>
-            } />
-            <Route path="/settings/followers" element={
-              <Suspense fallback={<PageFallback />}>
-                <DashboardPageLayout><FollowersPage /></DashboardPageLayout>
-              </Suspense>
-            } />
-            <Route path="/settings/ai-training" element={
-              <Suspense fallback={<PageFallback />}>
-                <DashboardPageLayout><AITrainingDashboard /></DashboardPageLayout>
-              </Suspense>
-            } />
-            <Route path="/settings/analytics" element={
-              <Suspense fallback={<PageFallback />}>
-                <DashboardPageLayout><AnalyticsPage /></DashboardPageLayout>
-              </Suspense>
-            } />
-            <Route path="/settings/super-admin" element={
-              <Suspense fallback={<PageFallback />}>
-                <DashboardPageLayout><SuperAdminPage /></DashboardPageLayout>
-              </Suspense>
-            } />
-            <Route path="/settings/buy-tokens" element={
-              <Suspense fallback={<PageFallback />}>
-                <DashboardPageLayout><BuyTokensPage /></DashboardPageLayout>
-              </Suspense>
-            } />
-            <Route path="/pricing" element={
-              <Suspense fallback={<PageFallback />}>
-                <DashboardPageLayout><PricingPage /></DashboardPageLayout>
-              </Suspense>
-            } />
-            <Route path="/settings/notifications" element={
-              <Suspense fallback={<PageFallback />}>
-                 <DashboardPageLayout><Index mode="authed" /></DashboardPageLayout>
-              </Suspense>
-            } />
-            <Route path="/:username" element={
-              <Suspense fallback={<ProfileFallback />}>
-                <UsernameRedirect />
-              </Suspense>
-            } />
-            <Route path="*" element={
-              <Suspense fallback={<PageFallback />}>
-                <NotFound />
-              </Suspense>
-            } />
-          </Routes>
+      try {
+        const { data, error } = await supabase
+          .from('user_onboarding')
+          .select('is_completed')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (error) {
+          setNeedsOnboarding(false);
+        } else if (!data) {
+          setNeedsOnboarding(true);
+        } else {
+          setNeedsOnboarding(!data.is_completed);
+        }
+      } catch {
+        setNeedsOnboarding(false);
+      }
+    };
+
+    checkOnboarding();
+  }, [user]);
+
+  // Show onboarding flow if needed
+  if (needsOnboarding === true) {
+    return (
+      <Routes>
+        <Route path="/onboarding" element={
+          <Suspense fallback={<PageFallback />}>
+            <OnboardingFlow />
+          </Suspense>
+        } />
+        <Route path="/:username" element={
+          <Suspense fallback={<ProfileFallback />}>
+            <UsernameRedirect />
+          </Suspense>
+        } />
+        <Route path="*" element={<Navigate to="/onboarding" replace />} />
+      </Routes>
+    );
+  }
+
+  // Still checking
+  if (needsOnboarding === null) {
+    return <PageFallback />;
+  }
+
+  return (
+    <SidebarProvider 
+      defaultOpen={!isMobile}
+      open={sidebarOpen}
+      onOpenChange={setSidebarOpen}
+    >
+      <div className="flex min-h-screen w-full bg-background">
+        <Suspense fallback={null}>
+          <DashboardSidebar onCreatePost={() => setIsCreatePostOpen(true)} />
         </Suspense>
-      </main>
-    </div>
-  </SidebarProvider>
-));
+        
+        <main className="flex-1 min-w-0 transition-all duration-200 bg-background">
+          <Suspense fallback={<PageFallback />}>
+            <Routes>
+              <Route path="/" element={<Navigate to="/settings/dashboard" replace />} />
+              <Route path="/onboarding" element={<Navigate to="/settings/dashboard" replace />} />
+              <Route path="/settings/dashboard" element={
+                <Suspense fallback={<PageFallback />}>
+                   <DashboardPageLayout><Index mode="authed" /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/avatar" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><AvatarPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/virtual-collaboration" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><VirtualCollaborationPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/products" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><ProductsPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/promo" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><PromoSettingsPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/account" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><SettingsPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/social-links" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><SocialLinksPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/feed" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><FeedPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/followers" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><FollowersPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/ai-training" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><AITrainingDashboard /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/analytics" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><AnalyticsPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/super-admin" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><SuperAdminPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/buy-tokens" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><BuyTokensPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/pricing" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><PricingPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/notifications" element={
+                <Suspense fallback={<PageFallback />}>
+                   <DashboardPageLayout><Index mode="authed" /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/:username" element={
+                <Suspense fallback={<ProfileFallback />}>
+                  <UsernameRedirect />
+                </Suspense>
+              } />
+              <Route path="*" element={
+                <Suspense fallback={<PageFallback />}>
+                  <NotFound />
+                </Suspense>
+              } />
+            </Routes>
+          </Suspense>
+        </main>
+      </div>
+    </SidebarProvider>
+  );
+});
 
 AuthenticatedRoutes.displayName = 'AuthenticatedRoutes';
 
