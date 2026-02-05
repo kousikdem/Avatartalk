@@ -4112,6 +4112,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_onboarding: {
+        Row: {
+          completed_steps: Json | null
+          created_at: string
+          current_step: string | null
+          id: string
+          is_completed: boolean | null
+          personal_info_data: Json | null
+          skipped_steps: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_steps?: Json | null
+          created_at?: string
+          current_step?: string | null
+          id?: string
+          is_completed?: boolean | null
+          personal_info_data?: Json | null
+          skipped_steps?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_steps?: Json | null
+          created_at?: string
+          current_step?: string | null
+          id?: string
+          is_completed?: boolean | null
+          personal_info_data?: Json | null
+          skipped_steps?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_platform_subscriptions: {
         Row: {
           auto_renew: boolean | null
