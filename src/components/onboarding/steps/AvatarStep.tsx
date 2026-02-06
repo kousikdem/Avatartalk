@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Upload, ArrowRight, Image } from 'lucide-react';
+import { Sparkles, Upload, ArrowRight, Image, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import PlanBadge from '@/components/PlanBadge';
 
@@ -18,42 +18,32 @@ const AvatarStep: React.FC<AvatarStepProps> = ({ onComplete }) => {
     {
       id: 'upload' as const,
       title: 'Upload Photo',
-      description: 'Use your own profile picture',
+      description: 'Use your own profile picture as avatar',
       icon: Upload,
       available: true,
       requiredPlan: 'free',
+      gradient: 'from-blue-500 to-cyan-500',
     },
     {
       id: 'create' as const,
       title: '3D Avatar Studio',
-      description: 'Create a customized 3D avatar',
+      description: 'Create a customized 3D avatar with full controls',
       icon: Sparkles,
       available: hasFeature('avatar_upload_enabled'),
       requiredPlan: 'creator',
+      gradient: 'from-purple-500 to-indigo-600',
     },
   ];
 
-  const handleContinue = () => {
-    onComplete();
-  };
-
   return (
-    <Card className="border-0 shadow-xl bg-card/50 backdrop-blur">
-      <CardHeader className="text-center pb-2">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-secondary to-secondary/60 flex items-center justify-center"
-        >
-          <Image className="w-8 h-8 text-secondary-foreground" />
-        </motion.div>
-        <CardTitle className="text-2xl">Set up your avatar</CardTitle>
-        <CardDescription>
-          Choose how you want to represent yourself to visitors
-        </CardDescription>
-      </CardHeader>
+    <Card className="border border-border/50 shadow-xl bg-white">
+      <CardContent className="p-6 sm:p-8 space-y-6">
+        <div className="text-center mb-2">
+          <p className="text-sm text-muted-foreground">
+            Choose how you want to represent yourself to visitors
+          </p>
+        </div>
 
-      <CardContent className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2">
           {avatarOptions.map((option) => {
             const Icon = option.icon;
@@ -66,13 +56,13 @@ const AvatarStep: React.FC<AvatarStepProps> = ({ onComplete }) => {
                 whileHover={{ scale: isLocked ? 1 : 1.02 }}
                 whileTap={{ scale: isLocked ? 1 : 0.98 }}
               >
-                <Card
-                  className={`cursor-pointer transition-all duration-200 relative overflow-hidden ${
+                <div
+                  className={`cursor-pointer rounded-xl border-2 p-6 text-center transition-all relative overflow-hidden ${
                     isSelected
-                      ? 'ring-2 ring-primary border-primary'
+                      ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50/50'
                       : isLocked
-                      ? 'opacity-60 cursor-not-allowed'
-                      : 'hover:border-primary/50'
+                      ? 'opacity-50 cursor-not-allowed border-slate-200'
+                      : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50/20'
                   }`}
                   onClick={() => !isLocked && setSelectedOption(option.id)}
                 >
@@ -81,35 +71,27 @@ const AvatarStep: React.FC<AvatarStepProps> = ({ onComplete }) => {
                       <PlanBadge planKey={option.requiredPlan} size="sm" />
                     </div>
                   )}
-                  <CardContent className="p-6 text-center">
-                    <div
-                      className={`w-12 h-12 mx-auto mb-4 rounded-xl flex items-center justify-center ${
-                        isSelected
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      <Icon className="w-6 h-6" />
-                    </div>
-                    <h3 className="font-semibold mb-1">{option.title}</h3>
-                    <p className="text-sm text-muted-foreground">{option.description}</p>
-                  </CardContent>
-                </Card>
+                  <div className={`w-14 h-14 mx-auto mb-4 rounded-xl bg-gradient-to-br ${option.gradient} flex items-center justify-center shadow-lg`}>
+                    <Icon className="w-7 h-7 text-white" />
+                  </div>
+                  <h3 className="font-semibold mb-1">{option.title}</h3>
+                  <p className="text-xs text-muted-foreground">{option.description}</p>
+                </div>
               </motion.div>
             );
           })}
         </div>
 
-        <div className="bg-muted/50 rounded-lg p-4 text-center">
-          <p className="text-sm text-muted-foreground">
-            You can always change your avatar later from the Avatar settings page
+        <div className="bg-blue-50/50 rounded-lg p-3 border border-blue-100 text-center">
+          <p className="text-xs text-muted-foreground">
+            You can edit your avatar anytime from the Avatar Studio in your dashboard
           </p>
         </div>
 
         <Button
           size="lg"
-          className="w-full bg-gradient-to-r from-primary to-primary/80"
-          onClick={handleContinue}
+          className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-lg"
+          onClick={onComplete}
         >
           Continue
           <ArrowRight className="w-4 h-4 ml-2" />

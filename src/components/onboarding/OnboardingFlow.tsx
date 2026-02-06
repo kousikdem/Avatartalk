@@ -1,10 +1,11 @@
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useOnboarding, ONBOARDING_STEPS, OnboardingStep } from '@/hooks/useOnboarding';
+import { useOnboarding, OnboardingStep } from '@/hooks/useOnboarding';
 import OnboardingLayout from './OnboardingLayout';
 import PersonalInfoStep from './steps/PersonalInfoStep';
 import AvatarStep from './steps/AvatarStep';
 import AITrainingStep from './steps/AITrainingStep';
+import AISettingsStep from './steps/AISettingsStep';
 import SocialLinksStep from './steps/SocialLinksStep';
 import ProductsStep from './steps/ProductsStep';
 import VirtualCollaborationStep from './steps/VirtualCollaborationStep';
@@ -49,9 +50,9 @@ const OnboardingFlow: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
           <p className="text-muted-foreground">Loading your setup...</p>
         </div>
       </div>
@@ -66,6 +67,8 @@ const OnboardingFlow: React.FC = () => {
         return <AvatarStep onComplete={() => handleCompleteStep()} />;
       case 'ai_training':
         return <AITrainingStep onComplete={() => handleCompleteStep()} />;
+      case 'ai_settings':
+        return <AISettingsStep onComplete={() => handleCompleteStep()} />;
       case 'social_links':
         return <SocialLinksStep onComplete={() => handleCompleteStep()} />;
       case 'products':

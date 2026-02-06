@@ -1,10 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Package, ShoppingBag, Tag, ArrowRight, Sparkles } from 'lucide-react';
+import { Package, ShoppingBag, Tag, ArrowRight, Sparkles, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import PlanBadge from '@/components/PlanBadge';
+import { useNavigate } from 'react-router-dom';
 
 interface ProductsStepProps {
   onComplete: () => void;
@@ -41,72 +42,61 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
   ];
 
   return (
-    <Card className="border-0 shadow-xl bg-card/50 backdrop-blur">
-      <CardHeader className="text-center pb-2">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center"
-        >
-          <Package className="w-8 h-8 text-primary-foreground" />
-        </motion.div>
-        <CardTitle className="text-2xl">Add your products</CardTitle>
-        <CardDescription>
-          Showcase and sell products directly from your profile
-        </CardDescription>
-      </CardHeader>
+    <Card className="border border-border/50 shadow-xl bg-white">
+      <CardContent className="p-6 sm:p-8 space-y-6">
+        <div className="text-center mb-2">
+          <p className="text-sm text-muted-foreground">
+            Showcase and sell products directly from your profile
+          </p>
+        </div>
 
-      <CardContent className="space-y-6">
-        <div className="grid gap-4">
+        <div className="grid gap-3">
           {productTypes.map((type, index) => {
             const Icon = type.icon;
             return (
               <motion.div
                 key={type.title}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card className={`relative overflow-hidden ${!type.available ? 'opacity-60' : ''}`}>
+                <div className={`relative overflow-hidden p-4 rounded-xl border transition-all ${
+                  type.available ? 'border-slate-200 hover:border-blue-200 hover:bg-blue-50/20' : 'border-slate-100 opacity-60'
+                }`}>
                   {!type.available && (
                     <div className="absolute top-2 right-2">
                       <PlanBadge planKey={type.requiredPlan} size="sm" />
                     </div>
                   )}
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                        <Icon className="w-5 h-5 text-muted-foreground" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold">{type.title}</h3>
-                        <p className="text-sm text-muted-foreground mb-2">{type.description}</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {type.examples.map((example) => (
-                            <span
-                              key={example}
-                              className="text-xs px-2 py-0.5 bg-muted rounded-full text-muted-foreground"
-                            >
-                              {example}
-                            </span>
-                          ))}
-                        </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center shrink-0">
+                      <Icon className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-sm">{type.title}</h3>
+                      <p className="text-xs text-muted-foreground mb-2">{type.description}</p>
+                      <div className="flex flex-wrap gap-1">
+                        {type.examples.map((example) => (
+                          <span key={example} className="text-[10px] px-2 py-0.5 bg-slate-100 rounded-full text-muted-foreground">
+                            {example}
+                          </span>
+                        ))}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </motion.div>
             );
           })}
         </div>
 
-        <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg p-4 border border-primary/20">
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
           <div className="flex items-start gap-3">
-            <Sparkles className="w-5 h-5 text-primary mt-0.5" />
+            <Sparkles className="w-5 h-5 text-blue-600 mt-0.5" />
             <div>
-              <p className="text-sm font-medium">Ready to sell?</p>
+              <p className="text-sm font-medium text-slate-800">Ready to sell?</p>
               <p className="text-xs text-muted-foreground">
-                You can add products from the Products page in your dashboard after completing setup
+                Add products from the Products page in your dashboard after completing setup
               </p>
             </div>
           </div>
@@ -114,7 +104,7 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
 
         <Button
           size="lg"
-          className="w-full bg-gradient-to-r from-primary to-primary/80"
+          className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-lg"
           onClick={onComplete}
         >
           Continue

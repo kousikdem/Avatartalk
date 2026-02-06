@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Share2, User, ChevronDown, Menu } from 'lucide-react';
+import { LogOut, Share2, User, ChevronDown, Menu, Rocket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import CurrencySelector from './CurrencySelector';
@@ -11,6 +11,8 @@ import ShareModal from './ShareModal';
 import NotificationBell from './NotificationBell';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/auth';
+import { ONBOARDING_STEPS } from '@/hooks/useOnboarding';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,11 +21,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Progress } from '@/components/ui/progress';
 
 const DashboardHeaderStrip: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { toggleSidebar } = useSidebar();
+  const { user } = useAuth();
   const [showShareModal, setShowShareModal] = useState(false);
   const [userProfile, setUserProfile] = useState<{
     username: string | null;
@@ -31,25 +35,37 @@ const DashboardHeaderStrip: React.FC = () => {
     profile_pic_url: string | null;
     email: string | null;
   } | null>(null);
+  const [onboardingProgress, setOnboardingProgress] = useState<{
+    completedSteps: string[];
+    totalSteps: number;
+  } | null>(null);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('username, display_name, profile_pic_url')
-          .eq('id', user.id)
-          .single();
-        
+    const fetchData = async () => {
+      if (!user) return;
+      
+      const [profileRes, onboardingRes] = await Promise.all([
+        supabase.from('profiles').select('username, display_name, profile_pic_url').eq('id', user.id).single(),
+        supabase.from('user_onboarding').select('completed_steps, is_completed').eq('user_id', user.id).maybeSingle(),
+      ]);
+      
+      if (profileRes.data) {
         setUserProfile({
-          ...data,
+          ...profileRes.data,
           email: user.email || null
         });
       }
+
+      if (onboardingRes.data) {
+        const completed = (onboardingRes.data.completed_steps as string[]) || [];
+        setOnboardingProgress({
+          completedSteps: completed,
+          totalSteps: ONBOARDING_STEPS.length,
+        });
+      }
     };
-    fetchProfile();
-  }, []);
+    fetchData();
+  }, [user]);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -103,6 +119,30 @@ const DashboardHeaderStrip: React.FC = () => {
 
           {/* Right section - Actions */}
           <div className="flex items-center gap-1.5">
+            {/* Onboarding Progress */}
+            {onboardingProgress && onboardingProgress.completedSteps.length < onboardingProgress.totalSteps && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/onboarding')}
+                className="gap-1.5 h-7 px-2 text-blue-700 hover:bg-blue-50 hidden sm:flex"
+              >
+                <Rocket className="w-3.5 h-3.5" />
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-medium">Setup</span>
+                  <div className="w-16 h-1.5 bg-blue-100 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all"
+                      style={{ width: `${(onboardingProgress.completedSteps.length / onboardingProgress.totalSteps) * 100}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">
+                    {onboardingProgress.completedSteps.length}/{onboardingProgress.totalSteps}
+                  </span>
+                </div>
+              </Button>
+            )}
+
             <div className="hidden sm:block">
               <CurrencySelector compact />
             </div>

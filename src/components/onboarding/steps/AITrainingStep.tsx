@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Bot, MessageSquare, Sparkles, ArrowRight, Settings } from 'lucide-react';
+import { Brain, FileText, Globe, Mic, Plus, ArrowRight, Upload, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import PlanBadge from '@/components/PlanBadge';
-import { useAITrainingSettings } from '@/hooks/useAITrainingSettings';
+import { useQAPairs } from '@/hooks/useQAPairs';
 import { useToast } from '@/hooks/use-toast';
 
 interface AITrainingStepProps {
@@ -17,182 +17,163 @@ interface AITrainingStepProps {
 }
 
 const AITrainingStep: React.FC<AITrainingStepProps> = ({ onComplete }) => {
-  const { canUseAITopics } = usePlanFeatures();
-  const { settings, saveSettings, isLoading: settingsLoading } = useAITrainingSettings();
+  const { hasFeature } = usePlanFeatures();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('qa');
 
-  const [formData, setFormData] = useState({
-    welcomeEnabled: settings?.welcomeMessage?.enabled ?? true,
-    welcomeMessage: settings?.welcomeMessage?.text || "Hi! 👋 I'm here to help you learn more about me and my work. Feel free to ask anything!",
-    perspective: settings?.globalDescribeText || '',
-    tone: 'friendly',
-  });
+  // Q&A state
+  const [qaQuestion, setQaQuestion] = useState('');
+  const [qaAnswer, setQaAnswer] = useState('');
+  const [qaPairs, setQaPairs] = useState<{ question: string; answer: string }[]>([]);
 
-  const toneOptions = [
-    { value: 'friendly', label: 'Friendly & Casual', emoji: '😊' },
-    { value: 'professional', label: 'Professional', emoji: '💼' },
-    { value: 'enthusiastic', label: 'Enthusiastic', emoji: '🎉' },
-    { value: 'calm', label: 'Calm & Supportive', emoji: '🧘' },
-  ];
-
-  const handleSubmit = async () => {
-    setLoading(true);
-    try {
-      await saveSettings({
-        welcomeMessage: {
-          enabled: formData.welcomeEnabled,
-          text: formData.welcomeMessage,
-          trigger: 'first_open',
-          language: 'en',
-          customVariables: [],
-        },
-        globalDescribeText: formData.perspective,
-      });
-      toast({
-        title: 'AI settings saved!',
-        description: 'Your AI assistant is ready to go.',
-      });
-      onComplete();
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to save AI settings.',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
+  const addQAPair = () => {
+    if (!qaQuestion.trim() || !qaAnswer.trim()) return;
+    setQaPairs([...qaPairs, { question: qaQuestion, answer: qaAnswer }]);
+    setQaQuestion('');
+    setQaAnswer('');
+    toast({ title: 'Q&A pair added', description: 'You can add more or continue.' });
   };
 
-  return (
-    <Card className="border-0 shadow-xl bg-card/50 backdrop-blur">
-      <CardHeader className="text-center pb-2">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-accent to-accent/60 flex items-center justify-center"
-        >
-          <Bot className="w-8 h-8 text-accent-foreground" />
-        </motion.div>
-        <CardTitle className="text-2xl">Train your AI assistant</CardTitle>
-        <CardDescription>
-          Configure how your AI represents you to visitors
-        </CardDescription>
-      </CardHeader>
+  const trainingTabs = [
+    { id: 'qa', label: 'Q&A', icon: HelpCircle, available: true },
+    { id: 'documents', label: 'Documents', icon: FileText, available: true },
+    { id: 'web', label: 'Web Scraper', icon: Globe, available: hasFeature('ai_webscraper_enabled'), plan: 'pro' },
+    { id: 'voice', label: 'Voice', icon: Mic, available: hasFeature('ai_voice_training_enabled'), plan: 'pro' },
+  ];
 
-      <CardContent className="space-y-6">
-        <Tabs defaultValue="welcome" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="welcome">
-              <MessageSquare className="w-4 h-4 mr-2" />
-              Welcome Message
-            </TabsTrigger>
-            <TabsTrigger value="perspective">
-              <Sparkles className="w-4 h-4 mr-2" />
-              AI Perspective
-            </TabsTrigger>
+  return (
+    <Card className="border border-border/50 shadow-xl bg-white">
+      <CardContent className="p-6 sm:p-8 space-y-6">
+        <div className="text-center mb-2">
+          <p className="text-sm text-muted-foreground">
+            Train your AI with knowledge so it can accurately represent you to visitors
+          </p>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-4 bg-slate-100">
+            {trainingTabs.map(tab => (
+              <TabsTrigger
+                key={tab.id}
+                value={tab.id}
+                disabled={!tab.available}
+                className="relative text-xs sm:text-sm"
+              >
+                <tab.icon className="w-3.5 h-3.5 mr-1.5" />
+                {tab.label}
+                {!tab.available && tab.plan && (
+                  <span className="absolute -top-1 -right-1">
+                    <PlanBadge planKey={tab.plan} size="sm" showIcon={false} />
+                  </span>
+                )}
+              </TabsTrigger>
+            ))}
           </TabsList>
 
-          <TabsContent value="welcome" className="space-y-4 mt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="welcome-toggle">Enable Welcome Message</Label>
-                <p className="text-sm text-muted-foreground">
-                  Greet visitors when they start a chat
-                </p>
-              </div>
-              <Switch
-                id="welcome-toggle"
-                checked={formData.welcomeEnabled}
-                onCheckedChange={(checked) =>
-                  setFormData({ ...formData, welcomeEnabled: checked })
-                }
-              />
-            </div>
-
-            {formData.welcomeEnabled && (
+          {/* Q&A Tab */}
+          <TabsContent value="qa" className="space-y-4 mt-4">
+            <div className="space-y-3">
               <div className="space-y-2">
-                <Label htmlFor="welcome-message">Welcome Message</Label>
+                <Label className="text-sm font-medium">Question</Label>
+                <Input
+                  placeholder="e.g., What services do you offer?"
+                  value={qaQuestion}
+                  onChange={(e) => setQaQuestion(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Answer</Label>
                 <Textarea
-                  id="welcome-message"
-                  placeholder="Write a friendly welcome message..."
-                  value={formData.welcomeMessage}
-                  onChange={(e) =>
-                    setFormData({ ...formData, welcomeMessage: e.target.value })
-                  }
+                  placeholder="Your answer..."
+                  value={qaAnswer}
+                  onChange={(e) => setQaAnswer(e.target.value)}
                   rows={3}
                   className="resize-none"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Use {'{visitor_name}'} to personalize the greeting
-                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addQAPair}
+                disabled={!qaQuestion.trim() || !qaAnswer.trim()}
+                className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Q&A Pair
+              </Button>
+            </div>
+
+            {qaPairs.length > 0 && (
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {qaPairs.map((pair, i) => (
+                  <div key={i} className="p-3 bg-blue-50/50 rounded-lg border border-blue-100">
+                    <p className="text-sm font-medium text-slate-800">Q: {pair.question}</p>
+                    <p className="text-sm text-slate-600 mt-1">A: {pair.answer}</p>
+                  </div>
+                ))}
               </div>
             )}
           </TabsContent>
 
-          <TabsContent value="perspective" className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Label>Communication Tone</Label>
-              <div className="grid grid-cols-2 gap-3">
-                {toneOptions.map((tone) => (
-                  <Card
-                    key={tone.value}
-                    className={`cursor-pointer transition-all p-3 ${
-                      formData.tone === tone.value
-                        ? 'ring-2 ring-primary border-primary'
-                        : 'hover:border-primary/50'
-                    }`}
-                    onClick={() => setFormData({ ...formData, tone: tone.value })}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">{tone.emoji}</span>
-                      <span className="text-sm font-medium">{tone.label}</span>
-                    </div>
-                  </Card>
-                ))}
-              </div>
+          {/* Documents Tab */}
+          <TabsContent value="documents" className="space-y-4 mt-4">
+            <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center hover:border-blue-300 transition-colors">
+              <Upload className="w-10 h-10 mx-auto text-slate-400 mb-3" />
+              <p className="text-sm font-medium text-slate-700">Upload training documents</p>
+              <p className="text-xs text-muted-foreground mt-1">PDF, TXT, DOCX files supported</p>
+              <Button variant="outline" size="sm" className="mt-3">
+                Choose Files
+              </Button>
             </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Documents help your AI understand your expertise in depth
+            </p>
+          </TabsContent>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="perspective">AI Perspective (How AI talks about you)</Label>
-                {!canUseAITopics && <PlanBadge planKey="creator" size="sm" />}
+          {/* Web Scraper Tab */}
+          <TabsContent value="web" className="space-y-4 mt-4">
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Website URL</Label>
+                <Input placeholder="https://yourblog.com" />
               </div>
-              <Textarea
-                id="perspective"
-                placeholder="Example: I am [Your Name]'s AI assistant. I help answer questions about their work, services, and expertise..."
-                value={formData.perspective}
-                onChange={(e) =>
-                  setFormData({ ...formData, perspective: e.target.value })
-                }
-                rows={3}
-                className="resize-none"
-                disabled={!canUseAITopics}
-              />
+              <Button variant="outline" className="w-full border-blue-200 text-blue-700 hover:bg-blue-50">
+                <Globe className="w-4 h-4 mr-2" />
+                Scrape Website Content
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                Extract content from your website to train your AI
+              </p>
+            </div>
+          </TabsContent>
+
+          {/* Voice Tab */}
+          <TabsContent value="voice" className="space-y-4 mt-4">
+            <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center hover:border-blue-300 transition-colors">
+              <Mic className="w-10 h-10 mx-auto text-slate-400 mb-3" />
+              <p className="text-sm font-medium text-slate-700">Voice Training</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Record your voice to personalize AI responses
+              </p>
+              <Button variant="outline" size="sm" className="mt-3">
+                Start Recording
+              </Button>
             </div>
           </TabsContent>
         </Tabs>
 
-        <div className="bg-muted/50 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <Settings className="w-5 h-5 text-muted-foreground mt-0.5" />
-            <div>
-              <p className="text-sm font-medium">Advanced Training Available</p>
-              <p className="text-xs text-muted-foreground">
-                Add Q&A pairs, documents, and web content from the AI Training dashboard after setup
-              </p>
-            </div>
-          </div>
+        <div className="bg-blue-50/50 rounded-lg p-3 border border-blue-100">
+          <p className="text-xs text-muted-foreground text-center">
+            You can add more training data anytime from the AI Training dashboard
+          </p>
         </div>
 
         <Button
           size="lg"
-          className="w-full bg-gradient-to-r from-primary to-primary/80"
-          onClick={handleSubmit}
-          disabled={loading}
+          className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-lg"
+          onClick={onComplete}
         >
-          {loading ? 'Saving...' : 'Continue'}
+          Continue
           <ArrowRight className="w-4 h-4 ml-2" />
         </Button>
       </CardContent>

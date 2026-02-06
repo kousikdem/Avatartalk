@@ -6,6 +6,7 @@ export type OnboardingStep =
   | 'personal_info' 
   | 'avatar' 
   | 'ai_training' 
+  | 'ai_settings'
   | 'social_links' 
   | 'products' 
   | 'virtual_collaboration'
@@ -21,14 +22,15 @@ interface OnboardingState {
   personal_info_data: Record<string, unknown>;
 }
 
-export const ONBOARDING_STEPS: { key: OnboardingStep; label: string; description: string }[] = [
-  { key: 'personal_info', label: 'Personal Info', description: 'Tell us about yourself' },
-  { key: 'avatar', label: 'Avatar', description: 'Create your digital avatar' },
-  { key: 'ai_training', label: 'AI Training', description: 'Set up your AI assistant' },
-  { key: 'social_links', label: 'Social Links', description: 'Connect your social profiles' },
-  { key: 'products', label: 'Products', description: 'Add your first product' },
-  { key: 'virtual_collaboration', label: 'Virtual Collaboration', description: 'Set up virtual meetings' },
-  { key: 'pricing', label: 'Choose Plan', description: 'Select your pricing plan' },
+export const ONBOARDING_STEPS: { key: OnboardingStep; label: string; description: string; icon: string }[] = [
+  { key: 'personal_info', label: 'Profile', description: 'Tell us about yourself', icon: 'user' },
+  { key: 'avatar', label: 'Avatar', description: 'Create your digital avatar', icon: 'sparkles' },
+  { key: 'ai_training', label: 'AI Training', description: 'Train your AI with data', icon: 'brain' },
+  { key: 'ai_settings', label: 'AI Settings', description: 'Configure AI behavior', icon: 'settings' },
+  { key: 'social_links', label: 'Social Links', description: 'Connect your profiles', icon: 'link' },
+  { key: 'products', label: 'Products', description: 'Add your products', icon: 'package' },
+  { key: 'virtual_collaboration', label: 'Collaboration', description: 'Set up meetings', icon: 'video' },
+  { key: 'pricing', label: 'Choose Plan', description: 'Select your plan', icon: 'crown' },
 ];
 
 export const useOnboarding = () => {
