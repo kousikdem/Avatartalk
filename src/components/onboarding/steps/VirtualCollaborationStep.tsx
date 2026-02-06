@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Video, Users, Calendar, ArrowRight, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import PlanBadge from '@/components/PlanBadge';
 
@@ -38,62 +38,54 @@ const VirtualCollaborationStep: React.FC<VirtualCollaborationStepProps> = ({ onC
   ];
 
   return (
-    <Card className="border-0 shadow-xl bg-card/50 backdrop-blur">
-      <CardHeader className="text-center pb-2">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-secondary to-secondary/60 flex items-center justify-center"
-        >
-          <Video className="w-8 h-8 text-secondary-foreground" />
-        </motion.div>
-        <CardTitle className="text-2xl">Virtual Collaboration</CardTitle>
-        <CardDescription>
-          Offer paid video sessions and connect with your audience
-        </CardDescription>
-      </CardHeader>
+    <Card className="border border-border/50 shadow-xl bg-white">
+      <CardContent className="p-6 sm:p-8 space-y-6">
+        <div className="text-center mb-2">
+          <p className="text-sm text-muted-foreground">
+            Offer paid video sessions and connect with your audience
+          </p>
+        </div>
 
-      <CardContent className="space-y-6">
         <div className="space-y-3">
           {features.map((feature, index) => {
             const Icon = feature.icon;
             return (
               <motion.div
                 key={feature.title}
-                initial={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card className={`relative ${!feature.available ? 'opacity-60' : ''}`}>
+                <div className={`relative p-4 rounded-xl border transition-all ${
+                  feature.available ? 'border-slate-200 hover:border-blue-200' : 'border-slate-100 opacity-60'
+                }`}>
                   {!feature.available && (
                     <div className="absolute top-2 right-2">
                       <PlanBadge planKey={feature.requiredPlan} size="sm" />
                     </div>
                   )}
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-secondary/20 flex items-center justify-center">
-                        <Icon className="w-5 h-5 text-secondary-foreground" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold">{feature.title}</h3>
-                        <p className="text-sm text-muted-foreground">{feature.description}</p>
-                      </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
+                      <Icon className="w-5 h-5 text-blue-600" />
                     </div>
-                  </CardContent>
-                </Card>
+                    <div>
+                      <h3 className="font-semibold text-sm">{feature.title}</h3>
+                      <p className="text-xs text-muted-foreground">{feature.description}</p>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             );
           })}
         </div>
 
-        <div className="bg-muted/50 rounded-lg p-4">
+        <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-100">
           <div className="flex items-start gap-3">
-            <Zap className="w-5 h-5 text-primary mt-0.5" />
+            <Zap className="w-5 h-5 text-blue-600 mt-0.5" />
             <div>
-              <p className="text-sm font-medium">Boost your earnings</p>
+              <p className="text-sm font-medium text-slate-800">Boost your earnings</p>
               <p className="text-xs text-muted-foreground">
-                Creators using virtual collaboration earn on average 3x more than those who don't
+                Set up collaboration sessions from the Virtual Collaboration page after setup
               </p>
             </div>
           </div>
@@ -101,7 +93,7 @@ const VirtualCollaborationStep: React.FC<VirtualCollaborationStepProps> = ({ onC
 
         <Button
           size="lg"
-          className="w-full bg-gradient-to-r from-primary to-primary/80"
+          className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-lg"
           onClick={onComplete}
         >
           Continue to Pricing
