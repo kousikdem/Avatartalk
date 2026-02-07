@@ -1,7 +1,7 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOnboarding, OnboardingStep } from '@/hooks/useOnboarding';
-import OnboardingLayout from './OnboardingLayout';
+import OnboardingModal from './OnboardingModal';
 import PersonalInfoStep from './steps/PersonalInfoStep';
 import AvatarStep from './steps/AvatarStep';
 import AITrainingStep from './steps/AITrainingStep';
@@ -10,43 +10,87 @@ import SocialLinksStep from './steps/SocialLinksStep';
 import ProductsStep from './steps/ProductsStep';
 import VirtualCollaborationStep from './steps/VirtualCollaborationStep';
 import PricingStep from './steps/PricingStep';
+import ShareModal from '@/components/ShareModal';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/context/auth';
+import { supabase } from '@/integrations/supabase/client';
 
-const OnboardingFlow: React.FC = () => {
+interface OnboardingFlowProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+  isModal?: boolean;
+}
+
+const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen = true, onClose, isModal = false }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const {
     currentStep,
     completedSteps,
     skippedSteps,
     completeStep,
     skipStep,
+    goToStep,
     finishOnboarding,
     loading,
   } = useOnboarding();
+
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [username, setUsername] = useState('');
+
+  const handleClose = useCallback(() => {
+    if (onClose) {
+      onClose();
+    } else {
+      navigate('/settings/dashboard');
+    }
+  }, [onClose, navigate]);
 
   const handleCompleteStep = useCallback(async (data?: Record<string, unknown>) => {
     try {
       const nextStep = await completeStep(currentStep, data);
       if (currentStep === 'pricing' || nextStep === undefined) {
         await finishOnboarding();
-        navigate('/settings/dashboard');
+        // Fetch username for share modal
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('id', user.id)
+            .maybeSingle();
+          setUsername(profile?.username || 'user');
+        }
+        setShowShareModal(true);
       }
     } catch (error) {
       console.error('Error completing step:', error);
     }
-  }, [currentStep, completeStep, finishOnboarding, navigate]);
+  }, [currentStep, completeStep, finishOnboarding, user]);
 
   const handleSkipStep = useCallback(async () => {
     try {
       const nextStep = await skipStep(currentStep);
       if (currentStep === 'pricing' || nextStep === undefined) {
         await finishOnboarding();
-        navigate('/settings/dashboard');
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('id', user.id)
+            .maybeSingle();
+          setUsername(profile?.username || 'user');
+        }
+        setShowShareModal(true);
       }
     } catch (error) {
       console.error('Error skipping step:', error);
     }
-  }, [currentStep, skipStep, finishOnboarding, navigate]);
+  }, [currentStep, skipStep, finishOnboarding, user]);
+
+  const handleShareClose = () => {
+    setShowShareModal(false);
+    handleClose();
+  };
 
   if (loading) {
     return (
@@ -82,16 +126,36 @@ const OnboardingFlow: React.FC = () => {
     }
   };
 
+  const profileUrl = username
+    ? `${window.location.origin}/${username}`
+    : window.location.origin;
+
+  // For first-time (non-modal) flow, check if completedSteps is empty
+  const isFirstTime = completedSteps.length === 0 && !isModal;
+
   return (
-    <OnboardingLayout
-      currentStep={currentStep}
-      completedSteps={completedSteps}
-      skippedSteps={skippedSteps}
-      onSkip={handleSkipStep}
-      showSkip={currentStep !== 'pricing'}
-    >
-      {renderStep()}
-    </OnboardingLayout>
+    <>
+      <OnboardingModal
+        isOpen={isOpen}
+        onClose={handleClose}
+        currentStep={currentStep}
+        completedSteps={completedSteps}
+        skippedSteps={skippedSteps}
+        onSkip={handleSkipStep}
+        onGoToStep={goToStep}
+        showSkip={currentStep !== 'pricing'}
+        isFirstTime={isFirstTime}
+      >
+        {renderStep()}
+      </OnboardingModal>
+
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={handleShareClose}
+        profileUrl={profileUrl}
+        username={username}
+      />
+    </>
   );
 };
 
