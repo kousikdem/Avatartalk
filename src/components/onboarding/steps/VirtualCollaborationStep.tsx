@@ -1,16 +1,18 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Video, Users, Calendar, ArrowRight, Zap } from 'lucide-react';
+import { Video, Users, Calendar, ArrowRight, Zap, Plus, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import PlanBadge from '@/components/PlanBadge';
+import { useNavigate } from 'react-router-dom';
 
 interface VirtualCollaborationStepProps {
   onComplete: () => void;
 }
 
 const VirtualCollaborationStep: React.FC<VirtualCollaborationStepProps> = ({ onComplete }) => {
+  const navigate = useNavigate();
   const { canHostVirtualMeetings, hasFeature } = usePlanFeatures();
 
   const features = [
@@ -39,14 +41,12 @@ const VirtualCollaborationStep: React.FC<VirtualCollaborationStepProps> = ({ onC
 
   return (
     <Card className="border border-border/50 shadow-xl bg-white">
-      <CardContent className="p-6 sm:p-8 space-y-6">
-        <div className="text-center mb-2">
-          <p className="text-sm text-muted-foreground">
-            Offer paid video sessions and connect with your audience
-          </p>
-        </div>
+      <CardContent className="p-4 sm:p-6 space-y-4">
+        <p className="text-xs text-muted-foreground text-center">
+          Offer paid video sessions and connect with your audience
+        </p>
 
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {features.map((feature, index) => {
             const Icon = feature.icon;
             return (
@@ -56,7 +56,7 @@ const VirtualCollaborationStep: React.FC<VirtualCollaborationStepProps> = ({ onC
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <div className={`relative p-4 rounded-xl border transition-all ${
+                <div className={`relative p-3 rounded-xl border transition-all ${
                   feature.available ? 'border-slate-200 hover:border-blue-200' : 'border-slate-100 opacity-60'
                 }`}>
                   {!feature.available && (
@@ -65,8 +65,8 @@ const VirtualCollaborationStep: React.FC<VirtualCollaborationStepProps> = ({ onC
                     </div>
                   )}
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
-                      <Icon className="w-5 h-5 text-blue-600" />
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
+                      <Icon className="w-4 h-4 text-blue-600" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-sm">{feature.title}</h3>
@@ -79,17 +79,24 @@ const VirtualCollaborationStep: React.FC<VirtualCollaborationStepProps> = ({ onC
           })}
         </div>
 
-        <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-100">
-          <div className="flex items-start gap-3">
-            <Zap className="w-5 h-5 text-blue-600 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-slate-800">Boost your earnings</p>
-              <p className="text-xs text-muted-foreground">
-                Set up collaboration sessions from the Virtual Collaboration page after setup
-              </p>
-            </div>
+        {/* Add Collaboration Button */}
+        <Button
+          variant="outline"
+          className="w-full border-blue-200 text-blue-700 hover:bg-blue-50 gap-2"
+          onClick={() => navigate('/settings/virtual-collaboration')}
+          disabled={!canHostVirtualMeetings}
+        >
+          <Plus className="w-4 h-4" />
+          Add New Collaboration
+          <ExternalLink className="w-3 h-3 ml-auto opacity-50" />
+        </Button>
+
+        {!canHostVirtualMeetings && (
+          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+            <span>Collaborations require</span>
+            <PlanBadge planKey="pro" size="sm" />
           </div>
-        </div>
+        )}
 
         <Button
           size="lg"

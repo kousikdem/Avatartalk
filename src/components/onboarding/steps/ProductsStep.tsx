@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Package, ShoppingBag, Tag, ArrowRight, Sparkles, Plus } from 'lucide-react';
+import { Package, ShoppingBag, Tag, ArrowRight, Sparkles, Plus, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
@@ -12,6 +12,7 @@ interface ProductsStepProps {
 }
 
 const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
+  const navigate = useNavigate();
   const { canSellDigitalProducts, canSellPhysicalProducts } = usePlanFeatures();
 
   const productTypes = [
@@ -43,14 +44,12 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
 
   return (
     <Card className="border border-border/50 shadow-xl bg-white">
-      <CardContent className="p-6 sm:p-8 space-y-6">
-        <div className="text-center mb-2">
-          <p className="text-sm text-muted-foreground">
-            Showcase and sell products directly from your profile
-          </p>
-        </div>
+      <CardContent className="p-4 sm:p-6 space-y-4">
+        <p className="text-xs text-muted-foreground text-center">
+          Showcase and sell products directly from your profile
+        </p>
 
-        <div className="grid gap-3">
+        <div className="grid gap-2.5">
           {productTypes.map((type, index) => {
             const Icon = type.icon;
             return (
@@ -60,7 +59,7 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <div className={`relative overflow-hidden p-4 rounded-xl border transition-all ${
+                <div className={`relative overflow-hidden p-3 rounded-xl border transition-all ${
                   type.available ? 'border-slate-200 hover:border-blue-200 hover:bg-blue-50/20' : 'border-slate-100 opacity-60'
                 }`}>
                   {!type.available && (
@@ -69,12 +68,12 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
                     </div>
                   )}
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center shrink-0">
-                      <Icon className="w-5 h-5 text-blue-600" />
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center shrink-0">
+                      <Icon className="w-4 h-4 text-blue-600" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-sm">{type.title}</h3>
-                      <p className="text-xs text-muted-foreground mb-2">{type.description}</p>
+                      <p className="text-xs text-muted-foreground mb-1.5">{type.description}</p>
                       <div className="flex flex-wrap gap-1">
                         {type.examples.map((example) => (
                           <span key={example} className="text-[10px] px-2 py-0.5 bg-slate-100 rounded-full text-muted-foreground">
@@ -90,17 +89,24 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
           })}
         </div>
 
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
-          <div className="flex items-start gap-3">
-            <Sparkles className="w-5 h-5 text-blue-600 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-slate-800">Ready to sell?</p>
-              <p className="text-xs text-muted-foreground">
-                Add products from the Products page in your dashboard after completing setup
-              </p>
-            </div>
+        {/* Add Product Button */}
+        <Button
+          variant="outline"
+          className="w-full border-blue-200 text-blue-700 hover:bg-blue-50 gap-2"
+          onClick={() => navigate('/settings/products')}
+          disabled={!canSellDigitalProducts}
+        >
+          <Plus className="w-4 h-4" />
+          Add New Product
+          <ExternalLink className="w-3 h-3 ml-auto opacity-50" />
+        </Button>
+
+        {!canSellDigitalProducts && (
+          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+            <span>Products require</span>
+            <PlanBadge planKey="creator" size="sm" />
           </div>
-        </div>
+        )}
 
         <Button
           size="lg"

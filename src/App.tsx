@@ -105,22 +105,22 @@ const AuthenticatedRoutes = memo(({
     checkOnboarding();
   }, [user]);
 
-  // Show onboarding flow if needed
+  // Show onboarding flow if needed (full-screen modal overlay)
   if (needsOnboarding === true) {
     return (
-      <Routes>
-        <Route path="/onboarding" element={
-          <Suspense fallback={<PageFallback />}>
-            <OnboardingFlow />
-          </Suspense>
-        } />
-        <Route path="/:username" element={
-          <Suspense fallback={<ProfileFallback />}>
-            <UsernameRedirect />
-          </Suspense>
-        } />
-        <Route path="*" element={<Navigate to="/onboarding" replace />} />
-      </Routes>
+      <>
+        <Routes>
+          <Route path="/:username" element={
+            <Suspense fallback={<ProfileFallback />}>
+              <UsernameRedirect />
+            </Suspense>
+          } />
+          <Route path="*" element={<div className="min-h-screen bg-background" />} />
+        </Routes>
+        <Suspense fallback={null}>
+          <OnboardingFlow isOpen={true} onClose={() => setNeedsOnboarding(false)} />
+        </Suspense>
+      </>
     );
   }
 
