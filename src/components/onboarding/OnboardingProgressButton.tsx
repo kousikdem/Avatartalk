@@ -41,11 +41,12 @@ const OnboardingProgressButton: React.FC = () => {
     fetchProgress();
   }, [user, showOnboarding]); // Refetch when modal closes
 
-  if (!progress || progress.isCompleted) return null;
+  if (!progress) return null;
 
-  const percentage = Math.round((progress.completed / progress.total) * 100);
+  const percentage = progress.isCompleted ? 100 : Math.round((progress.completed / progress.total) * 100);
   const circumference = 2 * Math.PI * 14; // radius = 14
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
+  const isComplete = progress.isCompleted;
 
   return (
     <>
@@ -55,7 +56,10 @@ const OnboardingProgressButton: React.FC = () => {
             variant="ghost"
             size="icon"
             onClick={() => setShowOnboarding(true)}
-            className="relative h-9 w-9 rounded-full hover:bg-blue-50"
+            className={cn(
+              "relative h-9 w-9 rounded-full",
+              isComplete ? "hover:bg-green-50" : "hover:bg-blue-50"
+            )}
           >
             {/* SVG circular progress */}
             <svg className="absolute inset-0 w-9 h-9 -rotate-90" viewBox="0 0 36 36">
@@ -68,7 +72,7 @@ const OnboardingProgressButton: React.FC = () => {
               <circle
                 cx="18" cy="18" r="14"
                 fill="none"
-                stroke="url(#progressGradient)"
+                stroke={isComplete ? "hsl(142, 71%, 45%)" : "url(#progressGradient)"}
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeDasharray={circumference}
@@ -83,13 +87,17 @@ const OnboardingProgressButton: React.FC = () => {
               </defs>
             </svg>
             {/* Center content */}
-            <span className="relative z-10 text-[9px] font-bold text-blue-700">
-              {percentage}%
-            </span>
+            {isComplete ? (
+              <Rocket className="relative z-10 w-3.5 h-3.5 text-green-600" />
+            ) : (
+              <span className="relative z-10 text-[9px] font-bold text-blue-700">
+                {percentage}%
+              </span>
+            )}
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          <p className="text-xs">Quick Setup — {percentage}% complete</p>
+          <p className="text-xs">{isComplete ? 'Quick Setup — Complete ✓' : `Quick Setup — ${percentage}% complete`}</p>
         </TooltipContent>
       </Tooltip>
 
