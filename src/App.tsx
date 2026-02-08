@@ -105,31 +105,18 @@ const AuthenticatedRoutes = memo(({
     checkOnboarding();
   }, [user]);
 
-  // Show onboarding flow if needed (full-screen modal overlay)
-  if (needsOnboarding === true) {
-    return (
-      <>
-        <Routes>
-          <Route path="/:username" element={
-            <Suspense fallback={<ProfileFallback />}>
-              <UsernameRedirect />
-            </Suspense>
-          } />
-          <Route path="*" element={<div className="min-h-screen bg-background" />} />
-        </Routes>
-        <Suspense fallback={null}>
-          <OnboardingFlow isOpen={true} onClose={() => setNeedsOnboarding(false)} />
-        </Suspense>
-      </>
-    );
-  }
-
   // Still checking
   if (needsOnboarding === null) {
     return <PageFallback />;
   }
 
   return (
+    <>
+    {needsOnboarding && (
+      <Suspense fallback={null}>
+        <OnboardingFlow isOpen={true} onClose={() => setNeedsOnboarding(false)} />
+      </Suspense>
+    )}
     <SidebarProvider 
       defaultOpen={!isMobile}
       open={sidebarOpen}
@@ -235,6 +222,7 @@ const AuthenticatedRoutes = memo(({
         </main>
       </div>
     </SidebarProvider>
+    </>
   );
 });
 
