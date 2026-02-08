@@ -1,10 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Video, Users, Calendar, ArrowRight, Zap, Plus, ExternalLink } from 'lucide-react';
+import { Video, Users, Calendar, Plus, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import PlanBadge from '@/components/PlanBadge';
+import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 
 interface VirtualCollaborationStepProps {
@@ -13,7 +14,11 @@ interface VirtualCollaborationStepProps {
 
 const VirtualCollaborationStep: React.FC<VirtualCollaborationStepProps> = ({ onComplete }) => {
   const navigate = useNavigate();
-  const { canHostVirtualMeetings, hasFeature } = usePlanFeatures();
+  const { canHostVirtualMeetings, hasFeature, limits, canAddCollaboration, getRemainingCollaborations } = usePlanFeatures();
+
+  const currentCount = 0; // Would come from useVirtualCollaborations in a full implementation
+  const remaining = getRemainingCollaborations(currentCount);
+  const canAdd = canAddCollaboration(currentCount);
 
   const features = [
     {
@@ -45,6 +50,16 @@ const VirtualCollaborationStep: React.FC<VirtualCollaborationStepProps> = ({ onC
         <p className="text-xs text-muted-foreground text-center">
           Offer paid video sessions and connect with your audience
         </p>
+
+        {/* Limit badge */}
+        <div className="flex items-center justify-between">
+          <Badge variant="outline" className="text-xs">
+            {currentCount} / {limits.collaborations === -1 ? '∞' : limits.collaborations} collaborations
+          </Badge>
+          <span className="text-[10px] text-muted-foreground">
+            {remaining === 'unlimited' ? 'Unlimited' : `${remaining} remaining`}
+          </span>
+        </div>
 
         <div className="space-y-2.5">
           {features.map((feature, index) => {
@@ -79,22 +94,21 @@ const VirtualCollaborationStep: React.FC<VirtualCollaborationStepProps> = ({ onC
           })}
         </div>
 
-        {/* Add Collaboration Button */}
+        {/* Add Collaboration Button - always visible */}
         <Button
           variant="outline"
           className="w-full border-blue-200 text-blue-700 hover:bg-blue-50 gap-2"
           onClick={() => navigate('/settings/virtual-collaboration')}
-          disabled={!canHostVirtualMeetings}
+          disabled={!canAdd}
         >
           <Plus className="w-4 h-4" />
-          Add New Collaboration
+          Add Collaboration ({remaining === 'unlimited' ? '∞' : remaining} left)
           <ExternalLink className="w-3 h-3 ml-auto opacity-50" />
         </Button>
 
-        {!canHostVirtualMeetings && (
+        {!canAdd && (
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-            <span>Collaborations require</span>
-            <PlanBadge planKey="pro" size="sm" />
+            <span>Collaboration limit reached. Upgrade to add more.</span>
           </div>
         )}
 
@@ -103,8 +117,7 @@ const VirtualCollaborationStep: React.FC<VirtualCollaborationStepProps> = ({ onC
           className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-lg"
           onClick={onComplete}
         >
-          Continue to Pricing
-          <ArrowRight className="w-4 h-4 ml-2" />
+          Continue to Choose Plan →
         </Button>
       </CardContent>
     </Card>

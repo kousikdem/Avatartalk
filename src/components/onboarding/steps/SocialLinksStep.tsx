@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Trash2, Save, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/auth';
@@ -43,6 +42,7 @@ const SocialLinksStep: React.FC<SocialLinksStepProps> = ({ onComplete }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [socialLinks, setSocialLinks] = useState<Record<string, string>>({});
   const [visiblePlatforms, setVisiblePlatforms] = useState<string[]>(DEFAULT_VISIBLE);
 
@@ -89,8 +89,8 @@ const SocialLinksStep: React.FC<SocialLinksStepProps> = ({ onComplete }) => {
         .from('social_links')
         .upsert(updates, { onConflict: 'user_id' });
       if (error) throw error;
+      setSaved(true);
       toast({ title: 'Social links saved!' });
-      onComplete();
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to save.', variant: 'destructive' });
     } finally {
@@ -153,7 +153,10 @@ const SocialLinksStep: React.FC<SocialLinksStepProps> = ({ onComplete }) => {
                 <div className="flex-1">
                   <Input
                     value={socialLinks[platform.id] || ''}
-                    onChange={(e) => setSocialLinks({ ...socialLinks, [platform.id]: e.target.value })}
+                    onChange={(e) => {
+                      setSocialLinks({ ...socialLinks, [platform.id]: e.target.value });
+                      setSaved(false);
+                    }}
                     placeholder={platform.placeholder}
                     className="h-8 text-sm"
                   />
@@ -211,15 +214,27 @@ const SocialLinksStep: React.FC<SocialLinksStepProps> = ({ onComplete }) => {
           </p>
         )}
 
-        <Button
-          size="lg"
-          className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-lg"
-          onClick={handleSave}
-          disabled={saving}
-        >
-          {saving ? 'Saving...' : 'Save & Continue'}
-          <ArrowRight className="w-4 h-4 ml-2" />
-        </Button>
+        {!saved ? (
+          <Button
+            size="lg"
+            className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-lg"
+            onClick={handleSave}
+            disabled={saving}
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {saving ? 'Saving...' : 'Save Links'}
+          </Button>
+        ) : (
+          <Button
+            size="lg"
+            variant="outline"
+            className="w-full border-green-200 text-green-700 hover:bg-green-50"
+            onClick={onComplete}
+          >
+            <Check className="w-4 h-4 mr-2" />
+            Saved — Continue to Next Step
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

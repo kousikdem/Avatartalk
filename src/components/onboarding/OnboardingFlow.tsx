@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useOnboarding, OnboardingStep } from '@/hooks/useOnboarding';
+import { useOnboarding, OnboardingStep, ONBOARDING_STEPS } from '@/hooks/useOnboarding';
 import OnboardingModal from './OnboardingModal';
 import PersonalInfoStep from './steps/PersonalInfoStep';
 import AvatarStep from './steps/AvatarStep';
@@ -51,7 +51,6 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen = true, onClose,
       const nextStep = await completeStep(currentStep, data);
       if (currentStep === 'pricing' || nextStep === undefined) {
         await finishOnboarding();
-        // Fetch username for share modal
         if (user) {
           const { data: profile } = await supabase
             .from('profiles')
@@ -86,6 +85,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen = true, onClose,
       console.error('Error skipping step:', error);
     }
   }, [currentStep, skipStep, finishOnboarding, user]);
+
+  const handleBack = useCallback(() => {
+    const currentIndex = ONBOARDING_STEPS.findIndex(s => s.key === currentStep);
+    if (currentIndex > 0) {
+      goToStep(ONBOARDING_STEPS[currentIndex - 1].key);
+    }
+  }, [currentStep, goToStep]);
 
   const handleShareClose = () => {
     setShowShareModal(false);
@@ -130,7 +136,6 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen = true, onClose,
     ? `${window.location.origin}/${username}`
     : window.location.origin;
 
-  // For first-time (non-modal) flow, check if completedSteps is empty
   const isFirstTime = completedSteps.length === 0 && !isModal;
 
   return (
@@ -143,6 +148,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen = true, onClose,
         skippedSteps={skippedSteps}
         onSkip={handleSkipStep}
         onGoToStep={goToStep}
+        onBack={handleBack}
         showSkip={currentStep !== 'pricing'}
         isFirstTime={isFirstTime}
       >

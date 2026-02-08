@@ -1,12 +1,19 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Crown, Check, Sparkles, Rocket, ArrowRight, Tag } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Crown, Check, Sparkles, Rocket, Tag, ChevronDown, ChevronUp, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { usePlatformPricingPlans } from '@/hooks/usePlatformPricingPlans';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface PricingStepProps {
   onComplete: () => void;
@@ -35,6 +42,8 @@ const PricingStep: React.FC<PricingStepProps> = ({ onComplete }) => {
   const { toast } = useToast();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [billingDuration, setBillingDuration] = useState<BillingDuration>('1');
+  const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
+  const [purchasing, setPurchasing] = useState(false);
 
   const planIcons: Record<string, React.ReactNode> = {
     free: <Sparkles className="w-5 h-5" />,
@@ -50,21 +59,28 @@ const PricingStep: React.FC<PricingStepProps> = ({ onComplete }) => {
     business: 'from-amber-500 to-orange-600',
   };
 
-  const handleChoosePlan = () => {
+  const handleChoosePlan = async () => {
     if (!selectedPlan) {
       toast({ title: 'Please select a plan', variant: 'destructive' });
       return;
     }
 
+    setPurchasing(true);
+
     if (selectedPlan === 'free') {
+      toast({ title: 'Free plan activated!', description: 'You can upgrade anytime.' });
+      setPurchasing(false);
       onComplete();
       return;
     }
 
-    // For paid plans, in a real app this would open Razorpay
-    // For now, trigger onComplete (integrate with platform-plan-checkout edge function)
-    toast({ title: `${selectedPlan} plan selected!`, description: 'Redirecting to payment...' });
-    onComplete();
+    // For paid plans - trigger payment flow
+    toast({ title: `${selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)} plan selected!`, description: 'Processing payment...' });
+    // In production, this would open Razorpay checkout
+    setTimeout(() => {
+      setPurchasing(false);
+      onComplete();
+    }, 1000);
   };
 
   const getDiscountedPrice = (basePrice: number) => {
@@ -90,29 +106,28 @@ const PricingStep: React.FC<PricingStepProps> = ({ onComplete }) => {
 
   return (
     <div className="space-y-4">
-      {/* Billing Duration Selector */}
-      <div className="flex justify-center">
-        <div className="inline-flex bg-slate-100 rounded-xl p-1 gap-0.5">
-          {(Object.entries(durationLabels) as [BillingDuration, string][]).map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setBillingDuration(key)}
-              className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-medium transition-all relative',
-                billingDuration === key
-                  ? 'bg-white text-blue-700 shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {label}
-              {durationDiscounts[key] > 0 && (
-                <span className="absolute -top-1.5 -right-1 text-[8px] bg-green-500 text-white px-1 rounded-full font-bold">
-                  -{durationDiscounts[key]}%
+      {/* Billing Duration - Dropdown at top */}
+      <div className="flex items-center justify-center gap-3">
+        <span className="text-sm font-medium text-muted-foreground">Billing:</span>
+        <Select value={billingDuration} onValueChange={(v) => setBillingDuration(v as BillingDuration)}>
+          <SelectTrigger className="w-[180px] h-9">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {(Object.entries(durationLabels) as [BillingDuration, string][]).map(([key, label]) => (
+              <SelectItem key={key} value={key}>
+                <span className="flex items-center gap-2">
+                  {label}
+                  {durationDiscounts[key] > 0 && (
+                    <Badge className="bg-green-100 text-green-700 text-[10px] px-1.5 py-0">
+                      -{durationDiscounts[key]}%
+                    </Badge>
+                  )}
                 </span>
-              )}
-            </button>
-          ))}
-        </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
@@ -121,6 +136,8 @@ const PricingStep: React.FC<PricingStepProps> = ({ onComplete }) => {
           const Icon = planIcons[plan.plan_key] || <Sparkles className="w-5 h-5" />;
           const gradient = planGradients[plan.plan_key] || 'from-slate-400 to-slate-500';
           const pricing = plan.price_inr > 0 ? getDiscountedPrice(plan.price_inr) : null;
+          const isExpanded = expandedPlan === plan.plan_key;
+          const allFeatures = plan.features_list || [];
 
           return (
             <motion.div
@@ -177,14 +194,56 @@ const PricingStep: React.FC<PricingStepProps> = ({ onComplete }) => {
                 </CardHeader>
 
                 <CardContent className="pt-0 p-4">
+                  {/* Show first 4 features always */}
                   <ul className="space-y-1.5">
-                    {plan.features_list?.slice(0, 4).map((feature, i: number) => (
+                    {allFeatures.slice(0, 4).map((feature: any, i: number) => (
                       <li key={i} className="flex items-start gap-1.5 text-xs">
                         <Check className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
                         <span className="text-muted-foreground">{feature.text}</span>
                       </li>
                     ))}
                   </ul>
+
+                  {/* Expandable features */}
+                  <AnimatePresence>
+                    {isExpanded && allFeatures.length > 4 && (
+                      <motion.ul
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="space-y-1.5 mt-1.5 overflow-hidden"
+                      >
+                        {allFeatures.slice(4).map((feature: any, i: number) => (
+                          <li key={i} className="flex items-start gap-1.5 text-xs">
+                            <Check className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+                            <span className="text-muted-foreground">{feature.text}</span>
+                          </li>
+                        ))}
+                      </motion.ul>
+                    )}
+                  </AnimatePresence>
+
+                  {allFeatures.length > 4 && (
+                    <button
+                      className="flex items-center gap-1 text-[10px] text-blue-600 mt-2 hover:underline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedPlan(isExpanded ? null : plan.plan_key);
+                      }}
+                    >
+                      {isExpanded ? (
+                        <>
+                          <ChevronUp className="w-3 h-3" />
+                          Show less
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="w-3 h-3" />
+                          +{allFeatures.length - 4} more features
+                        </>
+                      )}
+                    </button>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
@@ -197,9 +256,13 @@ const PricingStep: React.FC<PricingStepProps> = ({ onComplete }) => {
           size="lg"
           className="w-full max-w-md bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-lg"
           onClick={handleChoosePlan}
+          disabled={purchasing}
         >
-          {selectedPlan === 'free' || !selectedPlan ? 'Start Free' : `Get ${selectedPlan?.charAt(0).toUpperCase()}${selectedPlan?.slice(1)} Plan`}
-          <ArrowRight className="w-4 h-4 ml-2" />
+          <Zap className="w-4 h-4 mr-2" />
+          {purchasing ? 'Processing...' : selectedPlan === 'free' || !selectedPlan 
+            ? 'Start Free' 
+            : `Activate ${selectedPlan?.charAt(0).toUpperCase()}${selectedPlan?.slice(1)} Plan`
+          }
         </Button>
 
         <p className="text-[10px] text-muted-foreground text-center">
