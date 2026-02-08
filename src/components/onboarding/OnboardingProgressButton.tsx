@@ -29,6 +29,13 @@ const OnboardingProgressButton: React.FC = () => {
           total: ONBOARDING_STEPS.length,
           isCompleted: data.is_completed || false,
         });
+      } else {
+        // No onboarding record yet — show 0% progress
+        setProgress({
+          completed: 0,
+          total: ONBOARDING_STEPS.length,
+          isCompleted: false,
+        });
       }
     };
     fetchProgress();
