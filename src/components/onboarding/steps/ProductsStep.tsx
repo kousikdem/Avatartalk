@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Package, ShoppingBag, Tag, ArrowRight, Sparkles, Plus, ExternalLink } from 'lucide-react';
+import { Package, ShoppingBag, Tag, Plus, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import PlanBadge from '@/components/PlanBadge';
+import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
+import { useProducts } from '@/hooks/useProducts';
 
 interface ProductsStepProps {
   onComplete: () => void;
@@ -13,7 +15,12 @@ interface ProductsStepProps {
 
 const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
   const navigate = useNavigate();
-  const { canSellDigitalProducts, canSellPhysicalProducts } = usePlanFeatures();
+  const { canSellDigitalProducts, canSellPhysicalProducts, limits, canAddProduct, getRemainingProducts } = usePlanFeatures();
+  const { products } = useProducts();
+
+  const currentCount = products?.length || 0;
+  const remaining = getRemainingProducts(currentCount);
+  const canAdd = canAddProduct(currentCount);
 
   const productTypes = [
     {
@@ -48,6 +55,16 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
         <p className="text-xs text-muted-foreground text-center">
           Showcase and sell products directly from your profile
         </p>
+
+        {/* Limit badge */}
+        <div className="flex items-center justify-between">
+          <Badge variant="outline" className="text-xs">
+            {currentCount} / {limits.products === -1 ? '∞' : limits.products} products
+          </Badge>
+          <span className="text-[10px] text-muted-foreground">
+            {remaining === 'unlimited' ? 'Unlimited' : `${remaining} remaining`}
+          </span>
+        </div>
 
         <div className="grid gap-2.5">
           {productTypes.map((type, index) => {
@@ -89,22 +106,21 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
           })}
         </div>
 
-        {/* Add Product Button */}
+        {/* Add Product Button - always visible */}
         <Button
           variant="outline"
           className="w-full border-blue-200 text-blue-700 hover:bg-blue-50 gap-2"
           onClick={() => navigate('/settings/products')}
-          disabled={!canSellDigitalProducts}
+          disabled={!canAdd}
         >
           <Plus className="w-4 h-4" />
-          Add New Product
+          Add Product ({remaining === 'unlimited' ? '∞' : remaining} left)
           <ExternalLink className="w-3 h-3 ml-auto opacity-50" />
         </Button>
 
-        {!canSellDigitalProducts && (
+        {!canAdd && (
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-            <span>Products require</span>
-            <PlanBadge planKey="creator" size="sm" />
+            <span>Product limit reached. Upgrade to add more.</span>
           </div>
         )}
 
@@ -113,8 +129,7 @@ const ProductsStep: React.FC<ProductsStepProps> = ({ onComplete }) => {
           className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-lg"
           onClick={onComplete}
         >
-          Continue
-          <ArrowRight className="w-4 h-4 ml-2" />
+          Continue to Next Step →
         </Button>
       </CardContent>
     </Card>

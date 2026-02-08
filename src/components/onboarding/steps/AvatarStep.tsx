@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Upload, ArrowRight, Camera, User } from 'lucide-react';
+import { Sparkles, Upload, Camera, Save, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,6 +10,8 @@ import ProfilePictureUpload from '@/components/ProfilePictureUpload';
 import { useAuth } from '@/context/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useCustomAvatarUpload } from '@/hooks/useCustomAvatarUpload';
+import { Progress } from '@/components/ui/progress';
 
 interface AvatarStepProps {
   onComplete: () => void;
@@ -18,10 +20,12 @@ interface AvatarStepProps {
 const AvatarStep: React.FC<AvatarStepProps> = ({ onComplete }) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('upload');
+  const [activeTab, setActiveTab] = useState('3d');
   const [profilePicUrl, setProfilePicUrl] = useState('');
   const { hasFeature } = usePlanFeatures();
-  const canUse3D = hasFeature('avatar_upload_enabled');
+  const canUploadAvatar = hasFeature('avatar_upload_enabled');
+  const { uploading, progress: uploadProgress, uploadCustomAvatar } = useCustomAvatarUpload();
+  const [saved, setSaved] = useState(false);
 
   // 3D customizer state
   const [gender, setGender] = useState('male');
@@ -41,6 +45,12 @@ const AvatarStep: React.FC<AvatarStepProps> = ({ onComplete }) => {
     }
   };
 
+  const handleAvatarFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await uploadCustomAvatar(file);
+  };
+
   const handleSave3DAvatar = async () => {
     if (!user) return;
     try {
@@ -54,8 +64,8 @@ const AvatarStep: React.FC<AvatarStepProps> = ({ onComplete }) => {
         is_active: true,
         avatar_name: 'Quick Setup Avatar',
       }, { onConflict: 'user_id' });
+      setSaved(true);
       toast({ title: 'Avatar saved!' });
-      onComplete();
     } catch {
       toast({ title: 'Error saving avatar', variant: 'destructive' });
     }
@@ -65,43 +75,27 @@ const AvatarStep: React.FC<AvatarStepProps> = ({ onComplete }) => {
     <Card className="border border-border/50 shadow-xl bg-white">
       <CardContent className="p-4 sm:p-6 space-y-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 bg-slate-100">
-            <TabsTrigger value="upload" className="text-xs sm:text-sm">
-              <Upload className="w-3.5 h-3.5 mr-1.5" />
-              Upload Photo
-            </TabsTrigger>
-            <TabsTrigger value="3d" className="text-xs sm:text-sm relative" disabled={!canUse3D}>
+          <TabsList className="grid w-full grid-cols-3 bg-slate-100">
+            <TabsTrigger value="3d" className="text-xs sm:text-sm">
               <Sparkles className="w-3.5 h-3.5 mr-1.5" />
               3D Avatar
-              {!canUse3D && (
+            </TabsTrigger>
+            <TabsTrigger value="upload" className="text-xs sm:text-sm relative" disabled={!canUploadAvatar}>
+              <Upload className="w-3.5 h-3.5 mr-1.5" />
+              Upload 3D
+              {!canUploadAvatar && (
                 <span className="absolute -top-1 -right-1">
                   <PlanBadge planKey="creator" size="sm" showIcon={false} />
                 </span>
               )}
             </TabsTrigger>
+            <TabsTrigger value="photo" className="text-xs sm:text-sm">
+              <Camera className="w-3.5 h-3.5 mr-1.5" />
+              Photo
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="upload" className="mt-4 space-y-4">
-            <div className="flex flex-col items-center gap-4">
-              <ProfilePictureUpload
-                currentImageUrl={profilePicUrl}
-                onImageUpdate={handleImageUpdate}
-                displayName="Avatar"
-              />
-              <p className="text-xs text-muted-foreground text-center">
-                Upload a photo to use as your profile avatar
-              </p>
-            </div>
-            <Button
-              size="lg"
-              className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-lg"
-              onClick={onComplete}
-            >
-              Continue
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </TabsContent>
-
+          {/* 3D Avatar Builder - Main Tab */}
           <TabsContent value="3d" className="mt-4 space-y-4">
             {/* Gender Selection */}
             <div>
@@ -200,9 +194,89 @@ const AvatarStep: React.FC<AvatarStepProps> = ({ onComplete }) => {
               size="lg"
               className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-lg"
               onClick={handleSave3DAvatar}
+              disabled={saved}
             >
-              Save Avatar & Continue
-              <ArrowRight className="w-4 h-4 ml-2" />
+              {saved ? (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  Avatar Saved
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Avatar
+                </>
+              )}
+            </Button>
+
+            {saved && (
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
+                onClick={onComplete}
+              >
+                Continue to Next Step →
+              </Button>
+            )}
+          </TabsContent>
+
+          {/* Upload 3D Model Tab */}
+          <TabsContent value="upload" className="mt-4 space-y-4">
+            <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center hover:border-blue-300 transition-colors">
+              <Upload className="w-10 h-10 mx-auto text-slate-400 mb-3" />
+              <p className="text-sm font-medium text-slate-700">Upload 3D Avatar Model</p>
+              <p className="text-xs text-muted-foreground mt-1">GLB, GLTF, FBX, OBJ files supported</p>
+              <label className="cursor-pointer">
+                <Button variant="outline" size="sm" className="mt-3" disabled={uploading} asChild>
+                  <span>
+                    {uploading ? 'Uploading...' : 'Choose File'}
+                  </span>
+                </Button>
+                <input
+                  type="file"
+                  accept=".glb,.gltf,.fbx,.obj"
+                  onChange={handleAvatarFileUpload}
+                  className="hidden"
+                  disabled={uploading}
+                />
+              </label>
+            </div>
+
+            {uploading && (
+              <div className="space-y-1">
+                <Progress value={uploadProgress} className="h-2" />
+                <p className="text-xs text-muted-foreground text-center">{uploadProgress}% uploaded</p>
+              </div>
+            )}
+
+            <Button
+              size="lg"
+              className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-lg"
+              onClick={onComplete}
+            >
+              Continue to Next Step →
+            </Button>
+          </TabsContent>
+
+          {/* Photo Upload Tab */}
+          <TabsContent value="photo" className="mt-4 space-y-4">
+            <div className="flex flex-col items-center gap-4">
+              <ProfilePictureUpload
+                currentImageUrl={profilePicUrl}
+                onImageUpdate={handleImageUpdate}
+                displayName="Avatar"
+              />
+              <p className="text-xs text-muted-foreground text-center">
+                Upload a photo to use as your profile avatar
+              </p>
+            </div>
+            <Button
+              size="lg"
+              className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-lg"
+              onClick={onComplete}
+            >
+              Continue to Next Step →
             </Button>
           </TabsContent>
         </Tabs>

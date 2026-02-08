@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Settings, MessageSquare, Sparkles, ListChecks, MessageCircle, ArrowRight } from 'lucide-react';
+import { Settings, MessageSquare, Sparkles, ListChecks, MessageCircle, Save, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,6 +21,7 @@ const AISettingsStep: React.FC<AISettingsStepProps> = ({ onComplete }) => {
   const { settings, saveSettings, isLoading: settingsLoading } = useAITrainingSettings();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [activeTab, setActiveTab] = useState('perspective');
 
   const [formData, setFormData] = useState({
@@ -54,11 +54,11 @@ const AISettingsStep: React.FC<AISettingsStepProps> = ({ onComplete }) => {
         },
         globalDescribeText: formData.perspective,
       });
+      setSaved(true);
       toast({
         title: 'AI settings saved!',
         description: 'Your AI assistant is configured.',
       });
-      onComplete();
     } catch (error) {
       toast({
         title: 'Error',
@@ -133,7 +133,10 @@ const AISettingsStep: React.FC<AISettingsStepProps> = ({ onComplete }) => {
                 id="perspective"
                 placeholder="Example: I am [Your Name]'s AI assistant. I help answer questions about their work..."
                 value={formData.perspective}
-                onChange={(e) => setFormData({ ...formData, perspective: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, perspective: e.target.value });
+                  setSaved(false);
+                }}
                 rows={4}
                 className="resize-none"
               />
@@ -150,7 +153,10 @@ const AISettingsStep: React.FC<AISettingsStepProps> = ({ onComplete }) => {
               <Switch
                 id="welcome-toggle"
                 checked={formData.welcomeEnabled}
-                onCheckedChange={(checked) => setFormData({ ...formData, welcomeEnabled: checked })}
+                onCheckedChange={(checked) => {
+                  setFormData({ ...formData, welcomeEnabled: checked });
+                  setSaved(false);
+                }}
               />
             </div>
 
@@ -160,7 +166,10 @@ const AISettingsStep: React.FC<AISettingsStepProps> = ({ onComplete }) => {
                 <Textarea
                   placeholder="Write a friendly welcome message..."
                   value={formData.welcomeMessage}
-                  onChange={(e) => setFormData({ ...formData, welcomeMessage: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, welcomeMessage: e.target.value });
+                    setSaved(false);
+                  }}
                   rows={3}
                   className="resize-none"
                 />
@@ -184,7 +193,7 @@ const AISettingsStep: React.FC<AISettingsStepProps> = ({ onComplete }) => {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Topics help organize how your AI responds to different subjects. Configure detailed rules from the AI Training dashboard.
+                  Topics help organize how your AI responds to different subjects.
                 </p>
               </div>
             ) : (
@@ -209,7 +218,7 @@ const AISettingsStep: React.FC<AISettingsStepProps> = ({ onComplete }) => {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Follow-up questions guide conversations. Configure advanced rules from the AI Training dashboard.
+                  Follow-up questions guide conversations.
                 </p>
               </div>
             ) : (
@@ -222,15 +231,27 @@ const AISettingsStep: React.FC<AISettingsStepProps> = ({ onComplete }) => {
           </TabsContent>
         </Tabs>
 
-        <Button
-          size="lg"
-          className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-lg"
-          onClick={handleSubmit}
-          disabled={loading}
-        >
-          {loading ? 'Saving...' : 'Save & Continue'}
-          <ArrowRight className="w-4 h-4 ml-2" />
-        </Button>
+        {!saved ? (
+          <Button
+            size="lg"
+            className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-lg"
+            onClick={handleSubmit}
+            disabled={loading}
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {loading ? 'Saving...' : 'Save Settings'}
+          </Button>
+        ) : (
+          <Button
+            size="lg"
+            variant="outline"
+            className="w-full border-green-200 text-green-700 hover:bg-green-50"
+            onClick={onComplete}
+          >
+            <Check className="w-4 h-4 mr-2" />
+            Settings Saved — Continue
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

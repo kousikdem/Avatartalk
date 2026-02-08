@@ -15,6 +15,7 @@ interface OnboardingModalProps {
   children: React.ReactNode;
   onSkip?: () => void;
   onGoToStep?: (step: OnboardingStep) => void;
+  onBack?: () => void;
   showSkip?: boolean;
   isFirstTime?: boolean;
 }
@@ -39,6 +40,7 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({
   children,
   onSkip,
   onGoToStep,
+  onBack,
   showSkip = true,
   isFirstTime = false,
 }) => {
@@ -77,9 +79,19 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
   const canGoBack = currentIndex > 0;
   const handleBack = () => {
-    if (canGoBack && onGoToStep) {
-      onGoToStep(ONBOARDING_STEPS[currentIndex - 1].key);
+    if (canGoBack && onBack) {
+      onBack();
     }
+  };
+
+  // First-time users can only click on completed/skipped steps, not jump ahead
+  // Returning users (isFirstTime=false) can click any step
+  const canClickStep = (step: typeof ONBOARDING_STEPS[0], index: number) => {
+    if (!isFirstTime) return true; // returning users can click any step
+    const isCompleted = completedSteps.includes(step.key);
+    const isSkipped = skippedSteps.includes(step.key);
+    const isCurrent = step.key === currentStep;
+    return isCompleted || isSkipped || isCurrent;
   };
 
   if (!isOpen) return null;
@@ -92,7 +104,8 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-2 sm:p-4"
         onClick={(e) => {
-          if (e.target === e.currentTarget) onClose();
+          // Don't allow closing by clicking outside for first-time users
+          if (e.target === e.currentTarget && !isFirstTime) onClose();
         }}
       >
         <motion.div
@@ -108,16 +121,6 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({
             {/* Top row */}
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                {canGoBack && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleBack}
-                    className="h-7 w-7 text-white/70 hover:text-white hover:bg-white/10"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                  </Button>
-                )}
                 <Logo size="sm" />
                 <span className="text-sm font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent hidden sm:inline">
                   AvatarTalk.Co
@@ -155,14 +158,17 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({
                     Skip
                   </Button>
                 )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onClose}
-                  className="h-7 w-7 text-white/70 hover:text-white hover:bg-white/10"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+                {/* Only show close button for returning users */}
+                {!isFirstTime && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onClose}
+                    className="h-7 w-7 text-white/70 hover:text-white hover:bg-white/10"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -189,14 +195,13 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({
               </div>
             </div>
 
-            {/* Step indicators - clickable */}
+            {/* Step indicators */}
             <div className="flex items-center justify-between overflow-x-auto pb-1 gap-0.5 scrollbar-none">
               {ONBOARDING_STEPS.map((step, index) => {
                 const isCompleted = completedSteps.includes(step.key);
                 const isSkipped = skippedSteps.includes(step.key);
                 const isCurrent = step.key === currentStep;
-                const isPast = index < currentIndex;
-                const isClickable = isCompleted || isSkipped || isCurrent || isPast;
+                const isClickable = canClickStep(step, index);
 
                 return (
                   <button
@@ -214,8 +219,7 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({
                         isCompleted && "bg-gradient-to-br from-green-400 to-emerald-500 text-white shadow-lg shadow-green-500/20",
                         isSkipped && "bg-white/10 text-blue-300",
                         isCurrent && "bg-gradient-to-br from-blue-400 to-purple-500 text-white ring-2 ring-blue-400/40 shadow-lg shadow-blue-500/30",
-                        !isCompleted && !isSkipped && !isCurrent && isPast && "bg-white/10 text-blue-300",
-                        !isCompleted && !isSkipped && !isCurrent && !isPast && "bg-white/5 text-white/30",
+                        !isCompleted && !isSkipped && !isCurrent && "bg-white/5 text-white/30",
                         isClickable && "group-hover:scale-110"
                       )}
                     >
@@ -267,6 +271,21 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({
               </motion.div>
             </AnimatePresence>
           </div>
+
+          {/* Bottom bar with Back button */}
+          {canGoBack && (
+            <div className="shrink-0 border-t border-slate-200 bg-white px-4 sm:px-6 py-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBack}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <ArrowLeft className="w-4 h-4 mr-1.5" />
+                Back
+              </Button>
+            </div>
+          )}
         </motion.div>
       </motion.div>
     </AnimatePresence>
