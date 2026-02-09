@@ -33,6 +33,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen = true, onClose,
     goToStep,
     finishOnboarding,
     loading,
+    onboardingState,
   } = useOnboarding();
 
   const [showShareModal, setShowShareModal] = useState(false);
@@ -46,45 +47,53 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen = true, onClose,
     }
   }, [onClose, navigate]);
 
+  const showShareAndClose = useCallback(async () => {
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', user.id)
+        .maybeSingle();
+      setUsername(profile?.username || 'user');
+    }
+    setShowShareModal(true);
+  }, [user]);
+
   const handleCompleteStep = useCallback(async (data?: Record<string, unknown>) => {
     try {
       const nextStep = await completeStep(currentStep, data);
-      if (currentStep === 'pricing' || nextStep === undefined) {
-        await finishOnboarding();
-        if (user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('username')
-            .eq('id', user.id)
-            .maybeSingle();
-          setUsername(profile?.username || 'user');
-        }
-        setShowShareModal(true);
+      // Don't auto-complete on pricing - pricing step handles its own flow
+      if (currentStep === 'pricing') {
+        // Pricing step calls onComplete after payment
+        return;
       }
     } catch (error) {
       console.error('Error completing step:', error);
     }
-  }, [currentStep, completeStep, finishOnboarding, user]);
+  }, [currentStep, completeStep]);
+
+  const handlePricingComplete = useCallback(async (planKey?: string) => {
+    try {
+      await completeStep('pricing');
+      await finishOnboarding();
+      // Show share popup after plan is activated
+      await showShareAndClose();
+    } catch (error) {
+      console.error('Error completing pricing:', error);
+    }
+  }, [completeStep, finishOnboarding, showShareAndClose]);
 
   const handleSkipStep = useCallback(async () => {
     try {
       const nextStep = await skipStep(currentStep);
       if (currentStep === 'pricing' || nextStep === undefined) {
         await finishOnboarding();
-        if (user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('username')
-            .eq('id', user.id)
-            .maybeSingle();
-          setUsername(profile?.username || 'user');
-        }
-        setShowShareModal(true);
+        await showShareAndClose();
       }
     } catch (error) {
       console.error('Error skipping step:', error);
     }
-  }, [currentStep, skipStep, finishOnboarding, user]);
+  }, [currentStep, skipStep, finishOnboarding, showShareAndClose]);
 
   const handleBack = useCallback(() => {
     const currentIndex = ONBOARDING_STEPS.findIndex(s => s.key === currentStep);
@@ -100,8 +109,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen = true, onClose,
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
-        <div className="flex flex-col items-center gap-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="flex flex-col items-center gap-4 bg-white rounded-2xl p-8 shadow-2xl">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
           <p className="text-muted-foreground">Loading your setup...</p>
         </div>
@@ -126,7 +135,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen = true, onClose,
       case 'virtual_collaboration':
         return <VirtualCollaborationStep onComplete={() => handleCompleteStep()} />;
       case 'pricing':
-        return <PricingStep onComplete={() => handleCompleteStep()} />;
+        return <PricingStep onComplete={handlePricingComplete} />;
       default:
         return <PersonalInfoStep onComplete={handleCompleteStep} />;
     }
@@ -136,7 +145,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen = true, onClose,
     ? `${window.location.origin}/${username}`
     : window.location.origin;
 
-  const isFirstTime = completedSteps.length === 0 && !isModal;
+  // First time = no completed steps and not opened as modal from button
+  const isFirstTime = completedSteps.length === 0 && skippedSteps.length === 0 && !isModal;
 
   return (
     <>

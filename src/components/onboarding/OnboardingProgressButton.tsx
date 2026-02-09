@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Rocket } from 'lucide-react';
+import { Rocket, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/auth';
 import { ONBOARDING_STEPS } from '@/hooks/useOnboarding';
-import OnboardingFlow from './OnboardingFlow';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const OnboardingProgressButton: React.FC = () => {
+interface OnboardingProgressButtonProps {
+  onOpenOnboarding?: () => void;
+}
+
+const OnboardingProgressButton: React.FC<OnboardingProgressButtonProps> = ({ onOpenOnboarding }) => {
   const { user } = useAuth();
   const [progress, setProgress] = useState<{ completed: number; total: number; isCompleted: boolean } | null>(null);
-  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     const fetchProgress = async () => {
@@ -30,54 +33,48 @@ const OnboardingProgressButton: React.FC = () => {
           isCompleted: data.is_completed || false,
         });
       } else {
-        // No onboarding record yet — show 0% progress
-        setProgress({
-          completed: 0,
-          total: ONBOARDING_STEPS.length,
-          isCompleted: false,
-        });
+        setProgress({ completed: 0, total: ONBOARDING_STEPS.length, isCompleted: false });
       }
     };
     fetchProgress();
-  }, [user, showOnboarding]); // Refetch when modal closes
+    
+    // Refetch every 5s when modal might be open
+    const interval = setInterval(fetchProgress, 5000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   if (!progress) return null;
 
   const percentage = progress.isCompleted ? 100 : Math.round((progress.completed / progress.total) * 100);
-  const circumference = 2 * Math.PI * 14; // radius = 14
+  const circumference = 2 * Math.PI * 14;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
   const isComplete = progress.isCompleted;
 
   return (
-    <>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowOnboarding(true)}
-            className={cn(
-              "relative h-9 w-9 rounded-full",
-              isComplete ? "hover:bg-green-50" : "hover:bg-blue-50"
-            )}
-          >
-            {/* SVG circular progress */}
-            <svg className="absolute inset-0 w-9 h-9 -rotate-90" viewBox="0 0 36 36">
-              <circle
-                cx="18" cy="18" r="14"
-                fill="none"
-                stroke="hsl(var(--muted))"
-                strokeWidth="2.5"
-              />
-              <circle
-                cx="18" cy="18" r="14"
-                fill="none"
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          onClick={onOpenOnboarding}
+          className={cn(
+            "relative h-9 gap-1.5 px-2 rounded-full transition-all duration-300",
+            isComplete 
+              ? "hover:bg-green-50 text-green-700" 
+              : "hover:bg-blue-50 text-blue-700"
+          )}
+        >
+          {/* SVG circular progress */}
+          <div className="relative w-8 h-8 shrink-0">
+            <svg className="absolute inset-0 w-8 h-8 -rotate-90" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="14" fill="none" stroke="hsl(var(--muted))" strokeWidth="2.5" />
+              <motion.circle
+                cx="18" cy="18" r="14" fill="none"
                 stroke={isComplete ? "hsl(142, 71%, 45%)" : "url(#progressGradient)"}
-                strokeWidth="2.5"
-                strokeLinecap="round"
+                strokeWidth="2.5" strokeLinecap="round"
                 strokeDasharray={circumference}
-                strokeDashoffset={strokeDashoffset}
-                className="transition-all duration-500"
+                initial={{ strokeDashoffset: circumference }}
+                animate={{ strokeDashoffset }}
+                transition={{ duration: 0.8, ease: 'easeOut' }}
               />
               <defs>
                 <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -86,29 +83,39 @@ const OnboardingProgressButton: React.FC = () => {
                 </linearGradient>
               </defs>
             </svg>
-            {/* Center content */}
-            {isComplete ? (
-              <Rocket className="relative z-10 w-3.5 h-3.5 text-green-600" />
-            ) : (
-              <span className="relative z-10 text-[9px] font-bold text-blue-700">
-                {percentage}%
-              </span>
-            )}
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">
-          <p className="text-xs">{isComplete ? 'Quick Setup — Complete ✓' : `Quick Setup — ${percentage}% complete`}</p>
-        </TooltipContent>
-      </Tooltip>
-
-      {showOnboarding && (
-        <OnboardingFlow
-          isOpen={showOnboarding}
-          onClose={() => setShowOnboarding(false)}
-          isModal
-        />
-      )}
-    </>
+            <div className="absolute inset-0 flex items-center justify-center">
+              {isComplete ? (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', damping: 10 }}
+                >
+                  <Rocket className="w-3.5 h-3.5 text-green-600" />
+                </motion.div>
+              ) : (
+                <span className="text-[9px] font-bold">{percentage}%</span>
+              )}
+            </div>
+          </div>
+          {/* Text label */}
+          <span className="hidden sm:inline text-[11px] font-semibold whitespace-nowrap">
+            {isComplete ? 'Setup ✓' : 'Quick Setup'}
+          </span>
+          {!isComplete && (
+            <motion.div
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="hidden sm:block"
+            >
+              <Sparkles className="w-3 h-3 text-purple-500" />
+            </motion.div>
+          )}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">
+        <p className="text-xs">{isComplete ? 'Quick Setup — Complete ✓' : `Quick Setup — ${percentage}% complete`}</p>
+      </TooltipContent>
+    </Tooltip>
   );
 };
 
