@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, Plus, Trash2, Save, Check } from 'lucide-react';
+import { Loader2, Plus, Trash2, Save, Check, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,32 +10,23 @@ import { useAuth } from '@/context/auth';
 import {
   Twitter, Linkedin, Facebook, Instagram, Youtube, Globe, Github, Twitch, MessageCircle, Music,
 } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 
 interface SocialLinksStepProps {
   onComplete: () => void;
 }
 
 const ALL_PLATFORMS = [
-  { id: 'twitter', name: 'Twitter/X', icon: Twitter, placeholder: 'username', color: 'from-sky-400 to-blue-600' },
-  { id: 'linkedin', name: 'LinkedIn', icon: Linkedin, placeholder: 'username', color: 'from-blue-600 to-indigo-700' },
-  { id: 'facebook', name: 'Facebook', icon: Facebook, placeholder: 'username', color: 'from-blue-500 to-blue-700' },
-  { id: 'instagram', name: 'Instagram', icon: Instagram, placeholder: 'username', color: 'from-pink-500 via-red-500 to-orange-500' },
-  { id: 'youtube', name: 'YouTube', icon: Youtube, placeholder: '@channel', color: 'from-red-500 to-red-700' },
-  { id: 'tiktok', name: 'TikTok', icon: Music, placeholder: '@username', color: 'from-gray-900 to-black' },
-  { id: 'github', name: 'GitHub', icon: Github, placeholder: 'username', color: 'from-gray-700 to-gray-900' },
-  { id: 'twitch', name: 'Twitch', icon: Twitch, placeholder: 'channel', color: 'from-purple-600 to-purple-800' },
-  { id: 'discord', name: 'Discord', icon: MessageCircle, placeholder: 'invite-code', color: 'from-indigo-600 to-purple-700' },
-  { id: 'website', name: 'Website', icon: Globe, placeholder: 'https://...', color: 'from-slate-600 to-slate-800' },
+  { id: 'twitter', name: 'Twitter/X', icon: Twitter, prefix: 'https://x.com/', placeholder: 'username', color: 'from-sky-400 to-blue-600' },
+  { id: 'linkedin', name: 'LinkedIn', icon: Linkedin, prefix: 'https://linkedin.com/in/', placeholder: 'username', color: 'from-blue-600 to-indigo-700' },
+  { id: 'facebook', name: 'Facebook', icon: Facebook, prefix: 'https://facebook.com/', placeholder: 'username', color: 'from-blue-500 to-blue-700' },
+  { id: 'instagram', name: 'Instagram', icon: Instagram, prefix: 'https://instagram.com/', placeholder: 'username', color: 'from-pink-500 via-red-500 to-orange-500' },
+  { id: 'youtube', name: 'YouTube', icon: Youtube, prefix: 'https://youtube.com/@', placeholder: '@channel', color: 'from-red-500 to-red-700' },
+  { id: 'tiktok', name: 'TikTok', icon: Music, prefix: 'https://tiktok.com/@', placeholder: '@username', color: 'from-gray-900 to-black' },
+  { id: 'github', name: 'GitHub', icon: Github, prefix: 'https://github.com/', placeholder: 'username', color: 'from-gray-700 to-gray-900' },
+  { id: 'twitch', name: 'Twitch', icon: Twitch, prefix: 'https://twitch.tv/', placeholder: 'channel', color: 'from-purple-600 to-purple-800' },
+  { id: 'discord', name: 'Discord', icon: MessageCircle, prefix: 'https://discord.gg/', placeholder: 'invite-code', color: 'from-indigo-600 to-purple-700' },
+  { id: 'website', name: 'Website', icon: Globe, prefix: '', placeholder: 'https://yoursite.com', color: 'from-slate-600 to-slate-800' },
 ];
-
-const DEFAULT_VISIBLE = ['twitter', 'linkedin', 'instagram', 'youtube'];
 
 const SocialLinksStep: React.FC<SocialLinksStepProps> = ({ onComplete }) => {
   const { user } = useAuth();
@@ -44,7 +35,6 @@ const SocialLinksStep: React.FC<SocialLinksStepProps> = ({ onComplete }) => {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [socialLinks, setSocialLinks] = useState<Record<string, string>>({});
-  const [visiblePlatforms, setVisiblePlatforms] = useState<string[]>(DEFAULT_VISIBLE);
 
   useEffect(() => {
     const loadLinks = async () => {
@@ -58,15 +48,10 @@ const SocialLinksStep: React.FC<SocialLinksStepProps> = ({ onComplete }) => {
           .maybeSingle();
         if (data) {
           const links: Record<string, string> = {};
-          const visible = [...DEFAULT_VISIBLE];
           ALL_PLATFORMS.forEach(p => {
-            if (data[p.id]) {
-              links[p.id] = data[p.id];
-              if (!visible.includes(p.id)) visible.push(p.id);
-            }
+            if (data[p.id]) links[p.id] = data[p.id];
           });
           setSocialLinks(links);
-          setVisiblePlatforms(visible);
         }
       } catch (err) {
         console.error('Error loading links:', err);
@@ -98,20 +83,6 @@ const SocialLinksStep: React.FC<SocialLinksStepProps> = ({ onComplete }) => {
     }
   };
 
-  const addNewLink = (platformId: string) => {
-    if (!visiblePlatforms.includes(platformId)) {
-      setVisiblePlatforms([...visiblePlatforms, platformId]);
-    }
-  };
-
-  const removeLink = (platformId: string) => {
-    setVisiblePlatforms(visiblePlatforms.filter(id => id !== platformId));
-    const updated = { ...socialLinks };
-    delete updated[platformId];
-    setSocialLinks(updated);
-  };
-
-  const availableToAdd = ALL_PLATFORMS.filter(p => !visiblePlatforms.includes(p.id));
   const filledCount = Object.values(socialLinks).filter(Boolean).length;
 
   if (loading) {
@@ -126,15 +97,14 @@ const SocialLinksStep: React.FC<SocialLinksStepProps> = ({ onComplete }) => {
 
   return (
     <Card className="border border-border/50 shadow-xl bg-white">
-      <CardContent className="p-4 sm:p-6 space-y-4">
+      <CardContent className="p-4 sm:p-6 space-y-3">
         <p className="text-xs text-muted-foreground text-center">
-          Add your social profiles so visitors can find you across the web
+          Add your social profiles — full URLs or usernames accepted
         </p>
 
-        <div className="space-y-2.5 max-h-[320px] overflow-y-auto pr-1">
-          {visiblePlatforms.map((platformId, index) => {
-            const platform = ALL_PLATFORMS.find(p => p.id === platformId);
-            if (!platform) return null;
+        {/* All platforms shown at once for quick access */}
+        <div className="space-y-2 max-h-[350px] overflow-y-auto pr-1">
+          {ALL_PLATFORMS.map((platform, index) => {
             const Icon = platform.icon;
             const hasValue = !!socialLinks[platform.id];
             return (
@@ -142,71 +112,35 @@ const SocialLinksStep: React.FC<SocialLinksStepProps> = ({ onComplete }) => {
                 key={platform.id}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.03 }}
-                className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all ${
-                  hasValue ? 'border-blue-200 bg-blue-50/30' : 'border-slate-200'
+                transition={{ delay: index * 0.02 }}
+                className={`flex items-center gap-2 p-2 rounded-xl border transition-all ${
+                  hasValue ? 'border-blue-200 bg-blue-50/30' : 'border-slate-100 hover:border-slate-200'
                 }`}
               >
                 <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${platform.color} flex items-center justify-center shadow-sm shrink-0`}>
                   <Icon className="h-3.5 w-3.5 text-white" />
                 </div>
-                <div className="flex-1">
-                  <Input
-                    value={socialLinks[platform.id] || ''}
-                    onChange={(e) => {
-                      setSocialLinks({ ...socialLinks, [platform.id]: e.target.value });
-                      setSaved(false);
-                    }}
-                    placeholder={platform.placeholder}
-                    className="h-8 text-sm"
-                  />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1">
+                    {platform.prefix && (
+                      <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">{platform.prefix}</span>
+                    )}
+                    <Input
+                      value={socialLinks[platform.id] || ''}
+                      onChange={(e) => {
+                        setSocialLinks({ ...socialLinks, [platform.id]: e.target.value });
+                        setSaved(false);
+                      }}
+                      placeholder={platform.placeholder}
+                      className="h-7 text-xs border-0 bg-transparent focus-visible:ring-1 px-1"
+                    />
+                  </div>
                 </div>
-                {!DEFAULT_VISIBLE.includes(platform.id) && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-slate-400 hover:text-red-500"
-                    onClick={() => removeLink(platform.id)}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
-                )}
+                <span className="text-[9px] text-muted-foreground shrink-0">{platform.name}</span>
               </motion.div>
             );
           })}
         </div>
-
-        {/* Add new link */}
-        {availableToAdd.length > 0 && (
-          <div className="flex items-center gap-2">
-            <Select onValueChange={addNewLink}>
-              <SelectTrigger className="h-8 text-xs flex-1">
-                <SelectValue placeholder="Add another link..." />
-              </SelectTrigger>
-              <SelectContent>
-                {availableToAdd.map(p => (
-                  <SelectItem key={p.id} value={p.id}>
-                    <span className="flex items-center gap-2">
-                      <p.icon className="w-3.5 h-3.5" />
-                      {p.name}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs border-blue-200 text-blue-700 hover:bg-blue-50"
-              onClick={() => {
-                if (availableToAdd.length > 0) addNewLink(availableToAdd[0].id);
-              }}
-            >
-              <Plus className="w-3.5 h-3.5 mr-1" />
-              Add
-            </Button>
-          </div>
-        )}
 
         {filledCount > 0 && (
           <p className="text-xs text-center text-muted-foreground">
@@ -214,27 +148,21 @@ const SocialLinksStep: React.FC<SocialLinksStepProps> = ({ onComplete }) => {
           </p>
         )}
 
-        {!saved ? (
-          <Button
-            size="lg"
-            className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-lg"
-            onClick={handleSave}
-            disabled={saving}
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {saving ? 'Saving...' : 'Save Links'}
-          </Button>
-        ) : (
-          <Button
-            size="lg"
-            variant="outline"
-            className="w-full border-green-200 text-green-700 hover:bg-green-50"
-            onClick={onComplete}
-          >
-            <Check className="w-4 h-4 mr-2" />
-            Saved — Continue to Next Step
-          </Button>
-        )}
+        <Button
+          size="lg"
+          className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white shadow-lg"
+          onClick={async () => {
+            await handleSave();
+            onComplete();
+          }}
+          disabled={saving}
+        >
+          {saving ? 'Saving...' : saved ? (
+            <><Check className="w-4 h-4 mr-2" /> Links Saved — Continue</>
+          ) : (
+            <><Save className="w-4 h-4 mr-2" /> Save Links & Continue</>
+          )}
+        </Button>
       </CardContent>
     </Card>
   );

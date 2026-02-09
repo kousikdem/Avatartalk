@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Share2, User, ChevronDown, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,8 @@ import { useSidebar } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth';
 
+const OnboardingFlow = lazy(() => import('./onboarding/OnboardingFlow'));
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,12 +25,14 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import OnboardingProgressButton from './onboarding/OnboardingProgressButton';
 
+
 const DashboardHeaderStrip: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { toggleSidebar } = useSidebar();
   const { user } = useAuth();
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [userProfile, setUserProfile] = useState<{
     username: string | null;
     display_name: string | null;
@@ -104,7 +108,7 @@ const DashboardHeaderStrip: React.FC = () => {
           {/* Right section - Actions */}
           <div className="flex items-center gap-1.5">
             {/* Onboarding Progress Circle */}
-            <OnboardingProgressButton />
+            <OnboardingProgressButton onOpenOnboarding={() => setShowOnboarding(true)} />
 
             <div className="hidden sm:block">
               <CurrencySelector compact />
@@ -181,6 +185,17 @@ const DashboardHeaderStrip: React.FC = () => {
         profileUrl={profileUrl}
         username={userProfile?.username || 'user'}
       />
+
+      {/* Onboarding Modal - rendered here to avoid context issues */}
+      {showOnboarding && (
+        <Suspense fallback={null}>
+          <OnboardingFlow
+            isOpen={showOnboarding}
+            onClose={() => setShowOnboarding(false)}
+            isModal
+          />
+        </Suspense>
+      )}
     </>
   );
 };
