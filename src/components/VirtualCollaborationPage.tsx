@@ -28,6 +28,7 @@ import VirtualBookingCard from './VirtualBookingCard';
 import TokenDisplay from './TokenDisplay';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { LimitReachedBanner } from '@/components/LockedFeatureOverlay';
+import PlanBadge from '@/components/PlanBadge';
 import { GenericPageSkeleton } from '@/components/ui/page-skeletons';
 import { useAuth } from '@/context/auth';
 
@@ -796,20 +797,42 @@ const VirtualCollaborationPage = () => {
             </Card>
 
             {/* Promo Codes Quick Access */}
-            <Card className="border-2">
+            <Card className={`border-2 ${!hasFeature('promo_codes_enabled') ? 'opacity-70' : ''}`}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Percent className="w-5 h-5" />
                   Promo Codes
+                  {!hasFeature('promo_codes_enabled') && (
+                    <PlanBadge className="ml-1" showIcon={false} />
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Apply promo codes to virtual collaborations
+                  {hasFeature('promo_codes_enabled')
+                    ? 'Apply promo codes to virtual collaborations'
+                    : 'Upgrade to Creator plan to use promo codes'}
                 </p>
-                <Button variant="outline" className="w-full" onClick={() => navigate('/settings/promo')}>
-                  <Settings className="w-4 h-4 mr-2" />
+                <Button
+                  variant="outline"
+                  className={`w-full ${!hasFeature('promo_codes_enabled') ? 'opacity-60' : ''}`}
+                  onClick={() => {
+                    if (!hasFeature('promo_codes_enabled')) {
+                      navigate('/pricing');
+                      return;
+                    }
+                    navigate('/settings/promo');
+                  }}
+                >
+                  {!hasFeature('promo_codes_enabled') ? (
+                    <Lock className="w-4 h-4 mr-2" />
+                  ) : (
+                    <Settings className="w-4 h-4 mr-2" />
+                  )}
                   Manage Promos
+                  {!hasFeature('promo_codes_enabled') && (
+                    <Badge variant="secondary" className="ml-2 text-xs">Creator+</Badge>
+                  )}
                 </Button>
               </CardContent>
             </Card>
