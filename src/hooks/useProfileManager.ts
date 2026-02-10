@@ -34,7 +34,8 @@ export const useProfileManager = () => {
   const loadProfileData = async () => {
     try {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (user) {
         const { data: profile } = await supabase
           .from('profiles')

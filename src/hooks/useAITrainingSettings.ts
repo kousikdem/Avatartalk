@@ -83,8 +83,9 @@ export const useAITrainingSettings = () => {
   const fetchSettings = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error('User not authenticated');
+      const user = session.user;
 
       // Fetch or create settings
       let { data: settingsData, error } = await supabase

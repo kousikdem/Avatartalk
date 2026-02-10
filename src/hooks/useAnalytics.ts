@@ -80,11 +80,12 @@ export const useAnalytics = (dateRange?: DateRange) => {
 
   const fetchAnalytics = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
         setLoading(false);
         return;
       }
+      const user = session.user;
       setUserId(user.id);
 
       const startDate = format(startOfDay(range.start), 'yyyy-MM-dd');

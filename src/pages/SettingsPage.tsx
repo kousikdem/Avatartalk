@@ -88,11 +88,12 @@ import { IconSelect, type IconSelectOption } from '@/components/ui/icon-select';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { ProfessionSelect, type ProfessionOption } from '@/components/ui/profession-select';
 import { SettingsSkeleton } from '@/components/ui/page-skeletons';
+import { useAuth } from '@/context/auth';
 
 const SettingsPage = () => {
   const navigate = useNavigate();
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const { user: authUser } = useAuth();
+  const [currentUser, setCurrentUser] = useState<any>(authUser);
   const [profile, setProfile] = useState<any>(null);
   const [socialLinks, setSocialLinks] = useState<any>({});
   const [loading, setLoading] = useState(true);
@@ -137,31 +138,13 @@ const SettingsPage = () => {
     return Math.round(inINR * currencyRates[toCurrency]);
   };
 
-  // Authentication check
+  // Load data when auth user is available
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setCurrentUser(session?.user ?? null);
-      setAuthLoading(false);
-      
-      // Redirect to login if not authenticated
-      if (!session?.user) {
-        window.location.href = '/';
-      }
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setCurrentUser(session?.user ?? null);
-      if (!session?.user) {
-        window.location.href = '/';
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    if (authUser) {
+      setCurrentUser(authUser);
+      loadUserData();
+    }
+  }, [authUser]);
 
   // Profession options with icons
   const professionOptions: ProfessionOption[] = [
@@ -250,16 +233,15 @@ const SettingsPage = () => {
 
   const loadUserData = async () => {
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) return;
+      if (!authUser) return;
 
-      setCurrentUser(userData.user);
+      const userId = authUser.id;
 
       // Load profile data
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', userData.user.id)
+        .eq('id', userId)
         .maybeSingle();
 
       if (profileError) throw profileError;
@@ -294,7 +276,7 @@ const SettingsPage = () => {
       const { data: socialData, error: socialError } = await supabase
         .from('social_links')
         .select('*')
-        .eq('user_id', userData.user.id)
+        .eq('user_id', userId)
         .maybeSingle();
 
       if (socialError && socialError.code !== 'PGRST116') throw socialError;
@@ -390,7 +372,7 @@ const SettingsPage = () => {
   };
 
   // Show skeleton instantly while loading - design first, then data
-  if (authLoading || loading) {
+  if (loading) {
     return <SettingsSkeleton />;
   }
 

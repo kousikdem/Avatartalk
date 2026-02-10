@@ -20,6 +20,7 @@ import TokenDisplay from '@/components/TokenDisplay';
 import PlanBadge, { planColors } from '@/components/PlanBadge';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { FollowersSkeleton } from '@/components/ui/page-skeletons';
+import { useAuth } from '@/context/auth';
 
 interface FollowerStats {
   followersCount: number;
@@ -47,13 +48,14 @@ type FilterOption = 'all' | 'creators' | 'users' | 'business' | 'ai';
 type LoyalFilterOption = 10 | 100 | 1000;
 
 const FollowersPage = () => {
+  const { user: authUser } = useAuth();
   const { followers, following, loading, followUser, unfollowUser, isFollowing, refetch } = useFollows();
   const [searchTerm, setSearchTerm] = useState('');
   const [visitors, setVisitors] = useState<User[]>([]);
   const [activeTab, setActiveTab] = useState('followers');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const currentUserId = authUser?.id || null;
   const [loyalUsersLimit, setLoyalUsersLimit] = useState<LoyalFilterOption>(10);
   const [stats, setStats] = useState<FollowerStats>({
     followersCount: 0,
@@ -108,17 +110,12 @@ const FollowersPage = () => {
     }
   }, []);
 
-  // Get current user ID and fetch initial stats
+  // Fetch initial stats
   useEffect(() => {
-    const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id || null);
-      if (user?.id) {
-        fetchStats(user.id);
-      }
-    };
-    getCurrentUser();
-  }, [fetchStats]);
+    if (currentUserId) {
+      fetchStats(currentUserId);
+    }
+  }, [currentUserId, fetchStats]);
 
   // Real-time stats updates
   useEffect(() => {
@@ -140,8 +137,7 @@ const FollowersPage = () => {
   useEffect(() => {
     const fetchVisitors = async () => {
       try {
-        const { data: currentUser } = await supabase.auth.getUser();
-        if (!currentUser.user) return;
+        if (!currentUserId) return;
 
         // Fetch visitors with profile data including visit_count
         const { data: visitorsData, error } = await supabase
@@ -162,7 +158,7 @@ const FollowersPage = () => {
               following_count
             )
           `)
-          .eq('visited_profile_id', currentUser.user.id)
+          .eq('visited_profile_id', currentUserId)
           .order('visited_at', { ascending: false });
 
         if (error) throw error;
@@ -217,7 +213,7 @@ const FollowersPage = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [toast]);
+  }, [currentUserId, toast]);
 
   // Transform followers data for display
   const displayFollowers: User[] = followers.map(follow => ({
@@ -292,13 +288,12 @@ const FollowersPage = () => {
 
   const clearVisitorHistory = async () => {
     try {
-      const { data: currentUser } = await supabase.auth.getUser();
-      if (!currentUser.user) return;
+      if (!currentUserId) return;
 
       const { error } = await supabase
         .from('profile_visitors')
         .delete()
-        .eq('visited_profile_id', currentUser.user.id);
+        .eq('visited_profile_id', currentUserId);
 
       if (error) throw error;
 
@@ -457,8 +452,8 @@ const FollowersPage = () => {
     );
   };
 
-  // Show skeleton instantly while loading
-  if (loading && !currentUserId) {
+  // Show skeleton only while data is loading (not auth)
+  if (loading && followers.length === 0) {
     return <FollowersSkeleton />;
   }
 

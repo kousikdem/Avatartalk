@@ -72,8 +72,8 @@ export const useNotifications = (userId?: string) => {
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const targetUserId = userId || user?.id;
+      const { data: { session } } = await supabase.auth.getSession();
+      const targetUserId = userId || session?.user?.id;
       
       if (!targetUserId) {
         setLoading(false);
@@ -125,8 +125,8 @@ export const useNotifications = (userId?: string) => {
 
   const markAllAsRead = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const targetUserId = userId || user?.id;
+      const { data: { session } } = await supabase.auth.getSession();
+      const targetUserId = userId || session?.user?.id;
       
       if (!targetUserId) return;
 
@@ -168,8 +168,8 @@ export const useNotifications = (userId?: string) => {
 
   const clearAllNotifications = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const targetUserId = userId || user?.id;
+      const { data: { session } } = await supabase.auth.getSession();
+      const targetUserId = userId || session?.user?.id;
       
       if (!targetUserId) return;
 
@@ -194,8 +194,8 @@ export const useNotifications = (userId?: string) => {
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
     const setupSubscription = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      const targetUserId = userId || user?.id;
+      const { data: { session } } = await supabase.auth.getSession();
+      const targetUserId = userId || session?.user?.id;
       
       if (!targetUserId) return;
 
