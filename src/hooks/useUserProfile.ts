@@ -77,16 +77,26 @@ export const useUserProfile = () => {
         throw profileError;
       }
 
-      // Load all secondary data in parallel for speed
-      const [avatarRes, socialRes, statsRes] = await Promise.all([
-        supabase.from('avatar_settings').select('*').eq('user_id', user.id).maybeSingle(),
-        supabase.from('social_links').select('*').eq('user_id', user.id).maybeSingle(),
-        supabase.from('user_stats').select('*').eq('user_id', user.id).maybeSingle(),
-      ]);
+      // Load avatar settings
+      const { data: avatarSettings } = await supabase
+        .from('avatar_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      const avatarSettings = avatarRes.data;
-      const socialLinks = socialRes.data;
-      const userStats = statsRes.data;
+      // Load social links
+      const { data: socialLinks } = await supabase
+        .from('social_links')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      // Load user stats
+      const { data: userStats } = await supabase
+        .from('user_stats')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
       // Create complete profile with defaults if no profile exists
       const completeProfile: UserProfileData = {

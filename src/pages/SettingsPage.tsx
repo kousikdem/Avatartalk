@@ -73,7 +73,6 @@ import {
   type LucideIcon
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/context/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useAvatarSettings } from '@/hooks/useAvatarSettings';
 import { useSubscriptionPlans } from '@/hooks/useSubscriptionPlans';
@@ -138,15 +137,31 @@ const SettingsPage = () => {
     return Math.round(inINR * currencyRates[toCurrency]);
   };
 
-  // Use auth context instead of redundant session check (App.tsx already gates auth)
-  const { user: authUser } = useAuth();
-  
+  // Authentication check
   useEffect(() => {
-    if (authUser) {
-      setCurrentUser(authUser);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setCurrentUser(session?.user ?? null);
       setAuthLoading(false);
-    }
-  }, [authUser]);
+      
+      // Redirect to login if not authenticated
+      if (!session?.user) {
+        window.location.href = '/';
+      }
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCurrentUser(session?.user ?? null);
+      if (!session?.user) {
+        window.location.href = '/';
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Profession options with icons
   const professionOptions: ProfessionOption[] = [
@@ -374,9 +389,13 @@ const SettingsPage = () => {
     }
   };
 
-  // Show skeleton only during initial auth check - once authed, render shell immediately
-  if (authLoading) {
+  // Show skeleton instantly while loading - design first, then data
+  if (authLoading || loading) {
     return <SettingsSkeleton />;
+  }
+
+  if (!currentUser) {
+    return null; // Will redirect in useEffect
   }
 
   return (

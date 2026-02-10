@@ -42,12 +42,11 @@ const RefundPolicyPage = lazy(() => import("./pages/RefundPolicyPage"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 15, // 15 minutes - serve cached data instantly
+      staleTime: 1000 * 60 * 10, // 10 minutes - longer cache
       gcTime: 1000 * 60 * 60, // 1 hour cache retention
       refetchOnWindowFocus: false,
-      refetchOnMount: 'always', // Always mount but serve stale cache first (no blocking)
-      retry: 1, // Single retry for transient failures
-      networkMode: 'offlineFirst', // Show cached data immediately, refetch in background
+      refetchOnMount: false, // Don't refetch on mount for faster navigation
+      retry: 0, // No retries for faster failure handling
     },
   },
 });
@@ -132,23 +131,91 @@ const AuthenticatedRoutes = memo(({
             <Routes>
               <Route path="/" element={<Navigate to="/settings/dashboard" replace />} />
               <Route path="/onboarding" element={<Navigate to="/settings/dashboard" replace />} />
-              <Route path="/settings/dashboard" element={<DashboardPageLayout><Index mode="authed" /></DashboardPageLayout>} />
-              <Route path="/settings/avatar" element={<DashboardPageLayout><AvatarPage /></DashboardPageLayout>} />
-              <Route path="/settings/virtual-collaboration" element={<DashboardPageLayout><VirtualCollaborationPage /></DashboardPageLayout>} />
-              <Route path="/settings/products" element={<DashboardPageLayout><ProductsPage /></DashboardPageLayout>} />
-              <Route path="/settings/promo" element={<DashboardPageLayout><PromoSettingsPage /></DashboardPageLayout>} />
-              <Route path="/settings/account" element={<DashboardPageLayout><SettingsPage /></DashboardPageLayout>} />
-              <Route path="/settings/social-links" element={<DashboardPageLayout><SocialLinksPage /></DashboardPageLayout>} />
-              <Route path="/settings/feed" element={<DashboardPageLayout><FeedPage /></DashboardPageLayout>} />
-              <Route path="/settings/followers" element={<DashboardPageLayout><FollowersPage /></DashboardPageLayout>} />
-              <Route path="/settings/ai-training" element={<DashboardPageLayout><AITrainingDashboard /></DashboardPageLayout>} />
-              <Route path="/settings/analytics" element={<DashboardPageLayout><AnalyticsPage /></DashboardPageLayout>} />
-              <Route path="/settings/super-admin" element={<DashboardPageLayout><SuperAdminPage /></DashboardPageLayout>} />
-              <Route path="/settings/buy-tokens" element={<DashboardPageLayout><BuyTokensPage /></DashboardPageLayout>} />
-              <Route path="/pricing" element={<DashboardPageLayout><PricingPage /></DashboardPageLayout>} />
-              <Route path="/settings/notifications" element={<DashboardPageLayout><Index mode="authed" /></DashboardPageLayout>} />
-              <Route path="/:username" element={<UsernameRedirect />} />
-              <Route path="*" element={<NotFound />} />
+              <Route path="/settings/dashboard" element={
+                <Suspense fallback={<PageFallback />}>
+                   <DashboardPageLayout><Index mode="authed" /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/avatar" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><AvatarPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/virtual-collaboration" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><VirtualCollaborationPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/products" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><ProductsPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/promo" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><PromoSettingsPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/account" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><SettingsPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/social-links" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><SocialLinksPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/feed" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><FeedPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/followers" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><FollowersPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/ai-training" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><AITrainingDashboard /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/analytics" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><AnalyticsPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/super-admin" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><SuperAdminPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/buy-tokens" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><BuyTokensPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/pricing" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><PricingPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/notifications" element={
+                <Suspense fallback={<PageFallback />}>
+                   <DashboardPageLayout><Index mode="authed" /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/:username" element={
+                <Suspense fallback={<ProfileFallback />}>
+                  <UsernameRedirect />
+                </Suspense>
+              } />
+              <Route path="*" element={
+                <Suspense fallback={<PageFallback />}>
+                  <NotFound />
+                </Suspense>
+              } />
             </Routes>
           </Suspense>
         </main>
