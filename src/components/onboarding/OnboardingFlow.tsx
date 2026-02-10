@@ -108,14 +108,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ isOpen = true, onClose,
   };
 
   if (loading) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-        <div className="flex flex-col items-center gap-4 bg-white rounded-2xl p-8 shadow-2xl">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          <p className="text-muted-foreground">Loading your setup...</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   const renderStep = () => {
