@@ -223,8 +223,8 @@ const FollowersPage = () => {
     email: '',
     avatar_url: follow.follower?.profile_pic_url || follow.follower?.avatar_url,
     bio: 'Follower',
-    followers_count: 0,
-    following_count: 0,
+    followers_count: follow.follower?.followers_count || 0,
+    following_count: follow.follower?.following_count || 0,
     is_online: false
   }));
 
@@ -236,8 +236,8 @@ const FollowersPage = () => {
     email: '',
     avatar_url: follow.following?.profile_pic_url || follow.following?.avatar_url,
     bio: 'Following',
-    followers_count: 0,
-    following_count: 0,
+    followers_count: follow.following?.followers_count || 0,
+    following_count: follow.following?.following_count || 0,
     is_online: false
   }));
 

@@ -13,6 +13,8 @@ interface Follow {
     display_name: string;
     avatar_url: string;
     profile_pic_url?: string;
+    followers_count?: number;
+    following_count?: number;
   };
   following?: {
     id: string;
@@ -20,6 +22,8 @@ interface Follow {
     display_name: string;
     avatar_url: string;
     profile_pic_url?: string;
+    followers_count?: number;
+    following_count?: number;
   };
 }
 
@@ -67,11 +71,11 @@ export const useFollows = (userId?: string): UseFollowsReturn => {
       const [followersResponse, followingResponse] = await Promise.all([
         supabase
           .from('follows')
-          .select(`*, follower:profiles!follows_follower_id_fkey(id, username, display_name, avatar_url, profile_pic_url)`)
+          .select(`*, follower:profiles!follows_follower_id_fkey(id, username, display_name, avatar_url, profile_pic_url, followers_count, following_count)`)
           .eq('following_id', uid),
         supabase
           .from('follows')
-          .select(`*, following:profiles!follows_following_id_fkey(id, username, display_name, avatar_url, profile_pic_url)`)
+          .select(`*, following:profiles!follows_following_id_fkey(id, username, display_name, avatar_url, profile_pic_url, followers_count, following_count)`)
           .eq('follower_id', uid)
       ]);
 
