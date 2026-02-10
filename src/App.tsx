@@ -78,6 +78,7 @@ const AuthenticatedRoutes = memo(({
 }) => {
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
   const { user } = useAuth();
+  const location = window.location.pathname;
 
   useEffect(() => {
     const checkOnboarding = async () => {
@@ -112,7 +113,7 @@ const AuthenticatedRoutes = memo(({
 
   return (
     <>
-    {needsOnboarding && (
+    {needsOnboarding && !window.location.pathname.match(/^\/[^/]+$/) && (
       <Suspense fallback={null}>
         <OnboardingFlow isOpen={true} onClose={() => setNeedsOnboarding(false)} />
       </Suspense>

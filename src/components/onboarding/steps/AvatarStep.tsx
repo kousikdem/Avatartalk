@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Sparkles, Upload, Save, Check, Eye, RotateCcw } from 'lucide-react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { Sparkles, Upload, Save, Check, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,6 +11,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useCustomAvatarUpload } from '@/hooks/useCustomAvatarUpload';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei';
+import Avatar3DPreview from '@/components/Avatar3DPreview';
 
 interface AvatarStepProps {
   onComplete: () => void;
@@ -36,7 +38,6 @@ const AvatarStep: React.FC<AvatarStepProps> = ({ onComplete }) => {
   const [headSize, setHeadSize] = useState(50);
   const [noseSize, setNoseSize] = useState(50);
   const [mouthWidth, setMouthWidth] = useState(50);
-  const [rotateY, setRotateY] = useState(0);
 
   const skinTones = ['#F5D0A9', '#D2A679', '#C68642', '#8D5524', '#5C3317', '#FFF5E1'];
   const hairColors = ['#4A3728', '#2C1B0E', '#D4A76A', '#B22222', '#F0E68C', '#808080', '#1A1A1A', '#FFFFFF'];
@@ -91,16 +92,34 @@ const AvatarStep: React.FC<AvatarStepProps> = ({ onComplete }) => {
     }
   };
 
-  // Animated 3D-style rotation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRotateY(prev => (prev + 0.5) % 360);
-    }, 50);
-    return () => clearInterval(interval);
-  }, []);
-
-  const headScale = 0.8 + (headSize / 100) * 0.4;
-  const faceScale = 0.8 + (faceWidth / 100) * 0.4;
+  // Build config for Avatar3DPreview
+  const avatarConfig = {
+    body: {
+      gender,
+      age: 25,
+      ethnicity: 'default',
+      height: 170,
+      weight: 65 + (headSize - 50) * 0.3,
+      muscle: 50 + (faceWidth - 50) * 0.2,
+      fat: 30,
+    },
+    face: {
+      eyeColor,
+      skinTone,
+      hairStyle,
+      hairColor,
+      faceShape: 'oval',
+      eyeShape: 'almond',
+      noseShape: 'straight',
+      lipShape: 'full',
+    },
+    clothing: {
+      outfit: 'casual',
+      accessories: [],
+    },
+    pose: 'standing',
+    expression: 'neutral',
+  };
 
   return (
     <Card className="border border-border/50 shadow-xl bg-white">
@@ -195,53 +214,40 @@ const AvatarStep: React.FC<AvatarStepProps> = ({ onComplete }) => {
                 </div>
               </div>
 
-              {/* Right: 3D Preview */}
+              {/* Right: 3D Canvas Preview */}
               <div className="flex flex-col items-center justify-center">
-                <div className="relative w-48 h-56 flex items-center justify-center" style={{ perspective: '600px' }}>
-                  <motion.div
-                    className="w-40 h-48 rounded-2xl shadow-2xl border-2 border-slate-200 relative overflow-hidden"
-                    style={{
-                      background: `radial-gradient(ellipse at 50% 35%, ${skinTone} 50%, ${skinTone}99 80%, ${skinTone}66 100%)`,
-                      transform: `rotateY(${Math.sin(rotateY * Math.PI / 180) * 15}deg) scale(${headScale})`,
-                      transformStyle: 'preserve-3d',
-                    }}
-                  >
-                    <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ transform: `scaleX(${faceScale})` }}>
-                      {hairStyle !== 'bald' && (
-                        <div className="absolute top-1 left-1/2 -translate-x-1/2 rounded-t-full"
-                          style={{
-                            backgroundColor: hairColor,
-                            width: hairStyle === 'long' ? '90%' : '80%',
-                            height: hairStyle === 'long' ? '55%' : hairStyle === 'short' || hairStyle === 'buzz' ? '25%' : '38%',
-                            boxShadow: `0 2px 8px ${hairColor}80`,
-                          }} />
-                      )}
-                      <div className="flex gap-4 mt-8">
-                        {[0, 1].map(i => (
-                          <div key={i} className="w-5 h-5 rounded-full bg-white shadow-inner flex items-center justify-center" style={{ boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)' }}>
-                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: eyeColor, boxShadow: `0 0 4px ${eyeColor}` }}>
-                              <div className="w-1 h-1 bg-white rounded-full ml-0.5 mt-0.5" />
-                            </div>
-                          </div>
-                        ))}
+                <div className="w-full h-[320px] rounded-2xl overflow-hidden border-2 border-slate-200 bg-gradient-to-b from-slate-100 to-slate-50 shadow-inner">
+                  <Suspense fallback={
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div className="text-center">
+                        <Sparkles className="w-8 h-8 mx-auto text-blue-400 animate-pulse mb-2" />
+                        <p className="text-xs text-muted-foreground">Loading 3D Preview...</p>
                       </div>
-                      <div className="mt-2 rounded-full bg-black/10" style={{ width: `${6 + noseSize / 20}px`, height: `${8 + noseSize / 15}px` }} />
-                      <div className="mt-2 rounded-full bg-pink-400/70" style={{ width: `${16 + mouthWidth / 8}px`, height: '6px' }} />
                     </div>
-                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] font-medium bg-white/80 px-2 py-0.5 rounded-full shadow-sm">
-                      {gender === 'male' ? '👨' : '👩'} 3D Preview
-                    </div>
-                    {/* Light reflection effect */}
-                    <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-white/20 to-transparent pointer-events-none" />
-                  </motion.div>
+                  }>
+                    <Canvas
+                      camera={{ position: [0, 1.5, 6], fov: 35 }}
+                      style={{ width: '100%', height: '100%' }}
+                    >
+                      <ambientLight intensity={0.6} />
+                      <directionalLight position={[5, 5, 5]} intensity={0.8} />
+                      <directionalLight position={[-3, 3, -3]} intensity={0.3} />
+                      <Avatar3DPreview config={avatarConfig} />
+                      <OrbitControls
+                        enableZoom={false}
+                        enablePan={false}
+                        minPolarAngle={Math.PI / 4}
+                        maxPolarAngle={Math.PI / 1.5}
+                        autoRotate
+                        autoRotateSpeed={1.5}
+                      />
+                    </Canvas>
+                  </Suspense>
                 </div>
                 <div className="flex items-center gap-2 mt-2">
                   <Eye className="w-3 h-3 text-muted-foreground" />
-                  <p className="text-[10px] text-muted-foreground">Live 3D Preview — Auto Rotating</p>
+                  <p className="text-[10px] text-muted-foreground">Interactive 3D Preview — Drag to rotate</p>
                 </div>
-                <Button variant="ghost" size="sm" className="mt-1 h-6 text-[10px]" onClick={() => setRotateY(0)}>
-                  <RotateCcw className="w-3 h-3 mr-1" /> Reset View
-                </Button>
               </div>
             </div>
 

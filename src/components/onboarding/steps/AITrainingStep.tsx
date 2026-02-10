@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Brain, FileText, Globe, Mic, Plus, Upload, HelpCircle, Trash2, Check, Link2, Tag, Square, Circle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,7 +26,7 @@ const AITrainingStep: React.FC<AITrainingStepProps> = ({ onComplete }) => {
   const { user } = useAuth();
   const { hasFeature, limits, getRemainingQAPairs, getRemainingDocuments, canAddQAPair } = usePlanFeatures();
   const { toast } = useToast();
-  const { qaPairs: existingPairs, addQAPair: saveQAPair, deleteQAPair, isLoading: qaLoading } = useQAPairs();
+  const { qaPairs: existingPairs, addQAPair: saveQAPair, deleteQAPair, isLoading: qaLoading, fetchQAPairs } = useQAPairs();
   const { documents, fetchDocuments, uploadDocument, deleteDocument, isLoading: docsLoading } = useTrainingDocuments();
   const { webData, fetchWebData, scrapeUrl, deleteWebData, isScraping } = useWebTraining();
   const { recordings, fetchRecordings, startNewRecording, stopCurrentRecording, uploadVoiceFile, deleteRecording, isRecording, recordingDuration, formatDuration } = useVoiceRecordings();
@@ -53,6 +53,24 @@ const AITrainingStep: React.FC<AITrainingStepProps> = ({ onComplete }) => {
     fetchWebData();
     fetchRecordings();
   }, [fetchDocuments, fetchWebData, fetchRecordings]);
+
+  // Realtime subscription for Q&A pairs
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel('onboarding-qa-sync')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'qa_pairs',
+        filter: `user_id=eq.${user.id}`,
+      }, () => {
+        fetchQAPairs();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user, fetchQAPairs]);
 
   // Load AI name
   useEffect(() => {
