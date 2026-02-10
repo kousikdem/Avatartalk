@@ -15,7 +15,7 @@ import { AuthProvider, useAuth } from "@/context/auth";
 // Lazy load all page components for code splitting
 const DashboardSidebar = lazy(() => import("@/components/DashboardSidebar"));
 const DashboardPageLayout = lazy(() => import("@/components/DashboardPageLayout"));
-import OnboardingFlow from "./components/onboarding/OnboardingFlow";
+const OnboardingFlow = lazy(() => import("./components/onboarding/OnboardingFlow"));
 const Index = lazy(() => import("./pages/Index"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const AvatarPage = lazy(() => import("./pages/AvatarPage"));
