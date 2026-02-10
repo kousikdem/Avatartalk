@@ -6,7 +6,7 @@ import { useAuth } from '@/context/auth';
 import { ONBOARDING_STEPS } from '@/hooks/useOnboarding';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface OnboardingProgressButtonProps {
   onOpenOnboarding?: () => void;
@@ -17,8 +17,9 @@ const OnboardingProgressButton: React.FC<OnboardingProgressButtonProps> = ({ onO
   const [progress, setProgress] = useState<{ completed: number; total: number; isCompleted: boolean } | null>(null);
 
   useEffect(() => {
+    if (!user) return;
+
     const fetchProgress = async () => {
-      if (!user) return;
       const { data } = await supabase
         .from('user_onboarding')
         .select('completed_steps, is_completed')
@@ -27,20 +28,32 @@ const OnboardingProgressButton: React.FC<OnboardingProgressButtonProps> = ({ onO
 
       if (data) {
         const completed = (data.completed_steps as string[]) || [];
-        setProgress({
-          completed: completed.length,
-          total: ONBOARDING_STEPS.length,
-          isCompleted: data.is_completed || false,
-        });
+        setProgress({ completed: completed.length, total: ONBOARDING_STEPS.length, isCompleted: data.is_completed || false });
       } else {
         setProgress({ completed: 0, total: ONBOARDING_STEPS.length, isCompleted: false });
       }
     };
+
     fetchProgress();
-    
-    // Refetch every 5s when modal might be open
-    const interval = setInterval(fetchProgress, 5000);
-    return () => clearInterval(interval);
+
+    // Realtime subscription for instant updates
+    const channel = supabase
+      .channel('onboarding-progress')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'user_onboarding',
+        filter: `user_id=eq.${user.id}`,
+      }, (payload: any) => {
+        const data = payload.new;
+        if (data) {
+          const completed = (data.completed_steps as string[]) || [];
+          setProgress({ completed: completed.length, total: ONBOARDING_STEPS.length, isCompleted: data.is_completed || false });
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [user]);
 
   if (!progress) return null;
@@ -58,12 +71,9 @@ const OnboardingProgressButton: React.FC<OnboardingProgressButtonProps> = ({ onO
           onClick={onOpenOnboarding}
           className={cn(
             "relative h-9 gap-1.5 px-2 rounded-full transition-all duration-300",
-            isComplete 
-              ? "hover:bg-green-50 text-green-700" 
-              : "hover:bg-blue-50 text-blue-700"
+            isComplete ? "hover:bg-green-50 text-green-700" : "hover:bg-blue-50 text-blue-700"
           )}
         >
-          {/* SVG circular progress */}
           <div className="relative w-8 h-8 shrink-0">
             <svg className="absolute inset-0 w-8 h-8 -rotate-90" viewBox="0 0 36 36">
               <circle cx="18" cy="18" r="14" fill="none" stroke="hsl(var(--muted))" strokeWidth="2.5" />
@@ -85,11 +95,7 @@ const OnboardingProgressButton: React.FC<OnboardingProgressButtonProps> = ({ onO
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
               {isComplete ? (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', damping: 10 }}
-                >
+                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 10 }}>
                   <Rocket className="w-3.5 h-3.5 text-green-600" />
                 </motion.div>
               ) : (
@@ -97,23 +103,18 @@ const OnboardingProgressButton: React.FC<OnboardingProgressButtonProps> = ({ onO
               )}
             </div>
           </div>
-          {/* Text label */}
           <span className="hidden sm:inline text-[11px] font-semibold whitespace-nowrap">
-            {isComplete ? 'Setup ✓' : 'Quick Setup'}
+            {isComplete ? 'Setup ✓' : `Quick Setup ${percentage}%`}
           </span>
           {!isComplete && (
-            <motion.div
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="hidden sm:block"
-            >
+            <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }} className="hidden sm:block">
               <Sparkles className="w-3 h-3 text-purple-500" />
             </motion.div>
           )}
         </Button>
       </TooltipTrigger>
       <TooltipContent side="bottom">
-        <p className="text-xs">{isComplete ? 'Quick Setup — Complete ✓' : `Quick Setup — ${percentage}% complete`}</p>
+        <p className="text-xs">{isComplete ? 'Quick Setup — Complete ✓' : `Quick Setup — ${percentage}% complete (${progress.completed}/${progress.total} steps)`}</p>
       </TooltipContent>
     </Tooltip>
   );
