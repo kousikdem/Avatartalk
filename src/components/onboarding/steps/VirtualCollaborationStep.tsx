@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Video, Users, Calendar, Plus, ArrowRight, X, Loader2 } from 'lucide-react';
+import { Video, Users, Calendar, Plus, ArrowRight, X, Loader2, Handshake, MonitorPlay } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
-import PlanBadge from '@/components/PlanBadge';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -18,10 +17,16 @@ interface VirtualCollaborationStepProps {
   onComplete: () => void;
 }
 
+const COLLAB_TYPES = [
+  { value: 'one_to_one', label: '1:1 Call', icon: Video, description: 'Personal video session', color: 'text-purple-600 bg-purple-50' },
+  { value: 'webinar', label: 'Webinar', icon: MonitorPlay, description: 'Group live session', color: 'text-blue-600 bg-blue-50' },
+  { value: 'brand_collaboration', label: 'Brand Collab', icon: Handshake, description: 'Brand partnership', color: 'text-amber-600 bg-amber-50' },
+];
+
 const VirtualCollaborationStep: React.FC<VirtualCollaborationStepProps> = ({ onComplete }) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { canHostVirtualMeetings, hasFeature, limits, canAddCollaboration, getRemainingCollaborations } = usePlanFeatures();
+  const { limits, canAddCollaboration, getRemainingCollaborations } = usePlanFeatures();
 
   const [collaborations, setCollaborations] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -35,6 +40,13 @@ const VirtualCollaborationStep: React.FC<VirtualCollaborationStepProps> = ({ onC
   const currentCount = collaborations.length;
   const remaining = getRemainingCollaborations(currentCount);
   const canAdd = canAddCollaboration(currentCount);
+
+  const getTypeIcon = (type: string) => {
+    const t = COLLAB_TYPES.find(c => c.value === type);
+    if (!t) return <Video className="w-3.5 h-3.5" />;
+    const Icon = t.icon;
+    return <Icon className="w-3.5 h-3.5" />;
+  };
 
   // Load existing
   React.useEffect(() => {
@@ -85,6 +97,19 @@ const VirtualCollaborationStep: React.FC<VirtualCollaborationStepProps> = ({ onC
       <CardContent className="p-4 sm:p-6 space-y-4">
         <p className="text-xs text-muted-foreground text-center">Offer paid video sessions and connect with your audience</p>
 
+        {/* Collab type icons legend */}
+        <div className="flex items-center justify-center gap-3">
+          {COLLAB_TYPES.map(t => {
+            const Icon = t.icon;
+            return (
+              <div key={t.value} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium ${t.color}`}>
+                <Icon className="w-3 h-3" />
+                {t.label}
+              </div>
+            );
+          })}
+        </div>
+
         <div className="flex items-center justify-between">
           <Badge variant="outline" className="text-xs">{currentCount} / {limits.collaborations === -1 ? '∞' : limits.collaborations} collaborations</Badge>
           <span className="text-[10px] text-muted-foreground">{remaining === 'unlimited' ? 'Unlimited' : `${remaining} remaining`}</span>
@@ -95,9 +120,12 @@ const VirtualCollaborationStep: React.FC<VirtualCollaborationStepProps> = ({ onC
           <div className="space-y-1.5 max-h-28 overflow-y-auto">
             {collaborations.map((c: any) => (
               <div key={c.id} className="flex items-center justify-between p-2 bg-purple-50/50 rounded-lg border border-purple-100">
-                <div className="min-w-0">
-                  <p className="text-xs font-medium truncate">{c.title}</p>
-                  <p className="text-[9px] text-muted-foreground">{c.product_type} · {c.duration_mins}min · ₹{c.price}</p>
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="shrink-0">{getTypeIcon(c.product_type)}</div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium truncate">{c.title}</p>
+                    <p className="text-[9px] text-muted-foreground">{c.product_type} · {c.duration_mins}min · ₹{c.price}</p>
+                  </div>
                 </div>
               </div>
             ))}
@@ -119,9 +147,14 @@ const VirtualCollaborationStep: React.FC<VirtualCollaborationStepProps> = ({ onC
                 <Select value={collabType} onValueChange={setCollabType}>
                   <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="one_to_one">1:1 Call</SelectItem>
-                    <SelectItem value="webinar">Webinar</SelectItem>
-                    <SelectItem value="brand_collaboration">Brand</SelectItem>
+                    {COLLAB_TYPES.map(t => {
+                      const Icon = t.icon;
+                      return (
+                        <SelectItem key={t.value} value={t.value}>
+                          <span className="flex items-center gap-1.5"><Icon className="w-3 h-3" />{t.label}</span>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
@@ -142,7 +175,7 @@ const VirtualCollaborationStep: React.FC<VirtualCollaborationStepProps> = ({ onC
           <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
             <Button size="lg" className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white shadow-lg text-sm font-semibold h-12"
               onClick={() => setShowForm(true)} disabled={!canAdd}>
-              <Plus className="w-5 h-5 mr-2" /> Add Collaboration ({remaining === 'unlimited' ? '∞' : remaining} available)
+              <Calendar className="w-5 h-5 mr-2" /> Add Collaboration ({remaining === 'unlimited' ? '∞' : remaining} available)
             </Button>
           </motion.div>
         )}
