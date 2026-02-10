@@ -35,17 +35,17 @@ const DashboardHeaderStrip: React.FC = () => {
     display_name: string | null;
     profile_pic_url: string | null;
     email: string | null;
-  } | null>(null);
+  } | null>(user ? { username: null, display_name: null, profile_pic_url: null, email: user.email || null } : null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!user) return;
-      const { data } = await supabase.from('profiles').select('username, display_name, profile_pic_url').eq('id', user.id).single();
+    if (!user) return;
+    // Set email immediately from auth context, fetch profile in background
+    setUserProfile(prev => prev || { username: null, display_name: null, profile_pic_url: null, email: user.email || null });
+    supabase.from('profiles').select('username, display_name, profile_pic_url').eq('id', user.id).single().then(({ data }) => {
       if (data) {
         setUserProfile({ ...data, email: user.email || null });
       }
-    };
-    fetchData();
+    });
   }, [user]);
 
   const handleLogout = async () => {

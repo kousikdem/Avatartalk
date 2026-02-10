@@ -42,11 +42,12 @@ const RefundPolicyPage = lazy(() => import("./pages/RefundPolicyPage"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 10, // 10 minutes - longer cache
+      staleTime: 1000 * 60 * 15, // 15 minutes - serve cached data instantly
       gcTime: 1000 * 60 * 60, // 1 hour cache retention
       refetchOnWindowFocus: false,
-      refetchOnMount: false, // Don't refetch on mount for faster navigation
-      retry: 0, // No retries for faster failure handling
+      refetchOnMount: 'always', // Always mount but serve stale cache first (no blocking)
+      retry: 1, // Single retry for transient failures
+      networkMode: 'offlineFirst', // Show cached data immediately, refetch in background
     },
   },
 });

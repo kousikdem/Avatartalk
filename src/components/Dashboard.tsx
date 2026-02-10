@@ -111,6 +111,7 @@ const Dashboard = () => {
     }
   };
 
+  // Always show the page shell - use inline skeletons for data sections only
   const showProfileSkeletons = loading && !profileData;
 
   const mobileNavItems = [
