@@ -136,11 +136,12 @@ export const useUserPlatformSubscription = () => {
 
   const fetchSubscription = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
         setLoading(false);
         return;
       }
+      const user = session.user;
 
       const { data, error } = await supabase
         .from('user_platform_subscriptions')

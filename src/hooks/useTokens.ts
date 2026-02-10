@@ -42,10 +42,11 @@ export const useTokens = () => {
 
   const fetchTokenBalance = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
         return;
       }
+      const user = session.user;
 
       const { data, error } = await supabase
         .from('profiles')
@@ -81,8 +82,9 @@ export const useTokens = () => {
 
   const fetchEvents = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+      const user = session.user;
 
       const { data, error } = await supabase
         .from('token_events')
@@ -100,8 +102,9 @@ export const useTokens = () => {
 
   const fetchDailyUsage = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+      const user = session.user;
 
       const { data, error } = await supabase
         .from('daily_token_usage')
@@ -231,8 +234,9 @@ export const useTokens = () => {
 
     // Subscribe to token balance changes
     const setupSubscription = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+      const user = session.user;
 
       const channel = supabase
         .channel('token-balance-changes')

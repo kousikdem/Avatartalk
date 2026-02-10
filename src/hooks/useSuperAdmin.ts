@@ -67,12 +67,13 @@ export const useSuperAdmin = () => {
 
   const checkSuperAdminStatus = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
         setIsSuperAdmin(false);
         setLoading(false);
         return;
       }
+      const user = session.user;
 
       const { data, error } = await supabase
         .from('user_roles')

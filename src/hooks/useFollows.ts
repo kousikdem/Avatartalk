@@ -47,9 +47,9 @@ export const useFollows = (userId?: string): UseFollowsReturn => {
       const queryUserId = targetUserId || cachedUserIdRef.current;
       
       if (!queryUserId) {
-        const { data: currentUser } = await supabase.auth.getUser();
-        if (currentUser.user?.id) {
-          cachedUserIdRef.current = currentUser.user.id;
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.id) {
+          cachedUserIdRef.current = session.user.id;
         } else {
           setLoading(false);
           return;
@@ -183,7 +183,7 @@ export const useFollows = (userId?: string): UseFollowsReturn => {
 
     // Realtime subscription
     const setupSubscription = async () => {
-      const uid = userId || (await supabase.auth.getUser()).data.user?.id;
+      const uid = userId || (await supabase.auth.getSession()).data.session?.user?.id;
       if (!uid) return;
 
       const channel = supabase

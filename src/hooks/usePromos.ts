@@ -228,9 +228,9 @@ export const usePromos = () => {
 
   useEffect(() => {
     const fetchUserPromos = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        fetchPromos(user.id);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        fetchPromos(session.user.id);
       }
     };
 

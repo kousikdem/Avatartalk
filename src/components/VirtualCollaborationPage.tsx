@@ -29,6 +29,7 @@ import TokenDisplay from './TokenDisplay';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { LimitReachedBanner } from '@/components/LockedFeatureOverlay';
 import { GenericPageSkeleton } from '@/components/ui/page-skeletons';
+import { useAuth } from '@/context/auth';
 
 type ViewMode = 'grid' | 'list';
 type Currency = 'INR' | 'USD' | 'EUR' | 'GBP';
@@ -79,15 +80,8 @@ const VirtualCollaborationPage = () => {
     disconnectIntegration
   } = useVirtualCollaborations();
 
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id || null);
-    };
-    fetchUser();
-  }, []);
+  const { user } = useAuth();
+  const currentUserId = user?.id || null;
 
   // Calculate statistics
   const myProducts = products.filter(p => p.user_id === currentUserId);

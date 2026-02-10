@@ -26,6 +26,7 @@ import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { LimitReachedBanner } from '@/components/LockedFeatureOverlay';
 import { FastPageLoader, PriorityLoader, StatCardSkeleton, ProductCardSkeleton } from '@/components/ui/fast-loading';
 import { ProductsSkeleton } from '@/components/ui/page-skeletons';
+import { useAuth } from '@/context/auth';
 
 type ViewMode = 'grid' | 'list';
 type Currency = 'INR' | 'USD' | 'EUR' | 'GBP';
@@ -53,7 +54,8 @@ const ProductsPageEnhanced = () => {
   const { products, isLoading, deleteProduct, fetchProducts } = useProducts();
   const { orders } = useOrders();
   const { toast } = useToast();
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const { user } = useAuth();
+  const currentUserId = user?.id || null;
   
   // Plan features
   const { 
@@ -63,14 +65,6 @@ const ProductsPageEnhanced = () => {
     effectivePlanKey,
     hasFeature
   } = usePlanFeatures();
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id || null);
-    };
-    fetchUser();
-  }, []);
 
   // Real-time subscription for orders and products
   useEffect(() => {
@@ -241,17 +235,7 @@ const ProductsPageEnhanced = () => {
     navigate('/settings/promo');
   };
 
-  // Show skeleton instantly while loading - design first
-  if (isLoading && !currentUserId) {
-    return <ProductsSkeleton />;
-  }
-
   return (
-    <FastPageLoader 
-      isLoading={isLoading} 
-      message="Loading products..."
-      skeleton={<ProductsSkeleton />}
-    >
     <div className="min-h-screen bg-background p-4 sm:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Limit Reached Banner */}
@@ -620,7 +604,7 @@ const ProductsPageEnhanced = () => {
         />
       </div>
     </div>
-    </FastPageLoader>
+    
   );
 };
 

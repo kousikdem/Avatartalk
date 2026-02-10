@@ -70,8 +70,8 @@ export const useVirtualCollaborations = () => {
 
   const fetchProducts = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
 
       // Fetch virtual collaboration products from events table
       const { data, error } = await supabase
@@ -116,8 +116,9 @@ export const useVirtualCollaborations = () => {
 
   const fetchBookings = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+      const user = session.user;
 
       // For now, use orders table filtered by virtual collaboration products
       const { data, error } = await supabase
@@ -161,8 +162,9 @@ export const useVirtualCollaborations = () => {
 
   const fetchIntegrations = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+      const user = session.user;
 
       const { data, error } = await supabase
         .from('host_integrations')
