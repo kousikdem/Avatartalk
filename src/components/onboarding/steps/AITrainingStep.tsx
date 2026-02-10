@@ -49,10 +49,11 @@ const AITrainingStep: React.FC<AITrainingStepProps> = ({ onComplete }) => {
 
   // Load all data on mount
   useEffect(() => {
+    fetchQAPairs();
     fetchDocuments();
     fetchWebData();
     fetchRecordings();
-  }, [fetchDocuments, fetchWebData, fetchRecordings]);
+  }, [fetchQAPairs, fetchDocuments, fetchWebData, fetchRecordings]);
 
   // Realtime subscription for Q&A pairs
   useEffect(() => {
@@ -196,8 +197,8 @@ const AITrainingStep: React.FC<AITrainingStepProps> = ({ onComplete }) => {
                 <Plus className="w-3.5 h-3.5 mr-1.5" /> Add Q&A Pair
               </Button>
             </div>
-            {existingPairs && existingPairs.length > 0 && (
-              <div className="space-y-1.5 max-h-40 overflow-y-auto">
+           {existingPairs && existingPairs.length > 0 && (
+              <div className="space-y-1.5 max-h-60 overflow-y-auto">
                 {existingPairs.map((pair: any) => (
                   <div key={pair.id} className="p-2 bg-blue-50/50 rounded-lg border border-blue-100 flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">

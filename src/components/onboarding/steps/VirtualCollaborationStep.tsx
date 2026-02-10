@@ -97,14 +97,17 @@ const VirtualCollaborationStep: React.FC<VirtualCollaborationStepProps> = ({ onC
       <CardContent className="p-4 sm:p-6 space-y-4">
         <p className="text-xs text-muted-foreground text-center">Offer paid video sessions and connect with your audience</p>
 
-        {/* Collab type icons legend */}
-        <div className="flex items-center justify-center gap-3">
+        {/* Collab types row-by-row */}
+        <div className="space-y-1.5">
           {COLLAB_TYPES.map(t => {
             const Icon = t.icon;
             return (
-              <div key={t.value} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium ${t.color}`}>
-                <Icon className="w-3 h-3" />
-                {t.label}
+              <div key={t.value} className={`flex items-center gap-3 px-3 py-2 rounded-lg border ${t.color}`}>
+                <Icon className="w-5 h-5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold">{t.label}</p>
+                  <p className="text-[10px] opacity-70">{t.description}</p>
+                </div>
               </div>
             );
           })}
