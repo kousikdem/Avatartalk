@@ -191,14 +191,16 @@ export const useNotifications = (userId?: string) => {
   useEffect(() => {
     fetchNotifications();
 
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
     const setupSubscription = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       const targetUserId = userId || user?.id;
       
       if (!targetUserId) return;
 
-      const channel = supabase
-        .channel('notifications-changes')
+      channel = supabase
+        .channel(`notifications-${targetUserId}`)
         .on(
           'postgres_changes',
           {
@@ -251,13 +253,15 @@ export const useNotifications = (userId?: string) => {
           }
         )
         .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
     };
 
     setupSubscription();
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, [userId, fetchNotifications, toast]);
 
   // Filter helpers
