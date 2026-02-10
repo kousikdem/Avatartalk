@@ -184,7 +184,8 @@ const AdvancedNotificationManager = () => {
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       
       const { error } = await supabase
         .from('push_notifications')
@@ -229,10 +230,25 @@ const AdvancedNotificationManager = () => {
   const handleSendPushNotification = async (id: string) => {
     try {
       const pushNotif = pushNotifications.find(p => p.id === id);
-      if (!pushNotif) return;
+      if (!pushNotif) {
+        toast({ title: 'Error', description: 'Push notification not found', variant: 'destructive' });
+        return;
+      }
 
-      // Create notifications for all users
-      const notifications = users.map(user => ({
+      // Fetch ALL user IDs fresh (super admin can see all profiles)
+      const { data: allUsers, error: usersError } = await supabase
+        .from('profiles')
+        .select('id');
+
+      if (usersError) throw usersError;
+
+      if (!allUsers || allUsers.length === 0) {
+        toast({ title: 'Error', description: 'No users found to send notifications to', variant: 'destructive' });
+        return;
+      }
+
+      // Create notifications for all users in batches of 100
+      const notifications = allUsers.map(user => ({
         user_id: user.id,
         type: pushNotif.notification_type,
         title: pushNotif.title,
@@ -241,14 +257,21 @@ const AdvancedNotificationManager = () => {
         link_text: pushNotif.link_text,
         data: { push_notification_id: id, broadcast: true },
         read: false,
-        priority: 'high'
+        priority: 'high' as const
       }));
 
-      const { error: notifError } = await supabase
-        .from('notifications')
-        .insert(notifications);
+      // Insert in batches to avoid payload limits
+      const batchSize = 100;
+      let totalSent = 0;
+      for (let i = 0; i < notifications.length; i += batchSize) {
+        const batch = notifications.slice(i, i + batchSize);
+        const { error: notifError } = await supabase
+          .from('notifications')
+          .insert(batch);
 
-      if (notifError) throw notifError;
+        if (notifError) throw notifError;
+        totalSent += batch.length;
+      }
 
       // Update push notification status
       const { error: updateError } = await supabase
@@ -256,19 +279,19 @@ const AdvancedNotificationManager = () => {
         .update({
           status: 'sent',
           sent_at: new Date().toISOString(),
-          sent_count: users.length
+          sent_count: totalSent
         })
         .eq('id', id);
 
       if (updateError) throw updateError;
 
-      toast({ title: `Notification sent to ${users.length} users` });
+      toast({ title: `Notification sent to ${totalSent} users` });
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending push notification:', error);
       toast({
         title: 'Error',
-        description: 'Failed to send push notification',
+        description: `Failed to send: ${error?.message || 'Unknown error'}`,
         variant: 'destructive'
       });
     }
