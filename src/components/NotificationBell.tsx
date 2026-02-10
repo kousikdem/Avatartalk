@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useTransition } from 'react';
 import { Bell, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +39,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
 }) => {
   const { notifications, unreadCount, markAsRead, loading } = useNotifications();
   const navigate = useNavigate();
+  const [, startTransition] = useTransition();
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -120,34 +121,40 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
     }
   };
 
-  const handleNotificationClick = (notification: Notification) => {
+  const handleNotificationClick = useCallback((notification: Notification) => {
     markAsRead(notification.id);
+    
+    const navigateTo = (path: string) => {
+      startTransition(() => {
+        navigate(path);
+      });
+    };
     
     // If notification has a link, open it
     if (notification.link_url) {
       if (notification.link_url.startsWith('http')) {
         window.open(notification.link_url, '_blank');
       } else {
-        navigate(notification.link_url);
+        navigateTo(notification.link_url);
       }
       return;
     }
     
     // Navigate based on notification type
     if (notification.data?.postId) {
-      navigate(`/settings/feed`);
+      navigateTo('/settings/feed');
     } else if (notification.data?.followerId) {
-      navigate(`/settings/followers`);
+      navigateTo('/settings/followers');
     } else if (notification.data?.conversationId) {
-      navigate(`/settings/chat`);
+      navigateTo('/settings/chat');
     } else if (notification.data?.orderId) {
-      navigate(`/settings/orders`);
+      navigateTo('/settings/orders');
     } else if (notification.data?.productId) {
-      navigate(`/settings/products`);
+      navigateTo('/settings/products');
     } else {
-      navigate('/settings/notifications');
+      navigateTo('/settings/notifications');
     }
-  };
+  }, [markAsRead, navigate, startTransition]);
 
   const recentNotifications = notifications.slice(0, 5);
 
