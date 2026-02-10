@@ -247,10 +247,17 @@ const AdvancedNotificationManager = () => {
         return;
       }
 
+      // Map notification_type to valid DB constraint values
+      // DB allows: follow, like, comment, mention, system, event
+      const validTypes = ['follow', 'like', 'comment', 'mention', 'system', 'event'];
+      const dbType = validTypes.includes(pushNotif.notification_type) 
+        ? pushNotif.notification_type 
+        : 'system';
+
       // Create notifications for all users in batches of 100
       const notifications = allUsers.map(user => ({
         user_id: user.id,
-        type: pushNotif.notification_type,
+        type: dbType,
         title: pushNotif.title,
         message: pushNotif.message,
         link_url: pushNotif.link_url,
