@@ -226,20 +226,20 @@ const AvatarStep: React.FC<AvatarStepProps> = ({ onComplete }) => {
                     </div>
                   }>
                     <Canvas
-                      camera={{ position: [0, 0.8, 4.5], fov: 45 }}
+                      camera={{ position: [0, 0, 8], fov: 40 }}
                       style={{ width: '100%', height: '100%' }}
                     >
                       <ambientLight intensity={0.6} />
                       <directionalLight position={[5, 5, 5]} intensity={0.8} />
                       <directionalLight position={[-3, 3, -3]} intensity={0.3} />
-                      <group position={[0, -0.8, 0]}>
+                      <group position={[0, -1.2, 0]}>
                         <Avatar3DPreview config={avatarConfig} />
                       </group>
                       <OrbitControls
                         enableZoom={true}
                         enablePan={false}
-                        minDistance={2.5}
-                        maxDistance={7}
+                        minDistance={4}
+                        maxDistance={12}
                         minPolarAngle={Math.PI / 6}
                         maxPolarAngle={Math.PI / 1.3}
                         autoRotate
