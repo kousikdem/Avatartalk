@@ -29,75 +29,136 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, profileUrl, us
   const shareText = `Hey! Check out ${name}'s AI-powered bio link on AvatarTalk.Co 🚀✨`;
 
   // Generate branded QR code with logo overlay
+  const drawBranding = (ctx: CanvasRenderingContext2D, size: number) => {
+    const centerX = size / 2;
+    const centerY = size / 2;
+    const logoRadius = 38;
+
+    // White circle background
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, logoRadius + 6, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+
+    // Gradient circle for logo
+    const gradient = ctx.createLinearGradient(
+      centerX - logoRadius, centerY - logoRadius,
+      centerX + logoRadius, centerY + logoRadius
+    );
+    gradient.addColorStop(0, '#3b82f6');
+    gradient.addColorStop(0.5, '#8b5cf6');
+    gradient.addColorStop(1, '#4f46e5');
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, logoRadius, 0, Math.PI * 2);
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    // Draw "AT" text as logo
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 28px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('AT', centerX, centerY - 2);
+
+    // Draw sparkle
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = '14px system-ui';
+    ctx.fillText('✦', centerX + 22, centerY - 22);
+
+    // Bottom branding text
+    ctx.fillStyle = '#64748b';
+    ctx.font = '11px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('AvatarTalk.Co', centerX, size - 10);
+  };
+
   const generateBrandedQR = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const qrImg = new Image();
-    qrImg.crossOrigin = 'anonymous';
-    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(profileUrl)}&color=1e293b&bgcolor=ffffff&margin=2`;
-    
-    qrImg.onload = () => {
-      const size = 400;
-      canvas.width = size;
-      canvas.height = size;
+    const size = 400;
+    canvas.width = size;
+    canvas.height = size;
 
-      // Draw rounded background
+    // Draw white background immediately
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, size, size);
+
+    const drawFallbackQR = () => {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, size, size);
+
+      const cellSize = 10;
+      const margin = 40;
+      const cells = Math.floor((size - margin * 2) / cellSize);
+
+      let seed = 0;
+      for (let i = 0; i < profileUrl.length; i++) {
+        seed = ((seed << 5) - seed + profileUrl.charCodeAt(i)) | 0;
+      }
+      const seededRandom = (s: number) => {
+        const x = Math.sin(s) * 10000;
+        return x - Math.floor(x);
+      };
+
+      const drawFinder = (x: number, y: number) => {
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(x, y, 7 * cellSize, 7 * cellSize);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(x + cellSize, y + cellSize, 5 * cellSize, 5 * cellSize);
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(x + 2 * cellSize, y + 2 * cellSize, 3 * cellSize, 3 * cellSize);
+      };
+
+      drawFinder(margin, margin);
+      drawFinder(margin + (cells - 7) * cellSize, margin);
+      drawFinder(margin, margin + (cells - 7) * cellSize);
+
+      for (let row = 0; row < cells; row++) {
+        for (let col = 0; col < cells; col++) {
+          if ((row < 8 && col < 8) || (row < 8 && col >= cells - 8) || (row >= cells - 8 && col < 8)) continue;
+          const centerCell = cells / 2;
+          if (Math.abs(row - centerCell) < 5 && Math.abs(col - centerCell) < 5) continue;
+          if (seededRandom(seed + row * cells + col) > 0.5) {
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(margin + col * cellSize, margin + row * cellSize, cellSize, cellSize);
+          }
+        }
+      }
+
+      drawBranding(ctx, size);
+      setQrReady(true);
+    };
+
+    const qrImg = new Image();
+
+    qrImg.onload = () => {
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
       ctx.roundRect(0, 0, size, size, 16);
       ctx.fill();
-
-      // Draw QR code
       ctx.drawImage(qrImg, 0, 0, size, size);
-
-      // Draw center logo area (white circle + gradient icon)
-      const centerX = size / 2;
-      const centerY = size / 2;
-      const logoRadius = 38;
-
-      // White circle background
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, logoRadius + 6, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffffff';
-      ctx.fill();
-
-      // Gradient circle for logo
-      const gradient = ctx.createLinearGradient(
-        centerX - logoRadius, centerY - logoRadius,
-        centerX + logoRadius, centerY + logoRadius
-      );
-      gradient.addColorStop(0, '#3b82f6');
-      gradient.addColorStop(0.5, '#8b5cf6');
-      gradient.addColorStop(1, '#4f46e5');
-      
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, logoRadius, 0, Math.PI * 2);
-      ctx.fillStyle = gradient;
-      ctx.fill();
-
-      // Draw "AT" text as logo
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 28px system-ui, -apple-system, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('AT', centerX, centerY - 2);
-
-      // Draw sparkle
-      ctx.fillStyle = '#fbbf24';
-      ctx.font = '14px system-ui';
-      ctx.fillText('✦', centerX + 22, centerY - 22);
-
-      // Bottom branding text
-      ctx.fillStyle = '#64748b';
-      ctx.font = '11px system-ui, -apple-system, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('AvatarTalk.Co', centerX, size - 10);
-
+      drawBranding(ctx, size);
       setQrReady(true);
     };
+
+    qrImg.onerror = () => {
+      drawFallbackQR();
+    };
+
+    // Try loading with CORS first, fallback without
+    qrImg.crossOrigin = 'anonymous';
+    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(profileUrl)}&color=1e293b&bgcolor=ffffff&margin=2`;
+
+    // Timeout fallback in case image hangs
+    setTimeout(() => {
+      if (!qrReady) {
+        drawFallbackQR();
+      }
+    }, 5000);
   }, [profileUrl]);
 
   useEffect(() => {
