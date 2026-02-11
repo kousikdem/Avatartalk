@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Logo from './Logo';
+import QRCode from 'qrcode';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -74,7 +75,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, profileUrl, us
     ctx.fillText('AvatarTalk.Co', centerX, size - 10);
   };
 
-  const generateBrandedQR = useCallback(() => {
+  const generateBrandedQR = useCallback(async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -84,69 +85,34 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, profileUrl, us
     canvas.width = size;
     canvas.height = size;
 
-    // Draw QR immediately using canvas fallback (no external dependency)
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, size, size);
+    try {
+      // Generate real QR code instantly using qrcode library
+      await QRCode.toCanvas(canvas, profileUrl, {
+        width: size,
+        margin: 2,
+        color: { dark: '#1e293b', light: '#ffffff' },
+        errorCorrectionLevel: 'H', // High error correction to allow logo overlay
+      });
 
-    const cellSize = 10;
-    const margin = 40;
-    const cells = Math.floor((size - margin * 2) / cellSize);
-
-    let seed = 0;
-    for (let i = 0; i < profileUrl.length; i++) {
-      seed = ((seed << 5) - seed + profileUrl.charCodeAt(i)) | 0;
-    }
-    const seededRandom = (s: number) => {
-      const x = Math.sin(s) * 10000;
-      return x - Math.floor(x);
-    };
-
-    const drawFinder = (x: number, y: number) => {
-      ctx.fillStyle = '#1e293b';
-      ctx.fillRect(x, y, 7 * cellSize, 7 * cellSize);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(x + cellSize, y + cellSize, 5 * cellSize, 5 * cellSize);
-      ctx.fillStyle = '#1e293b';
-      ctx.fillRect(x + 2 * cellSize, y + 2 * cellSize, 3 * cellSize, 3 * cellSize);
-    };
-
-    drawFinder(margin, margin);
-    drawFinder(margin + (cells - 7) * cellSize, margin);
-    drawFinder(margin, margin + (cells - 7) * cellSize);
-
-    for (let row = 0; row < cells; row++) {
-      for (let col = 0; col < cells; col++) {
-        if ((row < 8 && col < 8) || (row < 8 && col >= cells - 8) || (row >= cells - 8 && col < 8)) continue;
-        const centerCell = cells / 2;
-        if (Math.abs(row - centerCell) < 5 && Math.abs(col - centerCell) < 5) continue;
-        if (seededRandom(seed + row * cells + col) > 0.5) {
-          ctx.fillStyle = '#1e293b';
-          ctx.fillRect(margin + col * cellSize, margin + row * cellSize, cellSize, cellSize);
-        }
-      }
-    }
-
-    drawBranding(ctx, size);
-    setQrReady(true);
-    qrReadyRef.current = true;
-
-    // Try to upgrade with real QR from API (non-blocking)
-    const qrImg = new Image();
-    qrImg.onload = () => {
+      // Draw branding on top
+      drawBranding(ctx, size);
+      setQrReady(true);
+      qrReadyRef.current = true;
+    } catch {
+      // Fallback: white canvas with branding
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, size, size);
-      ctx.drawImage(qrImg, 0, 0, size, size);
       drawBranding(ctx, size);
-    };
-    qrImg.crossOrigin = 'anonymous';
-    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(profileUrl)}&color=1e293b&bgcolor=ffffff&margin=2`;
+      setQrReady(true);
+      qrReadyRef.current = true;
+    }
   }, [profileUrl]);
 
   useEffect(() => {
     if (view === 'qr') {
       setQrReady(false);
       qrReadyRef.current = false;
-      requestAnimationFrame(generateBrandedQR);
+      generateBrandedQR();
     }
   }, [view, generateBrandedQR]);
 
@@ -172,43 +138,36 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, profileUrl, us
   const downloadQRCode = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${username}-avatartalk-qr.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      toast({ title: "Downloaded!", description: "QR code saved to your device" });
-    }, 'image/png');
+    const link = document.createElement('a');
+    link.download = `${username}-avatartalk-qr.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    toast({ title: "Downloaded!", description: "QR code saved to your device" });
   };
 
   const shareToSocial = (platform: string) => {
     const encodedUrl = encodeURIComponent(profileUrl);
     const encodedText = encodeURIComponent(shareText);
+    const fullText = encodeURIComponent(`${shareText}\n${profileUrl}`);
     
     const urls: Record<string, string> = {
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedText}`,
       twitter: `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`,
       linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
-      instagram: `https://www.instagram.com`,
+      instagram: `https://www.instagram.com/create/story?url=${encodedUrl}`,
       youtube: `https://www.youtube.com`,
       pinterest: `https://pinterest.com/pin/create/button/?url=${encodedUrl}&description=${encodedText}`,
-      tiktok: `https://www.tiktok.com/share?url=${encodedUrl}`,
+      tiktok: `https://www.tiktok.com/share?url=${encodedUrl}&text=${encodedText}`,
       snapchat: `https://www.snapchat.com/share?url=${encodedUrl}`,
       discord: `https://discord.com/channels/@me`,
-      whatsapp: `https://wa.me/?text=${encodedText}%20${encodedUrl}`,
+      whatsapp: `https://wa.me/?text=${fullText}`,
       telegram: `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`,
       reddit: `https://reddit.com/submit?url=${encodedUrl}&title=${encodedText}`,
-      gmail: `mailto:?subject=${encodeURIComponent(`Check out ${name} on AvatarTalk.Co`)}&body=${encodedText}%0A%0A${encodedUrl}`,
-      messenger: `https://www.messenger.com/t/?link=${encodedUrl}`,
-      line: `https://social-plugins.line.me/lineit/share?url=${encodedUrl}`,
-      viber: `viber://forward?text=${encodedText}%20${encodedUrl}`,
-      threads: `https://www.threads.net/intent/post?text=${encodedText}%20${profileUrl}`,
+      gmail: `mailto:?subject=${encodeURIComponent(`Check out ${name}'s profile on AvatarTalk.Co`)}&body=${encodeURIComponent(`${shareText}\n\n${profileUrl}`)}`,
+      messenger: `https://www.messenger.com/t/?link=${encodedUrl}&text=${encodedText}`,
+      line: `https://social-plugins.line.me/lineit/share?url=${encodedUrl}&text=${encodedText}`,
+      viber: `viber://forward?text=${fullText}`,
+      threads: `https://www.threads.net/intent/post?text=${fullText}`,
     };
     
     if (platform === 'gmail') {
