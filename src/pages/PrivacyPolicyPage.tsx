@@ -158,35 +158,51 @@ const PrivacyPolicyPage = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">9. Third-Party Services</h2>
+            <h2 className="text-2xl font-semibold mb-4">9. About AvatarTalk Turbo</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              AvatarTalk Turbo is our proprietary AI engine, fine-tuned on top of the finest large language models (including Gemini and ChatGPT architectures) specifically optimized for natural language processing and conversational AI experiences. AvatarTalk Turbo powers all AI-driven features on our platform, including:
+            </p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
+              <li><strong>Personalized AI Chat:</strong> Intelligent, context-aware conversations tailored to each creator's profile and training data</li>
+              <li><strong>Voice Chat & Synthesis:</strong> Natural voice generation and real-time voice interaction capabilities</li>
+              <li><strong>Content Understanding:</strong> Advanced comprehension of documents, web content, and custom Q&A data for accurate AI responses</li>
+              <li><strong>Token-Based Processing:</strong> Efficient token consumption model that counts both input and output processing for transparent billing</li>
+            </ul>
+            <p className="text-muted-foreground leading-relaxed mt-4">
+              AvatarTalk Turbo processes your data securely and does not share conversation data with third-party AI providers beyond what is necessary for generating responses. All AI interactions are subject to the data handling practices described in this Privacy Policy.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">10. Third-Party Services</h2>
             <p className="text-muted-foreground leading-relaxed">
               Our Services may integrate with third-party platforms such as Zoom, Google Calendar, Razorpay, and social media networks. These third parties have their own privacy policies, and we encourage you to review them. We are not responsible for the privacy practices of third-party services.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">10. Children's Privacy</h2>
+            <h2 className="text-2xl font-semibold mb-4">11. Children's Privacy</h2>
             <p className="text-muted-foreground leading-relaxed">
               Our Services are not intended for children under 18 years of age. We do not knowingly collect personal information from children. If we become aware that we have collected personal information from a child, we will take steps to delete such information promptly.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">11. International Data Transfers</h2>
+            <h2 className="text-2xl font-semibold mb-4">12. International Data Transfers</h2>
             <p className="text-muted-foreground leading-relaxed">
               Your information may be transferred to and processed in countries other than your country of residence. These countries may have different data protection laws. By using our Services, you consent to the transfer of your information to these countries. We ensure appropriate safeguards are in place to protect your information.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">12. Changes to This Privacy Policy</h2>
+            <h2 className="text-2xl font-semibold mb-4">13. Changes to This Privacy Policy</h2>
             <p className="text-muted-foreground leading-relaxed">
               We may update this Privacy Policy from time to time. We will notify you of any material changes by posting the new Privacy Policy on our website and updating the "Last updated" date. We encourage you to review this Privacy Policy periodically for any changes.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">13. Contact Us</h2>
+            <h2 className="text-2xl font-semibold mb-4">14. Contact Us</h2>
             <p className="text-muted-foreground leading-relaxed">
               If you have any questions or concerns about this Privacy Policy or our data practices, please contact us at:
             </p>
@@ -198,7 +214,7 @@ const PrivacyPolicyPage = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">14. Grievance Officer</h2>
+            <h2 className="text-2xl font-semibold mb-4">15. Grievance Officer</h2>
             <p className="text-muted-foreground leading-relaxed">
               In accordance with the Information Technology Act, 2000 and rules made thereunder, the name and contact details of the Grievance Officer are provided below:
             </p>
