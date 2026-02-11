@@ -123,7 +123,7 @@ const DashboardHeaderStrip: React.FC = () => {
         </div>
       </div>
 
-      <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} profileUrl={profileUrl} username={userProfile?.username || 'user'} />
+      <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} profileUrl={profileUrl} username={userProfile?.username || 'user'} displayName={userProfile?.display_name || undefined} />
 
       {showOnboarding && (
         <OnboardingFlow isOpen={showOnboarding} onClose={() => setShowOnboarding(false)} isModal />
