@@ -209,7 +209,7 @@ const TokenPurchaseAddon = ({ currSymbol }: { currSymbol: string }) => {
             <p className="text-3xl font-bold text-amber-600">
               {formatPrice(priceInINR)}
             </p>
-            <p className="text-xs text-muted-foreground">1M tokens = {formatPrice(pricePerMillion)}</p>
+            <p className="text-xs text-muted-foreground">Powered by AvatarTalk Turbo</p>
           </div>
           <Button 
             onClick={handlePurchase} 

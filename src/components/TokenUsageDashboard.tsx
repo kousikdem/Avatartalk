@@ -159,7 +159,7 @@ const TokenUsageDashboard: React.FC = () => {
                         {formatDate(event.created_at)}
                       </p>
                       <Badge variant="secondary" className="text-xs">
-                        {event.model || 'AI'}
+                        {event.model === 'gemini-2.5-flash' ? 'AvatarTalk Turbo' : (event.model || 'AvatarTalk Turbo')}
                       </Badge>
                     </div>
                   </div>

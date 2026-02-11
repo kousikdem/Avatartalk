@@ -170,7 +170,7 @@ const BuyTokensPage: React.FC = () => {
             <Card className="border border-amber-200/50 bg-gradient-to-br from-amber-50/30 to-yellow-50/30 dark:from-amber-950/20 dark:to-yellow-950/20">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-lg"><Zap className="w-5 h-5 text-amber-500" />Buy Tokens</CardTitle>
-                <CardDescription>1M tokens = {formatPrice(pricePerMillion)}</CardDescription>
+                <CardDescription>Select the amount of tokens you want to purchase</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-center py-3 bg-gradient-to-br from-amber-100/50 to-yellow-100/50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-xl">
