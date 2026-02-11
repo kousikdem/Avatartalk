@@ -183,7 +183,7 @@ Deno.serve(async (req) => {
 
       await supabase.from("notifications").insert({
         user_id: giftData.receiver_id,
-        type: "gift_received",
+        type: "system",
         title: "Token Gift Received! 🎁",
         message: `${senderName} gifted you ${giftData.amount.toLocaleString()} tokens!${giftData.message ? ` Message: "${giftData.message}"` : ""}`,
         data: { gift_id, amount: giftData.amount }
