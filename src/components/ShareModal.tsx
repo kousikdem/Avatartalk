@@ -149,24 +149,23 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, profileUrl, us
       drawFallbackQR();
     };
 
-    // Try loading with CORS first, fallback without
+    // Use smaller image for faster load, canvas upscales it
     qrImg.crossOrigin = 'anonymous';
-    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(profileUrl)}&color=1e293b&bgcolor=ffffff&margin=2`;
+    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(profileUrl)}&color=1e293b&bgcolor=ffffff&margin=2`;
 
-    // Timeout fallback in case image hangs
+    // 3s timeout fallback
     setTimeout(() => {
       if (!qrReady) {
         drawFallbackQR();
       }
-    }, 5000);
+    }, 3000);
   }, [profileUrl]);
 
   useEffect(() => {
     if (view === 'qr') {
       setQrReady(false);
-      // Small delay to ensure canvas is mounted
-      const timer = setTimeout(generateBrandedQR, 100);
-      return () => clearTimeout(timer);
+      // Use requestAnimationFrame for immediate canvas access
+      requestAnimationFrame(generateBrandedQR);
     }
   }, [view, generateBrandedQR]);
 
