@@ -8,7 +8,6 @@ import {
   Copy, Download, ArrowLeft, MessageCircle, Send, Globe, Smartphone, Check
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Logo from './Logo';
 import QRCode from 'qrcode';
 
 interface ShareModalProps {
@@ -23,9 +22,13 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, profileUrl, us
   const { toast } = useToast();
   const [view, setView] = useState<'share' | 'qr'>('share');
   const [copied, setCopied] = useState(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+
   const [qrReady, setQrReady] = useState(false);
+  const [qrPngUrl, setQrPngUrl] = useState<string | null>(null);
+
+  const qrCanvasCacheRef = useRef<HTMLCanvasElement | null>(null);
   const qrReadyRef = useRef(false);
+  const qrBuildingRef = useRef(false);
 
   const name = displayName || username || 'User';
   const shareText = `Hey! Check out ${name}'s AI-powered bio link on AvatarTalk.Co 🚀✨`;
@@ -34,7 +37,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, profileUrl, us
   const drawBranding = (ctx: CanvasRenderingContext2D, size: number) => {
     const centerX = size / 2;
     const centerY = size / 2;
-    const logoRadius = 38;
+    const logoRadius = Math.round(size * 0.095);
 
     // White circle background
     ctx.beginPath();
@@ -76,51 +79,88 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, profileUrl, us
   };
 
   const generateBrandedQR = useCallback(async () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (qrBuildingRef.current) return;
+    qrBuildingRef.current = true;
 
-    const size = 400;
-    canvas.width = size;
-    canvas.height = size;
+    const size = 320;
 
     try {
-      // Generate real QR code instantly using qrcode library
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('No canvas context');
+
+      // Generate QR locally (fast) and cache as PNG for instant display + download
       await QRCode.toCanvas(canvas, profileUrl, {
         width: size,
-        margin: 2,
+        margin: 1,
         color: { dark: '#1e293b', light: '#ffffff' },
-        errorCorrectionLevel: 'H', // High error correction to allow logo overlay
+        errorCorrectionLevel: 'H',
       });
 
-      // Draw branding on top
       drawBranding(ctx, size);
+
+      qrCanvasCacheRef.current = canvas;
+      setQrPngUrl(canvas.toDataURL('image/png'));
       setQrReady(true);
       qrReadyRef.current = true;
     } catch {
       // Fallback: white canvas with branding
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, size, size);
-      drawBranding(ctx, size);
-      setQrReady(true);
-      qrReadyRef.current = true;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, size, size);
+        drawBranding(ctx, size);
+
+        qrCanvasCacheRef.current = canvas;
+        setQrPngUrl(canvas.toDataURL('image/png'));
+        setQrReady(true);
+        qrReadyRef.current = true;
+      }
+    } finally {
+      qrBuildingRef.current = false;
     }
   }, [profileUrl]);
 
   useEffect(() => {
-    if (view === 'qr') {
-      setQrReady(false);
-      qrReadyRef.current = false;
+    if (!isOpen) return;
+
+    // Pre-build the QR immediately so it feels instant when switching to the QR view
+    setQrReady(false);
+    setQrPngUrl(null);
+    qrReadyRef.current = false;
+    qrCanvasCacheRef.current = null;
+    qrBuildingRef.current = false;
+
+    const id = requestAnimationFrame(() => {
       generateBrandedQR();
-    }
-  }, [view, generateBrandedQR]);
+    });
+
+    return () => cancelAnimationFrame(id);
+  }, [isOpen, generateBrandedQR]);
+
+  useEffect(() => {
+    if (view !== 'qr') return;
+    if (qrReadyRef.current || qrPngUrl) return;
+    generateBrandedQR();
+  }, [view, qrPngUrl, generateBrandedQR]);
 
   // Reset view when modal closes
   useEffect(() => {
     if (!isOpen) {
       setView('share');
       setCopied(false);
+      setQrReady(false);
+      setQrPngUrl(null);
+      qrReadyRef.current = false;
+      qrCanvasCacheRef.current = null;
+      qrBuildingRef.current = false;
     }
   }, [isOpen]);
 
@@ -136,13 +176,28 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, profileUrl, us
   };
 
   const downloadQRCode = () => {
-    const canvas = canvasRef.current;
+    const canvas = qrCanvasCacheRef.current;
     if (!canvas) return;
-    const link = document.createElement('a');
-    link.download = `${username}-avatartalk-qr.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    toast({ title: "Downloaded!", description: "QR code saved to your device" });
+
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          toast({ title: "Error", description: "Failed to download QR code", variant: "destructive" });
+          return;
+        }
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = `${username}-avatartalk-qr.png`;
+        link.href = url;
+        link.click();
+
+        // Cleanup
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        toast({ title: "Downloaded!", description: "QR code saved to your device" });
+      },
+      'image/png'
+    );
   };
 
   const shareToSocial = (platform: string) => {
@@ -319,11 +374,18 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, profileUrl, us
               {/* QR Code Canvas */}
               <div className="flex flex-col items-center gap-4">
                 <div className="relative bg-white p-5 rounded-2xl shadow-lg border border-gray-100">
-                  <canvas
-                    ref={canvasRef}
-                    className={`w-52 h-52 rounded-lg transition-opacity duration-300 ${qrReady ? 'opacity-100' : 'opacity-0'}`}
-                    style={{ imageRendering: 'pixelated' }}
-                  />
+                  {qrPngUrl ? (
+                    <img
+                      src={qrPngUrl}
+                      alt={`QR code for ${name}'s AvatarTalk profile`}
+                      className={`w-52 h-52 rounded-lg transition-opacity duration-300 ${qrReady ? 'opacity-100' : 'opacity-0'}`}
+                      loading="eager"
+                      decoding="async"
+                    />
+                  ) : (
+                    <div className="w-52 h-52 rounded-lg bg-muted" aria-hidden />
+                  )}
+
                   {!qrReady && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
                       <motion.div
