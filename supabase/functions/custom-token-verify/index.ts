@@ -145,6 +145,15 @@ Deno.serve(async (req) => {
       console.error('Failed to update purchase record:', updateError);
     }
 
+    // Send notification to user
+    await supabase.from('notifications').insert({
+      user_id: user_id,
+      type: 'system',
+      title: '💰 Tokens Purchased!',
+      message: `${tokensToCredit.toLocaleString()} tokens have been added to your account.`,
+      data: { tokens_credited: tokensToCredit, new_balance: creditResult.balance }
+    });
+
     console.log(`Custom token purchase verified: ${tokensToCredit} tokens credited to user ${user_id}`);
 
     return new Response(JSON.stringify({
