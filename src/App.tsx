@@ -87,16 +87,21 @@ const AuthenticatedRoutes = memo(({
       try {
         const { data, error } = await supabase
           .from('user_onboarding')
-          .select('is_completed')
+          .select('is_completed, completed_steps, skipped_steps')
           .eq('user_id', user.id)
           .maybeSingle();
 
         if (error) {
           setNeedsOnboarding(false);
         } else if (!data) {
+          // No record = truly first-time user
           setNeedsOnboarding(true);
         } else {
-          setNeedsOnboarding(!data.is_completed);
+          // Only auto-open for users who have NEVER interacted with onboarding
+          const completedSteps = (data.completed_steps as string[]) || [];
+          const skippedSteps = (data.skipped_steps as string[]) || [];
+          const hasNeverInteracted = completedSteps.length === 0 && skippedSteps.length === 0;
+          setNeedsOnboarding(!data.is_completed && hasNeverInteracted);
         }
       } catch {
         setNeedsOnboarding(false);
