@@ -59,12 +59,32 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, profileUrl, us
     ctx.fillStyle = gradient;
     ctx.fill();
 
-    // Draw "AT" text as logo
+    // Draw bot icon (from favicon)
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 28px system-ui, -apple-system, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('AT', centerX, centerY - 2);
+    const botSize = logoRadius * 1.4;
+    
+    // Bot body (rectangle)
+    ctx.fillRect(centerX - botSize / 2.5, centerY - botSize / 3, botSize / 1.25, botSize / 1.4);
+    
+    // Bot head (circle on top)
+    ctx.beginPath();
+    ctx.arc(centerX, centerY - botSize / 2.2, botSize / 3.5, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Bot eyes
+    ctx.fillStyle = '#3b82f6';
+    const eyeSize = botSize / 8;
+    ctx.beginPath();
+    ctx.arc(centerX - botSize / 7, centerY - botSize / 2.8, eyeSize, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.arc(centerX + botSize / 7, centerY - botSize / 2.8, eyeSize, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Bot mouth
+    ctx.fillStyle = '#3b82f6';
+    ctx.fillRect(centerX - botSize / 5.5, centerY - botSize / 4.5, botSize / 2.75, botSize / 18);
 
     // Draw sparkle
     ctx.fillStyle = '#fbbf24';
