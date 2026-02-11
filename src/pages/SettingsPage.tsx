@@ -395,7 +395,7 @@ const SettingsPage = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-8 bg-white shadow-sm">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-9 bg-white shadow-sm">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Profile
@@ -425,9 +425,13 @@ const SettingsPage = () => {
               <Bell className="h-4 w-4" />
               Notifications
             </TabsTrigger>
-            <TabsTrigger value="privacy" className="flex items-center gap-2">
+           <TabsTrigger value="privacy" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               Privacy
+            </TabsTrigger>
+            <TabsTrigger value="integrations" className="flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              Integrations
             </TabsTrigger>
           </TabsList>
 
@@ -1170,9 +1174,174 @@ const SettingsPage = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Integrations Tab */}
+          <TabsContent value="integrations" className="space-y-6">
+            <IntegrationsTab />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
+  );
+};
+
+// Integrations Tab Component
+const IntegrationsTab = () => {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const [zoomConnected, setZoomConnected] = useState(false);
+  const [zoomEmail, setZoomEmail] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStatus = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('host_integrations')
+        .select('zoom_connected, zoom_email')
+        .eq('user_id', user.id)
+        .single();
+      if (data) {
+        setZoomConnected(data.zoom_connected || false);
+        setZoomEmail(data.zoom_email || '');
+      }
+      setLoading(false);
+    };
+    fetchStatus();
+  }, [user]);
+
+  const handleConnectZoom = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast({ title: "Error", description: "Please log in first.", variant: "destructive" });
+        return;
+      }
+
+      const response = await fetch(
+        `https://hnxnvdzrwbtmcohdptfq.supabase.co/functions/v1/user-zoom-oauth?action=get_auth_url`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to get Zoom auth URL');
+      }
+
+      const result = await response.json();
+      const authUrl = result.auth_url;
+
+      const width = 600;
+      const height = 700;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+
+      window.open(authUrl, 'zoom_oauth', `width=${width},height=${height},left=${left},top=${top}`);
+
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data?.type === 'zoom_oauth_success') {
+          setZoomConnected(true);
+          setZoomEmail(event.data.email || '');
+          toast({ title: "Zoom Connected", description: `Connected as ${event.data.email}` });
+          window.removeEventListener('message', handleMessage);
+        } else if (event.data?.type === 'zoom_oauth_error') {
+          toast({ title: "Connection Failed", description: "Failed to connect Zoom.", variant: "destructive" });
+          window.removeEventListener('message', handleMessage);
+        }
+      };
+      window.addEventListener('message', handleMessage);
+      setTimeout(() => window.removeEventListener('message', handleMessage), 300000);
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message || "Failed to connect Zoom.", variant: "destructive" });
+    }
+  };
+
+  const handleDisconnectZoom = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      const response = await fetch(
+        `https://hnxnvdzrwbtmcohdptfq.supabase.co/functions/v1/user-zoom-oauth?action=disconnect`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error('Failed to disconnect');
+
+      setZoomConnected(false);
+      setZoomEmail('');
+      toast({ title: "Disconnected", description: "Zoom has been disconnected." });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  return (
+    <Card className="bg-white border border-slate-200">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Zap className="h-5 w-5 text-blue-600" />
+          Platform Integrations
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Zoom Integration */}
+        <div className="flex items-center justify-between p-4 border rounded-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#2D8CFF">
+                <path d="M4.5 4.5h10.8c1.32 0 2.4 1.08 2.4 2.4v6c0 1.32-1.08 2.4-2.4 2.4H4.5c-1.32 0-2.4-1.08-2.4-2.4v-6c0-1.32 1.08-2.4 2.4-2.4zm13.2 3l3.9-2.4v7.8l-3.9-2.4V7.5z"/>
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground">Zoom</h3>
+              <p className="text-sm text-muted-foreground">
+                {zoomConnected ? `Connected as ${zoomEmail}` : 'Connect your Zoom account for auto meeting links'}
+              </p>
+            </div>
+          </div>
+          <Button
+            variant={zoomConnected ? "destructive" : "default"}
+            size="sm"
+            onClick={zoomConnected ? handleDisconnectZoom : handleConnectZoom}
+            disabled={loading}
+          >
+            {zoomConnected ? 'Disconnect' : 'Connect Zoom'}
+          </Button>
+        </div>
+
+        {/* Google Meet - Coming Soon */}
+        <div className="flex items-center justify-between p-4 border rounded-lg opacity-60">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+              <svg className="w-6 h-6" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground">Google Meet</h3>
+              <p className="text-sm text-muted-foreground">Coming soon</p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" disabled>Coming Soon</Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

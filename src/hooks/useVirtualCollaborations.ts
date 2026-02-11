@@ -198,6 +198,42 @@ export const useVirtualCollaborations = () => {
       const endTime = new Date();
       endTime.setMinutes(endTime.getMinutes() + (productData.duration_mins || 60));
 
+      // Auto-generate Zoom meeting link if provider is zoom and user has Zoom connected
+      let joinUrl: string | undefined;
+      let meetingLocation = productData.provider === 'google_meet' ? 'Google Meet' : productData.provider === 'zoom' ? 'Zoom' : 'Virtual';
+
+      if (productData.provider === 'zoom' && productData.auto_generate_link !== false) {
+        try {
+          const { data: integration } = await supabase
+            .from('host_integrations')
+            .select('zoom_connected')
+            .eq('user_id', user.id)
+            .single();
+
+          if (integration?.zoom_connected) {
+            const meeting = await createZoomMeeting(
+              productData.title || 'Virtual Collaboration',
+              productData.duration_mins || 60,
+              productData.event_date || undefined,
+              productData.timezone || 'Asia/Kolkata'
+            );
+            if (meeting?.join_url) {
+              joinUrl = meeting.join_url;
+              meetingLocation = meeting.join_url;
+            }
+          }
+        } catch (zoomError) {
+          console.error('Auto Zoom link generation failed:', zoomError);
+          // Continue without Zoom link
+        }
+      }
+
+      // Use manual link if provided
+      if (productData.provider === 'manual' && productData.manual_link) {
+        meetingLocation = productData.manual_link;
+        joinUrl = productData.manual_link;
+      }
+
       const { data, error } = await supabase
         .from('events')
         .insert({
@@ -205,9 +241,9 @@ export const useVirtualCollaborations = () => {
           title: productData.title,
           description: productData.description,
           event_type: productData.product_type,
-          start_time: new Date().toISOString(),
+          start_time: productData.event_date || new Date().toISOString(),
           end_time: endTime.toISOString(),
-          location: productData.provider === 'google_meet' ? 'Google Meet' : productData.provider === 'zoom' ? 'Zoom' : 'Virtual',
+          location: meetingLocation,
           status: productData.status === 'published' ? 'upcoming' : 'draft',
           attendees: []
         })
@@ -218,7 +254,9 @@ export const useVirtualCollaborations = () => {
 
       toast({
         title: "Product created",
-        description: "Your virtual collaboration has been created successfully.",
+        description: joinUrl 
+          ? "Virtual collaboration created with auto-generated Zoom link!" 
+          : "Your virtual collaboration has been created successfully.",
       });
 
       fetchProducts();
