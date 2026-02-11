@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, Plus, Trash2, Save, Check, ExternalLink, Upload, Globe, Image } from 'lucide-react';
+import { Loader2, Plus, Trash2, Save, Check, ArrowUp, ArrowDown, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/auth';
 import {
-  Twitter, Linkedin, Facebook, Instagram, Youtube, Github, Twitch, MessageCircle, Music, Link2,
+  Twitter, Linkedin, Facebook, Instagram, Youtube, Github, Twitch, MessageCircle, Music, Globe,
 } from 'lucide-react';
 
 interface SocialLinksStepProps {
@@ -43,6 +43,7 @@ const SocialLinksStep: React.FC<SocialLinksStepProps> = ({ onComplete }) => {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [socialLinks, setSocialLinks] = useState<Record<string, string>>({});
+  const [platformOrder, setPlatformOrder] = useState<string[]>(ALL_PLATFORMS.map(p => p.id));
   const [customLinks, setCustomLinks] = useState<CustomLink[]>([]);
   const [showAddCustom, setShowAddCustom] = useState(false);
   const [newLinkName, setNewLinkName] = useState('');
@@ -58,6 +59,12 @@ const SocialLinksStep: React.FC<SocialLinksStepProps> = ({ onComplete }) => {
           const links: Record<string, string> = {};
           ALL_PLATFORMS.forEach(p => { if ((data as any)[p.id]) links[p.id] = (data as any)[p.id]; });
           setSocialLinks(links);
+
+          // Restore order: filled first, then empty
+          const filled = ALL_PLATFORMS.filter(p => links[p.id]).map(p => p.id);
+          const empty = ALL_PLATFORMS.filter(p => !links[p.id]).map(p => p.id);
+          setPlatformOrder([...filled, ...empty]);
+
           const rawCustom = (data as any).custom_links;
           if (rawCustom) {
             try { setCustomLinks(JSON.parse(rawCustom) || []); } catch { /* */ }
@@ -96,6 +103,46 @@ const SocialLinksStep: React.FC<SocialLinksStepProps> = ({ onComplete }) => {
     setSaved(false);
   };
 
+  const movePlatformUp = (index: number) => {
+    if (index === 0) return;
+    setPlatformOrder(prev => {
+      const newOrder = [...prev];
+      [newOrder[index], newOrder[index - 1]] = [newOrder[index - 1], newOrder[index]];
+      return newOrder;
+    });
+    setSaved(false);
+  };
+
+  const movePlatformDown = (index: number) => {
+    setPlatformOrder(prev => {
+      if (index >= prev.length - 1) return prev;
+      const newOrder = [...prev];
+      [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
+      return newOrder;
+    });
+    setSaved(false);
+  };
+
+  const moveCustomUp = (index: number) => {
+    if (index === 0) return;
+    setCustomLinks(prev => {
+      const newList = [...prev];
+      [newList[index], newList[index - 1]] = [newList[index - 1], newList[index]];
+      return newList;
+    });
+    setSaved(false);
+  };
+
+  const moveCustomDown = (index: number) => {
+    setCustomLinks(prev => {
+      if (index >= prev.length - 1) return prev;
+      const newList = [...prev];
+      [newList[index], newList[index + 1]] = [newList[index + 1], newList[index]];
+      return newList;
+    });
+    setSaved(false);
+  };
+
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
@@ -126,10 +173,12 @@ const SocialLinksStep: React.FC<SocialLinksStepProps> = ({ onComplete }) => {
   return (
     <Card className="border border-border/50 shadow-xl bg-white">
       <CardContent className="p-4 sm:p-6 space-y-3">
-        <p className="text-xs text-muted-foreground text-center">Add your social profiles — full URLs or usernames</p>
+        <p className="text-xs text-muted-foreground text-center">Add your social profiles — full URLs or usernames. Reorder with arrows.</p>
 
         <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-          {ALL_PLATFORMS.map((platform, index) => {
+          {platformOrder.map((platformId, index) => {
+            const platform = ALL_PLATFORMS.find(p => p.id === platformId);
+            if (!platform) return null;
             const Icon = platform.icon;
             const hasValue = !!socialLinks[platform.id];
             return (
@@ -145,13 +194,21 @@ const SocialLinksStep: React.FC<SocialLinksStepProps> = ({ onComplete }) => {
                       placeholder={platform.placeholder} className="h-7 text-xs border-0 bg-transparent focus-visible:ring-1 px-1" />
                   </div>
                 </div>
-                <span className="text-[9px] text-muted-foreground shrink-0">{platform.name}</span>
+                <div className="flex flex-col gap-0.5 shrink-0">
+                  <Button variant="ghost" size="icon" className="h-5 w-5 text-slate-400 hover:text-slate-700" disabled={index === 0} onClick={() => movePlatformUp(index)}>
+                    <ArrowUp className="w-3 h-3" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-5 w-5 text-slate-400 hover:text-slate-700" disabled={index === platformOrder.length - 1} onClick={() => movePlatformDown(index)}>
+                    <ArrowDown className="w-3 h-3" />
+                  </Button>
+                </div>
+                <span className="text-[9px] text-muted-foreground shrink-0 hidden sm:inline">{platform.name}</span>
               </motion.div>
             );
           })}
 
           {/* Custom links */}
-          {customLinks.map((link) => (
+          {customLinks.map((link, index) => (
             <div key={link.id} className="flex items-center gap-2 p-2 rounded-xl border border-green-200 bg-green-50/30">
               <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
                 {link.icon_url ? <img src={link.icon_url} alt="" className="w-5 h-5" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <Link2 className="w-3.5 h-3.5 text-slate-500" />}
@@ -159,6 +216,14 @@ const SocialLinksStep: React.FC<SocialLinksStepProps> = ({ onComplete }) => {
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium truncate">{link.name}</p>
                 <p className="text-[9px] text-muted-foreground truncate">{link.url}</p>
+              </div>
+              <div className="flex flex-col gap-0.5 shrink-0">
+                <Button variant="ghost" size="icon" className="h-5 w-5 text-slate-400 hover:text-slate-700" disabled={index === 0} onClick={() => moveCustomUp(index)}>
+                  <ArrowUp className="w-3 h-3" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-5 w-5 text-slate-400 hover:text-slate-700" disabled={index === customLinks.length - 1} onClick={() => moveCustomDown(index)}>
+                  <ArrowDown className="w-3 h-3" />
+                </Button>
               </div>
               <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-slate-400 hover:text-red-500" onClick={() => handleRemoveCustomLink(link.id)}>
                 <Trash2 className="w-3 h-3" />
