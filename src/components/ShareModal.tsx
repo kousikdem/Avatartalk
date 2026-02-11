@@ -24,6 +24,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, profileUrl, us
   const [copied, setCopied] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [qrReady, setQrReady] = useState(false);
+  const qrReadyRef = useRef(false);
 
   const name = displayName || username || 'User';
   const shareText = `Hey! Check out ${name}'s AI-powered bio link on AvatarTalk.Co 🚀✨`;
@@ -131,6 +132,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, profileUrl, us
 
       drawBranding(ctx, size);
       setQrReady(true);
+      qrReadyRef.current = true;
     };
 
     const qrImg = new Image();
@@ -143,19 +145,19 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, profileUrl, us
       ctx.drawImage(qrImg, 0, 0, size, size);
       drawBranding(ctx, size);
       setQrReady(true);
+      qrReadyRef.current = true;
     };
 
     qrImg.onerror = () => {
       drawFallbackQR();
     };
 
-    // Use smaller image for faster load, canvas upscales it
     qrImg.crossOrigin = 'anonymous';
     qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(profileUrl)}&color=1e293b&bgcolor=ffffff&margin=2`;
 
-    // 3s timeout fallback
+    // 3s timeout fallback using ref to avoid stale closure
     setTimeout(() => {
-      if (!qrReady) {
+      if (!qrReadyRef.current) {
         drawFallbackQR();
       }
     }, 3000);
@@ -164,7 +166,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, profileUrl, us
   useEffect(() => {
     if (view === 'qr') {
       setQrReady(false);
-      // Use requestAnimationFrame for immediate canvas access
+      qrReadyRef.current = false;
       requestAnimationFrame(generateBrandedQR);
     }
   }, [view, generateBrandedQR]);
@@ -378,12 +380,24 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, profileUrl, us
 
               {/* QR Code Canvas */}
               <div className="flex flex-col items-center gap-4">
-                <div className="bg-white p-5 rounded-2xl shadow-lg border border-gray-100">
+                <div className="relative bg-white p-5 rounded-2xl shadow-lg border border-gray-100">
                   <canvas
                     ref={canvasRef}
-                    className="w-52 h-52 rounded-lg"
+                    className={`w-52 h-52 rounded-lg transition-opacity duration-300 ${qrReady ? 'opacity-100' : 'opacity-0'}`}
                     style={{ imageRendering: 'pixelated' }}
                   />
+                  {!qrReady && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                      <motion.div
+                        className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 flex items-center justify-center shadow-lg"
+                        animate={{ rotate: 360, scale: [1, 1.1, 1] }}
+                        transition={{ rotate: { duration: 2, repeat: Infinity, ease: 'linear' }, scale: { duration: 1, repeat: Infinity } }}
+                      >
+                        <span className="text-white font-bold text-sm">AT</span>
+                      </motion.div>
+                      <p className="text-xs text-muted-foreground animate-pulse">Building QR code...</p>
+                    </div>
+                  )}
                 </div>
 
                 <p className="text-xs text-gray-500 text-center">
