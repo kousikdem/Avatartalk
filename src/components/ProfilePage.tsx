@@ -1359,8 +1359,8 @@ const ProfilePage: React.FC = () => {
                 </TabsList>
 
                 {/* Posts Tab - Scrollable content */}
-                <TabsContent value="posts" className="mt-6 flex-1 overflow-hidden flex flex-col">
-                  <div className="overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent max-h-[400px]">
+                <TabsContent value="posts" className="mt-2 flex-1 overflow-hidden flex flex-col min-h-0">
+                  <div className="overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent flex-1">
                     <AnimatePresence>
                     {userPosts.length > 0 ? (
                       userPosts.map((post, index) => (
@@ -1410,8 +1410,8 @@ const ProfilePage: React.FC = () => {
                 </TabsContent>
 
                 {/* Chat Tab */}
-                <TabsContent value="chat" className="mt-6 flex-1 flex flex-col overflow-hidden">
-                  <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent max-h-[400px]">
+                <TabsContent value="chat" className="mt-2 flex-1 flex flex-col overflow-hidden min-h-0">
+                  <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
                     <div className="space-y-4">
                      {chatMessages.map((message) => (
                        <div key={message.id} className={`flex items-start gap-3 ${message.sender === 'avatar' ? 'flex-row-reverse' : ''}`}>
@@ -1583,8 +1583,8 @@ const ProfilePage: React.FC = () => {
                 </TabsContent>
 
                 {/* Products & Events Tab */}
-                <TabsContent value="products" className="mt-6 flex-1 flex flex-col overflow-hidden">
-                  <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent max-h-[400px]">
+                <TabsContent value="products" className="mt-2 flex-1 flex flex-col overflow-hidden min-h-0">
+                  <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
                     <div className="space-y-4">
                       <AnimatePresence>
                     {(products.length > 0 || events.length > 0) ? (
