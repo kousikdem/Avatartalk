@@ -1360,7 +1360,7 @@ const ProfilePage: React.FC = () => {
 
                 {/* Posts Tab - Scrollable content */}
                 <TabsContent value="posts" className="mt-6 flex-1 overflow-hidden flex flex-col">
-                  <div className="overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent flex-1">
+                  <div className="overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent max-h-[400px]">
                     <AnimatePresence>
                     {userPosts.length > 0 ? (
                       userPosts.map((post, index) => (
@@ -1411,7 +1411,7 @@ const ProfilePage: React.FC = () => {
 
                 {/* Chat Tab */}
                 <TabsContent value="chat" className="mt-6 flex-1 flex flex-col overflow-hidden">
-                  <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
+                  <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent max-h-[400px]">
                     <div className="space-y-4">
                      {chatMessages.map((message) => (
                        <div key={message.id} className={`flex items-start gap-3 ${message.sender === 'avatar' ? 'flex-row-reverse' : ''}`}>
@@ -1584,7 +1584,7 @@ const ProfilePage: React.FC = () => {
 
                 {/* Products & Events Tab */}
                 <TabsContent value="products" className="mt-6 flex-1 flex flex-col overflow-hidden">
-                  <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
+                  <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent max-h-[400px]">
                     <div className="space-y-4">
                       <AnimatePresence>
                     {(products.length > 0 || events.length > 0) ? (
@@ -1677,19 +1677,20 @@ const ProfilePage: React.FC = () => {
               </Tabs>
             </div>
 
-            {/* Message Input Section - Only visible on chat tab */}
-            {activeTab === 'chat' && (
-              <div className="px-6 pt-2 pb-1 border-t border-slate-700/30 flex-shrink-0">
-                <MessageInput
-                  message={chatMessage}
-                  setMessage={setChatMessage}
-                  onSend={handleChatSubmit}
-                  placeholder="Type your message..."
-                  disabled={isLoading || !currentUser}
-                  lastAIMessage={chatMessages.filter(msg => msg.sender === 'avatar').pop()?.content}
-                />
-              </div>
-            )}
+            {/* Message Input Section - Sticky to bottom */}
+            <div className="px-6 pt-2 pb-1 border-t border-slate-700/30 flex-shrink-0">
+              <MessageInput
+                message={
+                  // Determine which message to show based on active tab - we'll need to track this
+                  chatMessage
+                }
+                setMessage={setChatMessage}
+                onSend={handleChatSubmit}
+                placeholder="Type your message..."
+                disabled={isLoading || !currentUser}
+                lastAIMessage={chatMessages.filter(msg => msg.sender === 'avatar').pop()?.content}
+              />
+            </div>
 
 
             {/* Social Links Section - Sticky to bottom with minimal spacing */}
