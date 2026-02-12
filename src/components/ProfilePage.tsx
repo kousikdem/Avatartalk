@@ -1163,6 +1163,8 @@ const ProfilePage: React.FC = () => {
       >
         <Card className={`${cardClass} backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl shadow-blue-950/50 min-h-[90vh] flex flex-col`}>
           <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
+            {/* Scrollable content area */}
+            <div className="flex-1 overflow-y-auto min-h-0">
             {/* Profile Header - Top Left Corner with Visitor Profile and Theme Toggle on Right */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4">
               <div className="flex items-center gap-3">
@@ -1335,8 +1337,8 @@ const ProfilePage: React.FC = () => {
             </div>
 
             {/* Content Tabs - Flexible to take remaining space */}
-            <div className="px-6 pb-2 flex-1 flex flex-col overflow-hidden">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 flex-1 flex flex-col overflow-hidden">
+            <div className="px-6 pb-2">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
                 <TabsList className={`grid w-full grid-cols-3 bg-transparent border-b rounded-none p-0 h-auto flex-shrink-0 ${isDarkTheme ? 'border-slate-700/30' : 'border-gray-300'}`}>
                   <TabsTrigger 
                     value="posts" 
@@ -1359,8 +1361,8 @@ const ProfilePage: React.FC = () => {
                 </TabsList>
 
                 {/* Posts Tab - Scrollable content */}
-                <TabsContent value="posts" className="mt-2 flex-1 overflow-hidden flex flex-col min-h-0">
-                  <div className="overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent flex-1">
+                <TabsContent value="posts" className="mt-2">
+                  <div className="pr-2">
                     <AnimatePresence>
                     {userPosts.length > 0 ? (
                       userPosts.map((post, index) => (
@@ -1410,8 +1412,8 @@ const ProfilePage: React.FC = () => {
                 </TabsContent>
 
                 {/* Chat Tab */}
-                <TabsContent value="chat" className="mt-2 flex-1 flex flex-col overflow-hidden min-h-0">
-                  <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
+                <TabsContent value="chat" className="mt-2">
+                  <div className="pr-2">
                     <div className="space-y-4">
                      {chatMessages.map((message) => (
                        <div key={message.id} className={`flex items-start gap-3 ${message.sender === 'avatar' ? 'flex-row-reverse' : ''}`}>
@@ -1583,8 +1585,8 @@ const ProfilePage: React.FC = () => {
                 </TabsContent>
 
                 {/* Products & Events Tab */}
-                <TabsContent value="products" className="mt-2 flex-1 flex flex-col overflow-hidden min-h-0">
-                  <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
+                <TabsContent value="products" className="mt-2">
+                  <div className="pr-2">
                     <div className="space-y-4">
                       <AnimatePresence>
                     {(products.length > 0 || events.length > 0) ? (
@@ -1676,8 +1678,9 @@ const ProfilePage: React.FC = () => {
                 </TabsContent>
               </Tabs>
             </div>
+            </div>
 
-            {/* Message Input Section - Sticky to bottom */}
+            {/* Message Input Section - Fixed at bottom */}
             <div className="px-6 pt-2 pb-1 border-t border-slate-700/30 flex-shrink-0">
               <MessageInput
                 message={
