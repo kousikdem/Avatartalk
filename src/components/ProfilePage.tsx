@@ -1156,7 +1156,7 @@ const ProfilePage: React.FC = () => {
   return (
     <div className={`${bgClass} flex items-center justify-center p-0 sm:p-2`} style={{ height: '100dvh', minHeight: '-webkit-fill-available' }}>
       <motion.div
-        className="w-full max-w-lg mx-auto h-full sm:h-auto"
+        className="w-full sm:max-w-lg mx-auto h-full sm:h-auto"
         style={{ height: '100%', maxHeight: '100dvh' }}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -1167,10 +1167,10 @@ const ProfilePage: React.FC = () => {
             {/* Scrollable content area - excludes fixed bottom section */}
             <div className="flex-1 overflow-y-auto min-h-0 scrollbar-none" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
             {/* Profile Header - Top Left Corner with Visitor Profile and Theme Toggle on Right */}
-            <div className="flex items-center justify-between px-6 pt-6 pb-4">
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between px-4 sm:px-6 pt-5 sm:pt-6 pb-3 sm:pb-4">
+              <div className="flex items-center gap-4 sm:gap-3">
                 <div className="relative">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
+                  <div className="w-20 h-20 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
                     <div className={`w-full h-full rounded-full ${isDarkTheme ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center overflow-hidden`}>
                        {profile?.profile_pic_url || profile?.avatar_url ? (
                          <img 
@@ -1179,7 +1179,7 @@ const ProfilePage: React.FC = () => {
                            className="w-full h-full object-cover"
                          />
                        ) : (
-                         <span className={`text-lg font-bold ${textPrimaryClass}`}>
+                         <span className={`text-xl sm:text-lg font-bold ${textPrimaryClass}`}>
                            {profileData.avatarInitial}
                          </span>
                        )}
@@ -1198,10 +1198,10 @@ const ProfilePage: React.FC = () => {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h2 className={`text-xl font-bold ${textPrimaryClass} leading-tight mb-0.5 truncate`}>
+                  <h2 className={`text-2xl sm:text-xl font-bold ${textPrimaryClass} leading-tight mb-0.5 truncate`}>
                     {profileData.displayName}
                   </h2>
-                  <p className={`${textSecondaryClass} text-sm`}>@{profileData.username}</p>
+                  <p className={`${textSecondaryClass} text-base sm:text-sm`}>@{profileData.username}</p>
                 </div>
               </div>
               
@@ -1244,14 +1244,14 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            <div className="px-6 pb-4">
-              <p className={`${textSecondaryClass} text-sm leading-relaxed`}>
+            <div className="px-4 sm:px-6 pb-3 sm:pb-4">
+              <p className={`${textSecondaryClass} text-base sm:text-sm leading-relaxed`}>
                 {profileData.bio}
               </p>
             </div>
 
             {/* Changeable 3D Avatar Preview */}
-            <div className="px-6 pb-3">
+            <div className="px-4 sm:px-6 pb-3">
               <ChangeableAvatarPreview
                 userId={profile?.id}
                 isLarge={true}
@@ -1272,8 +1272,8 @@ const ProfilePage: React.FC = () => {
             </div>
 
             {/* Compact Stats - Inline between avatar and tabs */}
-            <div className="px-6 pb-2">
-              <div className="flex items-center justify-center gap-3">
+            <div className="px-4 sm:px-6 pb-2">
+              <div className="flex items-center justify-center gap-4 sm:gap-3">
                 <div className="flex items-center gap-1.5">
                   <MessageCircle className={`w-3.5 h-3.5 ${textSecondaryClass}`} />
                   <span className={`text-sm font-semibold ${textPrimaryClass}`}>{engagement.totalConversations}</span>
@@ -1296,7 +1296,7 @@ const ProfilePage: React.FC = () => {
             </div>
 
             {/* Action Buttons - Subscribe (left wider) and Follow (right) - Enhanced design */}
-            <div className="px-6 pb-2">
+            <div className="px-4 sm:px-6 pb-2">
               <div className="grid grid-cols-5 gap-2">
                 {/* Left Side - Subscribe Button (wider - 3 columns) */}
                 {profile?.id && profile?.id !== currentUser?.id && (
@@ -1332,7 +1332,7 @@ const ProfilePage: React.FC = () => {
             </div>
 
             {/* Content Tabs - Flexible to take remaining space */}
-            <div className="px-6 pb-2">
+            <div className="px-4 sm:px-6 pb-2">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
                 <TabsList className={`grid w-full grid-cols-3 bg-transparent border-b rounded-none p-0 h-auto flex-shrink-0 ${isDarkTheme ? 'border-slate-700/30' : 'border-gray-300'}`}>
                   <TabsTrigger 
