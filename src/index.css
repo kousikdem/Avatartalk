@@ -269,6 +269,33 @@
   .scrollbar-none::-webkit-scrollbar {
     display: none;
   }
+
+  .scrollbar-thin-auto {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    -webkit-overflow-scrolling: touch;
+    transition: scrollbar-color 0.3s ease;
+  }
+  .scrollbar-thin-auto:hover,
+  .scrollbar-thin-auto:active,
+  .scrollbar-thin-auto.is-scrolling {
+    scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+  }
+  .scrollbar-thin-auto::-webkit-scrollbar {
+    width: 4px;
+  }
+  .scrollbar-thin-auto::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin-auto::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 9999px;
+    transition: background-color 0.3s ease;
+  }
+  .scrollbar-thin-auto:hover::-webkit-scrollbar-thumb,
+  .scrollbar-thin-auto:active::-webkit-scrollbar-thumb {
+    background-color: rgba(155, 155, 155, 0.5);
+  }
 }
 
 /* Cross-browser viewport height fix for mobile browsers */
