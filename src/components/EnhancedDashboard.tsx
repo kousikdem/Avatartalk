@@ -190,21 +190,21 @@ const EnhancedDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen white-gradient-bg pt-20 pb-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen white-gradient-bg pt-4 sm:pt-20 pb-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         {/* Header with Progress */}
         <motion.div 
-          className="mb-8"
+          className="mb-6 sm:mb-8"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Avatar Studio
               </h1>
-              <p className="text-gray-600 mt-2">Build your Llama 3 AI personality and interactive profile</p>
+              <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Build your Llama 3 AI personality and interactive profile</p>
               {profileData?.public_link && (
                 <p className="text-sm text-blue-600 mt-1">
                   Your profile: <a href={profileData.public_link} target="_blank" rel="noopener noreferrer" className="underline">{profileData.public_link}</a>
@@ -337,30 +337,30 @@ const EnhancedDashboard = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <Tabs defaultValue="profile" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-6 bg-white/90 border border-slate-200/60 backdrop-blur-sm">
-                <TabsTrigger value="profile" className="data-[state=active]:gradient-button">
-                  <User className="w-4 h-4 mr-2" />
-                  Profile
+              <TabsList className="flex w-full overflow-x-auto scrollbar-none bg-white/90 border border-slate-200/60 backdrop-blur-sm">
+                <TabsTrigger value="profile" className="data-[state=active]:gradient-button flex-shrink-0">
+                  <User className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Profile</span>
                 </TabsTrigger>
-                <TabsTrigger value="avatar" className="data-[state=active]:gradient-button">
-                  <Palette className="w-4 h-4 mr-2" />
-                  Avatar
+                <TabsTrigger value="avatar" className="data-[state=active]:gradient-button flex-shrink-0">
+                  <Palette className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Avatar</span>
                 </TabsTrigger>
-                <TabsTrigger value="voice" className="data-[state=active]:gradient-button">
-                  <Volume2 className="w-4 h-4 mr-2" />
-                  Voice
+                <TabsTrigger value="voice" className="data-[state=active]:gradient-button flex-shrink-0">
+                  <Volume2 className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Voice</span>
                 </TabsTrigger>
-                <TabsTrigger value="personality" className="data-[state=active]:gradient-button">
-                  <Brain className="w-4 h-4 mr-2" />
-                  Mind
+                <TabsTrigger value="personality" className="data-[state=active]:gradient-button flex-shrink-0">
+                  <Brain className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Mind</span>
                 </TabsTrigger>
-                <TabsTrigger value="responses" className="data-[state=active]:gradient-button">
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  Chat
+                <TabsTrigger value="responses" className="data-[state=active]:gradient-button flex-shrink-0">
+                  <MessageSquare className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Chat</span>
                 </TabsTrigger>
-                <TabsTrigger value="links" className="data-[state=active]:gradient-button">
-                  <Link className="w-4 h-4 mr-2" />
-                  Links
+                <TabsTrigger value="links" className="data-[state=active]:gradient-button flex-shrink-0">
+                  <Link className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Links</span>
                 </TabsTrigger>
               </TabsList>
 

@@ -381,7 +381,7 @@ const SettingsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 p-4 sm:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 p-2 sm:p-4 md:p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -395,43 +395,42 @@ const SettingsPage = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-9 bg-white shadow-sm">
-            <TabsTrigger value="profile" className="flex items-center gap-2">
+          <TabsList className="flex w-full overflow-x-auto scrollbar-none bg-white shadow-sm p-1 gap-1">
+            <TabsTrigger value="profile" className="flex items-center gap-1.5 flex-shrink-0 text-xs sm:text-sm">
               <User className="h-4 w-4" />
-              Profile
+              <span className="hidden sm:inline">Profile</span>
             </TabsTrigger>
-            <TabsTrigger value="avatar" className="flex items-center gap-2">
+            <TabsTrigger value="avatar" className="flex items-center gap-1.5 flex-shrink-0 text-xs sm:text-sm">
               <Palette className="h-4 w-4" />
-              Avatar
+              <span className="hidden sm:inline">Avatar</span>
             </TabsTrigger>
-            <TabsTrigger value="chat" className="flex items-center gap-2">
+            <TabsTrigger value="chat" className="flex items-center gap-1.5 flex-shrink-0 text-xs sm:text-sm">
               <MessageSquare className="h-4 w-4" />
-              AI Chat
+              <span className="hidden sm:inline">AI Chat</span>
             </TabsTrigger>
-            <TabsTrigger value="social" className="flex items-center gap-2">
+            <TabsTrigger value="social" className="flex items-center gap-1.5 flex-shrink-0 text-xs sm:text-sm">
               <Link className="h-4 w-4" />
-              Social
+              <span className="hidden sm:inline">Social</span>
             </TabsTrigger>
-            <TabsTrigger value="payment" className="flex items-center gap-2">
+            <TabsTrigger value="payment" className="flex items-center gap-1.5 flex-shrink-0 text-xs sm:text-sm">
               <CreditCard className="h-4 w-4" />
-              Subscription
-              <PlanBadge planKey="creator" size="sm" showIcon={false} />
+              <span className="hidden sm:inline">Subscription</span>
             </TabsTrigger>
-            <TabsTrigger value="orders" className="flex items-center gap-2">
+            <TabsTrigger value="orders" className="flex items-center gap-1.5 flex-shrink-0 text-xs sm:text-sm">
               <CreditCard className="h-4 w-4" />
-              Orders
+              <span className="hidden sm:inline">Orders</span>
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <TabsTrigger value="notifications" className="flex items-center gap-1.5 flex-shrink-0 text-xs sm:text-sm">
               <Bell className="h-4 w-4" />
-              Notifications
+              <span className="hidden sm:inline">Notifications</span>
             </TabsTrigger>
-           <TabsTrigger value="privacy" className="flex items-center gap-2">
+           <TabsTrigger value="privacy" className="flex items-center gap-1.5 flex-shrink-0 text-xs sm:text-sm">
               <Shield className="h-4 w-4" />
-              Privacy
+              <span className="hidden sm:inline">Privacy</span>
             </TabsTrigger>
-            <TabsTrigger value="integrations" className="flex items-center gap-2">
+            <TabsTrigger value="integrations" className="flex items-center gap-1.5 flex-shrink-0 text-xs sm:text-sm">
               <Zap className="h-4 w-4" />
-              Integrations
+              <span className="hidden sm:inline">Integrations</span>
             </TabsTrigger>
           </TabsList>
 

@@ -167,22 +167,22 @@ const AnalyticsPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-8 bg-background min-h-screen">
+    <div className="container mx-auto p-2 sm:p-4 md:p-6 space-y-6 sm:space-y-8 bg-background min-h-screen">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-3 sm:gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
           <div 
-            className="p-3 rounded-xl"
+            className="p-2 sm:p-3 rounded-xl"
             style={{ background: `linear-gradient(135deg, ${CHART_GRADIENTS.primary.start}, ${CHART_GRADIENTS.primary.end})` }}
           >
-            <BarChart3 className="h-8 w-8 text-white" />
+            <BarChart3 className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Analytics Dashboard</h1>
-            <p className="text-muted-foreground">Track your performance and growth</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Analytics Dashboard</h1>
+            <p className="text-muted-foreground text-sm sm:text-base">Track your performance and growth</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <TokenDisplay />
           <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
             <SelectTrigger className="w-32 bg-card border-border">
@@ -202,7 +202,7 @@ const AnalyticsPage = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           title="Total Earnings"
           value={formatCurrency(analytics?.totalEarnings || 0)}
@@ -269,7 +269,7 @@ const AnalyticsPage = () => {
         </Card>
       ) : (
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="bg-muted/50 p-1.5 rounded-xl flex-wrap backdrop-blur-sm">
+          <TabsList className="bg-muted/50 p-1.5 rounded-xl flex overflow-x-auto scrollbar-none backdrop-blur-sm">
             <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-1.5">
               <PlanBadge planKey="creator" size="sm" showIcon={false} />
               Overview

@@ -236,7 +236,7 @@ const ProductsPageEnhanced = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-6">
+    <div className="min-h-screen bg-background p-2 sm:p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Limit Reached Banner */}
         <LimitReachedBanner
@@ -322,7 +322,7 @@ const ProductsPageEnhanced = () => {
         </div>
 
         {/* KPI Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 sm:gap-4">
           <Card className="border-2">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -439,10 +439,10 @@ const ProductsPageEnhanced = () => {
 
         {/* Main Content */}
         <Tabs defaultValue="products" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="products">My Products ({myProducts.length})</TabsTrigger>
-            <TabsTrigger value="sales">Sales Orders</TabsTrigger>
-            <TabsTrigger value="purchases">My Purchases</TabsTrigger>
+          <TabsList className="flex w-full overflow-x-auto scrollbar-none">
+            <TabsTrigger value="products" className="flex-1 min-w-0 text-xs sm:text-sm">My Products ({myProducts.length})</TabsTrigger>
+            <TabsTrigger value="sales" className="flex-1 min-w-0 text-xs sm:text-sm">Sales Orders</TabsTrigger>
+            <TabsTrigger value="purchases" className="flex-1 min-w-0 text-xs sm:text-sm">My Purchases</TabsTrigger>
           </TabsList>
 
           <TabsContent value="products" className="space-y-6 mt-6">

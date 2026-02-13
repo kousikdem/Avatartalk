@@ -147,7 +147,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => 
               </Button>
             </div>
 
-            <SidebarMenu className="space-y-2">
+            <SidebarMenu className="space-y-1.5">
               {allNavItems.map((item) => {
                 return (
                   <SidebarMenuItem key={item.title}>
