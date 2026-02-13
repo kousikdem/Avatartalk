@@ -16,6 +16,8 @@ interface ProfileEngagement {
   isNewUser: boolean;
   profileViews: number;
   totalProductsSold: number;
+  totalPostViews: number;
+  totalProductViews: number;
 }
 
 export const useProfileEngagement = (profileId: string | null) => {
@@ -26,6 +28,8 @@ export const useProfileEngagement = (profileId: string | null) => {
     isNewUser: false,
     profileViews: 0,
     totalProductsSold: 0,
+    totalPostViews: 0,
+    totalProductViews: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -77,6 +81,22 @@ export const useProfileEngagement = (profileId: string | null) => {
         .select('*', { count: 'exact', head: true })
         .eq('visited_profile_id', profileId);
 
+      // Get total post views
+      const { data: postsData } = await supabase
+        .from('posts')
+        .select('views_count')
+        .eq('user_id', profileId);
+
+      const totalPostViews = postsData?.reduce((sum, p) => sum + (p.views_count || 0), 0) || 0;
+
+      // Get total product views
+      const { data: productsData } = await supabase
+        .from('products')
+        .select('views_count')
+        .eq('user_id', profileId);
+
+      const totalProductViews = productsData?.reduce((sum, p) => sum + (p.views_count || 0), 0) || 0;
+
       // Get follow-up completions from ai_chat_memory
       const { data: memoryData } = await supabase
         .from('ai_chat_memory')
@@ -108,10 +128,12 @@ export const useProfileEngagement = (profileId: string | null) => {
       setEngagement({
         totalConversations: conversations,
         followersCount: followers,
-        loyaltyScore: rawScore, // Raw score for new badge thresholds
+        loyaltyScore: rawScore,
         isNewUser: isNew,
         profileViews: profileViews,
         totalProductsSold: productsSold,
+        totalPostViews,
+        totalProductViews,
       });
     } catch (error) {
       console.error('Error fetching engagement:', error);
@@ -194,6 +216,34 @@ export const useProfileEngagement = (profileId: string | null) => {
         () => {
           console.log('👁️ Profile visit - refreshing engagement');
           fetchEngagement();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'posts'
+        },
+        (payload: any) => {
+          if (payload.new?.user_id === profileId) {
+            console.log('📝 Post views updated - refreshing engagement');
+            fetchEngagement();
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'products'
+        },
+        (payload: any) => {
+          if (payload.new?.user_id === profileId) {
+            console.log('🛍️ Product views updated - refreshing engagement');
+            fetchEngagement();
+          }
         }
       )
       .subscribe();

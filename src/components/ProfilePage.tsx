@@ -66,7 +66,9 @@ import {
   Music,
   FileText,
   BadgeCheck,
-  Gift
+  Gift,
+  Eye,
+  ShoppingBag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -1165,7 +1167,7 @@ const ProfilePage: React.FC = () => {
         <Card className={`${cardClass} backdrop-blur-xl rounded-none sm:rounded-3xl overflow-hidden shadow-none sm:shadow-2xl sm:shadow-blue-950/50 h-full flex flex-col`}>
           <CardContent className="p-0 h-full flex flex-col overflow-hidden" style={{ display: 'flex', flexDirection: 'column' }}>
             {/* Scrollable content area - excludes fixed bottom section */}
-            <div className="flex-1 overflow-y-auto min-h-0 scrollbar-none" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+            <div className="flex-1 overflow-y-auto min-h-0 scrollbar-thin-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
             {/* Profile Header - Top Left Corner with Visitor Profile and Theme Toggle on Right */}
             <div className="flex items-center justify-between px-4 sm:px-6 pt-5 sm:pt-6 pb-3 sm:pb-4">
               <div className="flex items-center gap-4 sm:gap-3">
@@ -1273,14 +1275,14 @@ const ProfilePage: React.FC = () => {
 
             {/* Compact Stats - Inline between avatar and tabs */}
             <div className="px-4 sm:px-6 pb-2">
-              <div className="flex items-center justify-center gap-4 sm:gap-3">
-                <div className="flex items-center gap-1.5">
+              <div className="flex items-center justify-center gap-3 sm:gap-2.5 flex-wrap">
+                <div className="flex items-center gap-1">
                   <MessageCircle className={`w-3.5 h-3.5 ${textSecondaryClass}`} />
                   <span className={`text-sm font-semibold ${textPrimaryClass}`}>{engagement.totalConversations}</span>
                   <span className={`text-[10px] ${textSecondaryClass}`}>chats</span>
                 </div>
                 <div className={`w-px h-3.5 ${isDarkTheme ? 'bg-slate-700' : 'bg-gray-300'}`} />
-                <div className="flex items-center gap-1.5 relative">
+                <div className="flex items-center gap-1 relative">
                   <Users className={`w-3.5 h-3.5 ${textSecondaryClass}`} />
                   <span className={`text-sm font-semibold ${textPrimaryClass}`}>
                     {engagement.followersCount >= 1000 ? `${(engagement.followersCount/1000).toFixed(1)}K` : engagement.followersCount}
@@ -1289,6 +1291,24 @@ const ProfilePage: React.FC = () => {
                   {engagement.isNewUser && (
                     <span className="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-[8px] px-1 py-0 rounded-full font-semibold ml-0.5">NEW</span>
                   )}
+                </div>
+                <div className={`w-px h-3.5 ${isDarkTheme ? 'bg-slate-700' : 'bg-gray-300'}`} />
+                <div className="flex items-center gap-1">
+                  <Eye className={`w-3.5 h-3.5 ${textSecondaryClass}`} />
+                  <span className={`text-sm font-semibold ${textPrimaryClass}`}>{engagement.profileViews}</span>
+                  <span className={`text-[10px] ${textSecondaryClass}`}>views</span>
+                </div>
+                <div className={`w-px h-3.5 ${isDarkTheme ? 'bg-slate-700' : 'bg-gray-300'}`} />
+                <div className="flex items-center gap-1">
+                  <FileText className={`w-3.5 h-3.5 ${textSecondaryClass}`} />
+                  <span className={`text-sm font-semibold ${textPrimaryClass}`}>{engagement.totalPostViews}</span>
+                  <span className={`text-[10px] ${textSecondaryClass}`}>post views</span>
+                </div>
+                <div className={`w-px h-3.5 ${isDarkTheme ? 'bg-slate-700' : 'bg-gray-300'}`} />
+                <div className="flex items-center gap-1">
+                  <ShoppingBag className={`w-3.5 h-3.5 ${textSecondaryClass}`} />
+                  <span className={`text-sm font-semibold ${textPrimaryClass}`}>{engagement.totalProductViews}</span>
+                  <span className={`text-[10px] ${textSecondaryClass}`}>product views</span>
                 </div>
                 <div className={`w-px h-3.5 ${isDarkTheme ? 'bg-slate-700' : 'bg-gray-300'}`} />
                 <LoyaltyBadge score={engagement.loyaltyScore} size="sm" showScore={true} showTierName={false} />

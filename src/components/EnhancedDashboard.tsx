@@ -324,6 +324,14 @@ const EnhancedDashboard = () => {
                     <div className="text-2xl font-bold text-orange-600">{profileData?.analytics.profile_views || 0}</div>
                     <div className="text-sm text-orange-500">Profile Views</div>
                   </div>
+                  <div className="text-center p-3 rounded-lg bg-gradient-to-br from-pink-50 to-pink-100 border border-pink-200">
+                    <div className="text-2xl font-bold text-pink-600">{profileData?.analytics.total_post_views || 0}</div>
+                    <div className="text-sm text-pink-500">Post Views</div>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-gradient-to-br from-cyan-50 to-cyan-100 border border-cyan-200">
+                    <div className="text-2xl font-bold text-cyan-600">{profileData?.analytics.total_product_views || 0}</div>
+                    <div className="text-sm text-cyan-500">Product Views</div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

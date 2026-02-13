@@ -41,6 +41,8 @@ interface UserProfileData {
     followers_count: number;
     total_chats_sent?: number;
     total_chats_received?: number;
+    total_post_views: number;
+    total_product_views: number;
   };
   created_at: string;
   updated_at: string;
@@ -98,6 +100,20 @@ export const useUserProfile = () => {
         .eq('user_id', user.id)
         .maybeSingle();
 
+      // Aggregate post views
+      const { data: postsViews } = await supabase
+        .from('posts')
+        .select('views_count')
+        .eq('user_id', user.id);
+      const totalPostViews = postsViews?.reduce((sum, p) => sum + (p.views_count || 0), 0) || 0;
+
+      // Aggregate product views
+      const { data: productsViews } = await supabase
+        .from('products')
+        .select('views_count')
+        .eq('user_id', user.id);
+      const totalProductViews = productsViews?.reduce((sum, p) => sum + (p.views_count || 0), 0) || 0;
+
       // Create complete profile with defaults if no profile exists
       const completeProfile: UserProfileData = {
         id: user.id,
@@ -137,6 +153,8 @@ export const useUserProfile = () => {
           followers_count: userStats?.followers_count || 0,
           total_chats_sent: userStats?.total_chats_sent || 0,
           total_chats_received: userStats?.total_chats_received || 0,
+          total_post_views: totalPostViews,
+          total_product_views: totalProductViews,
         },
         created_at: profile?.created_at || new Date().toISOString(),
         updated_at: profile?.updated_at || new Date().toISOString(),
@@ -321,6 +339,42 @@ export const useUserProfile = () => {
   useEffect(() => {
     loadCompleteProfile();
   }, []);
+
+  // Real-time subscriptions for view counts
+  useEffect(() => {
+    if (!profileData?.id) return;
+
+    const channel = supabase
+      .channel(`dashboard-views-${profileData.id}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'posts' }, (payload: any) => {
+        if (payload.new?.user_id === profileData.id) {
+          // Refresh post views aggregate
+          supabase.from('posts').select('views_count').eq('user_id', profileData.id).then(({ data }) => {
+            const total = data?.reduce((sum, p) => sum + (p.views_count || 0), 0) || 0;
+            setProfileData(prev => prev ? { ...prev, analytics: { ...prev.analytics, total_post_views: total } } : null);
+          });
+        }
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'products' }, (payload: any) => {
+        if (payload.new?.user_id === profileData.id) {
+          supabase.from('products').select('views_count').eq('user_id', profileData.id).then(({ data }) => {
+            const total = data?.reduce((sum, p) => sum + (p.views_count || 0), 0) || 0;
+            setProfileData(prev => prev ? { ...prev, analytics: { ...prev.analytics, total_product_views: total } } : null);
+          });
+        }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_stats', filter: `user_id=eq.${profileData.id}` }, () => {
+        loadCompleteProfile();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profile_visitors', filter: `visited_profile_id=eq.${profileData.id}` }, () => {
+        loadCompleteProfile();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profileData?.id]);
 
   return {
     profileData,
