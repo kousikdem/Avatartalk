@@ -387,13 +387,13 @@ const AiTraining = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white p-6">
-      <div className="container mx-auto space-y-6">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+    <div className="min-h-screen bg-white p-2 sm:p-4 md:p-6">
+      <div className="container mx-auto space-y-4 sm:space-y-6">
+        <div className="text-center mb-4 sm:mb-8">
+          <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
             AI Training & Voice Cloning
           </h1>
-          <p className="text-gray-700">
+          <p className="text-gray-700 text-sm sm:text-base px-2">
             Train your personalized AI with LlamaIndex → LLaMA 3 pipeline and clone voices with Coqui TTS
           </p>
         </div>

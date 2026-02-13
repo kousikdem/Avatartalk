@@ -458,7 +458,7 @@ const FollowersPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-7xl">
       <Card className="shadow-2xl border-primary/20 overflow-hidden">
         <CardHeader className="border-b bg-gradient-to-r from-primary/10 via-primary/5 to-background pb-6">
           <div className="flex flex-col gap-4">
@@ -468,7 +468,7 @@ const FollowersPage = () => {
                   <Users className="h-7 w-7" />
                 </div>
                 <div>
-                  <CardTitle className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                  <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
                     Community
                   </CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">
@@ -607,37 +607,37 @@ const FollowersPage = () => {
           </div>
         </CardHeader>
 
-        <CardContent className="p-6">
+        <CardContent className="p-3 sm:p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 mb-8 p-1 h-auto bg-muted/50 rounded-xl">
+            <TabsList className="flex w-full overflow-x-auto scrollbar-none mb-6 sm:mb-8 p-1 h-auto bg-muted/50 rounded-xl">
               <TabsTrigger 
                 value="followers" 
-                className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-md rounded-lg py-3 transition-all"
+                className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-background data-[state=active]:shadow-md rounded-lg py-2 sm:py-3 transition-all flex-shrink-0 text-xs sm:text-sm"
               >
                 <Users className="h-4 w-4" />
-                <span className="font-semibold">Followers</span>
-                <Badge variant="secondary" className="ml-1 bg-primary/20 text-primary border-0">
+                <span className="font-semibold hidden sm:inline">Followers</span>
+                <Badge variant="secondary" className="ml-0.5 sm:ml-1 bg-primary/20 text-primary border-0 text-xs">
                   {followers.length}
                 </Badge>
               </TabsTrigger>
               <TabsTrigger 
                 value="following" 
-                className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-md rounded-lg py-3 transition-all"
+                className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-background data-[state=active]:shadow-md rounded-lg py-2 sm:py-3 transition-all flex-shrink-0 text-xs sm:text-sm"
               >
                 <UserPlus className="h-4 w-4" />
-                <span className="font-semibold">Following</span>
-                <Badge variant="secondary" className="ml-1 bg-primary/20 text-primary border-0">
+                <span className="font-semibold hidden sm:inline">Following</span>
+                <Badge variant="secondary" className="ml-0.5 sm:ml-1 bg-primary/20 text-primary border-0 text-xs">
                   {following.length}
                 </Badge>
               </TabsTrigger>
               <TabsTrigger 
                 value="visitors" 
-                className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-md rounded-lg py-3 transition-all"
+                className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-background data-[state=active]:shadow-md rounded-lg py-2 sm:py-3 transition-all flex-shrink-0 text-xs sm:text-sm"
               >
                 <Eye className="h-4 w-4" />
-                <span className="font-semibold">Visitors</span>
+                <span className="font-semibold hidden sm:inline">Visitors</span>
                 {canViewVisitors ? (
-                  <Badge variant="secondary" className="ml-1 bg-primary/20 text-primary border-0">
+                  <Badge variant="secondary" className="ml-0.5 sm:ml-1 bg-primary/20 text-primary border-0 text-xs">
                     {visitors.length}
                   </Badge>
                 ) : (
@@ -646,11 +646,11 @@ const FollowersPage = () => {
               </TabsTrigger>
               <TabsTrigger 
                 value="loyal" 
-                className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-md rounded-lg py-3 transition-all"
+                className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-background data-[state=active]:shadow-md rounded-lg py-2 sm:py-3 transition-all flex-shrink-0 text-xs sm:text-sm"
               >
                 <Gem className="h-4 w-4" />
-                <span className="font-semibold">Loyal Users</span>
-                <Badge variant="secondary" className="ml-1 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-600 border-0">
+                <span className="font-semibold hidden sm:inline">Loyal</span>
+                <Badge variant="secondary" className="ml-0.5 sm:ml-1 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-600 border-0 text-xs">
                   {loyalUsers.length}
                 </Badge>
               </TabsTrigger>

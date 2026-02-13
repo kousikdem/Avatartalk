@@ -455,14 +455,14 @@ const AvatarPage: React.FC = () => {
   // Creation Mode View
   if (creationMode !== 'manual') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <div className="flex items-center justify-between">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-2 sm:p-4 md:p-6">
+        <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
-              <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+              <h1 className="text-3xl sm:text-5xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
                 🎨 Create Your Avatar
               </h1>
-              <p className="text-muted-foreground text-lg mt-2">
+              <p className="text-muted-foreground text-sm sm:text-lg mt-1 sm:mt-2">
                 Choose your preferred creation method
               </p>
             </div>
@@ -603,31 +603,31 @@ const AvatarPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+        <div className="container mx-auto px-3 sm:px-6 py-2 sm:py-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <h1 className="text-xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 🎨 Avatar Studio
               </h1>
-              <Badge variant="outline" className="gap-1">
+              <Badge variant="outline" className="gap-1 text-xs hidden sm:flex">
                 <Sparkles className="w-3 h-3" />
                 Realistic 3D Creation
               </Badge>
             </div>
             
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>
-                <Home className="w-4 h-4 mr-2" />
-                Dashboard
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')} className="h-8 text-xs sm:text-sm">
+                <Home className="w-3.5 h-3.5 sm:mr-2" />
+                <span className="hidden sm:inline">Dashboard</span>
               </Button>
-              <Button variant="outline" size="sm" onClick={handleReset}>
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Reset
+              <Button variant="outline" size="sm" onClick={handleReset} className="h-8 text-xs sm:text-sm">
+                <RotateCcw className="w-3.5 h-3.5 sm:mr-2" />
+                <span className="hidden sm:inline">Reset</span>
               </Button>
               <div className="relative group">
-                <Button variant="outline" size="sm" onClick={() => handleExport()}>
-                  <Download className="w-4 h-4 mr-2" />
-                  Export {exportFormat.toUpperCase()}
+                <Button variant="outline" size="sm" onClick={() => handleExport()} className="h-8 text-xs sm:text-sm">
+                  <Download className="w-3.5 h-3.5 sm:mr-2" />
+                  <span className="hidden sm:inline">Export {exportFormat.toUpperCase()}</span>
                 </Button>
                 <div className="absolute right-0 top-full mt-1 hidden group-hover:block bg-popover border rounded-md shadow-lg p-2 z-50 min-w-[120px]">
                   <div className="text-xs font-medium mb-2 text-muted-foreground">Format:</div>
@@ -645,18 +645,18 @@ const AvatarPage: React.FC = () => {
                   ))}
                 </div>
               </div>
-              <Button size="sm" onClick={handleSave} disabled={saving}>
-                <Save className="w-4 h-4 mr-2" />
-                {saving ? 'Saving...' : 'Save'}
+              <Button size="sm" onClick={handleSave} disabled={saving} className="h-8 text-xs sm:text-sm">
+                <Save className="w-3.5 h-3.5 sm:mr-2" />
+                {saving ? '...' : <span className="hidden sm:inline">Save</span>}
               </Button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto p-6">
-        <div className="grid grid-cols-12 gap-6">
-          <div className="col-span-3 space-y-4 max-h-[calc(100vh-120px)] overflow-y-auto pr-2">
+      <div className="container mx-auto p-2 sm:p-6">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6">
+          <div className="md:col-span-3 space-y-4 md:max-h-[calc(100vh-120px)] overflow-y-auto md:pr-2">
             <Card className="card-gradient p-4">
               <div className="flex items-center gap-2 mb-4">
                 <User className="w-5 h-5 text-primary" />
@@ -666,8 +666,8 @@ const AvatarPage: React.FC = () => {
             </Card>
           </div>
 
-          <div className="col-span-6 space-y-4">
-            <Card className="h-[calc(100vh-200px)] relative">
+          <div className="md:col-span-6 space-y-4">
+            <Card className="h-[60vh] sm:h-[calc(100vh-200px)] relative">
               <Canvas shadows>
                 <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={45} />
                 <ambientLight intensity={0.6} />
@@ -770,7 +770,7 @@ const AvatarPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="col-span-3 space-y-4 max-h-[calc(100vh-120px)] overflow-y-auto pl-2">
+          <div className="md:col-span-3 space-y-4 md:max-h-[calc(100vh-120px)] overflow-y-auto md:pl-2">
             <Tabs defaultValue="face" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="face"><Eye className="w-4 h-4" /></TabsTrigger>
@@ -811,7 +811,7 @@ const AvatarPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-6 mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mt-4 sm:mt-6">
           <Card className="card-gradient p-4">
             <div className="flex items-center gap-2 mb-4">
               <Shirt className="w-5 h-5 text-primary" />
