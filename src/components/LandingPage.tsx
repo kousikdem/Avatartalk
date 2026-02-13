@@ -1226,11 +1226,21 @@ const LandingPage = () => {
             <div>
               <h3 className="font-bold mb-4">Connect</h3>
               <div className="flex space-x-4">
-                <Twitter className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer" />
-                <Facebook className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer" />
-                <Instagram className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer" />
-                <Linkedin className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer" />
-                <Youtube className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer" />
+                <a href="https://x.com/avatartalk_" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
+                  <Twitter className="w-5 h-5" />
+                </a>
+                <a href="https://www.facebook.com/avatartalkco/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
+                  <Facebook className="w-5 h-5" />
+                </a>
+                <a href="https://www.instagram.com/avatartalk.co/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
+                  <Instagram className="w-5 h-5" />
+                </a>
+                <a href="https://www.linkedin.com/company/avatartalk-co/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
+                  <Linkedin className="w-5 h-5" />
+                </a>
+                <a href="https://www.youtube.com/@avatartalk-co" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
+                  <Youtube className="w-5 h-5" />
+                </a>
               </div>
             </div>
           </div>
