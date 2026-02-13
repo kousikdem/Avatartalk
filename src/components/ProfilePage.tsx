@@ -1154,9 +1154,10 @@ const ProfilePage: React.FC = () => {
   const textSecondaryClass = isDarkTheme ? "text-slate-400" : "text-gray-600";
 
   return (
-    <div className={`h-screen ${bgClass} flex items-center justify-center p-2`}>
+    <div className={`${bgClass} flex items-center justify-center p-2`} style={{ height: '100dvh', minHeight: '-webkit-fill-available' }}>
       <motion.div
-        className="w-full max-w-lg mx-auto h-full max-h-screen"
+        className="w-full max-w-lg mx-auto"
+        style={{ height: '100%', maxHeight: '100dvh' }}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6 }}
@@ -1164,7 +1165,7 @@ const ProfilePage: React.FC = () => {
         <Card className={`${cardClass} backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl shadow-blue-950/50 h-full flex flex-col`}>
           <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
             {/* Scrollable content area */}
-            <div className="flex-1 overflow-y-auto min-h-0 scrollbar-none" style={{ scrollbarWidth: 'none' }}>
+            <div className="flex-1 overflow-y-auto min-h-0 scrollbar-none" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
             {/* Profile Header - Top Left Corner with Visitor Profile and Theme Toggle on Right */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4">
               <div className="flex items-center gap-3">
