@@ -1162,7 +1162,7 @@ const ProfilePage: React.FC = () => {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6 }}
       >
-        <Card className={`${cardClass} backdrop-blur-xl rounded-none sm:rounded-3xl overflow-hidden shadow-2xl shadow-blue-950/50 h-full flex flex-col`}>
+        <Card className={`${cardClass} backdrop-blur-xl rounded-none sm:rounded-3xl overflow-hidden shadow-none sm:shadow-2xl sm:shadow-blue-950/50 h-full flex flex-col`}>
           <CardContent className="p-0 h-full flex flex-col overflow-hidden" style={{ display: 'flex', flexDirection: 'column' }}>
             {/* Scrollable content area - excludes fixed bottom section */}
             <div className="flex-1 overflow-y-auto min-h-0 scrollbar-none" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
@@ -1676,7 +1676,7 @@ const ProfilePage: React.FC = () => {
             </div>
 
             {/* Message Input Section - Fixed at bottom */}
-            <div className="px-6 pt-2 pb-1 border-t border-slate-700/30 flex-shrink-0" style={{ WebkitFlexShrink: 0, flexShrink: 0, minHeight: 'auto' }}>
+            <div className="px-3 sm:px-6 pt-2 pb-1 border-t border-slate-700/30 flex-shrink-0" style={{ WebkitFlexShrink: 0, flexShrink: 0, minHeight: 'auto' }}>
               <MessageInput
                 message={
                   // Determine which message to show based on active tab - we'll need to track this
@@ -1692,7 +1692,7 @@ const ProfilePage: React.FC = () => {
 
 
             {/* Social Links Section - Sticky to bottom with minimal spacing */}
-            <div className="px-6 py-1 border-t border-slate-700/30 flex-shrink-0" style={{ WebkitFlexShrink: 0, flexShrink: 0, minHeight: 'auto' }}>
+            <div className="px-3 sm:px-6 py-1 border-t border-slate-700/30 flex-shrink-0" style={{ WebkitFlexShrink: 0, flexShrink: 0, minHeight: 'auto' }}>
               <div className="flex items-center justify-between gap-2">
                 
                 {/* Left Side - All available social links inline */}
@@ -1808,7 +1808,7 @@ const ProfilePage: React.FC = () => {
             </div>
 
             {/* AvatarTalk.Co Branding - Sticky to bottom */}
-            <div className="px-6 py-1 border-t border-slate-700/30 flex-shrink-0 bg-slate-900/50" style={{ WebkitFlexShrink: 0, flexShrink: 0, minHeight: 'auto' }}>
+            <div className="px-3 sm:px-6 py-1 border-t border-slate-700/30 flex-shrink-0 bg-slate-900/50" style={{ WebkitFlexShrink: 0, flexShrink: 0, minHeight: 'auto' }}>
               <div className="text-center">
                 <a 
                   href="https://avatartalk.co" 
