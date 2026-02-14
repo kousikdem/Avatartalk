@@ -118,7 +118,7 @@ const AuthenticatedRoutes = memo(({
 
   return (
     <>
-    {needsOnboarding && !window.location.pathname.match(/^\/[^/]+$/) && (
+    {needsOnboarding && window.location.pathname.startsWith('/settings') && (
       <OnboardingFlow isOpen={true} onClose={() => setNeedsOnboarding(false)} />
     )}
     <SidebarProvider 
