@@ -77,6 +77,43 @@ const LandingPage = () => {
   const [demoMessage, setDemoMessage] = useState('');
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isDemoThemeDark, setIsDemoThemeDark] = useState(true);
+  const [demoChatMessages, setDemoChatMessages] = useState<Array<{sender: 'ai' | 'user'; text: string; id: number}>>([]);
+  const [isTyping, setIsTyping] = useState(false);
+
+  // Auto-playing demo conversation
+  const demoConversationScript = [
+    { sender: 'ai' as const, text: "👋 Hey there! I'm Demo Avatar — your AI-powered brand assistant built on AvatarTalk." },
+    { sender: 'ai' as const, text: "🎙️ I can talk, answer questions, and represent you 24/7 with voice + text — powered by AvatarTalk Turbo." },
+    { sender: 'user' as const, text: "That's cool! What features does AvatarTalk offer?" },
+    { sender: 'ai' as const, text: "Great question! Here's what you get:\n🧠 AI Trained on YOUR content\n🛒 Built-in E-Commerce store\n🔁 Membership & Subscription plans\n🎥 Live Virtual Collaboration\n📊 Lead & Follower Management\n💰 Monetize your brand 24/7" },
+    { sender: 'user' as const, text: "How fast can I set this up?" },
+    { sender: 'ai' as const, text: "⚡ Under 60 seconds! Just sign up, customize your avatar, train your AI, and share your smart bio link. It's that simple!" },
+    { sender: 'ai' as const, text: "🚀 Ready to unlock new earning opportunities? Try it FREE — no credit card needed. Click 'Free Early Access' above! 👆" },
+  ];
+
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    let messageIndex = 0;
+
+    const showNextMessage = () => {
+      if (messageIndex >= demoConversationScript.length) return;
+      
+      setIsTyping(true);
+      const msg = demoConversationScript[messageIndex];
+      const typingDelay = msg.sender === 'ai' ? 1200 + msg.text.length * 8 : 800;
+      
+      timeoutId = setTimeout(() => {
+        setIsTyping(false);
+        setDemoChatMessages(prev => [...prev, { ...msg, id: messageIndex }]);
+        messageIndex++;
+        timeoutId = setTimeout(showNextMessage, msg.sender === 'ai' ? 1000 : 600);
+      }, typingDelay);
+    };
+
+    // Start after 1.5s
+    timeoutId = setTimeout(showNextMessage, 1500);
+    return () => clearTimeout(timeoutId);
+  }, []);
   
   const { plans, loading: plansLoading } = usePlatformPricingPlans();
 
@@ -274,12 +311,11 @@ const LandingPage = () => {
           </Badge>
           
           <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent leading-tight">
-            AI Avatar for your<br />Link-in-Bio
+            Your AI Avatar for Bio Link<br />in Under 60 Sec
           </h1>
           
           <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Create a personalized AI assistant that greets visitors, responds to questions, 
-            and represents you online. Share your links with a touch of personality.
+            Create Smart 🎙️ Talking AI Avatar, 🧠 Intelligent Responses, 🛒 E-Commerce, 🔁 Membership Plans, 🎥 Live Collaboration, 📊 Lead Management, 💰 unlock new earning opportunities 24/7 — all in one smart link.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
@@ -288,7 +324,7 @@ const LandingPage = () => {
               className="gradient-button px-8 py-4 text-lg"
               onClick={() => setIsMainAuthOpen(true)}
             >
-              Early Access
+              Free Early Access
             </Button>
             
             <Button 
@@ -477,91 +513,75 @@ const LandingPage = () => {
               {/* Chat Tab Content */}
               {demoActiveTab === 'chat' && (
                 <div className="space-y-4">
-                  {/* Chat Messages */}
-                  <div className="flex flex-col space-y-3 max-h-48 overflow-y-auto pr-2">
-                    {/* Avatar Message */}
-                    <div className="flex items-start gap-2 flex-row-reverse">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
-                        <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center">
-                          <span className="text-xs font-bold text-white">DA</span>
+                  {/* Chat Messages - Auto-playing conversation */}
+                  <div className="flex flex-col space-y-3 max-h-48 overflow-y-auto scrollbar-thin-auto" ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}>
+                    {demoChatMessages.map((msg) => (
+                      msg.sender === 'ai' ? (
+                        <div key={msg.id} className="flex items-start gap-2 flex-row-reverse">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                            <div className={`w-full h-full rounded-full ${isDemoThemeDark ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center`}>
+                              <span className={`text-xs font-bold ${isDemoThemeDark ? 'text-white' : 'text-gray-900'}`}>DA</span>
+                            </div>
+                          </div>
+                          <div className="flex-1 flex justify-end">
+                            <div className={`${isDemoThemeDark ? 'bg-slate-700/50 border-slate-600/30' : 'bg-gray-100 border-gray-200'} border rounded-2xl rounded-tr-md px-3 py-2 max-w-xs`}>
+                              <p className={`text-sm whitespace-pre-line ${isDemoThemeDark ? 'text-slate-200' : 'text-gray-800'}`}>{msg.text}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div key={msg.id} className="flex items-start gap-2">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 p-[2px] flex-shrink-0">
+                            <div className={`w-full h-full rounded-full ${isDemoThemeDark ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center`}>
+                              <span className={`text-xs font-bold ${isDemoThemeDark ? 'text-white' : 'text-gray-900'}`}>U</span>
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <div className={`${isDemoThemeDark ? 'bg-blue-600/20 border-blue-500/30' : 'bg-blue-50 border-blue-200'} border rounded-2xl rounded-tl-md px-3 py-2 max-w-xs`}>
+                              <p className={`text-sm ${isDemoThemeDark ? 'text-blue-100' : 'text-blue-800'}`}>{msg.text}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    ))}
+                    {isTyping && (
+                      <div className="flex items-start gap-2 flex-row-reverse">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
+                          <div className={`w-full h-full rounded-full ${isDemoThemeDark ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center`}>
+                            <span className={`text-xs font-bold ${isDemoThemeDark ? 'text-white' : 'text-gray-900'}`}>DA</span>
+                          </div>
+                        </div>
+                        <div className="flex-1 flex justify-end">
+                          <div className={`${isDemoThemeDark ? 'bg-slate-700/50 border-slate-600/30' : 'bg-gray-100 border-gray-200'} border rounded-2xl rounded-tr-md px-3 py-2`}>
+                            <div className="flex gap-1">
+                              <span className={`w-2 h-2 rounded-full ${isDemoThemeDark ? 'bg-slate-400' : 'bg-gray-400'} animate-bounce`} style={{animationDelay: '0ms'}}></span>
+                              <span className={`w-2 h-2 rounded-full ${isDemoThemeDark ? 'bg-slate-400' : 'bg-gray-400'} animate-bounce`} style={{animationDelay: '150ms'}}></span>
+                              <span className={`w-2 h-2 rounded-full ${isDemoThemeDark ? 'bg-slate-400' : 'bg-gray-400'} animate-bounce`} style={{animationDelay: '300ms'}}></span>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex-1 flex justify-end">
-                        <div className="bg-slate-700/50 border border-slate-600/30 rounded-2xl rounded-tr-md px-3 py-2 max-w-xs">
-                          <p className="text-sm text-slate-200">
-                            Hi! I'm your AI assistant. How can I help you today?
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* User Message */}
-                    <div className="flex items-start gap-2">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
-                        <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center">
-                          <span className="text-xs font-bold text-white">U</span>
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <div className="bg-blue-600/20 border border-blue-500/30 rounded-2xl rounded-tl-md px-3 py-2 max-w-xs">
-                          <p className="text-sm text-blue-100">
-                            Tell me about your services
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Avatar Response */}
-                    <div className="flex items-start gap-2 flex-row-reverse">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] flex-shrink-0">
-                        <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center">
-                          <span className="text-xs font-bold text-white">DA</span>
-                        </div>
-                      </div>
-                      <div className="flex-1 flex justify-end">
-                        <div className="bg-slate-700/50 border border-slate-600/30 rounded-2xl rounded-tr-md px-3 py-2 max-w-xs">
-                          <p className="text-sm text-slate-200">
-                            I offer personalized AI solutions, avatar creation, and automated customer engagement. Let's discuss your needs!
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </div>
 
                   {/* Chat Input Box */}
-                  <div className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 rounded-2xl border border-slate-600/50 px-3 py-2.5 flex items-center gap-2">
+                  <div className={`${isDemoThemeDark ? 'bg-gradient-to-r from-slate-800/50 to-slate-700/50 border-slate-600/50' : 'bg-gray-50 border-gray-200'} rounded-2xl border px-3 py-2.5 flex items-center gap-2`}>
                     <Input
                       value={demoMessage}
                       onChange={(e) => setDemoMessage(e.target.value)}
                       placeholder="Type your message..."
-                      className="border-0 bg-transparent text-white placeholder:text-slate-400 flex-1 focus-visible:ring-0 p-0 text-sm h-auto"
+                      className={`border-0 bg-transparent ${isDemoThemeDark ? 'text-white placeholder:text-slate-400' : 'text-gray-900 placeholder:text-gray-400'} flex-1 focus-visible:ring-0 p-0 text-sm h-auto`}
                     />
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      className="h-7 w-7 p-0 hover:bg-slate-700 rounded-full"
-                    >
-                      <Smile className="w-3.5 h-3.5 text-slate-400" />
+                    <Button size="sm" variant="ghost" className={`h-7 w-7 p-0 ${isDemoThemeDark ? 'hover:bg-slate-700' : 'hover:bg-gray-200'} rounded-full`}>
+                      <Smile className={`w-3.5 h-3.5 ${isDemoThemeDark ? 'text-slate-400' : 'text-gray-400'}`} />
                     </Button>
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      className="h-7 w-7 p-0 hover:bg-slate-700 rounded-full"
-                    >
-                      <Mic className="w-3.5 h-3.5 text-slate-400" />
+                    <Button size="sm" variant="ghost" className={`h-7 w-7 p-0 ${isDemoThemeDark ? 'hover:bg-slate-700' : 'hover:bg-gray-200'} rounded-full`}>
+                      <Mic className={`w-3.5 h-3.5 ${isDemoThemeDark ? 'text-slate-400' : 'text-gray-400'}`} />
                     </Button>
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      className="h-7 w-7 p-0 hover:bg-slate-700 rounded-full"
-                    >
-                      <Volume2 className="w-3.5 h-3.5 text-slate-400" />
+                    <Button size="sm" variant="ghost" className={`h-7 w-7 p-0 ${isDemoThemeDark ? 'hover:bg-slate-700' : 'hover:bg-gray-200'} rounded-full`}>
+                      <Volume2 className={`w-3.5 h-3.5 ${isDemoThemeDark ? 'text-slate-400' : 'text-gray-400'}`} />
                     </Button>
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      className="h-7 w-7 p-0 hover:bg-slate-700 rounded-full bg-gradient-to-r from-blue-600 to-cyan-600"
-                    >
+                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0 rounded-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700">
                       <Send className="w-3.5 h-3.5 text-white" />
                     </Button>
                   </div>
