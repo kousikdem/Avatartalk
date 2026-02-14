@@ -16,6 +16,7 @@ import { useLikes } from '@/hooks/useLikes';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import EditPostModal from './EditPostModal';
+import { useViewTracking } from '@/hooks/useViewTracking';
 
 interface Post {
   id: string;
@@ -91,9 +92,44 @@ const EnhancedPostCardWithLocks: React.FC<EnhancedPostCardWithLocksProps> = ({
   const [selectedPollOption, setSelectedPollOption] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [liveViewsCount, setLiveViewsCount] = useState(post.views_count || 0);
   
   const { toast } = useToast();
   const { likesCount, isLiked, toggleLike, loading: likesLoading } = useLikes(post.id, 'post');
+
+  // Track post view (skips own posts via ownerId check in hook)
+  useViewTracking({
+    type: 'post',
+    targetId: post.id,
+    viewerId: currentUserId,
+    ownerId: post.user_id,
+    contentTitle: post.title || post.content?.substring(0, 30),
+    delaySeconds: 3
+  });
+
+  // Keep live views in sync with prop updates
+  useEffect(() => {
+    setLiveViewsCount(post.views_count || 0);
+  }, [post.views_count]);
+
+  // Real-time subscription for this post's view count
+  useEffect(() => {
+    const channel = supabase
+      .channel(`post-views-rt-${post.id}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'posts',
+        filter: `id=eq.${post.id}`
+      }, (payload: any) => {
+        if (payload.new?.views_count != null) {
+          setLiveViewsCount(payload.new.views_count);
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [post.id]);
   
   // Check if content is locked
   const isPaidContent = post.is_paid && post.price && post.price > 0;
@@ -608,7 +644,7 @@ const EnhancedPostCardWithLocks: React.FC<EnhancedPostCardWithLocksProps> = ({
               <span>{post.comments_count} comment{post.comments_count !== 1 ? 's' : ''}</span>
               <span className="flex items-center gap-1">
                 <Eye className="w-3 h-3" />
-                {post.views_count}
+                {liveViewsCount}
               </span>
             </div>
             {showLinkClicks && (post.link_clicks ?? 0) > 0 && (

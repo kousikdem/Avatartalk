@@ -39,6 +39,9 @@ export const useViewTracking = ({
     try {
       viewRecordedRef.current = true;
 
+      // Don't track own content views for any type
+      if (viewerId && viewerId === ownerId) return;
+
       if (type === 'profile') {
         // Don't track own profile views
         if (viewerId === targetId) return;
