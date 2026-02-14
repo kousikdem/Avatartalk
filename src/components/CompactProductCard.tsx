@@ -55,6 +55,8 @@ export const CompactProductCard = ({
     type: 'product',
     targetId: isExpanded ? product.id : '',
     viewerId: currentUserId,
+    ownerId: product.user_id,
+    contentTitle: product.title,
     delaySeconds: 3
   });
 

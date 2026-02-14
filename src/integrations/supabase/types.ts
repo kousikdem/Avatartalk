@@ -5138,6 +5138,12 @@ export type Database = {
         Args: { post_id_param: string }
         Returns: undefined
       }
+      increment_post_views: { Args: { p_post_id: string }; Returns: number }
+      increment_product_views: {
+        Args: { p_product_id: string }
+        Returns: number
+      }
+      increment_profile_views: { Args: { p_user_id: string }; Returns: number }
       is_own_profile: { Args: { profile_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       log_admin_action: {

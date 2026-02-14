@@ -75,11 +75,13 @@ export const useProfileEngagement = (profileId: string | null) => {
         .eq('seller_id', profileId)
         .eq('payment_status', 'completed');
 
-      // Count profile visits (unique daily visits)
-      const { count: profileViewsCount } = await supabase
-        .from('profile_visitors')
-        .select('*', { count: 'exact', head: true })
-        .eq('visited_profile_id', profileId);
+      // Use user_stats.profile_views as single source of truth for profile views
+      const { data: profileViewsData } = await supabase
+        .from('user_stats')
+        .select('profile_views')
+        .eq('user_id', profileId)
+        .maybeSingle();
+      const profileViewsCount = profileViewsData?.profile_views || 0;
 
       // Get total post views
       const { data: postsData } = await supabase
@@ -110,7 +112,7 @@ export const useProfileEngagement = (profileId: string | null) => {
       const conversations = totalUserMessages || 0; // All user messages = conversations
       const messages = totalMessages || 0;
       const productsSold = productsSoldCount || stats?.total_products_sold || 0;
-      const profileViews = profileViewsCount || stats?.profile_views || 0;
+      const profileViews = profileViewsCount || 0;
       
       // Loyalty score formula using fixed weights (raw score, no normalization)
       // Chat Messages * 2 + Profile Visits * 1 + Response Time Bonus * 1 + Follow-up Completion * 2
