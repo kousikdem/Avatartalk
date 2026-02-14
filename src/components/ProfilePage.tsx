@@ -1299,18 +1299,6 @@ const ProfilePage: React.FC = () => {
                   <span className={`text-[10px] ${textSecondaryClass}`}>views</span>
                 </div>
                 <div className={`w-px h-3.5 ${isDarkTheme ? 'bg-slate-700' : 'bg-gray-300'}`} />
-                <div className="flex items-center gap-1">
-                  <FileText className={`w-3.5 h-3.5 ${textSecondaryClass}`} />
-                  <span className={`text-sm font-semibold ${textPrimaryClass}`}>{engagement.totalPostViews}</span>
-                  <span className={`text-[10px] ${textSecondaryClass}`}>post views</span>
-                </div>
-                <div className={`w-px h-3.5 ${isDarkTheme ? 'bg-slate-700' : 'bg-gray-300'}`} />
-                <div className="flex items-center gap-1">
-                  <ShoppingBag className={`w-3.5 h-3.5 ${textSecondaryClass}`} />
-                  <span className={`text-sm font-semibold ${textPrimaryClass}`}>{engagement.totalProductViews}</span>
-                  <span className={`text-[10px] ${textSecondaryClass}`}>product views</span>
-                </div>
-                <div className={`w-px h-3.5 ${isDarkTheme ? 'bg-slate-700' : 'bg-gray-300'}`} />
                 <LoyaltyBadge score={engagement.loyaltyScore} size="sm" showScore={true} showTierName={false} />
               </div>
             </div>
