@@ -310,26 +310,21 @@ export const useUserProfile = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || !profileData) return;
 
-      // Update profile views directly in user_stats table
-      const newViews = (profileData.analytics.profile_views || 0) + 1;
-      
-      const { error } = await supabase
-        .from('user_stats')
-        .upsert({ 
-          user_id: user.id,
-          profile_views: newViews 
-        });
-
-      if (error) throw error;
+      // Atomic increment via RPC
+      const { data: newViews } = await supabase.rpc('increment_profile_views', {
+        p_user_id: user.id
+      });
 
       // Update local state
-      setProfileData(prev => prev ? {
-        ...prev,
-        analytics: {
-          ...prev.analytics,
-          profile_views: newViews
-        }
-      } : null);
+      if (newViews != null) {
+        setProfileData(prev => prev ? {
+          ...prev,
+          analytics: {
+            ...prev.analytics,
+            profile_views: newViews
+          }
+        } : null);
+      }
 
     } catch (error) {
       console.error('Error incrementing profile views:', error);

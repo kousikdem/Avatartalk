@@ -67,6 +67,8 @@ const PostCard: React.FC<PostCardProps> = ({
     type: 'post',
     targetId: post.id,
     viewerId: currentUserId,
+    ownerId: post.user_id,
+    contentTitle: (post as any).title || post.content?.substring(0, 30),
     delaySeconds: 3
   });
   

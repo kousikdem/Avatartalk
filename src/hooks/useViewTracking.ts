@@ -49,77 +49,44 @@ export const useViewTracking = ({
           visited_profile_id: targetId,
         });
 
-        // Also increment user_stats profile_views
-        const { data: currentStats } = await supabase
-          .from('user_stats')
-          .select('profile_views')
-          .eq('user_id', targetId)
-          .single();
-
-        const newViews = (currentStats?.profile_views || 0) + 1;
-
-        await supabase
-          .from('user_stats')
-          .upsert({
-            user_id: targetId,
-            profile_views: newViews
-          });
+        // Atomic increment profile views in user_stats via RPC
+        const { data: newViews } = await supabase.rpc('increment_profile_views', {
+          p_user_id: targetId
+        });
 
         // Send milestone notification if applicable
-        if (shouldNotifyMilestone(newViews)) {
+        if (newViews && shouldNotifyMilestone(newViews)) {
           await notificationService.notifyProfileVisitMilestone(targetId, newViews);
         }
 
       } else if (type === 'product') {
-        // Increment product views_count
-        const { data: product } = await supabase
-          .from('products')
-          .select('views_count, title, user_id')
-          .eq('id', targetId)
-          .single();
+        // Atomic increment product views via RPC
+        const { data: newViewsCount } = await supabase.rpc('increment_product_views', {
+          p_product_id: targetId
+        });
 
-        if (product) {
-          const newViewsCount = (product.views_count || 0) + 1;
-          
-          await supabase
-            .from('products')
-            .update({ views_count: newViewsCount })
-            .eq('id', targetId);
-
-          // Send milestone notification if applicable
-          if (shouldNotifyMilestone(newViewsCount) && product.user_id) {
-            await notificationService.notifyProductViewMilestone(
-              product.user_id,
-              product.title || 'Your product',
-              newViewsCount
-            );
-          }
+        // Send milestone notification if applicable
+        if (newViewsCount && shouldNotifyMilestone(newViewsCount) && ownerId) {
+          await notificationService.notifyProductViewMilestone(
+            ownerId,
+            contentTitle || 'Your product',
+            newViewsCount
+          );
         }
 
       } else if (type === 'post') {
-        // Increment post views_count
-        const { data: post } = await supabase
-          .from('posts')
-          .select('views_count, title, user_id')
-          .eq('id', targetId)
-          .single();
+        // Atomic increment post views via RPC
+        const { data: newViewsCount } = await supabase.rpc('increment_post_views', {
+          p_post_id: targetId
+        });
 
-        if (post) {
-          const newViewsCount = (post.views_count || 0) + 1;
-          
-          await supabase
-            .from('posts')
-            .update({ views_count: newViewsCount })
-            .eq('id', targetId);
-
-          // Send milestone notification if applicable
-          if (shouldNotifyMilestone(newViewsCount) && post.user_id) {
-            await notificationService.notifyPostViewMilestone(
-              post.user_id,
-              post.title || 'Your post',
-              newViewsCount
-            );
-          }
+        // Send milestone notification if applicable
+        if (newViewsCount && shouldNotifyMilestone(newViewsCount) && ownerId) {
+          await notificationService.notifyPostViewMilestone(
+            ownerId,
+            contentTitle || 'Your post',
+            newViewsCount
+          );
         }
       }
 

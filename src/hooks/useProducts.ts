@@ -161,14 +161,9 @@ export const useProducts = () => {
 
   const incrementViewCount = async (productId: string) => {
     try {
-      // Manual increment since RPC doesn't exist
-      const product = products.find(p => p.id === productId);
-      if (product) {
-        await supabase
-          .from('products')
-          .update({ views_count: (product.views_count || 0) + 1 })
-          .eq('id', productId);
-      }
+      await supabase.rpc('increment_product_views', {
+        p_product_id: productId
+      });
     } catch (error) {
       console.error('Error incrementing view count:', error);
     }
