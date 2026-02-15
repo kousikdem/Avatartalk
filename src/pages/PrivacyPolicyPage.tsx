@@ -195,14 +195,88 @@ const PrivacyPolicyPage = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">13. Changes to This Privacy Policy</h2>
+            <h2 className="text-2xl font-semibold mb-4">13. Vulnerability Management Policy</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              AvatarTalk.Co maintains a proactive vulnerability management program to identify, assess, and remediate security weaknesses across our platform:
+            </p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
+              <li><strong>Continuous Scanning:</strong> Automated vulnerability scans are conducted regularly across all production systems, APIs, and dependencies</li>
+              <li><strong>Patch Management:</strong> Critical vulnerabilities are prioritized and patched within 24–72 hours of discovery; non-critical issues are remediated within scheduled maintenance windows</li>
+              <li><strong>Penetration Testing:</strong> Third-party penetration tests are performed periodically to validate our security posture</li>
+              <li><strong>Responsible Disclosure:</strong> We welcome security researchers to report vulnerabilities responsibly at security@avatartalk.co</li>
+              <li><strong>Risk Assessment:</strong> Each vulnerability is evaluated using industry-standard severity scoring (CVSS) to prioritize remediation efforts</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">14. Security Policy</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              We implement comprehensive security measures to safeguard user data and platform integrity:
+            </p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
+              <li><strong>Encryption:</strong> All data in transit is encrypted using TLS 1.2+ and data at rest is encrypted using AES-256</li>
+              <li><strong>Access Control:</strong> Role-based access control (RBAC) and Row Level Security (RLS) policies enforce strict data isolation between users</li>
+              <li><strong>Authentication:</strong> Multi-factor authentication, secure session management, and token-based API access protect user accounts</li>
+              <li><strong>Infrastructure Security:</strong> Our infrastructure is hosted on SOC 2–compliant cloud providers with firewalls, intrusion detection, and DDoS protection</li>
+              <li><strong>Security Training:</strong> All team members undergo regular security awareness training</li>
+              <li><strong>Audit Logging:</strong> Administrative actions and sensitive operations are logged and monitored for anomalies</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">15. Data Retention & Protection Policy</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              We retain and protect user data according to the following principles:
+            </p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
+              <li><strong>Active Accounts:</strong> Personal data is retained for the duration of your active account plus 90 days after deletion request to allow recovery</li>
+              <li><strong>AI Training Data:</strong> AI conversation history, training documents, and Q&A pairs are retained as long as your account is active; deleted within 30 days of account closure</li>
+              <li><strong>Payment Records:</strong> Transaction and billing records are retained for 7 years as required by applicable tax and financial regulations</li>
+              <li><strong>Analytics & Logs:</strong> Anonymized usage analytics are retained for up to 24 months; server logs are purged after 90 days</li>
+              <li><strong>Backups:</strong> Encrypted backups are maintained for disaster recovery and are purged on the same schedule as primary data</li>
+              <li><strong>Data Minimization:</strong> We only collect and retain data that is necessary for the purposes described in this policy</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">16. Incident Management & Response Policy</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              In the event of a security incident or data breach, AvatarTalk.Co follows a structured response protocol:
+            </p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
+              <li><strong>Detection & Triage:</strong> Automated monitoring and alerting systems detect anomalies in real-time; incidents are triaged by severity within 1 hour</li>
+              <li><strong>Containment:</strong> Immediate containment measures are deployed to limit the scope and impact of the incident</li>
+              <li><strong>Investigation:</strong> A dedicated incident response team conducts root cause analysis and forensic investigation</li>
+              <li><strong>Notification:</strong> Affected users are notified within 72 hours of confirmed breach, in compliance with GDPR and applicable data protection laws</li>
+              <li><strong>Remediation:</strong> Corrective actions are implemented and verified; post-incident reviews are conducted to prevent recurrence</li>
+              <li><strong>Documentation:</strong> All incidents are documented, reviewed, and used to improve security controls</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">17. Infrastructure & Dependency Management Policy</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              We maintain rigorous standards for managing our technology infrastructure and third-party dependencies:
+            </p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
+              <li><strong>Cloud Infrastructure:</strong> All services run on enterprise-grade, SOC 2–certified cloud infrastructure with redundancy across multiple availability zones</li>
+              <li><strong>Dependency Auditing:</strong> Third-party libraries and packages are continuously monitored for known vulnerabilities using automated scanning tools</li>
+              <li><strong>Version Control:</strong> All infrastructure configurations and application code are version-controlled with mandatory code reviews before deployment</li>
+              <li><strong>Change Management:</strong> Infrastructure changes follow a formal change management process with testing, approval, and rollback procedures</li>
+              <li><strong>Service Level Agreements:</strong> Critical third-party services (payment gateways, AI providers, hosting) are governed by SLAs ensuring uptime and data protection standards</li>
+              <li><strong>Disaster Recovery:</strong> Business continuity and disaster recovery plans are tested annually to ensure data availability and service resilience</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">18. Changes to This Privacy Policy</h2>
             <p className="text-muted-foreground leading-relaxed">
               We may update this Privacy Policy from time to time. We will notify you of any material changes by posting the new Privacy Policy on our website and updating the "Last updated" date. We encourage you to review this Privacy Policy periodically for any changes.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">14. Contact Us</h2>
+            <h2 className="text-2xl font-semibold mb-4">19. Contact Us</h2>
             <p className="text-muted-foreground leading-relaxed">
               If you have any questions or concerns about this Privacy Policy or our data practices, please contact us at:
             </p>
@@ -214,7 +288,7 @@ const PrivacyPolicyPage = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">15. Grievance Officer</h2>
+            <h2 className="text-2xl font-semibold mb-4">20. Grievance Officer</h2>
             <p className="text-muted-foreground leading-relaxed">
               In accordance with the Information Technology Act, 2000 and rules made thereunder, the name and contact details of the Grievance Officer are provided below:
             </p>
