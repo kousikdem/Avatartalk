@@ -51,10 +51,10 @@ export const OrdersDashboard = ({ type }: OrdersDashboardProps) => {
     }
   };
 
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-IN', {
+  const formatCurrency = (amount: number, currency: string = 'USD') => {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency,
+      currency: 'USD',
       minimumFractionDigits: 0
     }).format(amount / 100);
   };

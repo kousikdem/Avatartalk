@@ -39,10 +39,10 @@ export const notificationService = {
         .from('notifications')
         .insert({
           user_id: userId,
-          type,
+          type: 'system', // Always use 'system' to satisfy notifications_type_check constraint
           title,
           message,
-          data,
+          data: { ...data, original_type: type },
           link_url,
           link_text,
           priority,

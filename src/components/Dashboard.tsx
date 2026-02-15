@@ -5,7 +5,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { 
   Share2, Users, MessageSquare, BarChart3, LogOut, 
   Home, ShoppingBag, PlusCircle, Menu, Brain, Video,
-  Coins, Calendar, UserCircle, Link, Bell, Settings
+  Coins, Calendar, UserCircle, Link, Bell, Settings, Eye, DollarSign
 } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import ShareModal from './ShareModal';
@@ -193,14 +193,18 @@ const Dashboard = () => {
 
         <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 hover:shadow-lg transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6 sm:pb-2">
-            <CardTitle className="text-xs sm:text-sm font-medium text-gray-700">Meetings</CardTitle>
-            <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
+            <CardTitle className="text-xs sm:text-sm font-medium text-gray-700">Visitors</CardTitle>
+            <Eye className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
           </CardHeader>
           <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
             <div className="text-xl sm:text-2xl font-bold text-gray-900">
-              {upcomingMeetings === null ? <Skeleton className="h-7 w-10" /> : upcomingMeetings}
+              {showProfileSkeletons ? (
+                <Skeleton className="h-7 w-10" />
+              ) : (
+                profileData?.analytics?.profile_views ?? 0
+              )}
             </div>
-            <p className="text-xs text-gray-600 hidden sm:block">Scheduled meetings</p>
+            <p className="text-xs text-gray-600 hidden sm:block">Profile visitors</p>
           </CardContent>
         </Card>
       </div>
@@ -308,6 +312,18 @@ const Dashboard = () => {
                     <BarChart3 className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
                   </div>
                   <span className="text-[10px] sm:text-xs text-gray-700 font-medium truncate w-full text-center">Analytics</span>
+                </Button>
+
+                {/* Earnings */}
+                <Button 
+                  variant="outline" 
+                  className="h-14 sm:h-20 bg-white hover:bg-gray-50 border border-gray-200 flex flex-col items-center justify-center gap-1 sm:gap-2 p-1 sm:p-2"
+                  onClick={() => navigate('/settings/earnings')}
+                >
+                  <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-emerald-400 to-green-600">
+                    <DollarSign className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
+                  </div>
+                  <span className="text-[10px] sm:text-xs text-gray-700 font-medium truncate w-full text-center">Earnings</span>
                 </Button>
                 
                 {/* Settings */}

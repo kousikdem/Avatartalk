@@ -43,7 +43,7 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
   const [content, setContent] = useState(post.content || '');
   const [isPaid, setIsPaid] = useState(post.is_paid || false);
   const [price, setPrice] = useState(post.price?.toString() || '');
-  const [currency, setCurrency] = useState(post.currency || 'INR');
+  const [currency, setCurrency] = useState(post.currency || 'USD');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -52,7 +52,7 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
     setContent(post.content || '');
     setIsPaid(post.is_paid || false);
     setPrice(post.price?.toString() || '');
-    setCurrency(post.currency || 'INR');
+    setCurrency(post.currency || 'USD');
   }, [post]);
 
   const handleSubmit = async (e: React.FormEvent) => {

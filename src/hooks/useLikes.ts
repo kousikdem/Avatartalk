@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { notificationService } from '@/utils/notificationService';
 
 interface Like {
   id: string;
@@ -103,6 +104,19 @@ export const useLikes = (itemId?: string, itemType?: 'post' | 'profile') => {
 
         setIsLiked(true);
         setLikesCount(prev => prev + 1);
+
+        // Send notification to post/profile owner
+        if (itemType === 'post') {
+          try {
+            const { data: post } = await supabase.from('posts').select('user_id, content').eq('id', itemId).single();
+            if (post && post.user_id !== user.id) {
+              const { data: likerProfile } = await supabase.from('profiles').select('display_name, username').eq('id', user.id).single();
+              const likerName = likerProfile?.display_name || likerProfile?.username || 'Someone';
+              const postTitle = (post.content || '').slice(0, 40) || 'your post';
+              await notificationService.notifyPostLike(post.user_id, likerName, postTitle, itemId);
+            }
+          } catch (e) { console.error('Like notification error:', e); }
+        }
       }
     } catch (error) {
       console.error('Error toggling like:', error);

@@ -33,6 +33,7 @@ const PromoSettingsPage = lazy(() => import("./pages/PromoSettingsPage"));
 const SuperAdminPage = lazy(() => import("./pages/SuperAdminPage"));
 const BuyTokensPage = lazy(() => import("./pages/BuyTokensPage"));
 const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
+const EarningsPage = lazy(() => import("./pages/EarningsPage"));
 const PricingPage = lazy(() => import("./components/PricingPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
@@ -189,6 +190,11 @@ const AuthenticatedRoutes = memo(({
               <Route path="/settings/analytics" element={
                 <Suspense fallback={<PageFallback />}>
                   <DashboardPageLayout><AnalyticsPage /></DashboardPageLayout>
+                </Suspense>
+              } />
+              <Route path="/settings/earnings" element={
+                <Suspense fallback={<PageFallback />}>
+                  <DashboardPageLayout><EarningsPage /></DashboardPageLayout>
                 </Suspense>
               } />
               <Route path="/settings/super-admin" element={

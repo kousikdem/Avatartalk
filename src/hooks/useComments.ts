@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { notificationService } from '@/utils/notificationService';
 
 interface Comment {
   id: string;
@@ -125,6 +126,19 @@ export const useComments = (itemId?: string, itemType?: 'post' | 'profile') => {
         .insert([commentData]);
 
       if (error) throw error;
+
+      // Send notification to post owner
+      if (itemType === 'post') {
+        try {
+          const { data: post } = await supabase.from('posts').select('user_id, content').eq('id', itemId).single();
+          if (post && post.user_id !== user.id) {
+            const { data: commenterProfile } = await supabase.from('profiles').select('display_name, username').eq('id', user.id).single();
+            const commenterName = commenterProfile?.display_name || commenterProfile?.username || 'Someone';
+            const postTitle = (post.content || '').slice(0, 40) || 'your post';
+            await notificationService.notifyPostComment(post.user_id, commenterName, postTitle, itemId, content.trim());
+          }
+        } catch (e) { console.error('Comment notification error:', e); }
+      }
 
       toast({
         title: "Success",

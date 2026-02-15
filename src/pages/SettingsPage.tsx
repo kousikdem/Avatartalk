@@ -105,12 +105,12 @@ const SettingsPage = () => {
   const { hasFeature } = usePlanFeatures();
   const canAccessSubscriptionPlans = hasFeature('subscription_button_enabled');
   const creatorPlanConfig = planColors.creator;
-  const [selectedCurrency, setSelectedCurrency] = useState('INR');
+  const [selectedCurrency, setSelectedCurrency] = useState('USD');
   const [newPlan, setNewPlan] = useState({
     title: '',
     description: '',
     price_amount: 99,
-    currency: 'INR',
+    currency: 'USD',
     billing_cycle: 'monthly',
     trial_days: 0,
     benefits: [],
@@ -1076,7 +1076,7 @@ const SettingsPage = () => {
                           title: '',
                           description: '',
                           price_amount: 99,
-                          currency: 'INR',
+                          currency: 'USD',
                           billing_cycle: 'monthly',
                           trial_days: 0,
                           benefits: [],

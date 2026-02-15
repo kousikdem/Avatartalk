@@ -42,11 +42,12 @@ const DemoProductCard: React.FC<DemoProductCardProps> = ({ product }) => {
   const isVirtualMeeting = product.product_type === 'virtual_meeting';
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-IN', {
+    const usdPrice = Math.round(price * 0.012);
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'INR',
+      currency: 'USD',
       minimumFractionDigits: 0
-    }).format(price);
+    }).format(usdPrice);
   };
 
   const getProductIcon = () => {
