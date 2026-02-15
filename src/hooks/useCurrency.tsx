@@ -60,7 +60,7 @@ const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
 export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currency, setCurrencyState] = useState<Currency>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return (saved as Currency) || 'INR';
+    return (saved as Currency) || 'USD';
   });
   const [exchangeRates, setExchangeRates] = useState<ExchangeRates>(FALLBACK_RATES);
   const [loading, setLoading] = useState(false);
