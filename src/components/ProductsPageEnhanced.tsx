@@ -46,7 +46,7 @@ const ProductsPageEnhanced = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [selectedCurrency, setSelectedCurrency] = useState<Currency>('INR');
+  const [selectedCurrency, setSelectedCurrency] = useState<Currency>('USD');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterType, setFilterType] = useState('all');

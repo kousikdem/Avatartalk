@@ -14,7 +14,8 @@ import {
   Share2,
   Shield,
   ArrowUp,
-  Sparkles
+  Sparkles,
+  DollarSign
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -56,6 +57,7 @@ const navigationItems: NavItem[] = [
   { title: "AI Training", icon: Brain, url: "/settings/ai-training", gradient: "from-fuchsia-500 to-pink-500", requiredPlan: 'free' },
   { title: "Social Links", icon: Share2, url: "/settings/social-links", gradient: "from-sky-500 to-blue-500", requiredPlan: 'free' },
   { title: "Analytics", icon: BarChart3, url: "/settings/analytics", gradient: "from-indigo-500 to-violet-500", requiredPlan: 'pro', featureKey: 'advanced_analytics' },
+  { title: "Earnings", icon: DollarSign, url: "/settings/earnings", gradient: "from-emerald-500 to-green-600", requiredPlan: 'free' },
   { title: "Followers", icon: Users, url: "/settings/followers", gradient: "from-green-500 to-emerald-500", requiredPlan: 'free' },
   { title: "Settings", icon: Settings, url: "/settings/account", gradient: "from-slate-500 to-gray-600", requiredPlan: 'free' },
 ];

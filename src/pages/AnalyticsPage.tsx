@@ -76,9 +76,9 @@ const AnalyticsPage = () => {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-IN', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'INR',
+      currency: 'USD',
       maximumFractionDigits: 0
     }).format(value);
   };
@@ -344,7 +344,7 @@ const AnalyticsPage = () => {
                       axisLine={{ stroke: 'hsl(var(--border))' }}
                     />
                     <YAxis 
-                      tickFormatter={(value) => `₹${formatNumber(value)}`}
+                      tickFormatter={(value) => `$${formatNumber(value)}`}
                       stroke="hsl(var(--muted-foreground))"
                       tick={{ fontSize: 12 }}
                       axisLine={{ stroke: 'hsl(var(--border))' }}

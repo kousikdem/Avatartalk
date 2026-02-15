@@ -280,7 +280,7 @@ const LandingPage = () => {
   const dynamicPricingPlans = plans.map(plan => {
     const PlanIcon = planIcons[plan.plan_key] || Star;
     const features = (plan.features_list || []) as PlatformFeature[];
-    const originalPrice = plan.price_inr;
+    const originalPrice = plan.price_usd || Math.round((plan.price_inr || 0) * 0.012);
     const discountedPrice = Math.round(originalPrice * (1 - yearlyDiscountPercent / 100));
     const saveAmount = originalPrice - discountedPrice;
     
@@ -288,7 +288,7 @@ const LandingPage = () => {
       id: plan.id,
       name: plan.plan_name,
       originalPrice: plan.plan_key === 'free' ? 0 : originalPrice,
-      price: plan.plan_key === 'free' ? 'Free' : `₹${discountedPrice}`,
+      price: plan.plan_key === 'free' ? 'Free' : `$${discountedPrice}`,
       saveAmount: plan.plan_key === 'free' ? 0 : saveAmount,
       discountPercent: plan.plan_key === 'free' ? 0 : yearlyDiscountPercent,
       period: plan.plan_key === 'free' ? '' : '/month',
@@ -1082,7 +1082,7 @@ const LandingPage = () => {
                       <div className="mb-2">
                         {plan.originalPrice > 0 && (
                           <div className="text-sm text-gray-400 line-through">
-                            ₹{plan.originalPrice}/mo
+                            ${plan.originalPrice}/mo
                           </div>
                         )}
                         <div className="text-3xl font-extrabold text-gray-900">
@@ -1093,7 +1093,7 @@ const LandingPage = () => {
                           <div className="inline-flex items-center gap-1 mt-2 px-3 py-1 bg-green-100 border border-green-200 rounded-full">
                             <Tag className="w-3 h-3 text-green-600" />
                             <span className="text-sm font-bold text-green-600">
-                              Save ₹{plan.saveAmount}/mo ({plan.discountPercent}% off)
+                              Save ${plan.saveAmount}/mo ({plan.discountPercent}% off)
                             </span>
                           </div>
                         )}
