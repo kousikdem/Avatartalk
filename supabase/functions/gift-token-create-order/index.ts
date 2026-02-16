@@ -5,7 +5,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Fallback: 1M tokens = ₹1000
 const DEFAULT_PRICE_PER_MILLION_INR = 1000;
 const MIN_AMOUNT_INR = 10;
 
@@ -15,43 +14,78 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // ============================================================
+    // FIX: Authenticate the caller via JWT
+    // ============================================================
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Authentication required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // Verify JWT using anon client
+    const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user: authUser }, error: authError } = await anonClient.auth.getUser();
+    if (authError || !authUser) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid or expired token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const body = await req.json().catch(() => null);
-    const senderId = body?.senderId as string | undefined;
     const receiverId = body?.receiverId as string | undefined;
     const amount = Number(body?.amount);
     const amountPaidRaw = Number(body?.amountPaid);
     const message = (body?.message ?? null) as string | null;
 
+    // The sender is ALWAYS the authenticated user – never trust client-provided senderId
+    const senderId = authUser.id;
+
     console.log(
-      `Gift token order request: sender=${senderId}, receiver=${receiverId}, tokens=${amount}, amountPaidRaw=${body?.amountPaid}`,
+      `Gift token order request: sender=${senderId}, receiver=${receiverId}, tokens=${amount}`,
     );
 
-    if (!senderId || !receiverId || !Number.isFinite(amount) || !Number.isFinite(amountPaidRaw)) {
+    if (!receiverId || !Number.isFinite(amount) || !Number.isFinite(amountPaidRaw)) {
       return new Response(
         JSON.stringify({
           success: false,
-          error: "Missing/invalid required fields: senderId, receiverId, amount, amountPaid",
+          error: "Missing/invalid required fields: receiverId, amount, amountPaid",
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    // Prevent self-gifting
+    if (senderId === receiverId) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Cannot gift tokens to yourself" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const razorpayKeyId = Deno.env.get("RAZORPAY_KEY_ID");
     const razorpayKeySecret = Deno.env.get("RAZORPAY_KEY_SECRET");
 
     if (!razorpayKeyId || !razorpayKeySecret) {
       console.error("Razorpay credentials not configured");
       return new Response(
-        JSON.stringify({ success: false, error: "Payment gateway not configured. Please contact support." }),
+        JSON.stringify({ success: false, error: "Payment gateway not configured." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Ensure sender profile exists (some environments may miss signup triggers)
+    // Verify sender profile exists
     const { data: senderProfile } = await supabase
       .from("profiles")
       .select("id, display_name, username")
@@ -59,19 +93,10 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!senderProfile) {
-      const { error: createSenderError } = await supabase
-        .from("profiles")
-        .insert({ id: senderId })
-        .select()
-        .maybeSingle();
-
-      if (createSenderError) {
-        console.error("Failed to auto-create sender profile:", createSenderError);
-        return new Response(
-          JSON.stringify({ success: false, error: "Your profile is not ready yet. Please re-login and try again." }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
+      return new Response(
+        JSON.stringify({ success: false, error: "Your profile is not ready. Please re-login." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
     const { data: receiverProfile, error: receiverError } = await supabase
@@ -81,14 +106,13 @@ Deno.serve(async (req) => {
       .single();
 
     if (receiverError || !receiverProfile) {
-      console.error("Receiver not found:", receiverError);
       return new Response(JSON.stringify({ success: false, error: "Receiver not found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Read gift price (same source as frontend hook)
+    // Read gift price
     let pricePerMillionINR = DEFAULT_PRICE_PER_MILLION_INR;
     const { data: priceRow } = await supabase
       .from("ai_system_limits")
@@ -103,8 +127,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Normalize amountPaid -> rupees if a client accidentally sends paise
-    // We detect this by comparing provided token amount vs. expected tokens.
+    // Normalize amountPaid
     let amountPaidINR = amountPaidRaw;
     const expectedTokensFromINR = Math.floor((amountPaidINR / pricePerMillionINR) * 1_000_000);
     const expectedTokensIfRawWasPaise = Math.floor(((amountPaidINR / 100) / pricePerMillionINR) * 1_000_000);
@@ -112,9 +135,6 @@ Deno.serve(async (req) => {
     const diffPaise = Math.abs(expectedTokensIfRawWasPaise - amount);
 
     if (amountPaidINR >= 1000 && diffPaise < diffINR * 0.2) {
-      console.log(
-        `Detected amountPaid sent as paise. Normalizing ${amountPaidINR} -> ${amountPaidINR / 100} INR (pricePerMillionINR=${pricePerMillionINR})`,
-      );
       amountPaidINR = amountPaidINR / 100;
     }
 
@@ -125,10 +145,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Convert rupees to paise for Razorpay (₹1 = 100 paise)
     const amountInPaise = Math.round(amountPaidINR * 100);
-    console.log(`Amount conversion: ₹${amountPaidINR} = ${amountInPaise} paise`);
-
     const razorpayAuth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
 
     const orderResponse = await fetch("https://api.razorpay.com/v1/orders", {
@@ -154,17 +171,12 @@ Deno.serve(async (req) => {
       const errorText = await orderResponse.text();
       console.error("Razorpay order creation failed:", errorText);
       return new Response(
-        JSON.stringify({
-          success: false,
-          error: "Failed to create payment order. Please try again.",
-          details: errorText.slice(0, 300),
-        }),
+        JSON.stringify({ success: false, error: "Failed to create payment order." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     const orderData = await orderResponse.json();
-    console.log(`Razorpay order created: ${orderData.id}, amount: ${orderData.amount} paise`);
 
     const { data: giftRecord, error: giftError } = await supabase
       .from("token_gifts")
@@ -184,19 +196,17 @@ Deno.serve(async (req) => {
     if (giftError) {
       console.error("Gift record error:", giftError);
       return new Response(
-        JSON.stringify({ success: false, error: giftError.message || "Failed to create gift record" }),
+        JSON.stringify({ success: false, error: "Failed to create gift record" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-
-    console.log(`Gift order created successfully: gift_id=${giftRecord.id}, order_id=${orderData.id}`);
 
     return new Response(
       JSON.stringify({
         success: true,
         order_id: orderData.id,
         gift_id: giftRecord.id,
-        amount: amountInPaise, // paise for Razorpay checkout
+        amount: amountInPaise,
         amount_inr: amountPaidINR,
         currency: "INR",
         key_id: razorpayKeyId,
@@ -207,7 +217,7 @@ Deno.serve(async (req) => {
     );
   } catch (error) {
     console.error("Gift token order error:", error);
-    return new Response(JSON.stringify({ success: false, error: error?.message || "Internal server error" }), {
+    return new Response(JSON.stringify({ success: false, error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

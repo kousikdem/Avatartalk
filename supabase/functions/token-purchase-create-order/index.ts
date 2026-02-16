@@ -11,29 +11,62 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { packageId, userId } = await req.json();
-    console.log(`Token purchase order request: packageId=${packageId}, userId=${userId}`);
-
-    if (!packageId || !userId) {
+    // ============================================================
+    // FIX: Authenticate the caller via JWT instead of trusting client-provided userId
+    // ============================================================
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({
         success: false,
-        error: 'Missing required fields: packageId and userId are required'
+        error: 'Authentication required'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    // Verify the JWT
+    const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user: authUser }, error: authError } = await anonClient.auth.getUser();
+    if (authError || !authUser) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Invalid or expired token'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Use authenticated user ID, ignore client-provided userId
+    const userId = authUser.id;
+
+    const { packageId } = await req.json();
+    console.log(`Token purchase order request: packageId=${packageId}, userId=${userId}`);
+
+    if (!packageId) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Missing required field: packageId'
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID');
     const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
 
     if (!razorpayKeyId || !razorpayKeySecret) {
-      console.error('Razorpay credentials not configured');
       return new Response(JSON.stringify({
         success: false,
-        error: 'Payment system not configured. Please contact support.'
+        error: 'Payment system not configured.'
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -51,7 +84,6 @@ Deno.serve(async (req) => {
       .single();
 
     if (packageError || !packageData) {
-      console.error('Package not found:', packageError);
       return new Response(JSON.stringify({
         success: false,
         error: 'Token package not found or inactive'
@@ -61,47 +93,25 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`Package found: ${packageData.name}, price: ₹${packageData.price_inr}`);
-
-    // Ensure user profile exists (some environments may miss signup triggers)
-    let userData: { id: string; email: string | null } | null = null;
-
-    const { data: existingProfile, error: profileError } = await supabase
+    // Verify profile exists
+    const { data: existingProfile } = await supabase
       .from('profiles')
       .select('id, email')
       .eq('id', userId)
       .maybeSingle();
 
-    if (profileError) {
-      console.error('Error checking profile:', profileError);
-    }
-
     if (!existingProfile) {
-      console.log(`Profile missing for user ${userId}. Attempting to create a minimal profile row...`);
-
-      // Try to fetch auth user details (best-effort)
-      const { data: authUserData, error: authUserError } = await supabase.auth.admin.getUserById(userId);
-      if (authUserError) {
-        console.warn('Could not fetch auth user for profile creation:', authUserError);
-      }
-
+      // Auto-create profile from auth metadata
+      const { data: authUserData } = await supabase.auth.admin.getUserById(userId);
       const email = authUserData?.user?.email ?? null;
       const meta = (authUserData?.user?.user_metadata ?? {}) as Record<string, unknown>;
       const fullName = (meta.full_name as string | undefined) || (meta.name as string | undefined) || null;
 
-      const { data: createdProfile, error: createProfileError } = await supabase
+      const { error: createProfileError } = await supabase
         .from('profiles')
-        .insert({
-          id: userId,
-          email,
-          full_name: fullName,
-          display_name: fullName,
-        })
-        .select('id, email')
-        .single();
+        .insert({ id: userId, email, full_name: fullName, display_name: fullName });
 
       if (createProfileError) {
-        console.error('Failed to create profile:', createProfileError);
         return new Response(JSON.stringify({
           success: false,
           error: 'User profile not initialized. Please log out and log in again.'
@@ -110,27 +120,11 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
-
-      userData = createdProfile;
-    } else {
-      userData = existingProfile;
     }
 
-    if (!userData) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'User not found'
-      }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Convert price to paise for Razorpay (₹1 = 100 paise)
+    // Convert price to paise
     const amountInPaise = Math.max(Math.round(packageData.price_inr * 100), 100);
-    console.log(`Amount in paise for Razorpay: ${amountInPaise} (₹${packageData.price_inr})`);
 
-    // Create Razorpay order
     const razorpayAuth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
     
     const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
@@ -159,7 +153,7 @@ Deno.serve(async (req) => {
       console.error('Razorpay order creation failed:', errorText);
       return new Response(JSON.stringify({
         success: false,
-        error: 'Failed to create payment order. Please try again.'
+        error: 'Failed to create payment order.'
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -167,9 +161,7 @@ Deno.serve(async (req) => {
     }
 
     const razorpayOrder = await razorpayResponse.json();
-    console.log(`Razorpay order created: ${razorpayOrder.id}`);
 
-    // Create token purchase record
     const { error: purchaseError } = await supabase
       .from('token_purchases')
       .insert({
@@ -184,15 +176,12 @@ Deno.serve(async (req) => {
 
     if (purchaseError) {
       console.error('Failed to create purchase record:', purchaseError);
-      // Don't fail the request - order was created in Razorpay
     }
-
-    console.log(`Token purchase order created successfully: order_id=${razorpayOrder.id}, amount=₹${packageData.price_inr}`);
 
     return new Response(JSON.stringify({
       success: true,
       order_id: razorpayOrder.id,
-      amount: amountInPaise, // Razorpay expects paise
+      amount: amountInPaise,
       currency: 'INR',
       key_id: razorpayKeyId,
       package: {
@@ -208,7 +197,7 @@ Deno.serve(async (req) => {
     console.error('Error in token-purchase-create-order:', error);
     return new Response(JSON.stringify({
       success: false,
-      error: error.message || 'Internal server error'
+      error: 'Internal server error'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

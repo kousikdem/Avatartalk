@@ -6,6 +6,66 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// SSRF Mitigation: Block internal/private IPs and dangerous protocols
+const BLOCKED_IP_RANGES = [
+  /^127\./,           // Loopback
+  /^10\./,            // Private Class A
+  /^172\.(1[6-9]|2\d|3[01])\./, // Private Class B
+  /^192\.168\./,      // Private Class C
+  /^169\.254\./,      // Link-local
+  /^0\./,             // Current network
+  /^100\.(6[4-9]|[7-9]\d|1[0-2]\d)\./, // Carrier-grade NAT
+  /^::1$/,            // IPv6 loopback
+  /^fd/i,             // IPv6 private
+  /^fe80/i,           // IPv6 link-local
+];
+
+const ALLOWED_PROTOCOLS = ['https:', 'http:'];
+
+// Maximum allowed URL length
+const MAX_URL_LENGTH = 2048;
+
+function isUrlSafe(urlString: string): { safe: boolean; error?: string } {
+  if (urlString.length > MAX_URL_LENGTH) {
+    return { safe: false, error: 'URL too long' };
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(urlString);
+  } catch {
+    return { safe: false, error: 'Invalid URL format' };
+  }
+
+  // Protocol validation
+  if (!ALLOWED_PROTOCOLS.includes(parsed.protocol)) {
+    return { safe: false, error: `Protocol ${parsed.protocol} not allowed. Only HTTP(S) permitted.` };
+  }
+
+  // Block IP-based hostnames (prevent direct IP access to internal services)
+  const hostname = parsed.hostname;
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+    for (const range of BLOCKED_IP_RANGES) {
+      if (range.test(hostname)) {
+        return { safe: false, error: 'Access to internal/private IP addresses is not allowed' };
+      }
+    }
+  }
+
+  // Block common internal hostnames
+  const blockedHosts = ['localhost', 'metadata.google.internal', '169.254.169.254', 'metadata'];
+  if (blockedHosts.includes(hostname.toLowerCase())) {
+    return { safe: false, error: 'Access to internal services is not allowed' };
+  }
+
+  // Block cloud metadata endpoints
+  if (hostname.endsWith('.internal') || hostname.endsWith('.local')) {
+    return { safe: false, error: 'Access to internal services is not allowed' };
+  }
+
+  return { safe: true };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -14,8 +74,8 @@ Deno.serve(async (req) => {
   try {
     const { url } = await req.json();
 
-    if (!url) {
-      throw new Error('URL is required');
+    if (!url || typeof url !== 'string') {
+      throw new Error('URL is required and must be a string');
     }
 
     // Normalize URL - add https:// if no protocol specified
@@ -24,16 +84,20 @@ Deno.serve(async (req) => {
       normalizedUrl = 'https://' + normalizedUrl;
     }
 
-    // Validate URL format
-    try {
-      new URL(normalizedUrl);
-    } catch (urlError) {
-      throw new Error(`Invalid URL format: ${url}. Please provide a valid URL (e.g., https://example.com)`);
+    // SSRF validation
+    const urlCheck = isUrlSafe(normalizedUrl);
+    if (!urlCheck.safe) {
+      return new Response(JSON.stringify({
+        error: urlCheck.error
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     console.log('📡 Scraping URL:', normalizedUrl);
 
-    // Get user
+    // Authenticate user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('Authentication required');
@@ -63,14 +127,27 @@ Deno.serve(async (req) => {
 
     if (insertError) throw insertError;
 
-    // Fetch and parse the webpage using Trafilatura-like approach
+    // Fetch and parse the webpage
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
       const response = await fetch(normalizedUrl, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (compatible; AvatartalkBot/1.0)',
         },
         redirect: 'follow',
+        signal: controller.signal,
       });
+
+      clearTimeout(timeout);
+
+      // Validate final URL after redirects (prevent redirect-based SSRF)
+      const finalUrl = response.url;
+      const finalCheck = isUrlSafe(finalUrl);
+      if (!finalCheck.safe) {
+        throw new Error(`Redirect to blocked destination: ${finalCheck.error}`);
+      }
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -78,10 +155,8 @@ Deno.serve(async (req) => {
 
       const html = await response.text();
       
-      // Simple content extraction (mimicking Trafilatura's main content extraction)
       const textContent = extractMainContent(html);
 
-      // Update record with scraped content
       const { error: updateError } = await supabaseClient
         .from('web_training_data')
         .update({
@@ -102,7 +177,6 @@ Deno.serve(async (req) => {
       });
 
     } catch (scrapingError) {
-      // Update record with error
       await supabaseClient
         .from('web_training_data')
         .update({
@@ -126,16 +200,10 @@ Deno.serve(async (req) => {
   }
 });
 
-// Simple content extraction function (simplified Trafilatura approach)
 function extractMainContent(html: string): string {
-  // Remove scripts and styles
   let content = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
   content = content.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
-  
-  // Remove HTML tags
   content = content.replace(/<[^>]+>/g, ' ');
-  
-  // Decode HTML entities
   content = content
     .replace(/&nbsp;/g, ' ')
     .replace(/&quot;/g, '"')
@@ -143,11 +211,8 @@ function extractMainContent(html: string): string {
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&amp;/g, '&');
-  
-  // Clean up whitespace
   content = content.replace(/\s+/g, ' ').trim();
   
-  // Limit content size (prevent oversized storage)
   const maxLength = 50000;
   if (content.length > maxLength) {
     content = content.substring(0, maxLength) + '...';
