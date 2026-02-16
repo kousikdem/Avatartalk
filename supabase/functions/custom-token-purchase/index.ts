@@ -5,11 +5,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Default pricing: 1M tokens = ₹1000 INR (will be fetched from DB)
 const DEFAULT_PRICE_PER_MILLION_INR = 1000;
 const MIN_TOKENS = 100000;
 const MAX_TOKENS = 100000000;
-const MIN_AMOUNT_INR = 10; // ₹10 minimum
+const MIN_AMOUNT_INR = 10;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -17,21 +16,55 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { tokens, amount_inr, user_id } = await req.json();
+    // ============================================================
+    // FIX: Authenticate the caller via JWT
+    // ============================================================
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Authentication required'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user: authUser }, error: authError } = await anonClient.auth.getUser();
+    if (authError || !authUser) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Invalid or expired token'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Use authenticated user ID, ignore client-provided user_id
+    const user_id = authUser.id;
+
+    const { tokens, amount_inr } = await req.json();
 
     console.log(`Token purchase request: user=${user_id}, tokens=${tokens}, amount_inr=${amount_inr}`);
 
-    if (!tokens || !amount_inr || !user_id) {
+    if (!tokens || !amount_inr) {
       return new Response(JSON.stringify({
         success: false,
-        error: 'Missing required fields: tokens, amount_inr, user_id'
+        error: 'Missing required fields: tokens, amount_inr'
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    // Validate token amount
     if (tokens < MIN_TOKENS || tokens > MAX_TOKENS) {
       return new Response(JSON.stringify({
         success: false,
@@ -42,11 +75,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Fetch price per million from database (same source as frontend)
+    // Fetch price per million from database
     let pricePerMillionINR = DEFAULT_PRICE_PER_MILLION_INR;
     const { data: priceRow } = await supabase
       .from('ai_system_limits')
@@ -61,15 +92,12 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log(`Using price per million: ₹${pricePerMillionINR}`);
-
-    // Validate price matches tokens (with tolerance for rounding)
+    // Validate price matches tokens
     const expectedPrice = (tokens / 1000000) * pricePerMillionINR;
     const priceDiff = Math.abs(amount_inr - expectedPrice);
-    const tolerance = Math.max(expectedPrice * 0.05, 1); // 5% tolerance or ₹1 minimum
+    const tolerance = Math.max(expectedPrice * 0.05, 1);
     
     if (priceDiff > tolerance) {
-      console.log(`Price mismatch: expected=${expectedPrice.toFixed(2)}, got=${amount_inr}, diff=${priceDiff.toFixed(2)}, tolerance=${tolerance.toFixed(2)}`);
       return new Response(JSON.stringify({
         success: false,
         error: `Price mismatch. Expected ~₹${expectedPrice.toFixed(0)} for ${tokens.toLocaleString()} tokens`
@@ -79,7 +107,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Validate minimum amount
     if (amount_inr < MIN_AMOUNT_INR) {
       return new Response(JSON.stringify({
         success: false,
@@ -94,50 +121,33 @@ Deno.serve(async (req) => {
     const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
 
     if (!razorpayKeyId || !razorpayKeySecret) {
-      console.error('Razorpay credentials not configured');
       return new Response(JSON.stringify({
         success: false,
-        error: 'Payment system not configured. Please contact support.'
+        error: 'Payment system not configured.'
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    // Ensure user profile exists (some environments may miss signup triggers)
-    const { data: existingProfile, error: profileError } = await supabase
+    // Ensure profile exists
+    const { data: existingProfile } = await supabase
       .from('profiles')
-      .select('id, email')
+      .select('id')
       .eq('id', user_id)
       .maybeSingle();
 
-    if (profileError) {
-      console.error('Error checking profile:', profileError);
-    }
-
     if (!existingProfile) {
-      console.log(`Profile missing for user ${user_id}. Attempting to create a minimal profile row...`);
-
-      const { data: authUserData, error: authUserError } = await supabase.auth.admin.getUserById(user_id);
-      if (authUserError) {
-        console.warn('Could not fetch auth user for profile creation:', authUserError);
-      }
-
+      const { data: authUserData } = await supabase.auth.admin.getUserById(user_id);
       const email = authUserData?.user?.email ?? null;
       const meta = (authUserData?.user?.user_metadata ?? {}) as Record<string, unknown>;
       const fullName = (meta.full_name as string | undefined) || (meta.name as string | undefined) || null;
 
       const { error: createProfileError } = await supabase
         .from('profiles')
-        .insert({
-          id: user_id,
-          email,
-          full_name: fullName,
-          display_name: fullName,
-        });
+        .insert({ id: user_id, email, full_name: fullName, display_name: fullName });
 
       if (createProfileError) {
-        console.error('Failed to create profile:', createProfileError);
         return new Response(JSON.stringify({
           success: false,
           error: 'User profile not initialized. Please log out and log in again.'
@@ -148,10 +158,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Convert price to paise (minimum ₹10 = 1000 paise)
     const amountInPaise = Math.round(amount_inr * 100);
 
-    // Create Razorpay order
     const razorpayAuth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
     
     const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
@@ -187,14 +195,13 @@ Deno.serve(async (req) => {
 
     const razorpayOrder = await razorpayResponse.json();
 
-    // Create custom token purchase record
     const { data: purchaseData, error: purchaseError } = await supabase
       .from('custom_token_purchases')
       .insert({
         user_id,
         tokens_requested: tokens,
         amount_inr,
-        amount_usd: amount_inr / 84, // Approximate conversion
+        amount_usd: amount_inr / 84,
         razorpay_order_id: razorpayOrder.id,
         status: 'pending'
       })
@@ -204,8 +211,6 @@ Deno.serve(async (req) => {
     if (purchaseError) {
       console.error('Failed to create purchase record:', purchaseError);
     }
-
-    console.log(`Created custom token purchase order: ${razorpayOrder.id} for user ${user_id}, tokens: ${tokens}`);
 
     return new Response(JSON.stringify({
       success: true,
