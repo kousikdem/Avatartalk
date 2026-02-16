@@ -1,30 +1,40 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, ShoppingBag, Video, FileText, Users, TrendingUp, Clock } from 'lucide-react';
+import { DollarSign, ShoppingBag, Video, FileText, Users, TrendingUp, Clock, Globe } from 'lucide-react';
 import { useEarnings } from '@/hooks/useEarnings';
+import { useCurrency } from '@/hooks/useCurrency';
 import { formatDistanceToNow } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import DashboardHeader from '@/components/DashboardHeader';
+import CurrencySelector from '@/components/CurrencySelector';
 
 const typeLabels: Record<string, { label: string; color: string; icon: any }> = {
   product: { label: 'Product Sale', color: 'bg-blue-100 text-blue-800', icon: ShoppingBag },
   virtual_collab: { label: 'Virtual Collab', color: 'bg-purple-100 text-purple-800', icon: Video },
-  post: { label: 'Post Sale', color: 'bg-pink-100 text-pink-800', icon: FileText },
+  post: { label: 'Paid Post', color: 'bg-pink-100 text-pink-800', icon: FileText },
   subscription: { label: 'Subscription', color: 'bg-green-100 text-green-800', icon: Users },
 };
 
-const formatUSD = (amount: number) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(amount);
-
 const EarningsPage = () => {
   const { earnings, loading } = useEarnings();
+  const { formatPrice, getCurrencyInfo } = useCurrency();
+  const currencyInfo = getCurrencyInfo();
+
+  // Format amount in original payment currency
+  const formatOriginal = (amount: number, currency: string) => {
+    const symbols: Record<string, string> = {
+      INR: '₹', USD: '$', EUR: '€', GBP: '£', AUD: 'A$', CAD: 'C$', SGD: 'S$', AED: 'د.إ', JPY: '¥',
+    };
+    const sym = symbols[currency] || '$';
+    return `${sym}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
 
   if (loading) {
     return (
       <div className="p-6 space-y-6">
         <Skeleton className="h-10 w-64" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-28" />)}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-28" />)}
         </div>
         <Skeleton className="h-96" />
       </div>
@@ -32,10 +42,11 @@ const EarningsPage = () => {
   }
 
   const statCards = [
-    { title: 'Total Earnings', value: formatUSD(earnings.totalEarnings), icon: DollarSign, gradient: 'from-emerald-500 to-green-600' },
-    { title: 'Product Sales', value: formatUSD(earnings.productEarnings), icon: ShoppingBag, gradient: 'from-blue-500 to-indigo-600' },
-    { title: 'Virtual Collabs', value: formatUSD(earnings.virtualCollabEarnings), icon: Video, gradient: 'from-purple-500 to-pink-600' },
-    { title: 'Subscriptions', value: formatUSD(earnings.subscriptionEarnings), icon: Users, gradient: 'from-amber-500 to-orange-600' },
+    { title: 'Total Earnings', value: formatPrice(earnings.totalEarnings), icon: DollarSign, gradient: 'from-emerald-500 to-green-600' },
+    { title: 'Product Sales', value: formatPrice(earnings.productEarnings), icon: ShoppingBag, gradient: 'from-blue-500 to-indigo-600' },
+    { title: 'Virtual Collabs', value: formatPrice(earnings.virtualCollabEarnings), icon: Video, gradient: 'from-purple-500 to-pink-600' },
+    { title: 'Paid Posts', value: formatPrice(earnings.postEarnings), icon: FileText, gradient: 'from-pink-500 to-rose-600' },
+    { title: 'Subscriptions', value: formatPrice(earnings.subscriptionEarnings), icon: Users, gradient: 'from-amber-500 to-orange-600' },
   ];
 
   return (
@@ -46,8 +57,15 @@ const EarningsPage = () => {
         icon={<div className="p-2 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600"><DollarSign className="h-6 w-6 text-white" /></div>}
       />
 
+      {/* Currency conversion info */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Globe className="h-4 w-4" />
+        <span>Totals converted to <strong>{currencyInfo.code}</strong> in real-time.</span>
+        <CurrencySelector compact />
+      </div>
+
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {statCards.map((stat) => (
           <Card key={stat.title} className="overflow-hidden relative group hover:shadow-lg transition-all">
             <div className={`absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity bg-gradient-to-br ${stat.gradient}`} />
@@ -103,7 +121,14 @@ const EarningsPage = () => {
                         </div>
                       </div>
                     </div>
-                    <span className="font-bold text-emerald-600">{formatUSD(sale.amount)}</span>
+                    <div className="text-right">
+                      <span className="font-bold text-emerald-600">{formatOriginal(sale.amount, sale.currency)}</span>
+                      {sale.currency !== currencyInfo.code && (
+                        <p className="text-[10px] text-muted-foreground">
+                          ≈ {formatPrice(sale.amount)}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 );
               })}
