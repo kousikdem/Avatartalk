@@ -1,10 +1,13 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import TokenDisplay from './TokenDisplay';
 import CurrencySelector from './CurrencySelector';
 import PlanBadge from './PlanBadge';
 import { useEarnings } from '@/hooks/useEarnings';
+import { useCurrency } from '@/hooks/useCurrency';
 import { DollarSign } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 interface DashboardHeaderProps {
   title: string;
@@ -13,9 +16,6 @@ interface DashboardHeaderProps {
   children?: React.ReactNode;
 }
 
-const formatUSD = (amount: number) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(amount);
-
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   title,
   description,
@@ -23,6 +23,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   children
 }) => {
   const { earnings } = useEarnings();
+  const { formatPrice } = useCurrency();
 
   return (
     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
@@ -42,10 +43,12 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       </div>
       
       <div className="flex items-center gap-2 flex-wrap">
-        <Badge variant="outline" className="flex items-center gap-1.5 px-3 py-1.5 border-emerald-300 bg-emerald-50 text-emerald-700">
-          <DollarSign className="h-3.5 w-3.5" />
-          <span className="text-sm font-semibold">{formatUSD(earnings.totalEarnings)}</span>
-        </Badge>
+        <Link to="/settings/earnings">
+          <Button variant="outline" size="sm" className="flex items-center gap-1.5 border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 h-8 px-3">
+            <DollarSign className="h-3.5 w-3.5" />
+            <span className="text-sm font-semibold">{formatPrice(earnings.totalEarnings)}</span>
+          </Button>
+        </Link>
         <CurrencySelector compact />
         <TokenDisplay compact />
         {children}

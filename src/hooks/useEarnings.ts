@@ -1,20 +1,23 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface SaleItem {
+  id: string;
+  type: 'product' | 'virtual_collab' | 'post' | 'subscription';
+  title: string;
+  amount: number;
+  currency: string;
+  buyerName: string;
+  createdAt: string;
+}
+
 export interface EarningsData {
   totalEarnings: number;
   productEarnings: number;
   virtualCollabEarnings: number;
   postEarnings: number;
   subscriptionEarnings: number;
-  recentSales: Array<{
-    id: string;
-    type: 'product' | 'virtual_collab' | 'post' | 'subscription';
-    title: string;
-    amount: number;
-    buyerName: string;
-    createdAt: string;
-  }>;
+  recentSales: SaleItem[];
 }
 
 export const useEarnings = () => {
@@ -51,6 +54,18 @@ export const useEarnings = () => {
         .eq('subscribed_to_id', uid)
         .eq('status', 'active');
 
+      // Fetch paid post unlocks (posts owned by this user)
+      const { data: postUnlocks } = await supabase
+        .from('post_unlocks')
+        .select('id, post_id, payment_amount, payment_currency, unlocked_at')
+        .order('unlocked_at', { ascending: false });
+
+      // Fetch user's posts to filter unlocks for own posts
+      const { data: userPosts } = await supabase
+        .from('posts')
+        .select('id, title')
+        .eq('user_id', uid);
+
       // Fetch products to categorize orders
       const { data: products } = await supabase
         .from('products')
@@ -58,19 +73,22 @@ export const useEarnings = () => {
         .eq('user_id', uid);
 
       const productMap = new Map(products?.map(p => [p.id, p]) || []);
+      const postMap = new Map(userPosts?.map(p => [p.id, p]) || []);
+      const userPostIds = new Set(userPosts?.map(p => p.id) || []);
       const allOrders = orders || [];
       const allSubs = subscriptions || [];
 
       let productEarnings = 0;
       let virtualCollabEarnings = 0;
       let postEarnings = 0;
-      const recentSales: EarningsData['recentSales'] = [];
+      const recentSales: SaleItem[] = [];
 
       allOrders.forEach(order => {
         const product = productMap.get(order.product_id);
         const earning = order.seller_earnings || 0;
+        const currency = order.currency || 'USD';
         const type = product?.product_type === 'virtual_meeting' ? 'virtual_collab' : 'product';
-        
+
         if (type === 'virtual_collab') {
           virtualCollabEarnings += earning;
         } else {
@@ -82,8 +100,29 @@ export const useEarnings = () => {
           type,
           title: product?.title || 'Product',
           amount: earning,
+          currency,
           buyerName: 'Buyer',
           createdAt: order.created_at,
+        });
+      });
+
+      // Process paid post unlocks for this user's posts
+      const ownPostUnlocks = (postUnlocks || []).filter(u => userPostIds.has(u.post_id));
+      ownPostUnlocks.forEach(unlock => {
+        const postInfo = postMap.get(unlock.post_id);
+        const amount = Number(unlock.payment_amount) || 0;
+        const platformFee = amount * 0.1; // 10% platform fee
+        const earning = amount - platformFee;
+        postEarnings += earning;
+
+        recentSales.push({
+          id: unlock.id,
+          type: 'post',
+          title: postInfo?.title || 'Paid Post',
+          amount: earning,
+          currency: unlock.payment_currency || 'USD',
+          buyerName: 'Buyer',
+          createdAt: unlock.unlocked_at,
         });
       });
 
@@ -95,6 +134,7 @@ export const useEarnings = () => {
           type: 'subscription',
           title: 'Subscription',
           amount: Number(sub.price) || 0,
+          currency: 'USD',
           buyerName: 'Subscriber',
           createdAt: sub.created_at,
         });
@@ -141,6 +181,11 @@ export const useEarnings = () => {
           schema: 'public',
           table: 'subscriptions',
           filter: `subscribed_to_id=eq.${session.user.id}`
+        }, () => fetchEarnings())
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'post_unlocks',
         }, () => fetchEarnings())
         .subscribe();
 
