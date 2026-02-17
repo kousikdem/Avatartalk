@@ -21,7 +21,7 @@ import { IntegrationSecret } from '@/hooks/useSuperAdminIntegrations';
 interface IntegrationConfig {
   name: string;
   label: string;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
   hasOAuth: boolean;
   oauthScopes?: string[];
   secretKeys: { key: string; label: string; isSecret: boolean }[];
