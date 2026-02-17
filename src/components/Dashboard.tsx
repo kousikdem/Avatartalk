@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import ShareModal from './ShareModal';
-import ChangeableAvatarPreview from './ChangeableAvatarPreview';
+const ChangeableAvatarPreview = lazy(() => import('./ChangeableAvatarPreview'));
 import RealtimeFollowWidget from './RealtimeFollowWidget';
 import DashboardPlanUpgrade from './DashboardPlanUpgrade';
 import { useFollows } from '@/hooks/useFollows';
@@ -360,14 +360,16 @@ const Dashboard = () => {
           <DashboardPlanUpgrade />
           
           {/* Changeable Avatar with Real-time Features */}
-          <ChangeableAvatarPreview
-            userId={profileData?.id}
-            isLarge={true}
-            showControls={true}
-            enableVoice={true}
-            isInteractive={true}
-            onAvatarClick={() => navigate('/avatar')}
-          />
+          <Suspense fallback={<div className="h-64 bg-muted rounded-lg animate-pulse" />}>
+            <ChangeableAvatarPreview
+              userId={profileData?.id}
+              isLarge={true}
+              showControls={true}
+              enableVoice={true}
+              isInteractive={true}
+              onAvatarClick={() => navigate('/avatar')}
+            />
+          </Suspense>
           
           {/* Real-time Social Activity Widget */}
           <RealtimeFollowWidget currentUserId={profileData?.id} />

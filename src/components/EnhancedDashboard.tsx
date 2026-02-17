@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import ChangeableAvatarPreview from './ChangeableAvatarPreview';
+const ChangeableAvatarPreview = lazy(() => import('./ChangeableAvatarPreview'));
 import ProfilePictureUpload from './ProfilePictureUpload';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
@@ -260,15 +260,17 @@ const EnhancedDashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center">
-                <ChangeableAvatarPreview
-                  userId={profileData?.id}
-                  isLarge={true}
-                  showControls={false}
-                  enableVoice={false}
-                  isInteractive={true}
-                  isTalking={isTalking}
-                  onAvatarClick={() => navigate('/settings/avatar')}
-                />
+                <Suspense fallback={<div className="h-64 bg-muted rounded-lg animate-pulse" />}>
+                  <ChangeableAvatarPreview
+                    userId={profileData?.id}
+                    isLarge={true}
+                    showControls={false}
+                    enableVoice={false}
+                    isInteractive={true}
+                    isTalking={isTalking}
+                    onAvatarClick={() => navigate('/settings/avatar')}
+                  />
+                </Suspense>
                 
                 <div className="mt-6 w-full space-y-3">
                   <Button 
