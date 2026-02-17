@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import LandingPage from '@/components/LandingPage';
 import Dashboard from '@/components/Dashboard';
 import PricingPage from '@/components/PricingPage';
-import EnhancedAvatarStudio from '@/components/EnhancedAvatarStudio';
 import VisitorAuth from '@/components/VisitorAuth';
+
+const EnhancedAvatarStudio = lazy(() => import('@/components/EnhancedAvatarStudio'));
 
 export type IndexMode = 'public' | 'authed';
 
@@ -29,7 +30,7 @@ const Index: React.FC<{ mode?: IndexMode }> = ({ mode }) => {
 
   // Authenticated mode: never re-check session here (App already decided).
   if (mode === 'authed') {
-    if (view === 'avatar') return <EnhancedAvatarStudio />;
+    if (view === 'avatar') return <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}><EnhancedAvatarStudio /></Suspense>;
     return <Dashboard />;
   }
 
