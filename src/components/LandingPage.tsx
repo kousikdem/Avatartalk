@@ -82,13 +82,10 @@ const LandingPage = () => {
 
   // Auto-playing demo conversation
   const demoConversationScript = [
-    { sender: 'ai' as const, text: "👋 Hey there! I'm Demo Avatar — your AI-powered brand assistant built on AvatarTalk." },
-    { sender: 'ai' as const, text: "🎙️ I can talk, answer questions, and represent you 24/7 with voice + text — powered by AvatarTalk Turbo." },
-    { sender: 'user' as const, text: "That's cool! What features does AvatarTalk offer?" },
-    { sender: 'ai' as const, text: "Great question! Here's what you get:\n🧠 AI Trained on YOUR content\n🛒 Built-in E-Commerce store\n🔁 Membership & Subscription plans\n🎥 Live Virtual Collaboration\n📊 Lead & Follower Management\n💰 Monetize your brand 24/7" },
-    { sender: 'user' as const, text: "How fast can I set this up?" },
-    { sender: 'ai' as const, text: "⚡ Under 60 seconds! Just sign up, customize your avatar, train your AI, and share your smart bio link. It's that simple!" },
-    { sender: 'ai' as const, text: "🚀 Ready to unlock new earning opportunities? Try it FREE — no credit card needed. Click 'Free Early Access' above! 👆" },
+    { sender: 'user' as const, text: "Hey! What is AvatarTalk?" },
+    { sender: 'ai' as const, text: "🎙️ AvatarTalk is your AI-powered clone avatar that talks, sells & engages visitors 24/7 through voice + text — all from a single smart bio-link! 🚀" },
+    { sender: 'user' as const, text: "Sounds amazing! How can it help me grow?" },
+    { sender: 'ai' as const, text: "🔥 Here's a special offer just for you!\n\n🎁 Get 30% OFF on the Creator Plan — includes AI voice + text responses, e-commerce store, membership plans & lead management.\n\n⏰ Limited time only! Tap 'Free Early Access' above to claim your spot. Let your AI avatar start selling while you sleep! 💰🎙️" },
   ];
 
   useEffect(() => {
@@ -311,7 +308,7 @@ const LandingPage = () => {
           </Badge>
           
           <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent leading-tight">
-            Your AI Avatar for Bio Link<br />in Under 60 Sec
+            AI Avatar for Bio-Link<br />in 60 Sec
           </h1>
           
           <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
@@ -503,7 +500,7 @@ const LandingPage = () => {
 
               {/* Posts Tab Content */}
               {demoActiveTab === 'posts' && (
-                <div className="space-y-3 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
+                <div className="space-y-3 max-h-64 overflow-y-auto pr-1 scrollbar-thin-auto">
                   {demoPosts.map((post) => (
                     <DemoPostCard key={post.id} post={post} />
                   ))}
@@ -526,6 +523,10 @@ const LandingPage = () => {
                           <div className="flex-1 flex justify-end">
                             <div className={`${isDemoThemeDark ? 'bg-slate-700/50 border-slate-600/30' : 'bg-gray-100 border-gray-200'} border rounded-2xl rounded-tr-md px-3 py-2 max-w-xs`}>
                               <p className={`text-sm whitespace-pre-line ${isDemoThemeDark ? 'text-slate-200' : 'text-gray-800'}`}>{msg.text}</p>
+                              <div className="flex items-center gap-1 mt-1.5">
+                                <Volume2 className={`w-3 h-3 ${isDemoThemeDark ? 'text-blue-400' : 'text-blue-500'}`} />
+                                <span className={`text-[10px] font-medium ${isDemoThemeDark ? 'text-blue-400' : 'text-blue-500'}`}>Voice + Text</span>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -590,7 +591,7 @@ const LandingPage = () => {
 
               {/* Product Tab Content */}
               {demoActiveTab === 'product' && (
-                <div className="space-y-3 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
+                <div className="space-y-3 max-h-64 overflow-y-auto pr-1 scrollbar-thin-auto">
                   {/* Digital Products */}
                   {demoProducts.slice(0, 2).map((product) => (
                     <DemoProductCard key={product.id} product={product} />
