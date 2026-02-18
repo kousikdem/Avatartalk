@@ -15,7 +15,21 @@ Deno.serve(async (req) => {
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const encryptionKey = supabaseServiceKey.substring(0, 32);
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Helper to decrypt stored secrets
+    const decryptValue = async (ciphertext: string): Promise<string> => {
+      const { data, error } = await supabase.rpc('decrypt_secret', {
+        p_ciphertext: ciphertext,
+        p_encryption_key: encryptionKey,
+      });
+      if (error) {
+        console.error('Decryption error:', error.message);
+        return ciphertext; // Fallback to raw value (might be pre-encryption data)
+      }
+      return data;
+    };
 
     let status = 'pending';
     let message = '';
@@ -82,11 +96,14 @@ Deno.serve(async (req) => {
           .single();
 
         if (tokenData?.secret_value) {
+          // Decrypt the stored token
+          const decryptedToken = await decryptValue(tokenData.secret_value);
+          
           // Verify token is still valid
           const response = await fetch('https://www.googleapis.com/oauth2/v1/tokeninfo', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `access_token=${tokenData.secret_value}`,
+            body: `access_token=${decryptedToken}`,
           });
 
           if (response.ok) {
@@ -173,9 +190,12 @@ Deno.serve(async (req) => {
             .single();
 
           if (tokenData?.secret_value) {
+            // Decrypt the stored token
+            const decryptedToken = await decryptValue(tokenData.secret_value);
+            
             // Verify token is still valid
             const response = await fetch('https://api.zoom.us/v2/users/me', {
-              headers: { Authorization: `Bearer ${tokenData.secret_value}` },
+              headers: { Authorization: `Bearer ${decryptedToken}` },
             });
 
             if (response.ok) {
