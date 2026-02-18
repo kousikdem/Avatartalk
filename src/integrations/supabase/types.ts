@@ -5091,6 +5091,14 @@ export type Database = {
         Args: { p_product_id: string; p_quantity: number; p_variant_id: string }
         Returns: boolean
       }
+      decrypt_secret: {
+        Args: { p_ciphertext: string; p_encryption_key: string }
+        Returns: string
+      }
+      encrypt_secret: {
+        Args: { p_encryption_key: string; p_plaintext: string }
+        Returns: string
+      }
       get_product_rating: {
         Args: { p_product_id: string }
         Returns: {

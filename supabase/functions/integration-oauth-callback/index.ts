@@ -11,6 +11,9 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Encryption key derived from service role key (server-side only)
+    const encryptionKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!.substring(0, 32);
+
     const url = new URL(req.url);
     const code = url.searchParams.get('code');
     const state = url.searchParams.get('state');
@@ -160,20 +163,34 @@ Deno.serve(async (req) => {
         );
     }
 
-    // Store tokens in platform_integration_secrets
+    // Store tokens in platform_integration_secrets (ENCRYPTED)
     const expiresAt = tokenData.expires_in 
       ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString()
       : null;
 
-    console.log('Storing tokens for integration:', integrationName);
+    console.log('Storing encrypted tokens for integration:', integrationName);
 
-    // Store access token
+    // Helper to encrypt sensitive values before storage
+    const encryptValue = async (value: string): Promise<string> => {
+      const { data, error } = await supabase.rpc('encrypt_secret', {
+        p_plaintext: value,
+        p_encryption_key: encryptionKey,
+      });
+      if (error) {
+        console.error('Encryption error:', error.message);
+        throw new Error('Failed to encrypt token');
+      }
+      return data;
+    };
+
+    // Store access token (encrypted)
+    const encryptedAccessToken = await encryptValue(tokenData.access_token);
     const { error: accessTokenError } = await supabase
       .from('platform_integration_secrets')
       .upsert({
         integration_name: integrationName,
         secret_key: 'access_token',
-        secret_value: tokenData.access_token,
+        secret_value: encryptedAccessToken,
         environment: 'live',
         is_active: true,
         verification_status: 'verified',
@@ -186,14 +203,15 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to store access token: ${accessTokenError.message}`);
     }
 
-    // Store refresh token if available
+    // Store refresh token if available (encrypted)
     if (tokenData.refresh_token) {
+      const encryptedRefreshToken = await encryptValue(tokenData.refresh_token);
       const { error: refreshTokenError } = await supabase
         .from('platform_integration_secrets')
         .upsert({
           integration_name: integrationName,
           secret_key: 'refresh_token',
-          secret_value: tokenData.refresh_token,
+          secret_value: encryptedRefreshToken,
           environment: 'live',
           is_active: true,
           verification_status: 'verified',
@@ -206,7 +224,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Store token expiry
+    // Store token expiry (not sensitive, no encryption needed)
     if (expiresAt) {
       const { error: expiryError } = await supabase
         .from('platform_integration_secrets')
@@ -226,7 +244,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Store connected email
+    // Store connected email (not highly sensitive, no encryption)
     if (tokenData.email) {
       const { error: emailError } = await supabase
         .from('platform_integration_secrets')
