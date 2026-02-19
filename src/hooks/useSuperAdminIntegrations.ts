@@ -228,62 +228,36 @@ export const useSuperAdminIntegrations = () => {
   }, []);
 
   const saveIntegrationSecret = async (secret: Partial<IntegrationSecret>) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    // Encrypt the secret_value before storing
-    let encryptedValue = secret.secret_value;
-    if (secret.secret_value && secret.secret_value.trim()) {
-      const { data: encrypted, error: encError } = await supabase.rpc('encrypt_secret', {
-        p_plaintext: secret.secret_value,
-        p_encryption_key: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.substring(0, 32) || '',
-      });
-      if (!encError && encrypted) {
-        encryptedValue = encrypted;
-      } else {
-        console.error('Failed to encrypt secret value');
-        toast({ title: 'Error', description: 'Failed to encrypt secret. Please try again.', variant: 'destructive' });
-        return false;
-      }
-    }
-
-    if (secret.id) {
-      const { error } = await supabase
-        .from('platform_integration_secrets')
-        .update({
+    try {
+      // Server-side encryption via edge function — never expose encryption key to client
+      const { data, error } = await supabase.functions.invoke('save-integration-secret', {
+        body: {
+          id: secret.id,
           integration_name: secret.integration_name,
           secret_key: secret.secret_key,
-          secret_value: encryptedValue,
+          secret_value: secret.secret_value,
           environment: secret.environment,
           is_active: secret.is_active,
-          updated_by: user?.id
-        })
-        .eq('id', secret.id);
-
-      if (error) {
-        toast({ title: 'Error', description: 'Failed to update secret', variant: 'destructive' });
-        return false;
-      }
-    } else {
-      const { error } = await supabase
-        .from('platform_integration_secrets')
-        .insert({
-          integration_name: secret.integration_name!,
-          secret_key: secret.secret_key!,
-          secret_value: encryptedValue,
-          environment: secret.environment,
-          is_active: secret.is_active,
-          updated_by: user?.id
-        });
+        },
+      });
 
       if (error) {
         toast({ title: 'Error', description: 'Failed to save secret', variant: 'destructive' });
         return false;
       }
-    }
 
-    toast({ title: 'Success', description: 'Secret saved successfully' });
-    await fetchIntegrationSecrets();
-    return true;
+      if (data && !data.success) {
+        toast({ title: 'Error', description: data.error || 'Failed to save secret', variant: 'destructive' });
+        return false;
+      }
+
+      toast({ title: 'Success', description: 'Secret saved successfully' });
+      await fetchIntegrationSecrets();
+      return true;
+    } catch {
+      toast({ title: 'Error', description: 'Failed to save secret', variant: 'destructive' });
+      return false;
+    }
   };
 
   const deleteIntegrationSecret = async (id: string) => {

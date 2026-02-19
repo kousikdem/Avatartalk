@@ -73,3 +73,6 @@ verify_jwt = true
 
 [functions.admin-platform-plan-change]
 verify_jwt = true
+
+[functions.save-integration-secret]
+verify_jwt = false
