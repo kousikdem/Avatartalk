@@ -147,15 +147,32 @@ Deno.serve(async (req) => {
       // Calculate token expiry
       const expiresAt = new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString();
 
-      // Save to host_integrations
+      // Encrypt tokens before storage
+      const encryptionKey = supabaseServiceKey.substring(0, 32);
+      const encryptToken = async (token: string): Promise<string> => {
+        const { data, error } = await supabase.rpc('encrypt_secret', {
+          p_plaintext: token,
+          p_encryption_key: encryptionKey,
+        });
+        if (error) {
+          console.error('Encryption failed:', error.message);
+          throw new Error('Token encryption failed');
+        }
+        return data;
+      };
+
+      const encryptedAccess = await encryptToken(tokenData.access_token);
+      const encryptedRefresh = await encryptToken(tokenData.refresh_token);
+
+      // Save to host_integrations (tokens encrypted)
       const { error: upsertError } = await supabase
         .from('host_integrations')
         .upsert({
           user_id: userId,
           zoom_connected: true,
           zoom_email: zoomEmail,
-          zoom_access_token: tokenData.access_token,
-          zoom_refresh_token: tokenData.refresh_token,
+          zoom_access_token: encryptedAccess,
+          zoom_refresh_token: encryptedRefresh,
           zoom_token_expires_at: expiresAt,
           zoom_user_id: zoomUserId,
           updated_at: new Date().toISOString(),
@@ -216,12 +233,27 @@ Deno.serve(async (req) => {
         );
       }
 
-      let accessToken = integration.zoom_access_token;
+      // Decrypt stored tokens
+      const encryptionKey = supabaseServiceKey.substring(0, 32);
+      const decryptToken = async (encrypted: string): Promise<string> => {
+        const { data, error } = await supabase.rpc('decrypt_secret', {
+          p_ciphertext: encrypted,
+          p_encryption_key: encryptionKey,
+        });
+        if (error) {
+          console.error('Decryption failed:', error.message);
+          return encrypted; // Fallback for pre-encryption data
+        }
+        return data;
+      };
+
+      let accessToken = await decryptToken(integration.zoom_access_token);
 
       // Check if token is expired and refresh if needed
       if (integration.zoom_token_expires_at && new Date(integration.zoom_token_expires_at) < new Date()) {
         console.log('Refreshing expired Zoom token for user:', user.id);
         
+        const decryptedRefresh = await decryptToken(integration.zoom_refresh_token);
         const refreshResponse = await fetch('https://zoom.us/oauth/token', {
           method: 'POST',
           headers: {
@@ -230,7 +262,7 @@ Deno.serve(async (req) => {
           },
           body: new URLSearchParams({
             grant_type: 'refresh_token',
-            refresh_token: integration.zoom_refresh_token,
+            refresh_token: decryptedRefresh,
           }),
         });
 
@@ -244,12 +276,27 @@ Deno.serve(async (req) => {
         const refreshData = await refreshResponse.json();
         accessToken = refreshData.access_token;
 
-        // Update stored tokens
+        // Encrypt new tokens before storing
+        const encryptToken = async (token: string): Promise<string> => {
+          const { data, error } = await supabase.rpc('encrypt_secret', {
+            p_plaintext: token,
+            p_encryption_key: encryptionKey,
+          });
+          if (error) throw new Error('Encryption failed');
+          return data;
+        };
+
+        const encryptedNewAccess = await encryptToken(refreshData.access_token);
+        const encryptedNewRefresh = refreshData.refresh_token
+          ? await encryptToken(refreshData.refresh_token)
+          : integration.zoom_refresh_token;
+
+        // Update stored tokens (encrypted)
         await supabase
           .from('host_integrations')
           .update({
-            zoom_access_token: refreshData.access_token,
-            zoom_refresh_token: refreshData.refresh_token || integration.zoom_refresh_token,
+            zoom_access_token: encryptedNewAccess,
+            zoom_refresh_token: encryptedNewRefresh,
             zoom_token_expires_at: new Date(Date.now() + (refreshData.expires_in * 1000)).toISOString(),
             updated_at: new Date().toISOString(),
           })
