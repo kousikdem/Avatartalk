@@ -48,8 +48,22 @@ async def create_status_check(input: StatusCheckCreate):
     return status_obj
 
 @api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    status_checks = await db.status_checks.find().to_list(1000)
+async def get_status_checks(limit: int = 50, skip: int = 0):
+    """Get status checks with pagination and optimized field projection"""
+    # Validate limit to prevent excessive queries
+    limit = min(limit, 100)  # Max 100 records per request
+    
+    # Fetch only required fields with pagination
+    status_checks = await db.status_checks.find(
+        {},
+        {
+            '_id': 0,  # Exclude MongoDB _id field
+            'id': 1,
+            'client_name': 1,
+            'timestamp': 1
+        }
+    ).skip(skip).limit(limit).to_list(limit)
+    
     return [StatusCheck(**status_check) for status_check in status_checks]
 
 # Include the router in the main app
