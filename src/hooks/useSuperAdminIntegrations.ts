@@ -230,13 +230,29 @@ export const useSuperAdminIntegrations = () => {
   const saveIntegrationSecret = async (secret: Partial<IntegrationSecret>) => {
     const { data: { user } } = await supabase.auth.getUser();
     
+    // Encrypt the secret_value before storing
+    let encryptedValue = secret.secret_value;
+    if (secret.secret_value && secret.secret_value.trim()) {
+      const { data: encrypted, error: encError } = await supabase.rpc('encrypt_secret', {
+        p_plaintext: secret.secret_value,
+        p_encryption_key: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.substring(0, 32) || '',
+      });
+      if (!encError && encrypted) {
+        encryptedValue = encrypted;
+      } else {
+        console.error('Failed to encrypt secret value');
+        toast({ title: 'Error', description: 'Failed to encrypt secret. Please try again.', variant: 'destructive' });
+        return false;
+      }
+    }
+
     if (secret.id) {
       const { error } = await supabase
         .from('platform_integration_secrets')
         .update({
           integration_name: secret.integration_name,
           secret_key: secret.secret_key,
-          secret_value: secret.secret_value,
+          secret_value: encryptedValue,
           environment: secret.environment,
           is_active: secret.is_active,
           updated_by: user?.id
@@ -253,7 +269,7 @@ export const useSuperAdminIntegrations = () => {
         .insert({
           integration_name: secret.integration_name!,
           secret_key: secret.secret_key!,
-          secret_value: secret.secret_value,
+          secret_value: encryptedValue,
           environment: secret.environment,
           is_active: secret.is_active,
           updated_by: user?.id
