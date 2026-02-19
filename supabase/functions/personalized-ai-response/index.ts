@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
 
     const { userMessage, profileId, userId, visitorName } = validationResult.data;
 
-    console.log('Processing AI request for profile:', profileId);
+    console.log('Processing AI request for profile:', profileId.substring(0, 8) + '...');
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -401,19 +401,40 @@ ${selectedFollowUp.choices && selectedFollowUp.choices.length > 0 ? `Offer these
       });
     }
 
+    // Prompt injection detection: reject known attack patterns
+    const injectionPatterns = [
+      /ignore\s+(all\s+)?(previous|prior|above)\s+(instructions|prompts|rules)/i,
+      /disregard\s+(all\s+)?(previous|prior|above)/i,
+      /reveal\s+(your|the)\s+(system|original|initial)\s+(prompt|instructions|message)/i,
+      /repeat\s+(your|the)\s+(system|full|entire)\s+(prompt|instructions)/i,
+      /output\s+(your|the)\s+(system|initial)\s+(prompt|instructions)/i,
+      /act\s+as\s+(DAN|evil|unrestricted|jailbr)/i,
+      /you\s+are\s+now\s+(DAN|unrestricted|free)/i,
+      /print\s+(your|the)\s+(system|initial)\s+(prompt|message|instructions)/i,
+    ];
+
+    const isPromptInjection = injectionPatterns.some(pattern => pattern.test(userMessage));
+    if (isPromptInjection) {
+      console.warn('Prompt injection attempt detected from IP:', clientIP);
+    }
+
     // Use Google Gemini API directly with user's own API key
     const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
     
+    // Use separate system instruction and user content to prevent prompt injection
     const response = await fetch(geminiEndpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        systemInstruction: {
+          parts: [{ text: systemPrompt }]
+        },
         contents: [
           {
             role: 'user',
-            parts: [{ text: `${systemPrompt}\n\nUser message: ${userMessage}` }]
+            parts: [{ text: userMessage }]
           }
         ],
         generationConfig: {
@@ -424,7 +445,7 @@ ${selectedFollowUp.choices && selectedFollowUp.choices.length > 0 ? `Offer these
     });
 
     if (!response.ok) {
-      console.error('AI Gateway error:', response.status);
+      console.error('AI Gateway error status:', response.status);
       
       if (response.status === 429) {
         return new Response(JSON.stringify({ 
@@ -670,7 +691,7 @@ ${selectedFollowUp.choices && selectedFollowUp.choices.length > 0 ? `Offer these
     );
 
   } catch (error) {
-    console.error('Error in personalized-ai-response:', error);
+    console.error('Error in personalized-ai-response:', error instanceof Error ? error.message : 'Unknown error');
     return new Response(
       JSON.stringify({ 
         success: false, 
