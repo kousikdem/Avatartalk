@@ -304,7 +304,7 @@ const LandingPage = () => {
         <div className="max-w-6xl mx-auto">
         <div className="flex flex-col lg:flex-row items-center lg:items-center gap-8 lg:gap-16">
             {/* Left Side - Text & CTA */}
-            <div className="flex-1 text-center lg:text-left order-2 lg:order-1">
+            <div className="flex-1 text-center lg:text-left order-1">
               <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white mb-6 px-4 py-2 text-sm font-medium">
                 <Sparkles className="w-4 h-4 mr-2" />
                 INTRODUCING
