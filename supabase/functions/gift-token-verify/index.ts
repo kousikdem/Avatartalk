@@ -72,21 +72,78 @@ Deno.serve(async (req) => {
 
     console.log("Signature verified successfully");
 
+    // Fetch payment details from Razorpay API to validate amount
+    const razorpayKeyId = Deno.env.get("RAZORPAY_KEY_ID");
+    if (razorpayKeyId && razorpayKeySecret) {
+      try {
+        const paymentResponse = await fetch(
+          `https://api.razorpay.com/v1/payments/${razorpay_payment_id}`,
+          {
+            headers: {
+              'Authorization': 'Basic ' + btoa(`${razorpayKeyId}:${razorpayKeySecret}`),
+            },
+          }
+        );
+        if (paymentResponse.ok) {
+          const paymentData = await paymentResponse.json();
+          // We'll validate the amount after fetching the gift row below
+          // Store for comparison
+          (globalThis as any).__verifiedPaymentAmount = paymentData.amount;
+        } else {
+          await paymentResponse.text(); // consume body
+        }
+      } catch (e) {
+        console.warn("Could not fetch Razorpay payment details for amount validation:", e instanceof Error ? e.message : 'Unknown');
+      }
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Validate gift exists and order_id matches (and add idempotency)
     const { data: giftRow, error: giftError } = await supabase
       .from("token_gifts")
-      .select("id, status, razorpay_order_id, amount, receiver_id")
+      .select("id, status, razorpay_order_id, amount, amount_paid, receiver_id, sender_id")
       .eq("id", gift_id)
       .single();
 
     if (giftError || !giftRow) {
-      console.error("Gift not found:", giftError);
+      console.error("Gift not found");
       return new Response(
         JSON.stringify({ success: false, error: "Gift not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Validate payment amount matches expected gift amount
+    const verifiedPaymentAmount = (globalThis as any).__verifiedPaymentAmount;
+    delete (globalThis as any).__verifiedPaymentAmount;
+    if (verifiedPaymentAmount !== undefined && giftRow.amount_paid) {
+      // amount_paid is in currency units, Razorpay returns paise (x100)
+      const expectedPaise = Math.round(giftRow.amount_paid * 100);
+      if (verifiedPaymentAmount !== expectedPaise) {
+        console.error("Payment amount mismatch", {
+          expected_paise: expectedPaise,
+          actual_paise: verifiedPaymentAmount,
+        });
+        return new Response(
+          JSON.stringify({ success: false, error: "Payment amount mismatch" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // Optional auth: log if caller is not sender/receiver
+    const callerAuth = req.headers.get('Authorization');
+    if (callerAuth?.startsWith('Bearer ')) {
+      try {
+        const userClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
+          global: { headers: { Authorization: callerAuth } }
+        });
+        const { data: { user } } = await userClient.auth.getUser();
+        if (user && user.id !== giftRow.sender_id && user.id !== giftRow.receiver_id) {
+          console.warn('Gift verification by non-participant user:', user.id.substring(0, 8) + '...');
+        }
+      } catch { /* auth is optional for this endpoint */ }
     }
 
     if (giftRow.razorpay_order_id && giftRow.razorpay_order_id !== razorpay_order_id) {
