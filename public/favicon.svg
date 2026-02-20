@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6"/>
+      <stop offset="50%" style="stop-color:#8b5cf6"/>
+      <stop offset="100%" style="stop-color:#4f46e5"/>
+    </linearGradient>
+  </defs>
+  <rect width="24" height="24" rx="5" fill="url(#grad)"/>
+  <!-- Bot Icon -->
+  <rect x="7" y="8" width="10" height="9" rx="1.5" fill="white" opacity="0.95"/>
+  <circle cx="10" cy="11" r="0.8" fill="#3b82f6"/>
+  <circle cx="14" cy="11" r="0.8" fill="#3b82f6"/>
+  <rect x="10.5" y="14" width="3" height="0.6" rx="0.3" fill="#3b82f6"/>
+  <circle cx="12" cy="6.5" r="1" fill="white" opacity="0.95"/>
+  <rect x="11.5" y="6.5" width="1" height="1.5" fill="white" opacity="0.95"/>
+  <!-- Sparkle -->
+  <circle cx="18" cy="4" r="2" fill="#fde047"/>
+  <path d="M16.5 3l1 1M19.5 3l-1 1" stroke="#fde047" stroke-width="1" stroke-linecap="round"/>
+</svg>
