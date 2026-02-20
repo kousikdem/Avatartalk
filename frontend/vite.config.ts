@@ -12,6 +12,10 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 3000,
+    hmr: {
+      clientPort: 443,
+      protocol: 'wss'
+    }
   },
   plugins: [
     react(),
