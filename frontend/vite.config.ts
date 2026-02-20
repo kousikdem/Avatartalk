@@ -12,6 +12,12 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 3000,
+    allowedHosts: [
+      '.emergentagent.com',
+      '.emergentcf.cloud',
+      '.preview.emergentagent.com',
+      'localhost'
+    ],
     hmr: {
       clientPort: 443,
       protocol: 'wss'
