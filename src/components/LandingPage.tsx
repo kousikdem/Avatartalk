@@ -304,7 +304,7 @@ const LandingPage = () => {
         <div className="max-w-6xl mx-auto">
         <div className="flex flex-col lg:flex-row items-center lg:items-center gap-8 lg:gap-16">
             {/* Left Side - Text & CTA */}
-            <div className="flex-1 text-center lg:text-left order-1">
+            <div className="flex-1 text-center lg:text-left order-2 lg:order-1">
               <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white mb-6 px-4 py-2 text-sm font-medium">
                 <Sparkles className="w-4 h-4 mr-2" />
                 INTRODUCING
@@ -354,7 +354,7 @@ const LandingPage = () => {
             </div>
 
             {/* Right Side - Demo User Profile */}
-            <div className="w-full max-w-sm flex-shrink-0 order-2">
+            <div className="w-full max-w-sm flex-shrink-0 order-1 lg:order-2">
               <div className={`${isDemoThemeDark ? 'bg-gradient-to-br from-slate-900 to-slate-800 border-slate-700/50' : 'bg-gradient-to-br from-white to-gray-100 border-gray-200'} rounded-3xl shadow-2xl overflow-hidden border hover:scale-[1.02] transition-all duration-500`} style={{ transform: 'perspective(1200px) rotateX(2deg) rotateY(-1deg)', transformStyle: 'preserve-3d' }}>
             {/* Profile Header */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4">

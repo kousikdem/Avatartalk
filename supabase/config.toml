@@ -1,1 +1,78 @@
 project_id = "hnxnvdzrwbtmcohdptfq"
+
+[functions.user-zoom-oauth]
+verify_jwt = false
+
+[functions.voice-to-text]
+verify_jwt = true
+
+[functions.avatar-file-compress]
+verify_jwt = true
+
+[functions.web-scraper]
+verify_jwt = true
+
+[functions.personalized-ai-response]
+verify_jwt = false
+
+[functions.personalized-ai-training]
+verify_jwt = true
+
+[functions.voice-cloning]
+verify_jwt = true
+
+[functions.voice-chat-stream]
+verify_jwt = true
+
+[functions.razorpay-create-order]
+verify_jwt = true
+
+[functions.razorpay-verify-payment]
+verify_jwt = true
+
+[functions.product-checkout]
+verify_jwt = true
+
+[functions.product-payment-verify]
+verify_jwt = true
+
+[functions.token-purchase-create-order]
+verify_jwt = true
+
+[functions.token-purchase-verify]
+verify_jwt = true
+
+# custom-token-purchase moved to verify_jwt = false section below
+
+[functions.custom-token-verify]
+verify_jwt = true
+
+[functions.integration-oauth-callback]
+verify_jwt = false
+
+[functions.verify-integration]
+verify_jwt = true
+
+[functions.gift-token-create-order]
+verify_jwt = false
+
+[functions.gift-token-verify]
+verify_jwt = false
+
+[functions.custom-token-purchase]
+verify_jwt = false
+
+[functions.token-purchase-create-order]
+verify_jwt = false
+
+[functions.platform-plan-checkout]
+verify_jwt = true
+
+[functions.platform-plan-verify]
+verify_jwt = true
+
+[functions.admin-platform-plan-change]
+verify_jwt = true
+
+[functions.save-integration-secret]
+verify_jwt = false
