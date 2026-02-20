@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Fix the website's 404: NOT_FOUND errors and fix the full website. Call Deployer Agent and Run Health Check to Check for Readiness for Deployment."
+user_problem_statement: "Fix the full website's preview errors in the github's main branch, check your web preview and fix the errors"
 
 frontend:
   - task: "Fix landing page layout - responsive hero section"
