@@ -151,6 +151,53 @@ frontend:
     status_history:
       - working: true
         agent: "main"
+        comment: "Fixed Vite allowedHosts configuration to allow preview domains. Added .emergentagent.com, .emergentcf.cloud, .preview.emergentagent.com, and localhost to allowed hosts. Configured HMR with WSS protocol and port 443. This resolved the 'Blocked request. This host is not allowed' error."
+
+  - task: "Install frontend dependencies"
+    implemented: true
+    working: true
+    file: "/app/frontend/node_modules"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Ran yarn install to install all frontend dependencies. Vite and all required packages are now installed."
+
+backend:
+  - task: "Backend health check"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Backend is running correctly on port 8001 with /api/health endpoint responding with healthy status and database connected."
+
+metadata:
+  created_by: "main_agent"
+  version: "2.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Preview website functionality"
+    - "Landing page rendering"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Fixed critical preview error - Vite was blocking requests from preview domain. Updated vite.config.ts to allow preview-fix-17.preview.emergentagent.com and related domains. Site is now loading correctly with all sections rendering properly. Minor non-blocking issues: exchange rate fetch error (external API) and accessibility warning for dialog description."
+    status_history:
+      - working: true
+        agent: "main"
         comment: "Changed Vite port to 3000. Added 'start' script."
   
   - task: "All frontend routes working"
