@@ -1,0 +1,37 @@
+# Backend (not needed for frontend deployment)
+backend/
+tests/
+
+# Development files
+*.log
+*.md
+!DEPLOYMENT.md
+!README.md
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Test files
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+test_result.md
+test_reports/
+
+# Memory folder
+memory/
