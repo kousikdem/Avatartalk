@@ -42,41 +42,48 @@ export default defineConfig(({ mode }) => ({
     assetsInlineLimit: 4096,
     chunkSizeWarningLimit: 1500,
     minify: 'esbuild',
+    reportCompressedSize: false, // Faster builds
     rollupOptions: {
       output: {
+        // Optimize for initial load
+        experimentalMinChunkSize: 20000, // Merge small chunks
         manualChunks(id) {
           if (id.includes("node_modules")) {
-            // Group Three.js and related 3D libraries first (most specific)
-            if (id.includes("three") || id.includes("@react-three")) {
-              return "vendor-3d";
+            // Critical path - load first
+            if (id.includes("react-dom") || id.includes("react/jsx")) {
+              return "vendor-react-core";
             }
-            // Group Radix UI components
+            if (id.includes("react") && !id.includes("react-dom") && !id.includes("@react-three")) {
+              return "vendor-react";
+            }
+            
+            // UI framework - load second
             if (id.includes("@radix-ui")) {
               return "vendor-radix";
             }
-            // Group routing libraries
+            
+            // Routing - needed for navigation
             if (id.includes("react-router")) {
               return "vendor-router";
             }
-            // Group charting libraries
+            
+            // Supabase - needed for auth
+            if (id.includes("@supabase") || id.includes("@supabase/supabase-js")) {
+              return "vendor-supabase";
+            }
+            
+            // Defer heavy libraries
+            if (id.includes("three") || id.includes("@react-three")) {
+              return "vendor-3d";
+            }
             if (id.includes("recharts") || id.includes("d3")) {
               return "vendor-charts";
             }
-            // Group animation libraries
             if (id.includes("framer-motion")) {
               return "vendor-motion";
             }
-            // Group Supabase
-            if (id.includes("@supabase")) {
-              return "vendor-supabase";
-            }
-            // Group icons
             if (id.includes("lucide")) {
               return "vendor-icons";
-            }
-            // Group React core last (most general, must come after router check)
-            if (id.includes("react-dom") || id.includes("react")) {
-              return "vendor-react";
             }
           }
         },
