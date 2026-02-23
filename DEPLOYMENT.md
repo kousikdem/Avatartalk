@@ -92,6 +92,55 @@ vercel --prod
 
 ---
 
+### **Netlify Deployment**
+
+#### Prerequisites
+- Netlify account
+- GitHub repository connected to Netlify
+- Environment variables configured
+
+#### Step 1: Configure Environment Variables
+
+Add these environment variables in Netlify Dashboard → Site Settings → Environment Variables:
+
+```env
+# Supabase Configuration
+VITE_SUPABASE_URL=https://hnxnvdzrwbtmcohdptfq.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueG52ZHpyd2J0bWNvaGRwdGZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2MjA1MzMsImV4cCI6MjA2NjE5NjUzM30.bJerrLVY2DdTkaDurRoVBZIqmLRVYt-sxAH9sUDWgu8
+VITE_SUPABASE_PROJECT_ID=hnxnvdzrwbtmcohdptfq
+```
+
+#### Step 2: Deploy Using Netlify CLI
+
+```bash
+# Install Netlify CLI (if not already installed)
+npm install -g netlify-cli
+
+# Login to Netlify
+netlify login
+
+# Deploy to production
+netlify deploy --prod
+```
+
+#### Step 3: Deploy via Netlify Dashboard
+
+1. Go to [Netlify Dashboard](https://app.netlify.com/)
+2. Click "Add new site" → "Import an existing project"
+3. Connect your GitHub repository
+4. Netlify will auto-detect the configuration from `netlify.toml`
+5. Click "Deploy site"
+
+**Note**: The `netlify.toml` file is already configured with:
+- Build command: `yarn build`
+- Publish directory: `frontend/dist`
+- Base directory: `frontend`
+- Node.js 22 and increased memory
+- SPA routing redirects
+- Security headers
+
+---
+
 ## 📦 Build Configuration
 
 ### Package.json Scripts
