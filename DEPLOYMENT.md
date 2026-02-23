@@ -4,6 +4,8 @@
 
 The project is now **FULLY READY FOR DEPLOYMENT** with all critical issues resolved.
 
+**Latest Fix (Feb 23, 2026)**: ✅ Resolved npm ERESOLVE peer dependency conflict between react-day-picker and date-fns. See [`DEPLOYMENT_FIX.md`](./DEPLOYMENT_FIX.md) for details.
+
 ---
 
 ## 🔧 Fixed Issues
