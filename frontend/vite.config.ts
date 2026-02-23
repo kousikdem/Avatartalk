@@ -41,6 +41,12 @@ export default defineConfig(({ mode }) => ({
     cssCodeSplit: true,
     assetsInlineLimit: 4096,
     chunkSizeWarningLimit: 1000,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+      },
+    },
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -72,6 +78,8 @@ export default defineConfig(({ mode }) => ({
             if (id.includes("lucide")) {
               return "vendor-icons";
             }
+            // Group all other node_modules into vendor chunk
+            return "vendor";
           }
         },
       },
