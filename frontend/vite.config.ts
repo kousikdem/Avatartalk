@@ -49,11 +49,9 @@ export default defineConfig(({ mode }) => ({
         experimentalMinChunkSize: 20000, // Merge small chunks
         manualChunks(id) {
           if (id.includes("node_modules")) {
-            // Critical path - load first
-            if (id.includes("react-dom") || id.includes("react/jsx")) {
-              return "vendor-react-core";
-            }
-            if (id.includes("react") && !id.includes("react-dom") && !id.includes("@react-three")) {
+            // Critical path - load first (combine react core)
+            if (id.includes("react/jsx") || id.includes("react-dom") || 
+                (id.includes("react") && !id.includes("react-router") && !id.includes("@react-three"))) {
               return "vendor-react";
             }
             
@@ -68,7 +66,7 @@ export default defineConfig(({ mode }) => ({
             }
             
             // Supabase - needed for auth
-            if (id.includes("@supabase") || id.includes("@supabase/supabase-js")) {
+            if (id.includes("@supabase")) {
               return "vendor-supabase";
             }
             
