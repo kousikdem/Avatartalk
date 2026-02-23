@@ -1,12 +1,15 @@
 
 import { createRoot } from 'react-dom/client'
-import { StrictMode } from 'react'
+import { Component } from 'react'
 import App from './App.tsx'
 import './index.css'
 
 // Error boundary for production
-class ErrorBoundary extends StrictMode {
-  state = { hasError: false, error: null };
+class ErrorBoundary extends Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
+  constructor(props: {children: React.ReactNode}) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
   
   static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };
