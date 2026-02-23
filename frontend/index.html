@@ -6,18 +6,105 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AvatarTalk.Co</title>
+    
+    <!-- Preconnect to external domains for faster loading -->
+    <link rel="preconnect" href="https://hnxnvdzrwbtmcohdptfq.supabase.co" crossorigin>
+    <link rel="dns-prefetch" href="https://hnxnvdzrwbtmcohdptfq.supabase.co">
+    
+    <!-- Social meta tags -->
     <meta property="og:title" content="AvatarTalk.Co">
-  <meta name="twitter:title" content="AvatarTalk.Co">
-  <meta name="description" content="Lovable Generated Project">
-  <meta property="og:description" content="Lovable Generated Project">
-  <meta name="twitter:description" content="Lovable Generated Project">
-  <meta property="og:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/bf5994d3-980b-49a2-b98e-6b7a76749a97/id-preview-7d1226b7--3f13907b-5ec4-480a-b091-424fe5ca2573.lovable.app-1771346720410.png">
-  <meta name="twitter:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/bf5994d3-980b-49a2-b98e-6b7a76749a97/id-preview-7d1226b7--3f13907b-5ec4-480a-b091-424fe5ca2573.lovable.app-1771346720410.png">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta property="og:type" content="website">
-</head>
+    <meta name="twitter:title" content="AvatarTalk.Co">
+    <meta name="description" content="Create AI avatars that talk, sell & engage visitors 24/7">
+    <meta property="og:description" content="Create AI avatars that talk, sell & engage visitors 24/7">
+    <meta name="twitter:description" content="Create AI avatars that talk, sell & engage visitors 24/7">
+    <meta property="og:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/bf5994d3-980b-49a2-b98e-6b7a76749a97/id-preview-7d1226b7--3f13907b-5ec4-480a-b091-424fe5ca2573.lovable.app-1771346720410.png">
+    <meta name="twitter:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/bf5994d3-980b-49a2-b98e-6b7a76749a97/id-preview-7d1226b7--3f13907b-5ec4-480a-b091-424fe5ca2573.lovable.app-1771346720410.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="og:type" content="website">
+    
+    <!-- Inline critical CSS for instant render -->
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { height: 100%; }
+      body { 
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #000;
+        color: #fff;
+      }
+      #root { 
+        min-height: 100vh; 
+        display: flex;
+        flex-direction: column;
+      }
+      /* Initial loading state */
+      #app-loader {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #000 0%, #1a1a2e 100%);
+        z-index: 9999;
+      }
+      .loader-content {
+        text-align: center;
+      }
+      .loader-logo {
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .loader-spinner {
+        width: 40px;
+        height: 40px;
+        margin: 0 auto;
+        border: 3px solid rgba(255,255,255,0.1);
+        border-top-color: #667eea;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      /* Hide loader when app loads */
+      .app-loaded #app-loader {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s;
+      }
+    </style>
+  </head>
   <body>
+    <!-- Initial loading screen -->
+    <div id="app-loader">
+      <div class="loader-content">
+        <div class="loader-logo">AvatarTalk.Co</div>
+        <div class="loader-spinner"></div>
+      </div>
+    </div>
+    
     <div id="root"></div>
+    
+    <!-- Hide loader when JS starts -->
+    <script>
+      // Remove loader as soon as React mounts
+      window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+          document.body.classList.add('app-loaded');
+        }, 100);
+      });
+      
+      // Fallback: remove loader after 5 seconds
+      setTimeout(function() {
+        var loader = document.getElementById('app-loader');
+        if (loader) loader.style.display = 'none';
+      }, 5000);
+    </script>
+    
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
