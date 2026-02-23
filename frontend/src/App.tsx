@@ -312,10 +312,9 @@ const App = () => {
     };
   }, []);
 
-  // Show empty screen only during initial load
-  if (!isReady) {
-    return <AppLoadingScreen />;
-  }
+  // Show app immediately, don't wait for auth check
+  // The auth state will update once loaded
+  const showApp = true;
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -326,23 +325,27 @@ const App = () => {
             <Sonner />
             <BrowserRouter>
               <AuthProvider value={{ user, session, isReady }}>
-                {user ? (
-                  <>
-                    <AuthenticatedRoutes
-                      sidebarOpen={sidebarOpen}
-                      setSidebarOpen={setSidebarOpen}
-                      setIsCreatePostOpen={setIsCreatePostOpen}
-                      isMobile={isMobile}
-                    />
-                    <Suspense fallback={null}>
-                      <EnhancedCreatePostModal 
-                        isOpen={isCreatePostOpen}
-                        onClose={() => setIsCreatePostOpen(false)}
+                {isReady ? (
+                  user ? (
+                    <>
+                      <AuthenticatedRoutes
+                        sidebarOpen={sidebarOpen}
+                        setSidebarOpen={setSidebarOpen}
+                        setIsCreatePostOpen={setIsCreatePostOpen}
+                        isMobile={isMobile}
                       />
-                    </Suspense>
-                  </>
+                      <Suspense fallback={null}>
+                        <EnhancedCreatePostModal 
+                          isOpen={isCreatePostOpen}
+                          onClose={() => setIsCreatePostOpen(false)}
+                        />
+                      </Suspense>
+                    </>
+                  ) : (
+                    <PublicRoutes />
+                  )
                 ) : (
-                  <PublicRoutes />
+                  <AppLoadingScreen />
                 )}
               </AuthProvider>
             </BrowserRouter>
