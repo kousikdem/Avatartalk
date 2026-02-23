@@ -40,46 +40,44 @@ export default defineConfig(({ mode }) => ({
     target: "es2020",
     cssCodeSplit: true,
     assetsInlineLimit: 4096,
-    chunkSizeWarningLimit: 1000,
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-      },
-    },
+    chunkSizeWarningLimit: 1500,
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {
-            if (id.includes("react-router-dom") || id.includes("react-router")) {
-              return "vendor-router";
-            }
-            if (id.includes("react-dom")) {
-              return "vendor-react-dom";
-            }
-            if (id.includes("react")) {
-              return "vendor-react";
-            }
-            if (id.includes("@radix-ui")) {
-              return "vendor-radix";
-            }
-            if (id.includes("recharts") || id.includes("d3")) {
-              return "vendor-charts";
-            }
-            if (id.includes("framer-motion")) {
-              return "vendor-motion";
-            }
+            // Group Three.js and related 3D libraries first (most specific)
             if (id.includes("three") || id.includes("@react-three")) {
               return "vendor-3d";
             }
+            // Group Radix UI components
+            if (id.includes("@radix-ui")) {
+              return "vendor-radix";
+            }
+            // Group routing libraries
+            if (id.includes("react-router")) {
+              return "vendor-router";
+            }
+            // Group charting libraries
+            if (id.includes("recharts") || id.includes("d3")) {
+              return "vendor-charts";
+            }
+            // Group animation libraries
+            if (id.includes("framer-motion")) {
+              return "vendor-motion";
+            }
+            // Group Supabase
             if (id.includes("@supabase")) {
               return "vendor-supabase";
             }
+            // Group icons
             if (id.includes("lucide")) {
               return "vendor-icons";
             }
-            // Group all other node_modules into vendor chunk
-            return "vendor";
+            // Group React core last (most general, must come after router check)
+            if (id.includes("react-dom") || id.includes("react")) {
+              return "vendor-react";
+            }
           }
         },
       },
