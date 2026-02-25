@@ -8,7 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { ProfileLoadingScreen, ProfilePageSkeleton } from './ProfileLoadingScreen';
 import { useFollows } from '@/hooks/useFollows';
 import { usePersonalizedAI } from '@/hooks/usePersonalizedAI';
 import { usePosts } from '@/hooks/usePosts';
