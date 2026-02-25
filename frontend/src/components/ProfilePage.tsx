@@ -678,45 +678,79 @@ const ProfilePage: React.FC = () => {
 
   const fetchProfile = async () => {
     try {
-      // Parallel fetch: get profile ID and current user simultaneously
-      const [profileIdResult, userResult] = await Promise.all([
-        supabase.from('profiles').select('id').eq('username', username).maybeSingle(),
-        supabase.auth.getUser()
-      ]);
-        
-      if (profileIdResult.error) throw profileIdResult.error;
-      if (!profileIdResult.data) throw new Error('Profile not found');
+      console.log('Fetching profile for username:', username);
       
-      const profileId = profileIdResult.data.id;
+      // Step 1: Get profile by username
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('username', username)
+        .maybeSingle();
       
-      // Parallel fetch: profile data and all related data at once
-      const [profileResult, statsResult, productsResult, eventsResult, avatarResult, socialLinksResult] = await Promise.all([
-        supabase.rpc('get_public_profile', { profile_id: profileId }),
+      console.log('Profile query result:', { profileData, profileError });
+      
+      if (profileError) {
+        console.error('Profile fetch error:', profileError);
+        throw profileError;
+      }
+      
+      if (!profileData) {
+        console.error('No profile found for username:', username);
+        toast({
+          title: "Profile not found",
+          description: `No user profile found with username: ${username}`,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+      
+      const profileId = profileData.id;
+      console.log('Found profile ID:', profileId);
+      
+      // Step 2: Get current user for comparison
+      const { data: { user: currentUserData } } = await supabase.auth.getUser();
+      
+      // Step 3: Fetch all related data in parallel
+      const [statsResult, productsResult, eventsResult, avatarResult, socialLinksResult] = await Promise.all([
         supabase.from('user_stats').select('*').eq('user_id', profileId).maybeSingle(),
         supabase.from('products').select('*').eq('user_id', profileId).eq('status', 'published').order('created_at', { ascending: false }).limit(6),
         supabase.from('events').select('*').eq('user_id', profileId).in('status', ['published', 'upcoming']).order('created_at', { ascending: false }).limit(6),
         supabase.from('avatar_configurations').select('*').eq('user_id', profileId).eq('is_active', true).maybeSingle(),
         supabase.from('social_links').select('*').eq('user_id', profileId).maybeSingle()
       ]);
-        
-      if (profileResult.error) throw profileResult.error;
-      if (!profileResult.data || profileResult.data.length === 0) throw new Error('Profile not found');
       
-      const profileData = profileResult.data[0];
-
+      console.log('Related data fetched:', {
+        stats: statsResult.data,
+        products: productsResult.data?.length,
+        events: eventsResult.data?.length,
+        avatar: avatarResult.data ? 'found' : 'none',
+        socialLinks: socialLinksResult.data ? 'found' : 'none'
+      });
+      
       // Set all state at once to minimize re-renders
       setProfile(profileData);
-      setUserStats(statsResult.data);
+      setUserStats(statsResult.data || { 
+        total_conversations: 0,
+        followers_count: 0,
+        profile_views: 0,
+        engagement_score: 0
+      });
       setProducts(productsResult.data || []);
       setEvents(eventsResult.data || []);
       setAvatarConfig(avatarResult.data);
       setSocialLinks(socialLinksResult.data);
       setLoading(false);
-
-      // Note: Profile view tracking is now handled by useViewTracking hook with 3-second delay
+      
+      console.log('Profile loaded successfully');
 
     } catch (error) {
       console.error('Error fetching profile:', error);
+      toast({
+        title: "Error loading profile",
+        description: error instanceof Error ? error.message : "Failed to load user profile",
+        variant: "destructive",
+      });
       setLoading(false);
     }
   };
