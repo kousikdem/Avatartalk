@@ -1121,14 +1121,9 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  // Fast loading screen with hi-fi animation
+  // No loading screen for user profile - instant load
   if (loading) {
-    return (
-      <>
-        <ProfileLoadingScreen isLoading={loading} maxDuration={2500} />
-        <ProfilePageSkeleton />
-      </>
-    );
+    return null; // Return nothing while loading
   }
 
   if (!profile) {
