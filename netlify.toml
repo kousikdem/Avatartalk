@@ -1,12 +1,26 @@
 [build]
   base = "frontend"
-  command = "yarn build"
+  command = "yarn install && yarn build"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "22"
   NODE_OPTIONS = "--max-old-space-size=8192"
   NPM_FLAGS = "--legacy-peer-deps"
+  # Supabase environment variables (public keys - safe for client-side)
+  VITE_SUPABASE_URL = "https://hnxnvdzrwbtmcohdptfq.supabase.co"
+  VITE_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_uaL-zelOHdGlOlvaWuIa1A_wtL7mx3p"
+  VITE_SUPABASE_PROJECT_ID = "hnxnvdzrwbtmcohdptfq"
+
+# Alternative build command using npm
+[context.production]
+  command = "npm install && npm run build"
+
+[context.deploy-preview]
+  command = "yarn install && yarn build"
+
+[context.branch-deploy]
+  command = "yarn install && yarn build"
 
 [[redirects]]
   from = "/*"
