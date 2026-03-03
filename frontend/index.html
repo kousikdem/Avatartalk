@@ -17,8 +17,8 @@
     <meta name="description" content="Create AI avatars that talk, sell & engage visitors 24/7">
     <meta property="og:description" content="Create AI avatars that talk, sell & engage visitors 24/7">
     <meta name="twitter:description" content="Create AI avatars that talk, sell & engage visitors 24/7">
-    <meta property="og:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/bf5994d3-980b-49a2-b98e-6b7a76749a97/id-preview-7d1226b7--3f13907b-5ec4-480a-b091-424fe5ca2573.lovable.app-1771346720410.png">
-    <meta name="twitter:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/bf5994d3-980b-49a2-b98e-6b7a76749a97/id-preview-7d1226b7--3f13907b-5ec4-480a-b091-424fe5ca2573.lovable.app-1771346720410.png">
+    <meta property="og:image" content="https://avatartalk.co/og-image.png">
+    <meta name="twitter:image" content="https://avatartalk.co/og-image.png">
     <meta name="twitter:card" content="summary_large_image">
     <meta property="og:type" content="website">
     
@@ -77,18 +77,17 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 50px;
-        height: 50px;
-        background: #fff;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-        font-weight: 700;
-        color: #667eea;
+        width: 60px;
+        height: 60px;
         z-index: 2;
         animation: bounce 1s ease-in-out infinite;
+      }
+      
+      .logo-icon svg {
+        width: 100%;
+        height: 100%;
+        fill: #fff;
+        filter: drop-shadow(0 2px 8px rgba(102, 126, 234, 0.3));
       }
       
       /* Rotating ring */
@@ -168,7 +167,23 @@
         <div class="loader-logo">
           <div class="logo-circle"></div>
           <div class="logo-ring"></div>
-          <div class="logo-icon">A</div>
+          <div class="logo-icon">
+            <!-- AvatarTalk Logo SVG -->
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+              <!-- Head circle -->
+              <circle cx="50" cy="35" r="18" fill="#667eea" opacity="0.9"/>
+              <!-- Body -->
+              <ellipse cx="50" cy="65" rx="20" ry="15" fill="#667eea" opacity="0.8"/>
+              <!-- Speech bubble -->
+              <circle cx="75" cy="25" r="8" fill="#764ba2" opacity="0.9"/>
+              <circle cx="80" cy="30" r="5" fill="#764ba2" opacity="0.7"/>
+              <!-- Eyes -->
+              <circle cx="45" cy="33" r="2" fill="white"/>
+              <circle cx="55" cy="33" r="2" fill="white"/>
+              <!-- Smile -->
+              <path d="M 43 38 Q 50 42 57 38" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+            </svg>
+          </div>
         </div>
         <div class="loader-text">AvatarTalk.Co</div>
         <div class="loader-subtext">Loading your AI avatar...</div>
