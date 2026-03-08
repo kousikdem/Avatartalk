@@ -8,7 +8,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { CurrencyProvider } from "@/hooks/useCurrency";
-import { DashboardPageSkeleton, ProfileSkeleton, FastLoadingScreen } from "@/components/ui/fast-loading";
+// Skeleton imports removed - instant loading without skeletons
 import type { Session, User } from "@supabase/supabase-js";
 import { AuthProvider, useAuth } from "@/context/auth";
 
@@ -52,11 +52,11 @@ const queryClient = new QueryClient({
   },
 });
 
-// Minimal loading fallback
-const PageFallback = memo(() => <DashboardPageSkeleton showStats showTabs />);
+// Minimal loading fallback - instant with no skeleton
+const PageFallback = memo(() => null);
 PageFallback.displayName = 'PageFallback';
 
-const ProfileFallback = memo(() => <ProfileSkeleton />);
+const ProfileFallback = memo(() => null);
 ProfileFallback.displayName = 'ProfileFallback';
 
 // Minimal app loading - just shows instantly with no animation delay
@@ -277,7 +277,8 @@ const App = () => {
     // Listen for auth changes (sync callback only)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!mounted) return;
-      if (event === "INITIAL_SESSION") return;
+      // Ignore events that don't represent actual login/logout
+      if (event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") return;
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
     });

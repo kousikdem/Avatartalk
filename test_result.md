@@ -233,7 +233,7 @@ test_plan:
 
 agent_communication:
   - agent: "main"
-    message: "DEPLOYMENT READY ✅ - Fixed all critical issues for both preview and Vercel deployments. Preview site working perfectly at https://preview-fix-17.preview.emergentagent.com. Production build successful (47s, 5276 modules, 12MB output). Created comprehensive deployment configuration and documentation. Project is now fully deployable to Vercel with all optimizations in place."
+    message: "DEPLOYMENT READY ✅ - Fixed all critical issues for both preview and Vercel deployments. Preview site working perfectly at https://oauth-skeleton-fix.preview.emergentagent.com. Production build successful (47s, 5276 modules, 12MB output). Created comprehensive deployment configuration and documentation. Project is now fully deployable to Vercel with all optimizations in place."
     status_history:
       - working: true
         agent: "main"

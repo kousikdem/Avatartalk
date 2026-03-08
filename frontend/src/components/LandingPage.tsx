@@ -79,6 +79,38 @@ const LandingPage = () => {
   const [isDemoThemeDark, setIsDemoThemeDark] = useState(true);
   const [demoChatMessages, setDemoChatMessages] = useState<Array<{sender: 'ai' | 'user'; text: string; id: number}>>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  // Text-to-speech function for AI messages
+  const speakText = (text: string) => {
+    if ('speechSynthesis' in window) {
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel();
+      
+      // Clean text from emojis for better speech
+      const cleanText = text.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '');
+      
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+      
+      // Try to get a good voice
+      const voices = window.speechSynthesis.getVoices();
+      const preferredVoice = voices.find(v => 
+        v.name.includes('Google') || v.name.includes('Samantha') || v.lang.startsWith('en')
+      );
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+      }
+      
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+      
+      window.speechSynthesis.speak(utterance);
+    }
+  };
 
   // Auto-playing demo conversation
   const demoConversationScript = [
@@ -102,14 +134,26 @@ const LandingPage = () => {
       timeoutId = setTimeout(() => {
         setIsTyping(false);
         setDemoChatMessages(prev => [...prev, { ...msg, id: messageIndex }]);
+        
+        // Speak AI messages automatically
+        if (msg.sender === 'ai') {
+          speakText(msg.text);
+        }
+        
         messageIndex++;
-        timeoutId = setTimeout(showNextMessage, msg.sender === 'ai' ? 1000 : 600);
+        timeoutId = setTimeout(showNextMessage, msg.sender === 'ai' ? 3000 : 600); // Longer delay for AI to allow speech
       }, typingDelay);
     };
 
     // Start after 1.5s
     timeoutId = setTimeout(showNextMessage, 1500);
-    return () => clearTimeout(timeoutId);
+    return () => {
+      clearTimeout(timeoutId);
+      // Stop any ongoing speech when component unmounts
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
   }, []);
   
   const { plans, loading: plansLoading } = usePlatformPricingPlans();

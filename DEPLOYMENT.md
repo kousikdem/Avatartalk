@@ -141,6 +141,62 @@ netlify deploy --prod
 
 ---
 
+## 🔐 Google OAuth Configuration (CRITICAL)
+
+**⚠️ IMPORTANT**: If Google login redirects to `localhost` instead of your production domain, you MUST configure the URL settings in **Supabase Dashboard**. The code is already set up to use `window.location.origin` for redirects - the issue is in your Supabase project settings.
+
+### Step-by-Step Fix
+
+1. **Go to Supabase Dashboard**
+   - Navigate to: https://supabase.com/dashboard
+   - Select your project: `hnxnvdzrwbtmcohdptfq`
+
+2. **Configure URL Settings**
+   - Go to: **Authentication** → **URL Configuration**
+   
+3. **Set Site URL** (Critical)
+   ```
+   https://your-production-domain.com
+   ```
+   For Vercel deployment:
+   ```
+   https://avatartalk-p1ia4t6zc-kousik-kars-projects.vercel.app
+   ```
+
+4. **Add Redirect URLs** (Add ALL of these)
+   ```
+   https://your-production-domain.com
+   https://your-production-domain.com/**
+   https://avatartalk-p1ia4t6zc-kousik-kars-projects.vercel.app
+   https://avatartalk-p1ia4t6zc-kousik-kars-projects.vercel.app/**
+   https://oauth-skeleton-fix.preview.emergentagent.com
+   https://oauth-skeleton-fix.preview.emergentagent.com/**
+   http://localhost:3000
+   http://localhost:3000/**
+   ```
+
+5. **Configure Google Provider**
+   - Go to: **Authentication** → **Providers** → **Google**
+   - Ensure Google OAuth is enabled
+   - Add these to **Authorized redirect URIs** in your Google Cloud Console:
+     ```
+     https://hnxnvdzrwbtmcohdptfq.supabase.co/auth/v1/callback
+     ```
+
+### Why This Happens
+- Supabase's `signInWithOAuth` uses the **Site URL** from your project settings as the base redirect
+- Even if you pass `redirectTo` in the code, Supabase validates it against the **Redirect URLs** whitelist
+- If validation fails, it falls back to the **Site URL**, which might be set to `localhost`
+
+### Verification
+After configuring, test the Google login flow:
+1. Go to your production URL
+2. Click "Sign in with Google"
+3. Complete Google authentication
+4. You should be redirected back to your production domain, NOT localhost
+
+---
+
 ## 📦 Build Configuration
 
 ### Package.json Scripts
@@ -199,7 +255,7 @@ yarn preview
 ```
 
 ### Preview Site Test
-- **URL**: https://preview-fix-17.preview.emergentagent.com
+- **URL**: https://oauth-skeleton-fix.preview.emergentagent.com
 - **Status**: ✅ Working perfectly
 - **Features Tested**:
   - Landing page loads correctly
@@ -240,7 +296,7 @@ Largest Chunks:
 ## 🌐 Domain Configuration
 
 ### Current Domains
-- **Preview**: https://preview-fix-17.preview.emergentagent.com
+- **Preview**: https://oauth-skeleton-fix.preview.emergentagent.com
 - **Vercel**: https://avatartalk-p1ia4t6zc-kousik-kars-projects.vercel.app
 
 ### Custom Domain Setup (Optional)

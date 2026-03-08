@@ -33,7 +33,7 @@ http://localhost:54321/auth/v1/callback
 
 # For your production domains
 https://avatartalk-p1ia4t6zc-kousik-kars-projects.vercel.app/auth/v1/callback
-https://preview-fix-17.preview.emergentagent.com/auth/v1/callback
+https://oauth-skeleton-fix.preview.emergentagent.com/auth/v1/callback
 https://yourdomain.com/auth/v1/callback
 ```
 

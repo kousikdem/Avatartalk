@@ -27,7 +27,7 @@ yarn build
 ```
 
 ### Preview Site
-**URL**: https://preview-fix-17.preview.emergentagent.com  
+**URL**: https://oauth-skeleton-fix.preview.emergentagent.com  
 **Status**: ✅ Working perfectly
 
 ---
@@ -141,7 +141,7 @@ yarn build
 
 ## 🌐 URLs
 
-- **Preview**: https://preview-fix-17.preview.emergentagent.com
+- **Preview**: https://oauth-skeleton-fix.preview.emergentagent.com
 - **Vercel**: https://avatartalk-p1ia4t6zc-kousik-kars-projects.vercel.app
 
 ---

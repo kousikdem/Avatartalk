@@ -30,7 +30,6 @@ import TokenDisplay from './TokenDisplay';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { LimitReachedBanner } from '@/components/LockedFeatureOverlay';
 import PlanBadge from '@/components/PlanBadge';
-import { GenericPageSkeleton } from '@/components/ui/page-skeletons';
 import { useAuth } from '@/context/auth';
 
 type ViewMode = 'grid' | 'list';

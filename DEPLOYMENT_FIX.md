@@ -118,7 +118,7 @@ yarn build
 ```
 
 ### Preview Site ✅
-- URL: https://preview-fix-17.preview.emergentagent.com
+- URL: https://oauth-skeleton-fix.preview.emergentagent.com
 - Status: Working perfectly
 - Calendar component: Functional
 

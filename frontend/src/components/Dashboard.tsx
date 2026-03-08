@@ -21,9 +21,7 @@ import EnhancedCreatePostModal from './EnhancedCreatePostModal';
 import DashboardSidebar from './DashboardSidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { DashboardSkeleton } from '@/components/ui/page-skeletons';
 import { useNavigate } from 'react-router-dom';
-import { Skeleton } from '@/components/ui/skeleton';
 
 const Dashboard = () => {
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -111,7 +109,8 @@ const Dashboard = () => {
     }
   };
 
-  const showProfileSkeletons = loading && !profileData;
+  // No skeletons - show actual values or fallbacks instantly
+const showFallback = loading && !profileData;
 
   const mobileNavItems = [
     { title: "Dashboard", icon: Home, url: "/settings/dashboard" },
@@ -149,11 +148,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
             <div className="text-xl sm:text-2xl font-bold text-gray-900">
-              {showProfileSkeletons ? (
-                <Skeleton className="h-7 w-12" />
-              ) : (
-                profileData?.followers_count ?? 0
-              )}
+              {profileData?.followers_count ?? 0}
             </div>
             <p className="text-xs text-gray-600 hidden sm:block">+20% from last month</p>
           </CardContent>
@@ -166,11 +161,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
             <div className="text-xl sm:text-2xl font-bold text-gray-900">
-              {showProfileSkeletons ? (
-                <Skeleton className="h-7 w-14" />
-              ) : (
-                (profileData?.analytics?.total_chats_sent || 0) + (profileData?.analytics?.total_chats_received || 0)
-              )}
+              {(profileData?.analytics?.total_chats_sent || 0) + (profileData?.analytics?.total_chats_received || 0)}
             </div>
             <p className="text-xs text-gray-600 hidden sm:block">
               {profileData?.analytics?.total_chats_sent || 0} sent • {profileData?.analytics?.total_chats_received || 0} received
@@ -185,7 +176,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
             <div className="text-xl sm:text-2xl font-bold text-gray-900">
-              {upcomingCollabs === null ? <Skeleton className="h-7 w-10" /> : upcomingCollabs}
+              {upcomingCollabs ?? 0}
             </div>
             <p className="text-xs text-gray-600 hidden sm:block">Upcoming collaborations</p>
           </CardContent>
@@ -198,11 +189,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
             <div className="text-xl sm:text-2xl font-bold text-gray-900">
-              {showProfileSkeletons ? (
-                <Skeleton className="h-7 w-10" />
-              ) : (
-                profileData?.analytics?.profile_views ?? 0
-              )}
+              {profileData?.analytics?.profile_views ?? 0}
             </div>
             <p className="text-xs text-gray-600 hidden sm:block">Profile visitors</p>
           </CardContent>

@@ -24,8 +24,6 @@ import { useToast } from '@/hooks/use-toast';
 import TokenDisplay from '@/components/TokenDisplay';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { LimitReachedBanner } from '@/components/LockedFeatureOverlay';
-import { FastPageLoader, PriorityLoader, StatCardSkeleton, ProductCardSkeleton } from '@/components/ui/fast-loading';
-import { ProductsSkeleton } from '@/components/ui/page-skeletons';
 import { useAuth } from '@/context/auth';
 
 type ViewMode = 'grid' | 'list';
