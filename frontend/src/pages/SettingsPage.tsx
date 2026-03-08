@@ -87,7 +87,6 @@ import { CountrySelect } from '@/components/ui/country-select';
 import { IconSelect, type IconSelectOption } from '@/components/ui/icon-select';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { ProfessionSelect, type ProfessionOption } from '@/components/ui/profession-select';
-import { SettingsSkeleton } from '@/components/ui/page-skeletons';
 import { useAuth } from '@/context/auth';
 
 const SettingsPage = () => {
@@ -371,9 +370,9 @@ const SettingsPage = () => {
     }
   };
 
-  // Show skeleton instantly while loading - design first, then data
+  // No loading skeleton - instant render
   if (loading) {
-    return <SettingsSkeleton />;
+    return null;
   }
 
   if (!currentUser) {

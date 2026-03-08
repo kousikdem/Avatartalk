@@ -301,7 +301,7 @@ const VirtualCollaborationPage = () => {
   }, []);
 
   if (isLoading && products.length === 0) {
-    return <GenericPageSkeleton title stats={4} tabs={3} cards={6} />;
+    return null;
   }
 
   return (

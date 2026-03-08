@@ -19,7 +19,6 @@ import { useLoyalUsers } from '@/hooks/useLoyalUsers';
 import TokenDisplay from '@/components/TokenDisplay';
 import PlanBadge, { planColors } from '@/components/PlanBadge';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
-import { FollowersSkeleton } from '@/components/ui/page-skeletons';
 import { useAuth } from '@/context/auth';
 
 interface FollowerStats {
@@ -452,9 +451,9 @@ const FollowersPage = () => {
     );
   };
 
-  // Show skeleton only while data is loading (not auth)
+  // No loading skeleton - instant render
   if (loading && followers.length === 0) {
-    return <FollowersSkeleton />;
+    return null;
   }
 
   return (

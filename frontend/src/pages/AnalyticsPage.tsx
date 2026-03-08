@@ -20,7 +20,6 @@ import { format, subDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import TokenDisplay from '@/components/TokenDisplay';
 import PlanBadge, { planColors } from '@/components/PlanBadge';
-import { AnalyticsSkeleton } from '@/components/ui/page-skeletons';
 
 // Modern gradient color palette
 const CHART_GRADIENTS = {
@@ -161,9 +160,9 @@ const AnalyticsPage = () => {
     return null;
   };
 
-  // Show skeleton instantly while loading
+  // No loading skeleton - instant render
   if (loading) {
-    return <AnalyticsSkeleton />;
+    return null;
   }
 
   return (

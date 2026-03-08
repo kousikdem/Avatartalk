@@ -4,7 +4,6 @@ import { DollarSign, ShoppingBag, Video, FileText, Users, TrendingUp, Clock, Glo
 import { useEarnings } from '@/hooks/useEarnings';
 import { useCurrency } from '@/hooks/useCurrency';
 import { formatDistanceToNow } from 'date-fns';
-import { Skeleton } from '@/components/ui/skeleton';
 import DashboardHeader from '@/components/DashboardHeader';
 import CurrencySelector from '@/components/CurrencySelector';
 
@@ -30,15 +29,7 @@ const EarningsPage = () => {
   };
 
   if (loading) {
-    return (
-      <div className="p-6 space-y-6">
-        <Skeleton className="h-10 w-64" />
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-28" />)}
-        </div>
-        <Skeleton className="h-96" />
-      </div>
-    );
+    return null;
   }
 
   const statCards = [

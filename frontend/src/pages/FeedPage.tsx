@@ -15,7 +15,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useFollows } from '@/hooks/useFollows';
 import SocialFeed from '@/components/SocialFeed';
 import TokenDisplay from '@/components/TokenDisplay';
-import { FeedSkeleton } from '@/components/ui/page-skeletons';
 import { useAuth } from '@/context/auth';
 
 interface User {
@@ -109,8 +108,8 @@ const FeedPage = () => {
     </Card>
   );
 
-  // Show skeleton shell if auth context isn't ready yet (prevents blank screen)
-  if (!userId) return <FeedSkeleton />;
+  // No loading skeleton - instant render
+  if (!userId) return null;
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6">

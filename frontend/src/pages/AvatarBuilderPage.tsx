@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import AvatarStudioLayout from '@/components/avatar-studio/AvatarStudioLayout';
-import { AvatarBuilderSkeleton } from '@/components/ui/page-skeletons';
 
 const AvatarBuilderPage = () => {
   const [user, setUser] = useState<any>(null);
@@ -32,9 +31,9 @@ const AvatarBuilderPage = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Show skeleton instantly while loading
+  // No loading skeleton - instant render
   if (loading) {
-    return <AvatarBuilderSkeleton />;
+    return null;
   }
 
   if (!user) {

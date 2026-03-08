@@ -164,10 +164,17 @@ const MainAuth: React.FC<MainAuthProps> = ({ isOpen, onClose, defaultTab = 'sign
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
+      // Get the base URL without any params
+      const baseUrl = window.location.origin;
+      const redirectUrl = `${baseUrl}/dashboard`;
+      
+      console.log('Google OAuth redirect URL:', redirectUrl);
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/?view=dashboard`,
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: false,
         }
       });
 
@@ -177,7 +184,9 @@ const MainAuth: React.FC<MainAuthProps> = ({ isOpen, onClose, defaultTab = 'sign
           description: error.message,
           variant: "destructive",
         });
+        setLoading(false);
       }
+      // Loading state will be cleared by navigation or error
     } catch (error) {
       console.error('Google login error:', error);
       toast({
@@ -185,7 +194,6 @@ const MainAuth: React.FC<MainAuthProps> = ({ isOpen, onClose, defaultTab = 'sign
         description: "An unexpected error occurred",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };

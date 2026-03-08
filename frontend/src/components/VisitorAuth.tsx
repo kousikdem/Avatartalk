@@ -185,10 +185,18 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
+      // Get current page path to return to after auth
+      const baseUrl = window.location.origin;
+      const currentPath = window.location.pathname;
+      const redirectUrl = `${baseUrl}${currentPath}`;
+      
+      console.log('Visitor Google OAuth redirect URL:', redirectUrl);
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}${window.location.pathname}`,
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: false,
         }
       });
 
@@ -198,6 +206,7 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
           description: error.message,
           variant: "destructive",
         });
+        setLoading(false);
       }
     } catch (error) {
       console.error('Google login error:', error);
@@ -206,7 +215,6 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
         description: "An unexpected error occurred",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
@@ -214,10 +222,15 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
   const handleFacebookLogin = async () => {
     setLoading(true);
     try {
+      const baseUrl = window.location.origin;
+      const currentPath = window.location.pathname;
+      const redirectUrl = `${baseUrl}${currentPath}`;
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'facebook',
         options: {
-          redirectTo: `${window.location.origin}${window.location.pathname}`,
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: false,
         }
       });
 
@@ -227,6 +240,7 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
           description: error.message,
           variant: "destructive",
         });
+        setLoading(false);
       }
     } catch (error) {
       console.error('Facebook login error:', error);
@@ -235,7 +249,6 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
         description: "An unexpected error occurred",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
@@ -243,10 +256,15 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
   const handleTwitterLogin = async () => {
     setLoading(true);
     try {
+      const baseUrl = window.location.origin;
+      const currentPath = window.location.pathname;
+      const redirectUrl = `${baseUrl}${currentPath}`;
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'twitter',
         options: {
-          redirectTo: `${window.location.origin}${window.location.pathname}`,
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: false,
         }
       });
 
@@ -256,6 +274,7 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
           description: error.message,
           variant: "destructive",
         });
+        setLoading(false);
       }
     } catch (error) {
       console.error('Twitter login error:', error);
@@ -264,7 +283,6 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
         description: "An unexpected error occurred",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
@@ -272,10 +290,15 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
   const handleLinkedInLogin = async () => {
     setLoading(true);
     try {
+      const baseUrl = window.location.origin;
+      const currentPath = window.location.pathname;
+      const redirectUrl = `${baseUrl}${currentPath}`;
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
-          redirectTo: `${window.location.origin}${window.location.pathname}`,
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: false,
         }
       });
 
@@ -285,6 +308,7 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
           description: error.message,
           variant: "destructive",
         });
+        setLoading(false);
       }
     } catch (error) {
       console.error('LinkedIn login error:', error);
@@ -293,7 +317,6 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
         description: "An unexpected error occurred",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
