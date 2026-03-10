@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "fix the full website's web view in the vercel deploy webview and your own webview, fix the both webview errors and make the project deployable and everything should work after deploy"
+user_problem_statement: "connect the Supabase database. change the google auth redirect url http://localhost:3000/ to original url or main url. fix the vercel deploy blank page issue to full working page (vercel deploy url - http://avatartalk-37t7l9b23-kousik-kars-projects.vercel.app/) and make deployable."
 
 frontend:
   - task: "Fix Vite host blocking error for preview domains"
@@ -239,7 +239,7 @@ test_plan:
 
 agent_communication:
   - agent: "main"
-    message: "DEPLOYMENT READY ✅ - Fixed all critical issues for both preview and Vercel deployments. Preview site working perfectly at https://auth-redirect-fix-19.preview.emergentagent.com. Production build successful (47s, 5276 modules, 12MB output). Created comprehensive deployment configuration and documentation. Project is now fully deployable to Vercel with all optimizations in place."
+    message: "CONTINUATION FIXES - Fixed 3 issues: (1) Supabase client updated with proper auth config (persistSession, autoRefreshToken, detectSessionInUrl, pkce flowType). (2) Google Auth redirect URL changed from localhost:3000 to window.location.origin/settings/dashboard in MainAuth.tsx and AuthModal.tsx. (3) Created /app/frontend/vercel.json for direct frontend deployment. Updated /app/vercel.json with yarn install in build command. Preview site verified working at https://auth-redirect-fix-19.preview.emergentagent.com. User still needs to disable Vercel deployment protection and update Supabase Site URL."
     status_history:
       - working: true
         agent: "main"
