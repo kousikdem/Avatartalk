@@ -1,9 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "cd frontend && yarn install && yarn build",
-  "outputDirectory": "frontend/dist",
-  "devCommand": "cd frontend && yarn dev",
-  "installCommand": "cd frontend && yarn install",
+  "buildCommand": "yarn build",
+  "outputDirectory": "dist",
+  "devCommand": "yarn dev",
+  "installCommand": "yarn install",
   "framework": "vite",
   "rewrites": [
     {

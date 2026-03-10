@@ -277,10 +277,14 @@ const App = () => {
     // Listen for auth changes (sync callback only)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!mounted) return;
-      // Ignore events that don't represent actual login/logout
-      if (event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") return;
+      // Handle all meaningful auth events including OAuth callback
+      if (event === "TOKEN_REFRESHED") return;
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
+      // Mark as ready when we get an auth event (important for OAuth callbacks)
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "INITIAL_SESSION") {
+        setIsReady(true);
+      }
     });
 
     // Fast local session hydrate (no UI blocking beyond initial empty screen)

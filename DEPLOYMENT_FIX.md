@@ -118,7 +118,7 @@ yarn build
 ```
 
 ### Preview Site ✅
-- URL: https://oauth-skeleton-fix.preview.emergentagent.com
+- URL: https://auth-redirect-fix-19.preview.emergentagent.com
 - Status: Working perfectly
 - Calendar component: Functional
 

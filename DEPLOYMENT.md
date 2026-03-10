@@ -169,8 +169,8 @@ netlify deploy --prod
    https://your-production-domain.com/**
    https://avatartalk-p1ia4t6zc-kousik-kars-projects.vercel.app
    https://avatartalk-p1ia4t6zc-kousik-kars-projects.vercel.app/**
-   https://oauth-skeleton-fix.preview.emergentagent.com
-   https://oauth-skeleton-fix.preview.emergentagent.com/**
+   https://auth-redirect-fix-19.preview.emergentagent.com
+   https://auth-redirect-fix-19.preview.emergentagent.com/**
    http://localhost:3000
    http://localhost:3000/**
    ```
@@ -255,7 +255,7 @@ yarn preview
 ```
 
 ### Preview Site Test
-- **URL**: https://oauth-skeleton-fix.preview.emergentagent.com
+- **URL**: https://auth-redirect-fix-19.preview.emergentagent.com
 - **Status**: ✅ Working perfectly
 - **Features Tested**:
   - Landing page loads correctly
@@ -296,7 +296,7 @@ Largest Chunks:
 ## 🌐 Domain Configuration
 
 ### Current Domains
-- **Preview**: https://oauth-skeleton-fix.preview.emergentagent.com
+- **Preview**: https://auth-redirect-fix-19.preview.emergentagent.com
 - **Vercel**: https://avatartalk-p1ia4t6zc-kousik-kars-projects.vercel.app
 
 ### Custom Domain Setup (Optional)

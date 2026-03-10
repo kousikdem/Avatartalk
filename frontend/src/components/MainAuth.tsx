@@ -122,7 +122,7 @@ const MainAuth: React.FC<MainAuthProps> = ({ isOpen, onClose, defaultTab = 'sign
           data: {
             full_name: validatedData.name,
           },
-          emailRedirectTo: `${window.location.origin}/?view=dashboard`
+          emailRedirectTo: `${window.location.origin}/settings/dashboard`
         }
       });
 
@@ -166,7 +166,7 @@ const MainAuth: React.FC<MainAuthProps> = ({ isOpen, onClose, defaultTab = 'sign
     try {
       // Get the base URL without any params
       const baseUrl = window.location.origin;
-      const redirectUrl = `${baseUrl}/dashboard`;
+      const redirectUrl = `${baseUrl}/settings/dashboard`;
       
       console.log('Google OAuth redirect URL:', redirectUrl);
       
@@ -387,7 +387,7 @@ const MainAuth: React.FC<MainAuthProps> = ({ isOpen, onClose, defaultTab = 'sign
               try {
                 const { error } = await supabase.auth.signInWithOAuth({
                   provider: 'facebook',
-                  options: { redirectTo: `${window.location.origin}/?view=dashboard` }
+                  options: { redirectTo: `${window.location.origin}/settings/dashboard` }
                 });
                 if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
               } finally {
@@ -409,7 +409,7 @@ const MainAuth: React.FC<MainAuthProps> = ({ isOpen, onClose, defaultTab = 'sign
               try {
                 const { error } = await supabase.auth.signInWithOAuth({
                   provider: 'twitter',
-                  options: { redirectTo: `${window.location.origin}/?view=dashboard` }
+                  options: { redirectTo: `${window.location.origin}/settings/dashboard` }
                 });
                 if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
               } finally {
@@ -431,7 +431,7 @@ const MainAuth: React.FC<MainAuthProps> = ({ isOpen, onClose, defaultTab = 'sign
               try {
                 const { error } = await supabase.auth.signInWithOAuth({
                   provider: 'linkedin_oidc',
-                  options: { redirectTo: `${window.location.origin}/?view=dashboard` }
+                  options: { redirectTo: `${window.location.origin}/settings/dashboard` }
                 });
                 if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
               } finally {
