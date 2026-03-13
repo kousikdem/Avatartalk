@@ -279,7 +279,7 @@ test_plan:
 
 agent_communication:
   - agent: "main"
-    message: "CONTINUATION FIXES - Fixed 3 issues: (1) Supabase client updated with proper auth config (persistSession, autoRefreshToken, detectSessionInUrl, pkce flowType). (2) Google Auth redirect URL changed from localhost:3000 to window.location.origin/settings/dashboard in MainAuth.tsx and AuthModal.tsx. (3) Created /app/frontend/vercel.json for direct frontend deployment. Updated /app/vercel.json with yarn install in build command. Preview site verified working at https://auth-redirect-fix-19.preview.emergentagent.com. User still needs to disable Vercel deployment protection and update Supabase Site URL."
+    message: "FIXED 3 ISSUES: (1) Google Auth redirect URL - added VITE_SITE_URL=Vercel URL to all env files + vercel.json, updated all OAuth redirectTo in MainAuth.tsx, AuthModal.tsx, VisitorAuth.tsx to use VITE_SITE_URL. (2) Page reload loop fixed - removed INITIAL_SESSION duplicate state updates, added initialLoadDone flag, removed aggressive getUser()+signOut() logic, removed PKCE flow. (3) Wrong routes fixed - navigate('/dashboard') -> navigate('/settings/dashboard') in 4 files. Frontend testing confirmed: no reload loop, auth stable, all OAuth buttons present."
     status_history:
       - working: true
         agent: "main"
