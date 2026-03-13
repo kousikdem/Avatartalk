@@ -372,7 +372,7 @@ const VirtualCollaborationPage = () => {
               <div className="flex gap-2">
                 {hasFeature('promo_codes_enabled') ? (
                   <>
-                    <Button variant="outline" size="sm" onClick={() => navigate('/dashboard/promos')} className="gap-2">
+                    <Button variant="outline" size="sm" onClick={() => navigate('/settings/promo')} className="gap-2">
                       <Settings className="w-4 h-4" /> Manage All Promos
                     </Button>
                     <Button size="sm" onClick={() => { setEditingPromo(null); setShowPromoModal(true); }} className="gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">

@@ -467,7 +467,7 @@ const AvatarPage: React.FC = () => {
               </p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => navigate('/dashboard')}>
+              <Button variant="outline" onClick={() => navigate('/settings/dashboard')}>
                 <Home className="w-4 h-4 mr-2" />
                 Dashboard
               </Button>
@@ -616,7 +616,7 @@ const AvatarPage: React.FC = () => {
             </div>
             
             <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-              <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')} className="h-8 text-xs sm:text-sm">
+              <Button variant="outline" size="sm" onClick={() => navigate('/settings/dashboard')} className="h-8 text-xs sm:text-sm">
                 <Home className="w-3.5 h-3.5 sm:mr-2" />
                 <span className="hidden sm:inline">Dashboard</span>
               </Button>

@@ -273,42 +273,34 @@ const App = () => {
 
   useEffect(() => {
     let mounted = true;
+    let initialLoadDone = false;
 
-    // Listen for auth changes (sync callback only)
+    // Listen for post-init auth changes only (SIGNED_IN from OAuth callback, SIGNED_OUT)
+    // INITIAL_SESSION is handled by getSession() below to avoid double-update
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!mounted) return;
-      // Handle all meaningful auth events including OAuth callback
-      if (event === "TOKEN_REFRESHED") return;
+      // Skip events that would cause duplicate state updates or spurious re-renders
+      if (event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") return;
+      // Only process after initial load to avoid race with getSession()
+      if (!initialLoadDone) return;
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
-      // Mark as ready when we get an auth event (important for OAuth callbacks)
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "INITIAL_SESSION") {
-        setIsReady(true);
-      }
     });
 
-    // Fast local session hydrate (no UI blocking beyond initial empty screen)
+    // Primary auth hydration - single source of truth for initial state
     supabase.auth
       .getSession()
       .then(({ data: { session: initialSession } }) => {
         if (!mounted) return;
+        initialLoadDone = true;
         setSession(initialSession);
         setUser(initialSession?.user ?? null);
         setIsReady(true);
-
-        // Server-side verification (Auth API) in background to ensure token is valid
-        if (initialSession) {
-          supabase.auth.getUser().then(({ data, error }) => {
-            if (!mounted) return;
-            if (error || !data.user) {
-              // If token is invalid/expired, force clean state
-              supabase.auth.signOut();
-            }
-          });
-        }
       })
       .catch(() => {
-        if (mounted) setIsReady(true);
+        if (!mounted) return;
+        initialLoadDone = true;
+        setIsReady(true);
       });
 
     return () => {
@@ -316,10 +308,6 @@ const App = () => {
       subscription.unsubscribe();
     };
   }, []);
-
-  // Show app immediately, don't wait for auth check
-  // The auth state will update once loaded
-  const showApp = true;
 
   return (
     <QueryClientProvider client={queryClient}>

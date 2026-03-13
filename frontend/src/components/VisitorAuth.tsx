@@ -119,7 +119,7 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
           data: {
             full_name: validatedData.name,
           },
-          emailRedirectTo: `${window.location.origin}${window.location.pathname}`
+          emailRedirectTo: `${import.meta.env.VITE_SITE_URL || window.location.origin}${window.location.pathname}`
         }
       });
 
@@ -186,7 +186,7 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
     setLoading(true);
     try {
       // Get current page path to return to after auth
-      const baseUrl = window.location.origin;
+      const baseUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
       const currentPath = window.location.pathname;
       const redirectUrl = `${baseUrl}${currentPath}`;
       
@@ -222,7 +222,7 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
   const handleFacebookLogin = async () => {
     setLoading(true);
     try {
-      const baseUrl = window.location.origin;
+      const baseUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
       const currentPath = window.location.pathname;
       const redirectUrl = `${baseUrl}${currentPath}`;
       
@@ -256,7 +256,7 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
   const handleTwitterLogin = async () => {
     setLoading(true);
     try {
-      const baseUrl = window.location.origin;
+      const baseUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
       const currentPath = window.location.pathname;
       const redirectUrl = `${baseUrl}${currentPath}`;
       
@@ -290,7 +290,7 @@ const VisitorAuth: React.FC<VisitorAuthProps> = ({
   const handleLinkedInLogin = async () => {
     setLoading(true);
     try {
-      const baseUrl = window.location.origin;
+      const baseUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
       const currentPath = window.location.pathname;
       const redirectUrl = `${baseUrl}${currentPath}`;
       

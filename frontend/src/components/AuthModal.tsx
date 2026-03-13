@@ -88,7 +88,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
         });
         onClose();
         // SPA navigation (avoid full page reload)
-        navigate('/', { replace: true });
+        navigate('/settings/dashboard', { replace: true });
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -130,7 +130,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
           data: {
             full_name: validatedData.name,
           },
-          emailRedirectTo: `${window.location.origin}/?view=dashboard`
+          emailRedirectTo: `${import.meta.env.VITE_SITE_URL || window.location.origin}/settings/dashboard`
         }
       });
 
@@ -155,7 +155,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
         });
         onClose();
         // SPA navigation (avoid full page reload)
-        navigate('/', { replace: true });
+        navigate('/settings/dashboard', { replace: true });
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -183,7 +183,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/settings/dashboard`,
+          redirectTo: `${import.meta.env.VITE_SITE_URL || window.location.origin}/settings/dashboard`,
         }
       });
 
@@ -212,7 +212,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'facebook',
         options: {
-          redirectTo: `${window.location.origin}/settings/dashboard`,
+          redirectTo: `${import.meta.env.VITE_SITE_URL || window.location.origin}/settings/dashboard`,
         }
       });
 
@@ -241,7 +241,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'twitter',
         options: {
-          redirectTo: `${window.location.origin}/settings/dashboard`,
+          redirectTo: `${import.meta.env.VITE_SITE_URL || window.location.origin}/settings/dashboard`,
         }
       });
 
@@ -270,7 +270,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
-          redirectTo: `${window.location.origin}/settings/dashboard`,
+          redirectTo: `${import.meta.env.VITE_SITE_URL || window.location.origin}/settings/dashboard`,
         }
       });
 
