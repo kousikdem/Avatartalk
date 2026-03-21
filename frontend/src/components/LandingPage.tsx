@@ -80,9 +80,23 @@ const LandingPage = () => {
   const [demoChatMessages, setDemoChatMessages] = useState<Array<{sender: 'ai' | 'user'; text: string; id: number}>>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  // Sound control: start OFF by default so it doesn't auto-play unexpectedly
+  const [isSoundEnabled, setIsSoundEnabled] = useState(false);
+  const [soundBtnVisible, setSoundBtnVisible] = useState(true);
 
-  // Text-to-speech function for AI messages
+  // Toggle sound on/off
+  const toggleSound = () => {
+    const next = !isSoundEnabled;
+    setIsSoundEnabled(next);
+    if (!next && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+  };
+
+  // Text-to-speech function for AI messages (respects isSoundEnabled)
   const speakText = (text: string) => {
+    if (!isSoundEnabled) return;
     if ('speechSynthesis' in window) {
       // Cancel any ongoing speech
       window.speechSynthesis.cancel();
@@ -1358,6 +1372,67 @@ const LandingPage = () => {
         isOpen={isVisitorAuthOpen} 
         onClose={() => setIsVisitorAuthOpen(false)} 
       />
+
+      {/* Floating Audio Sound Toggle Button */}
+      {soundBtnVisible && (
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-2">
+          {/* Tooltip label */}
+          <div className={`
+            text-xs font-medium px-3 py-1 rounded-full text-white transition-all duration-300
+            ${isSoundEnabled
+              ? 'bg-gradient-to-r from-blue-500 to-purple-600 shadow-lg shadow-purple-500/30'
+              : 'bg-gray-700/90 backdrop-blur-sm'
+            }
+          `}>
+            {isSoundEnabled ? '🔊 Sound On' : '🔇 Sound Off'}
+          </div>
+
+          {/* Main floating button */}
+          <button
+            onClick={toggleSound}
+            className={`
+              relative w-14 h-14 rounded-full flex items-center justify-center
+              transition-all duration-300 cursor-pointer select-none
+              shadow-2xl hover:scale-110 active:scale-95
+              border-2
+              ${isSoundEnabled
+                ? 'bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 border-purple-400/50 shadow-purple-500/40'
+                : 'bg-gray-800/95 border-gray-600/50 shadow-gray-900/60 backdrop-blur-sm'
+              }
+            `}
+            title={isSoundEnabled ? 'Click to mute sound' : 'Click to enable sound'}
+            aria-label={isSoundEnabled ? 'Mute sound' : 'Enable sound'}
+          >
+            {/* Sound wave rings when speaking */}
+            {isSpeaking && isSoundEnabled && (
+              <>
+                <span className="absolute inset-0 rounded-full border-2 border-purple-400/60 animate-ping" />
+                <span className="absolute inset-[-6px] rounded-full border border-blue-400/30 animate-ping" style={{ animationDelay: '0.3s' }} />
+              </>
+            )}
+            {/* Icon */}
+            {isSoundEnabled ? (
+              isSpeaking ? (
+                <Volume2 className="w-6 h-6 text-white animate-pulse" />
+              ) : (
+                <Volume2 className="w-6 h-6 text-white" />
+              )
+            ) : (
+              <VolumeX className="w-6 h-6 text-gray-400" />
+            )}
+          </button>
+
+          {/* Close/dismiss button */}
+          <button
+            onClick={() => setSoundBtnVisible(false)}
+            className="w-5 h-5 rounded-full bg-gray-700/70 hover:bg-gray-600/90 flex items-center justify-center transition-all"
+            title="Dismiss"
+            aria-label="Dismiss audio button"
+          >
+            <span className="text-gray-400 text-xs leading-none">✕</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };

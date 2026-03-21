@@ -58,51 +58,93 @@
         margin: 0 auto 24px;
       }
       
-      /* Pulsing circle animation */
-      .logo-circle {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        animation: pulse 2s ease-in-out infinite;
-      }
-      
-      /* Avatar icon in center */
-      .logo-icon {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 60px;
-        height: 60px;
-        z-index: 2;
-        animation: bounce 1s ease-in-out infinite;
-      }
-      
-      .logo-icon svg {
-        width: 100%;
-        height: 100%;
-        fill: #fff;
-        filter: drop-shadow(0 2px 8px rgba(102, 126, 234, 0.3));
-      }
-      
-      /* Rotating ring */
+      /* Outer rotating ring */
       .logo-ring {
         position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 100px;
-        height: 100px;
-        border: 3px solid transparent;
+        width: 110px;
+        height: 110px;
+        border: 2px solid transparent;
         border-top-color: #667eea;
         border-right-color: #764ba2;
         border-radius: 50%;
         animation: rotate 1.5s linear infinite;
+      }
+      
+      /* Second slower ring */
+      .logo-ring-2 {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 90px;
+        height: 90px;
+        border: 1.5px solid transparent;
+        border-bottom-color: #a78bfa;
+        border-left-color: #60a5fa;
+        border-radius: 50%;
+        animation: rotate 2.5s linear infinite reverse;
+      }
+      
+      /* Brand logo square - matches the actual Logo component */
+      .logo-icon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 64px;
+        height: 64px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #4f46e5 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 32px rgba(139, 92, 246, 0.4);
+        animation: logoPulse 2s ease-in-out infinite;
+      }
+      
+      .logo-bot-icon {
+        width: 36px;
+        height: 36px;
+      }
+      
+      .logo-sparkle {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        width: 18px;
+        height: 18px;
+      }
+      
+      /* Speed progress bar below logo */
+      .loader-progress {
+        width: 120px;
+        height: 3px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 99px;
+        overflow: hidden;
+        margin: 8px auto 16px;
+      }
+      
+      .loader-progress-bar {
+        height: 100%;
+        border-radius: 99px;
+        background: linear-gradient(90deg, #3b82f6, #8b5cf6, #4f46e5);
+        animation: speedBar 1.8s ease-in-out infinite;
+      }
+      
+      @keyframes speedBar {
+        0%   { width: 0%;   margin-left: 0%;   opacity: 1; }
+        60%  { width: 80%;  margin-left: 10%;  opacity: 1; }
+        90%  { width: 15%;  margin-left: 85%;  opacity: 0.6; }
+        100% { width: 0%;   margin-left: 100%; opacity: 0; }
+      }
+      
+      @keyframes logoPulse {
+        0%, 100% { transform: translate(-50%, -50%) scale(1);    box-shadow: 0 8px 32px rgba(139, 92, 246, 0.4); }
+        50%       { transform: translate(-50%, -50%) scale(1.06); box-shadow: 0 12px 40px rgba(139, 92, 246, 0.7); }
       }
       
       .loader-text {
@@ -112,7 +154,7 @@
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
-        margin-bottom: 12px;
+        margin-bottom: 8px;
         animation: fadeInOut 2s ease-in-out infinite;
       }
       
@@ -120,26 +162,6 @@
         font-size: 14px;
         color: #94a3b8;
         font-weight: 500;
-      }
-      
-      @keyframes pulse {
-        0%, 100% { 
-          transform: translate(-50%, -50%) scale(1);
-          opacity: 0.6;
-        }
-        50% { 
-          transform: translate(-50%, -50%) scale(1.1);
-          opacity: 0.8;
-        }
-      }
-      
-      @keyframes bounce {
-        0%, 100% { 
-          transform: translate(-50%, -50%) translateY(0);
-        }
-        50% { 
-          transform: translate(-50%, -50%) translateY(-5px);
-        }
       }
       
       @keyframes rotate {
@@ -165,25 +187,31 @@
     <div id="app-loader">
       <div class="loader-content">
         <div class="loader-logo">
-          <div class="logo-circle"></div>
+          <!-- Outer rotating rings -->
           <div class="logo-ring"></div>
+          <div class="logo-ring-2"></div>
+          <!-- Brand logo square (matches Logo.tsx exactly) -->
           <div class="logo-icon">
-            <!-- AvatarTalk Logo SVG -->
-            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-              <!-- Head circle -->
-              <circle cx="50" cy="35" r="18" fill="#667eea" opacity="0.9"/>
-              <!-- Body -->
-              <ellipse cx="50" cy="65" rx="20" ry="15" fill="#667eea" opacity="0.8"/>
-              <!-- Speech bubble -->
-              <circle cx="75" cy="25" r="8" fill="#764ba2" opacity="0.9"/>
-              <circle cx="80" cy="30" r="5" fill="#764ba2" opacity="0.7"/>
-              <!-- Eyes -->
-              <circle cx="45" cy="33" r="2" fill="white"/>
-              <circle cx="55" cy="33" r="2" fill="white"/>
-              <!-- Smile -->
-              <path d="M 43 38 Q 50 42 57 38" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <!-- Bot SVG matching favicon.svg + Logo component -->
+            <svg class="logo-bot-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="7" y="8" width="10" height="9" rx="1.5" fill="white" opacity="0.95"/>
+              <circle cx="10" cy="11" r="0.8" fill="#3b82f6"/>
+              <circle cx="14" cy="11" r="0.8" fill="#3b82f6"/>
+              <rect x="10.5" y="14" width="3" height="0.6" rx="0.3" fill="#3b82f6"/>
+              <circle cx="12" cy="6.5" r="1" fill="white" opacity="0.95"/>
+              <rect x="11.5" y="6.5" width="1" height="1.5" fill="white" opacity="0.95"/>
+            </svg>
+            <!-- Sparkle dot (top-right like Logo component) -->
+            <svg class="logo-sparkle" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="9" cy="9" r="6" fill="#fde047"/>
+              <line x1="6" y1="7" x2="8" y2="9" stroke="#fde047" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="12" y1="7" x2="10" y2="9" stroke="#fde047" stroke-width="1.5" stroke-linecap="round"/>
             </svg>
           </div>
+        </div>
+        <!-- Speed progress bar instead of text -->
+        <div class="loader-progress">
+          <div class="loader-progress-bar"></div>
         </div>
         <div class="loader-text">AvatarTalk.Co</div>
         <div class="loader-subtext">Loading your AI avatar...</div>
