@@ -328,7 +328,7 @@ test_plan:
 
 agent_communication:
   - agent: "main"
-    message: "FIXED 3 ISSUES: (1) Google Auth redirect URL - added VITE_SITE_URL=Vercel URL to all env files + vercel.json, updated all OAuth redirectTo in MainAuth.tsx, AuthModal.tsx, VisitorAuth.tsx to use VITE_SITE_URL. (2) Page reload loop fixed - removed INITIAL_SESSION duplicate state updates, added initialLoadDone flag, removed aggressive getUser()+signOut() logic, removed PKCE flow. (3) Wrong routes fixed - navigate('/dashboard') -> navigate('/settings/dashboard') in 4 files. Frontend testing confirmed: no reload loop, auth stable, all OAuth buttons present."
+    message: "4 ISSUES FIXED + TESTED: (1) Auto reload - added useRef(currentUserIdRef + initialLoadDoneRef), only update auth state when user ID actually changes, prevents spurious re-renders from token events. (2) Skeleton Loading replaced with SpeedShimmerBar (fast left-to-right sweep) in all fast-loading.tsx components + new AppLoadingScreen with progress bar. (3) HTML loader icon updated to brand logo: rounded square with gradient + robot SVG + yellow sparkle dot + dual rotating rings. (4) Floating audio button added to LandingPage bottom-right: Sound On/Off toggle with dismiss X button, sound defaults to OFF. All 4 verified by frontend testing agent."
     status_history:
       - working: true
         agent: "main"
