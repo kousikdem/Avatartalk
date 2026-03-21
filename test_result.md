@@ -337,7 +337,7 @@ test_plan:
 
 agent_communication:
   - agent: "main"
-    message: "4 ISSUES FIXED + TESTED: (1) Auto reload - added useRef(currentUserIdRef + initialLoadDoneRef), only update auth state when user ID actually changes, prevents spurious re-renders from token events. (2) Skeleton Loading replaced with SpeedShimmerBar (fast left-to-right sweep) in all fast-loading.tsx components + new AppLoadingScreen with progress bar. (3) HTML loader icon updated to brand logo: rounded square with gradient + robot SVG + yellow sparkle dot + dual rotating rings. (4) Floating audio button added to LandingPage bottom-right: Sound On/Off toggle with dismiss X button, sound defaults to OFF. All 4 verified by frontend testing agent."
+    message: "DEEP FIX - 2 ROOT CAUSES RESOLVED + TESTED: (1) Auto re-render STOPPED: Moved sidebarOpen/isCreatePostOpen/isMobile state OUT of App into AuthenticatedRoutes (sidebar toggles no longer re-render App). Memoized AuthProvider value with useMemo([user?.id, session?.access_token, isReady]) so useAuth() consumers only update on actual changes. Wrapped all setUser/setIsReady in startTransition. onAuthStateChange dependency changed from [user] to [user?.id] in AuthenticatedRoutes. (2) White screen END-of-loading FIXED: Replaced unmount/mount pattern with LoadingOverlay (fixed, z-9999) that stays in DOM and fades out (opacity 0.35s) AFTER content is painted. HTML loader now hides at 300ms (after React overlay takes over). Content renders underneath overlay then overlay fades away - zero white flash. Testing confirmed: 0 re-renders in 30s, smooth fade transition, no white flash detected."
     status_history:
       - working: true
         agent: "main"
