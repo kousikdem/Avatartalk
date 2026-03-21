@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState, useEffect, useRef, memo } from "react";
+import { Suspense, lazy, useState, useEffect, useRef, useMemo, startTransition, memo } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,7 +8,6 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { CurrencyProvider } from "@/hooks/useCurrency";
-// Skeleton imports removed - instant loading without skeletons
 import type { Session, User } from "@supabase/supabase-js";
 import { AuthProvider, useAuth } from "@/context/auth";
 
@@ -39,47 +38,38 @@ const TermsPage = lazy(() => import("./pages/TermsPage"));
 const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
 const RefundPolicyPage = lazy(() => import("./pages/RefundPolicyPage"));
 
-// Optimized QueryClient with aggressive caching for faster loads
+// Stable QueryClient outside component — never recreated
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 10, // 10 minutes - longer cache
-      gcTime: 1000 * 60 * 60, // 1 hour cache retention
+      staleTime: 1000 * 60 * 10,
+      gcTime: 1000 * 60 * 60,
       refetchOnWindowFocus: false,
-      refetchOnMount: false, // Don't refetch on mount for faster navigation
-      retry: 0, // No retries for faster failure handling
+      refetchOnMount: false,
+      retry: 0,
     },
   },
 });
 
-// Minimal loading fallback with smooth progress speed animation
-const PageFallback = memo(() => (
-  <div className="fixed top-0 left-0 right-0 z-50">
-    <div className="h-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 animate-[progress_1.2s_ease-in-out_infinite]" 
-         style={{
-           backgroundSize: '200% 100%',
-           animation: 'shimmerProgress 1.2s ease-in-out infinite'
-         }} />
-  </div>
-));
-PageFallback.displayName = 'PageFallback';
-
-const ProfileFallback = memo(() => (
-  <div className="fixed top-0 left-0 right-0 z-50">
-    <div className="h-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500"
-         style={{ animation: 'shimmerProgress 1.2s ease-in-out infinite', backgroundSize: '200% 100%' }} />
-  </div>
-));
-ProfileFallback.displayName = 'ProfileFallback';
-
-// Minimal app loading - shows a centered progress animation
-const AppLoadingScreen = memo(() => (
-  <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+// ─── Loading overlay (fixed, always in DOM, fades out when content is ready) ─────
+// This eliminates the white flash at the end of loading
+const LoadingOverlay = memo(({ visible }: { visible: boolean }) => (
+  <div
+    className="fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-4 bg-background pointer-events-none"
+    style={{
+      opacity: visible ? 1 : 0,
+      transition: 'opacity 0.35s ease-out',
+      visibility: visible ? 'visible' : 'hidden',
+    }}
+  >
+    {/* Brand logo + spinning ring */}
     <div className="relative w-16 h-16">
-      {/* Outer spinning ring */}
       <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 border-r-purple-500 animate-spin" />
-      {/* Inner pulsing logo */}
-      <div className="absolute inset-2 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 flex items-center justify-center animate-pulse shadow-lg shadow-purple-500/30">
+      <div
+        className="absolute inset-[-6px] rounded-full border border-purple-400/20 animate-spin"
+        style={{ animationDuration: '3s', animationDirection: 'reverse' }}
+      />
+      <div className="absolute inset-2 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/40">
         <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">
           <rect x="7" y="8" width="10" height="9" rx="1.5" fill="white" opacity="0.95"/>
           <circle cx="10" cy="11" r="0.8" fill="#3b82f6"/>
@@ -93,199 +83,140 @@ const AppLoadingScreen = memo(() => (
     </div>
     {/* Speed progress bar */}
     <div className="w-32 h-1 bg-muted rounded-full overflow-hidden">
-      <div className="h-full bg-gradient-to-r from-blue-500 via-purple-400 to-indigo-500 rounded-full"
-           style={{ animation: 'speedProgress 1.5s ease-in-out infinite' }} />
+      <div
+        className="h-full rounded-full bg-gradient-to-r from-blue-500 via-purple-400 to-indigo-500"
+        style={{ animation: 'appSpeedBar 1.6s ease-in-out infinite' }}
+      />
     </div>
     <style>{`
-      @keyframes speedProgress {
-        0% { width: 0%; transform: translateX(0); opacity: 1; }
-        70% { width: 100%; transform: translateX(0); opacity: 1; }
-        100% { width: 100%; transform: translateX(100%); opacity: 0; }
-      }
-      @keyframes shimmerProgress {
-        0% { background-position: 200% 0; opacity: 0.6; }
-        50% { background-position: 0% 0; opacity: 1; }
-        100% { background-position: -200% 0; opacity: 0.6; }
+      @keyframes appSpeedBar {
+        0%   { width: 0%;   margin-left: 0%;    opacity: 1; }
+        65%  { width: 85%;  margin-left: 5%;    opacity: 1; }
+        90%  { width: 12%;  margin-left: 88%;   opacity: 0.5; }
+        100% { width: 0%;   margin-left: 100%;  opacity: 0; }
       }
     `}</style>
   </div>
 ));
-AppLoadingScreen.displayName = 'AppLoadingScreen';
+LoadingOverlay.displayName = 'LoadingOverlay';
 
-// Memoized authenticated routes
-const AuthenticatedRoutes = memo(({ 
-  sidebarOpen, 
-  setSidebarOpen, 
-  setIsCreatePostOpen, 
-  isMobile 
-}: {
-  sidebarOpen: boolean;
-  setSidebarOpen: (open: boolean) => void;
-  setIsCreatePostOpen: (open: boolean) => void;
-  isMobile: boolean;
-}) => {
+// ─── Thin top-bar fallback for Suspense boundaries (lazy route loading) ──────────
+const PageFallback = memo(() => (
+  <div
+    className="fixed top-0 left-0 right-0 z-50 h-0.5 overflow-hidden"
+    style={{ background: 'transparent' }}
+  >
+    <div
+      className="h-full bg-gradient-to-r from-blue-500 via-purple-400 to-indigo-500"
+      style={{ animation: 'topBarSweep 1.2s ease-in-out infinite', width: '40%' }}
+    />
+    <style>{`
+      @keyframes topBarSweep {
+        0%   { margin-left: -40%; }
+        100% { margin-left: 140%; }
+      }
+    `}</style>
+  </div>
+));
+PageFallback.displayName = 'PageFallback';
+
+const ProfileFallback = memo(() => (
+  <div className="fixed top-0 left-0 right-0 z-50 h-0.5">
+    <div
+      className="h-full bg-gradient-to-r from-blue-500 via-purple-400 to-indigo-500"
+      style={{ animation: 'topBarSweep 1.2s ease-in-out infinite', width: '40%' }}
+    />
+  </div>
+));
+ProfileFallback.displayName = 'ProfileFallback';
+
+// ─── Authenticated Routes ─────────────────────────────────────────────────────────
+// All volatile state (sidebar, mobile) lives here — NOT in App
+// This prevents re-rendering App and the entire tree on sidebar toggle
+const AuthenticatedRoutes = memo(() => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
+  const isMobile = useIsMobile();
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
   const { user } = useAuth();
-  const location = window.location.pathname;
 
   useEffect(() => {
+    if (!user) return;
     const checkOnboarding = async () => {
-      if (!user) return;
-      
       try {
         const { data, error } = await supabase
           .from('user_onboarding')
           .select('is_completed, completed_steps, skipped_steps')
           .eq('user_id', user.id)
           .maybeSingle();
-
-        if (error) {
-          setNeedsOnboarding(false);
-        } else if (!data) {
-          // No record = truly first-time user
-          setNeedsOnboarding(true);
-        } else {
-          // Only auto-open for users who have NEVER interacted with onboarding
-          const completedSteps = (data.completed_steps as string[]) || [];
-          const skippedSteps = (data.skipped_steps as string[]) || [];
-          const hasNeverInteracted = completedSteps.length === 0 && skippedSteps.length === 0;
-          setNeedsOnboarding(!data.is_completed && hasNeverInteracted);
-        }
+        if (error) { setNeedsOnboarding(false); return; }
+        if (!data) { setNeedsOnboarding(true); return; }
+        const completedSteps = (data.completed_steps as string[]) || [];
+        const skippedSteps = (data.skipped_steps as string[]) || [];
+        setNeedsOnboarding(!data.is_completed && completedSteps.length === 0 && skippedSteps.length === 0);
       } catch {
         setNeedsOnboarding(false);
       }
     };
-
     checkOnboarding();
-  }, [user]);
+  }, [user?.id]);  // Only re-run when user ID changes (not when user object reference changes)
 
-  // Still checking
-  if (needsOnboarding === null) {
-    return <PageFallback />;
-  }
+  if (needsOnboarding === null) return <PageFallback />;
 
   return (
     <>
-    {needsOnboarding && window.location.pathname.startsWith('/settings') && (
-      <OnboardingFlow isOpen={true} onClose={() => setNeedsOnboarding(false)} />
-    )}
-    <SidebarProvider 
-      defaultOpen={!isMobile}
-      open={sidebarOpen}
-      onOpenChange={setSidebarOpen}
-    >
-      <div className="flex min-h-screen w-full bg-background">
-        <Suspense fallback={null}>
-          <DashboardSidebar onCreatePost={() => setIsCreatePostOpen(true)} />
-        </Suspense>
-        
-        <main className="flex-1 min-w-0 transition-all duration-200 bg-background">
-          <Suspense fallback={<PageFallback />}>
-            <Routes>
-              <Route path="/" element={<Navigate to="/settings/dashboard" replace />} />
-              <Route path="/onboarding" element={<Navigate to="/settings/dashboard" replace />} />
-              <Route path="/settings/dashboard" element={
-                <Suspense fallback={<PageFallback />}>
-                   <DashboardPageLayout><Index mode="authed" /></DashboardPageLayout>
-                </Suspense>
-              } />
-              <Route path="/settings/avatar" element={
-                <Suspense fallback={<PageFallback />}>
-                  <DashboardPageLayout><AvatarPage /></DashboardPageLayout>
-                </Suspense>
-              } />
-              <Route path="/settings/virtual-collaboration" element={
-                <Suspense fallback={<PageFallback />}>
-                  <DashboardPageLayout><VirtualCollaborationPage /></DashboardPageLayout>
-                </Suspense>
-              } />
-              <Route path="/settings/products" element={
-                <Suspense fallback={<PageFallback />}>
-                  <DashboardPageLayout><ProductsPage /></DashboardPageLayout>
-                </Suspense>
-              } />
-              <Route path="/settings/promo" element={
-                <Suspense fallback={<PageFallback />}>
-                  <DashboardPageLayout><PromoSettingsPage /></DashboardPageLayout>
-                </Suspense>
-              } />
-              <Route path="/settings/account" element={
-                <Suspense fallback={<PageFallback />}>
-                  <DashboardPageLayout><SettingsPage /></DashboardPageLayout>
-                </Suspense>
-              } />
-              <Route path="/settings/social-links" element={
-                <Suspense fallback={<PageFallback />}>
-                  <DashboardPageLayout><SocialLinksPage /></DashboardPageLayout>
-                </Suspense>
-              } />
-              <Route path="/settings/feed" element={
-                <Suspense fallback={<PageFallback />}>
-                  <DashboardPageLayout><FeedPage /></DashboardPageLayout>
-                </Suspense>
-              } />
-              <Route path="/settings/followers" element={
-                <Suspense fallback={<PageFallback />}>
-                  <DashboardPageLayout><FollowersPage /></DashboardPageLayout>
-                </Suspense>
-              } />
-              <Route path="/settings/ai-training" element={
-                <Suspense fallback={<PageFallback />}>
-                  <DashboardPageLayout><AITrainingDashboard /></DashboardPageLayout>
-                </Suspense>
-              } />
-              <Route path="/settings/analytics" element={
-                <Suspense fallback={<PageFallback />}>
-                  <DashboardPageLayout><AnalyticsPage /></DashboardPageLayout>
-                </Suspense>
-              } />
-              <Route path="/settings/earnings" element={
-                <Suspense fallback={<PageFallback />}>
-                  <DashboardPageLayout><EarningsPage /></DashboardPageLayout>
-                </Suspense>
-              } />
-              <Route path="/settings/super-admin" element={
-                <Suspense fallback={<PageFallback />}>
-                  <DashboardPageLayout><SuperAdminPage /></DashboardPageLayout>
-                </Suspense>
-              } />
-              <Route path="/settings/buy-tokens" element={
-                <Suspense fallback={<PageFallback />}>
-                  <DashboardPageLayout><BuyTokensPage /></DashboardPageLayout>
-                </Suspense>
-              } />
-              <Route path="/pricing" element={
-                <Suspense fallback={<PageFallback />}>
-                  <DashboardPageLayout><PricingPage /></DashboardPageLayout>
-                </Suspense>
-              } />
-              <Route path="/settings/notifications" element={
-                <Suspense fallback={<PageFallback />}>
-                   <DashboardPageLayout><Index mode="authed" /></DashboardPageLayout>
-                </Suspense>
-              } />
-              <Route path="/:username" element={
-                <Suspense fallback={<ProfileFallback />}>
-                  <UsernameRedirect />
-                </Suspense>
-              } />
-              <Route path="*" element={
-                <Suspense fallback={<PageFallback />}>
-                  <NotFound />
-                </Suspense>
-              } />
-            </Routes>
+      {needsOnboarding && window.location.pathname.startsWith('/settings') && (
+        <OnboardingFlow isOpen={true} onClose={() => setNeedsOnboarding(false)} />
+      )}
+      <SidebarProvider
+        defaultOpen={!isMobile}
+        open={sidebarOpen}
+        onOpenChange={setSidebarOpen}
+      >
+        <div className="flex min-h-screen w-full bg-background">
+          <Suspense fallback={null}>
+            <DashboardSidebar onCreatePost={() => setIsCreatePostOpen(true)} />
           </Suspense>
-        </main>
-      </div>
-    </SidebarProvider>
+          <main className="flex-1 min-w-0 transition-all duration-200 bg-background">
+            <Suspense fallback={<PageFallback />}>
+              <Routes>
+                <Route path="/" element={<Navigate to="/settings/dashboard" replace />} />
+                <Route path="/onboarding" element={<Navigate to="/settings/dashboard" replace />} />
+                <Route path="/settings/dashboard" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><Index mode="authed" /></DashboardPageLayout></Suspense>} />
+                <Route path="/settings/avatar" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><AvatarPage /></DashboardPageLayout></Suspense>} />
+                <Route path="/settings/virtual-collaboration" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><VirtualCollaborationPage /></DashboardPageLayout></Suspense>} />
+                <Route path="/settings/products" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><ProductsPage /></DashboardPageLayout></Suspense>} />
+                <Route path="/settings/promo" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><PromoSettingsPage /></DashboardPageLayout></Suspense>} />
+                <Route path="/settings/account" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><SettingsPage /></DashboardPageLayout></Suspense>} />
+                <Route path="/settings/social-links" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><SocialLinksPage /></DashboardPageLayout></Suspense>} />
+                <Route path="/settings/feed" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><FeedPage /></DashboardPageLayout></Suspense>} />
+                <Route path="/settings/followers" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><FollowersPage /></DashboardPageLayout></Suspense>} />
+                <Route path="/settings/ai-training" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><AITrainingDashboard /></DashboardPageLayout></Suspense>} />
+                <Route path="/settings/analytics" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><AnalyticsPage /></DashboardPageLayout></Suspense>} />
+                <Route path="/settings/earnings" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><EarningsPage /></DashboardPageLayout></Suspense>} />
+                <Route path="/settings/super-admin" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><SuperAdminPage /></DashboardPageLayout></Suspense>} />
+                <Route path="/settings/buy-tokens" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><BuyTokensPage /></DashboardPageLayout></Suspense>} />
+                <Route path="/pricing" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><PricingPage /></DashboardPageLayout></Suspense>} />
+                <Route path="/settings/notifications" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><Index mode="authed" /></DashboardPageLayout></Suspense>} />
+                <Route path="/:username" element={<Suspense fallback={<ProfileFallback />}><UsernameRedirect /></Suspense>} />
+                <Route path="*" element={<Suspense fallback={<PageFallback />}><NotFound /></Suspense>} />
+              </Routes>
+            </Suspense>
+          </main>
+        </div>
+      </SidebarProvider>
+      <Suspense fallback={null}>
+        <EnhancedCreatePostModal
+          isOpen={isCreatePostOpen}
+          onClose={() => setIsCreatePostOpen(false)}
+        />
+      </Suspense>
     </>
   );
 });
-
 AuthenticatedRoutes.displayName = 'AuthenticatedRoutes';
 
-// Memoized public routes
+// ─── Public Routes ────────────────────────────────────────────────────────────────
 const PublicRoutes = memo(() => (
   <SidebarProvider defaultOpen={false}>
     <div className="min-h-screen w-full bg-background">
@@ -296,76 +227,76 @@ const PublicRoutes = memo(() => (
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
           <Route path="/refund-policy" element={<RefundPolicyPage />} />
-          <Route path="/:username" element={
-            <Suspense fallback={<ProfileFallback />}>
-              <UsernameRedirect />
-            </Suspense>
-          } />
+          <Route path="/:username" element={<Suspense fallback={<ProfileFallback />}><UsernameRedirect /></Suspense>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
     </div>
   </SidebarProvider>
 ));
-
 PublicRoutes.displayName = 'PublicRoutes';
 
+// ─── Root App ─────────────────────────────────────────────────────────────────────
+// App ONLY owns auth state — nothing else
+// Moving sidebar/mobile state to AuthenticatedRoutes prevents full-tree re-renders
 const App = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isReady, setIsReady] = useState(false);
-  const isMobile = useIsMobile();
+  // Show loading overlay until content is fully painted
+  const [overlayVisible, setOverlayVisible] = useState(true);
 
-  // Refs to track current values inside callbacks without stale closure
+  // Stable refs prevent stale closures in async callbacks
   const currentUserIdRef = useRef<string | null>(null);
   const initialLoadDoneRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
 
-    // Listen for post-init auth changes only (SIGNED_IN from OAuth, SIGNED_OUT from logout)
-    // INITIAL_SESSION, TOKEN_REFRESHED, USER_UPDATED are handled elsewhere or ignored
+    // Only listen for genuine login/logout transitions
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!mounted) return;
-      // Ignore events that don't represent real user login/logout transitions
+      // Skip all automatic/background events
       if (
         event === "INITIAL_SESSION" ||
         event === "TOKEN_REFRESHED" ||
         event === "USER_UPDATED" ||
         event === "MFA_CHALLENGE_VERIFIED"
       ) return;
-      // Only process AFTER initial getSession() completes to prevent race condition
+      // Guard against race with getSession()
       if (!initialLoadDoneRef.current) return;
 
       const nextUserId = nextSession?.user?.id ?? null;
-
-      // KEY FIX: Only update state if the user identity actually changed
-      // This prevents spurious re-renders from token refresh side-effects
+      // ONLY update when the user identity actually changes (login ↔ logout)
+      // This prevents spurious full-tree re-renders from Supabase internals
       if (nextUserId !== currentUserIdRef.current) {
         currentUserIdRef.current = nextUserId;
-        setSession(nextSession);
-        setUser(nextSession?.user ?? null);
+        // Use startTransition so React can batch this with other updates
+        startTransition(() => {
+          setSession(nextSession);
+          setUser(nextSession?.user ?? null);
+        });
       }
     });
 
-    // Primary auth hydration — single source of truth for initial state
+    // Single source of truth for initial auth state
     supabase.auth
       .getSession()
       .then(({ data: { session: initialSession } }) => {
         if (!mounted) return;
-        const userId = initialSession?.user?.id ?? null;
-        currentUserIdRef.current = userId;
+        currentUserIdRef.current = initialSession?.user?.id ?? null;
         initialLoadDoneRef.current = true;
-        setSession(initialSession);
-        setUser(initialSession?.user ?? null);
-        setIsReady(true);
+        // startTransition: marks as non-urgent — React renders current frame first
+        startTransition(() => {
+          setSession(initialSession);
+          setUser(initialSession?.user ?? null);
+          setIsReady(true);
+        });
       })
       .catch(() => {
         if (!mounted) return;
         initialLoadDoneRef.current = true;
-        setIsReady(true);
+        startTransition(() => setIsReady(true));
       });
 
     return () => {
@@ -373,6 +304,25 @@ const App = () => {
       subscription.unsubscribe();
     };
   }, []);
+
+  // Fade out the loading overlay AFTER content has had one frame to paint
+  // This prevents the white flash between loader and content
+  useEffect(() => {
+    if (!isReady) return;
+    // Give React one rAF to paint the content, then fade out overlay
+    const raf = requestAnimationFrame(() => {
+      const timer = setTimeout(() => setOverlayVisible(false), 50);
+      return () => clearTimeout(timer);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [isReady]);
+
+  // Memoize context value — prevents all useAuth() consumers from re-rendering
+  // when App re-renders for unrelated reasons
+  const authValue = useMemo(
+    () => ({ user, session, isReady }),
+    [user?.id, session?.access_token, isReady]  // Use primitives, not objects
+  );
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -382,28 +332,15 @@ const App = () => {
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <AuthProvider value={{ user, session, isReady }}>
-                {isReady ? (
-                  user ? (
-                    <>
-                      <AuthenticatedRoutes
-                        sidebarOpen={sidebarOpen}
-                        setSidebarOpen={setSidebarOpen}
-                        setIsCreatePostOpen={setIsCreatePostOpen}
-                        isMobile={isMobile}
-                      />
-                      <Suspense fallback={null}>
-                        <EnhancedCreatePostModal 
-                          isOpen={isCreatePostOpen}
-                          onClose={() => setIsCreatePostOpen(false)}
-                        />
-                      </Suspense>
-                    </>
-                  ) : (
-                    <PublicRoutes />
-                  )
-                ) : (
-                  <AppLoadingScreen />
+              <AuthProvider value={authValue}>
+                {/* Loading overlay — always in DOM, fades out instead of unmounting */}
+                {/* This prevents white flash at end of loading */}
+                <LoadingOverlay visible={overlayVisible} />
+
+                {/* Content renders even while overlay is visible */}
+                {/* React paints content underneath, then we fade the overlay away */}
+                {isReady && (
+                  user ? <AuthenticatedRoutes /> : <PublicRoutes />
                 )}
               </AuthProvider>
             </BrowserRouter>

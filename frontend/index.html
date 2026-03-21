@@ -220,20 +220,24 @@
     
     <div id="root"></div>
     
-    <!-- Hide loader when JS starts -->
+    <!-- Hide HTML loader once React's LoadingOverlay takes over -->
     <script>
-      // Remove loader as soon as React mounts
+      // The React LoadingOverlay (fixed, z-9999) renders on top and handles
+      // the transition. We hide the HTML loader shortly after React starts
+      // painting so there's no double-loader visible.
       window.addEventListener('DOMContentLoaded', function() {
+        // React's LoadingOverlay appears within ~50ms of JS executing.
+        // Hide the HTML loader after 300ms so the React overlay is already visible.
         setTimeout(function() {
           document.body.classList.add('app-loaded');
-        }, 100);
+        }, 300);
       });
       
-      // Fallback: remove loader after 5 seconds
+      // Hard fallback: remove HTML loader after 6 seconds regardless
       setTimeout(function() {
         var loader = document.getElementById('app-loader');
-        if (loader) loader.style.display = 'none';
-      }, 5000);
+        if (loader) { loader.style.opacity = '0'; loader.style.transition = 'opacity 0.3s'; }
+      }, 6000);
     </script>
     
     <script type="module" src="/src/main.tsx"></script>
