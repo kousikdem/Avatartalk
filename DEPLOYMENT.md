@@ -1,383 +1,178 @@
-# AvatarTalk.Co Deployment Guide
+# 🚀 Deployment Guide
 
-## ✅ Deployment Readiness Status
+## ✅ Pre-Deployment Checklist
 
-The project is now **FULLY READY FOR DEPLOYMENT** with all critical issues resolved.
-
-**Latest Fix (Feb 23, 2026)**: ✅ Resolved npm ERESOLVE peer dependency conflict between react-day-picker and date-fns. See [`DEPLOYMENT_FIX.md`](./DEPLOYMENT_FIX.md) for details.
-
----
-
-## 🔧 Fixed Issues
-
-### 1. **Preview Webview Fixed** ✅
-- **Issue**: "Blocked request. This host is not allowed" error
-- **Fix**: Added `allowedHosts` configuration in `vite.config.ts`
-- **Allowed Hosts**:
-  - `.emergentagent.com`
-  - `.emergentcf.cloud`
-  - `.preview.emergentagent.com`
-  - `localhost`
-
-### 2. **Build Memory Issues Fixed** ✅
-- **Issue**: JavaScript heap out of memory during build
-- **Fix**: 
-  - Increased Node.js memory limit to 8GB
-  - Updated `package.json` build scripts with `NODE_OPTIONS='--max-old-space-size=4096'`
-  - Optimized Vite build configuration
-
-### 3. **Circular Chunk Dependencies Fixed** ✅
-- **Issue**: Circular dependencies between vendor chunks
-- **Fix**: Reorganized `manualChunks` logic with proper ordering (most specific to most general)
-
-### 4. **Minification Configuration Fixed** ✅
-- **Issue**: Missing terser dependency
-- **Fix**: Changed minification from `terser` to `esbuild` (built into Vite)
-
----
-
-## 🚀 Deployment Instructions
-
-### **Vercel Deployment**
-
-#### Prerequisites
-- Vercel account
-- GitHub repository connected to Vercel
-- Environment variables configured
-
-#### Step 1: Configure Environment Variables
-
-Add these environment variables in Vercel Dashboard → Project Settings → Environment Variables:
-
-```env
-# Supabase Configuration
-VITE_SUPABASE_URL=https://hnxnvdzrwbtmcohdptfq.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueG52ZHpyd2J0bWNvaGRwdGZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2MjA1MzMsImV4cCI6MjA2NjE5NjUzM30.bJerrLVY2DdTkaDurRoVBZIqmLRVYt-sxAH9sUDWgu8
-VITE_SUPABASE_PROJECT_ID=hnxnvdzrwbtmcohdptfq
-
-# Build Configuration
-NODE_OPTIONS=--max-old-space-size=8192
-
-# Optional: Backend URL (if using separate backend)
-REACT_APP_BACKEND_URL=<your-backend-url>
-```
-
-#### Step 2: Deploy Using Vercel CLI
+Before deploying to any environment (Vercel, Railway, AWS, etc.), run:
 
 ```bash
-# Install Vercel CLI (if not already installed)
-npm install -g vercel
-
-# Login to Vercel
-vercel login
-
-# Deploy to production
-vercel --prod
+/app/scripts/validate-deployment.sh
 ```
 
-#### Step 3: Deploy via Vercel Dashboard
-
-1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
-2. Click "Import Project"
-3. Select your GitHub repository
-4. Vercel will auto-detect the configuration from `vercel.json`
-5. Click "Deploy"
-
-**Note**: The `vercel.json` file is already configured with:
-- Correct build commands using Yarn
-- Proper output directory (`frontend/dist`)
-- SPA routing configuration
-- Security headers
-- Increased memory allocation
+This script checks for:
+- ❌ No `package-lock.json` files (npm conflicts)
+- ❌ No `.npmrc` files
+- ✅ `yarn.lock` exists
+- ✅ Build succeeds
+- ✅ Dependencies installed
+- ✅ Environment files present
 
 ---
 
-### **Netlify Deployment**
+## 📦 Package Manager: YARN ONLY
 
-#### Prerequisites
-- Netlify account
-- GitHub repository connected to Netlify
-- Environment variables configured
+**⛔ NEVER USE NPM**
 
-#### Step 1: Configure Environment Variables
+- ✅ Use `yarn install` (not npm install)
+- ✅ Use `yarn add <package>` (not npm install)
+- ✅ Use `yarn remove <package>` (not npm uninstall)
+- ✅ Use `yarn build` (not npm run build)
 
-Add these environment variables in Netlify Dashboard → Site Settings → Environment Variables:
+### Why Yarn?
+- This project uses `yarn.lock` for deterministic builds
+- npm causes lockfile conflicts and deployment failures
+- Supervisor is configured to use `yarn start`
 
+---
+
+## 🔧 Environment Setup
+
+### Frontend Environment (`/app/frontend/.env`)
 ```env
-# Supabase Configuration
-VITE_SUPABASE_URL=https://hnxnvdzrwbtmcohdptfq.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueG52ZHpyd2J0bWNvaGRwdGZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2MjA1MzMsImV4cCI6MjA2NjE5NjUzM30.bJerrLVY2DdTkaDurRoVBZIqmLRVYt-sxAH9sUDWgu8
-VITE_SUPABASE_PROJECT_ID=hnxnvdzrwbtmcohdptfq
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_PUBLISHABLE_KEY=your_key
+VITE_SUPABASE_PROJECT_ID=your_project_id
+VITE_SITE_URL=your_production_url
 ```
 
-#### Step 2: Deploy Using Netlify CLI
-
-```bash
-# Install Netlify CLI (if not already installed)
-npm install -g netlify-cli
-
-# Login to Netlify
-netlify login
-
-# Deploy to production
-netlify deploy --prod
+### Backend Environment (`/app/backend/.env`)
+```env
+MONGO_URL=mongodb://localhost:27017
+DB_NAME=avatartalk
 ```
-
-#### Step 3: Deploy via Netlify Dashboard
-
-1. Go to [Netlify Dashboard](https://app.netlify.com/)
-2. Click "Add new site" → "Import an existing project"
-3. Connect your GitHub repository
-4. Netlify will auto-detect the configuration from `netlify.toml`
-5. Click "Deploy site"
-
-**Note**: The `netlify.toml` file is already configured with:
-- Build command: `yarn build`
-- Publish directory: `frontend/dist`
-- Base directory: `frontend`
-- Node.js 22 and increased memory
-- SPA routing redirects
-- Security headers
 
 ---
 
-## 🔐 Google OAuth Configuration (CRITICAL)
+## 🌐 Deployment Platforms
 
-**⚠️ IMPORTANT**: If Google login redirects to `localhost` instead of your production domain, you MUST configure the URL settings in **Supabase Dashboard**. The code is already set up to use `window.location.origin` for redirects - the issue is in your Supabase project settings.
+### Vercel (Frontend)
 
-### Step-by-Step Fix
+**GitHub Actions Workflow:** `.github/workflows/vercel-deploy.yml`
 
-1. **Go to Supabase Dashboard**
-   - Navigate to: https://supabase.com/dashboard
-   - Select your project: `hnxnvdzrwbtmcohdptfq`
+The workflow automatically:
+1. Installs Vercel CLI globally (uses npm for CLI only)
+2. Pulls Vercel environment
+3. Builds using `vercel build --prod` (uses yarn internally)
+4. Deploys to production
 
-2. **Configure URL Settings**
-   - Go to: **Authentication** → **URL Configuration**
-   
-3. **Set Site URL** (Critical)
-   ```
-   https://your-production-domain.com
-   ```
-   For Vercel deployment:
-   ```
-   https://avatartalk-p1ia4t6zc-kousik-kars-projects.vercel.app
-   ```
-
-4. **Add Redirect URLs** (Add ALL of these)
-   ```
-   https://your-production-domain.com
-   https://your-production-domain.com/**
-   https://avatartalk-p1ia4t6zc-kousik-kars-projects.vercel.app
-   https://avatartalk-p1ia4t6zc-kousik-kars-projects.vercel.app/**
-   https://auth-redirect-fix-19.preview.emergentagent.com
-   https://auth-redirect-fix-19.preview.emergentagent.com/**
-   http://localhost:3000
-   http://localhost:3000/**
-   ```
-
-5. **Configure Google Provider**
-   - Go to: **Authentication** → **Providers** → **Google**
-   - Ensure Google OAuth is enabled
-   - Add these to **Authorized redirect URIs** in your Google Cloud Console:
-     ```
-     https://hnxnvdzrwbtmcohdptfq.supabase.co/auth/v1/callback
-     ```
-
-### Why This Happens
-- Supabase's `signInWithOAuth` uses the **Site URL** from your project settings as the base redirect
-- Even if you pass `redirectTo` in the code, Supabase validates it against the **Redirect URLs** whitelist
-- If validation fails, it falls back to the **Site URL**, which might be set to `localhost`
-
-### Verification
-After configuring, test the Google login flow:
-1. Go to your production URL
-2. Click "Sign in with Google"
-3. Complete Google authentication
-4. You should be redirected back to your production domain, NOT localhost
-
----
-
-## 📦 Build Configuration
-
-### Package.json Scripts
-```json
-{
-  "build": "NODE_OPTIONS='--max-old-space-size=4096' vite build",
-  "build:dev": "NODE_OPTIONS='--max-old-space-size=4096' vite build --mode development"
-}
-```
-
-### Vite Configuration Highlights
-
-**File**: `/app/frontend/vite.config.ts`
-
-- **Server Configuration**:
-  - Host: `::`
-  - Port: `3000`
-  - Allowed hosts for preview domains
-  - HMR with WSS protocol
-
-- **Build Configuration**:
-  - Minifier: `esbuild` (fast and efficient)
-  - Source maps: Disabled for production
-  - Target: `es2020`
-  - CSS code splitting: Enabled
-  - Chunk size warning: 1500 KB
-
-- **Code Splitting**:
-  - `vendor-3d`: Three.js and React Three Fiber
-  - `vendor-radix`: Radix UI components
-  - `vendor-router`: React Router
-  - `vendor-charts`: Recharts and D3
-  - `vendor-motion`: Framer Motion
-  - `vendor-supabase`: Supabase client
-  - `vendor-icons`: Lucide icons
-  - `vendor-react`: React core and React DOM
-
----
-
-## 🧪 Testing Deployment
-
-### Local Build Test
+**Manual Deploy:**
 ```bash
 cd /app/frontend
 yarn build
+vercel --prod
+```
+
+### Railway / AWS / Other
+
+Update build commands:
+- **Install:** `yarn install`
+- **Build:** `yarn build`
+- **Start:** `yarn start` (dev) or serve `dist` (production)
+
+---
+
+## 🧪 Testing Before Deploy
+
+### 1. Build Test
+```bash
+cd /app/frontend
+yarn build
+```
+
+### 2. Local Preview
+```bash
 yarn preview
 ```
 
-### Production Build Verification
+### 3. Full Validation
 ```bash
-# Build succeeded with:
-# - 5276 modules transformed
-# - Output size: ~12MB
-# - Build time: ~47 seconds
-# - No errors or warnings
-```
-
-### Preview Site Test
-- **URL**: https://auth-redirect-fix-19.preview.emergentagent.com
-- **Status**: ✅ Working perfectly
-- **Features Tested**:
-  - Landing page loads correctly
-  - All sections render properly
-  - Authentication modal works
-  - Navigation is functional
-  - Images load correctly
-
----
-
-## 🔒 Security Headers
-
-The deployment includes security headers configured in `vercel.json`:
-
-- `X-Content-Type-Options: nosniff`
-- `X-Frame-Options: DENY`
-- `X-XSS-Protection: 1; mode=block`
-- Cache-Control for static assets: `max-age=31536000, immutable`
-
----
-
-## 📊 Build Output Summary
-
-```
-Total Modules: 5,276
-Output Directory: frontend/dist
-Total Size: ~12 MB (before gzip)
-
-Largest Chunks:
-- vendor-3d: 796.60 kB (214.65 kB gzip)
-- OrdersDashboard: 418.09 kB (134.92 kB gzip)
-- vendor-charts: 393.27 kB (105.30 kB gzip)
-- vendor-react: 390.82 kB (123.28 kB gzip)
+/app/scripts/validate-deployment.sh
 ```
 
 ---
 
-## 🌐 Domain Configuration
+## 🐛 Common Issues
 
-### Current Domains
-- **Preview**: https://auth-redirect-fix-19.preview.emergentagent.com
-- **Vercel**: https://avatartalk-p1ia4t6zc-kousik-kars-projects.vercel.app
-
-### Custom Domain Setup (Optional)
-
-1. Go to Vercel Dashboard → Project Settings → Domains
-2. Add your custom domain (e.g., `avatartalk.co`)
-3. Configure DNS records as instructed by Vercel
-4. SSL certificate will be automatically provisioned
-
----
-
-## 🐛 Troubleshooting
-
-### Build Fails with Memory Error
-**Solution**: Increase memory allocation
+### Issue: "Command npm install exited with 1"
+**Solution:**
 ```bash
-NODE_OPTIONS='--max-old-space-size=8192' yarn build
+rm -f /app/frontend/package-lock.json /app/package-lock.json /app/frontend/.npmrc
+cd /app/frontend && yarn install
 ```
 
-### Preview Shows "Host Not Allowed"
-**Solution**: Verify `allowedHosts` in `vite.config.ts` includes your domain
+### Issue: Dependencies out of sync
+**Solution:**
+```bash
+cd /app/frontend
+rm -rf node_modules
+yarn install
+```
 
-### Missing Environment Variables
-**Solution**: Check Vercel environment variables match `.env` file structure
-
-### Deployment Authentication Issue
-**Solution**: 
-- The Vercel URL showing a login page is due to deployment protection
-- To disable: Vercel Dashboard → Project Settings → Deployment Protection → Disable
-- Or: Share with password from Vercel settings
-
----
-
-## ✨ Features Confirmed Working
-
-- ✅ Landing page with hero section
-- ✅ Authentication modal (Supabase)
-- ✅ Avatar preview and customization
-- ✅ Social features
-- ✅ AI training dashboard
-- ✅ E-commerce integration
-- ✅ Responsive design
-- ✅ Dark/Light theme
-- ✅ All routing
-- ✅ Code splitting and lazy loading
+### Issue: Build fails
+**Solution:**
+```bash
+cd /app/frontend
+yarn cache clean
+yarn install
+yarn build
+```
 
 ---
 
-## 📝 Next Steps
+## 📝 Quick Reference
 
-1. **Configure Backend** (if needed):
-   - Update `REACT_APP_BACKEND_URL` environment variable
-   - Ensure backend API is deployed and accessible
-
-2. **Test All Features**:
-   - User registration and login
-   - Avatar creation
-   - Payment processing
-   - AI training features
-
-3. **Setup Monitoring**:
-   - Configure Vercel Analytics
-   - Setup error tracking (e.g., Sentry)
-
-4. **Custom Domain**:
-   - Add custom domain in Vercel
-   - Configure DNS records
-
-5. **CI/CD**:
-   - Vercel automatically deploys on git push
-   - Configure branch deployments if needed
+| Action | Command |
+|--------|---------|
+| Install dependencies | `yarn install` |
+| Add package | `yarn add <package>` |
+| Remove package | `yarn remove <package>` |
+| Build for production | `yarn build` |
+| Start dev server | `yarn dev` |
+| Preview build | `yarn preview` |
+| Validate deployment | `/app/scripts/validate-deployment.sh` |
 
 ---
 
-## 📞 Support
+## ⚙️ Supervisor Services
 
-- **Vercel Documentation**: https://vercel.com/docs
-- **Vite Documentation**: https://vitejs.dev/
-- **Supabase Documentation**: https://supabase.com/docs
+Current services running in Kubernetes pod:
+
+- **Frontend:** Port 3000 (uses `yarn start`)
+- **Backend:** Port 8001 (uses uvicorn)
+- **MongoDB:** Port 27017
+
+Check status:
+```bash
+sudo supervisorctl status
+```
+
+Restart services:
+```bash
+sudo supervisorctl restart frontend
+sudo supervisorctl restart backend
+```
 
 ---
 
-**Last Updated**: February 23, 2026
-**Build Status**: ✅ READY FOR DEPLOYMENT
+## 🔒 Security Notes
+
+- Never commit `.env` files
+- `package-lock.json` and `.npmrc` are gitignored
+- Use environment variables for all secrets
+- Production URLs configured in Vercel dashboard
+
+---
+
+**Last Updated:** 2025-03-26  
+**Build System:** Vite + React + TypeScript  
+**Package Manager:** Yarn 1.22.22  
+**Node Version:** 20.x

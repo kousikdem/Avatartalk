@@ -1,0 +1,16 @@
+# Deployment Configuration
+# This file ensures consistent deployment behavior
+
+PACKAGE_MANAGER=yarn
+BUILD_COMMAND=yarn build
+INSTALL_COMMAND=yarn install
+DEV_COMMAND=yarn dev
+
+# Prevent npm usage
+NO_NPM=true
+
+# Node version
+NODE_VERSION=20
+
+# Build optimization
+NODE_OPTIONS=--max-old-space-size=8192
