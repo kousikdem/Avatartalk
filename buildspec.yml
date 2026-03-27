@@ -1,0 +1,91 @@
+version: 0.2
+
+# AWS CodeBuild specification for React + Vite + Yarn application
+# This buildspec.yml is optimized for the AvatarTalk.Co application
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo "Installing Yarn globally..."
+      - npm install -g yarn@1.22.22
+      - echo "Yarn version:"
+      - yarn --version
+      
+      - echo "Navigating to frontend directory..."
+      - cd frontend
+      
+      - echo "Installing dependencies with Yarn..."
+      - yarn install --frozen-lockfile --network-timeout 300000
+      
+      - echo "Dependencies installed successfully"
+
+  pre_build:
+    commands:
+      - echo "Pre-build phase started..."
+      - cd frontend
+      
+      - echo "Current directory:"
+      - pwd
+      
+      - echo "Checking environment variables..."
+      - |
+        if [ -z "$VITE_SUPABASE_URL" ]; then
+          echo "ERROR: VITE_SUPABASE_URL not set"
+          exit 1
+        fi
+      
+      - echo "Creating .env file from environment variables..."
+      - |
+        cat > .env << EOF
+        VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+        VITE_SUPABASE_PUBLISHABLE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY}
+        VITE_SUPABASE_PROJECT_ID=${VITE_SUPABASE_PROJECT_ID}
+        VITE_SITE_URL=${VITE_SITE_URL}
+        EOF
+      
+      - echo ".env file created successfully"
+      - echo "Running linter..."
+      - yarn lint || echo "Linting completed with warnings"
+
+  build:
+    commands:
+      - echo "Build phase started..."
+      - cd frontend
+      
+      - echo "Building application with Vite..."
+      - yarn build
+      
+      - echo "Build completed successfully"
+      
+      - echo "Listing build output..."
+      - ls -lah dist/
+      
+      - echo "Checking bundle sizes..."
+      - du -sh dist/*
+
+  post_build:
+    commands:
+      - echo "Post-build phase started..."
+      - cd frontend
+      
+      - echo "Build artifacts ready for deployment"
+      - echo "Build completed at $(date)"
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: 'frontend/dist'
+  name: build-artifacts-$(date +%Y%m%d-%H%M%S)
+
+cache:
+  paths:
+    - 'frontend/node_modules/**/*'
+    - 'frontend/.yarn/**/*'
+
+reports:
+  build-report:
+    files:
+      - '**/*'
+    base-directory: 'frontend/dist'

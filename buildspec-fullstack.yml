@@ -1,0 +1,97 @@
+version: 0.2
+
+# Full-stack buildspec (Frontend + Backend)
+# Use this if deploying both frontend and backend to AWS
+
+env:
+  variables:
+    NODE_VERSION: "20"
+    PYTHON_VERSION: "3.11"
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+      python: 3.11
+    commands:
+      - echo "=== Installing build tools ==="
+      - npm install -g yarn@1.22.22
+      - pip install --upgrade pip
+      - yarn --version
+      - python --version
+
+  pre_build:
+    commands:
+      - echo "=== Pre-build phase ==="
+      
+      # Frontend setup
+      - echo "Setting up frontend..."
+      - cd frontend
+      - yarn install --frozen-lockfile --network-timeout 300000
+      - |
+        cat > .env << EOF
+        VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+        VITE_SUPABASE_PUBLISHABLE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY}
+        VITE_SUPABASE_PROJECT_ID=${VITE_SUPABASE_PROJECT_ID}
+        VITE_SITE_URL=${VITE_SITE_URL}
+        EOF
+      - cd ..
+      
+      # Backend setup
+      - echo "Setting up backend..."
+      - cd backend
+      - pip install -r requirements.txt
+      - |
+        cat > .env << EOF
+        MONGO_URL=${MONGO_URL}
+        DB_NAME=${DB_NAME}
+        CORS_ORIGINS=*
+        EOF
+      - cd ..
+
+  build:
+    commands:
+      - echo "=== Build phase ==="
+      
+      # Build frontend
+      - echo "Building frontend..."
+      - cd frontend
+      - yarn build
+      - echo "Frontend build completed"
+      - ls -lah dist/
+      - cd ..
+      
+      # Prepare backend (if needed)
+      - echo "Backend ready for deployment"
+
+  post_build:
+    commands:
+      - echo "=== Post-build phase ==="
+      - echo "Full-stack build completed at $(date)"
+      
+      # Optional: Deploy to S3
+      # - cd frontend
+      # - aws s3 sync dist/ s3://$S3_BUCKET_NAME --delete
+      
+      # Optional: Update backend (Elastic Beanstalk, ECS, etc.)
+      # Add deployment commands here
+
+artifacts:
+  files:
+    - '**/*'
+  secondary-artifacts:
+    frontend:
+      files:
+        - '**/*'
+      base-directory: 'frontend/dist'
+      name: frontend-artifacts
+    backend:
+      files:
+        - '**/*'
+      base-directory: 'backend'
+      name: backend-artifacts
+
+cache:
+  paths:
+    - 'frontend/node_modules/**/*'
+    - 'backend/.venv/**/*'
