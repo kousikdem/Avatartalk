@@ -130,7 +130,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
           data: {
             full_name: validatedData.name,
           },
-          emailRedirectTo: `${import.meta.env.VITE_SITE_URL || window.location.origin}/settings/dashboard`
+          emailRedirectTo: `${window.location.origin}/settings/dashboard`
         }
       });
 
@@ -183,7 +183,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${import.meta.env.VITE_SITE_URL || window.location.origin}/settings/dashboard`,
+          redirectTo: `${window.location.origin}/settings/dashboard`,
         }
       });
 
@@ -212,7 +212,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'facebook',
         options: {
-          redirectTo: `${import.meta.env.VITE_SITE_URL || window.location.origin}/settings/dashboard`,
+          redirectTo: `${window.location.origin}/settings/dashboard`,
         }
       });
 
@@ -241,7 +241,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'twitter',
         options: {
-          redirectTo: `${import.meta.env.VITE_SITE_URL || window.location.origin}/settings/dashboard`,
+          redirectTo: `${window.location.origin}/settings/dashboard`,
         }
       });
 
@@ -270,7 +270,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'si
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
-          redirectTo: `${import.meta.env.VITE_SITE_URL || window.location.origin}/settings/dashboard`,
+          redirectTo: `${window.location.origin}/settings/dashboard`,
         }
       });
 

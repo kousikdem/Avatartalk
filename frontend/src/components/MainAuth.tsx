@@ -122,7 +122,7 @@ const MainAuth: React.FC<MainAuthProps> = ({ isOpen, onClose, defaultTab = 'sign
           data: {
             full_name: validatedData.name,
           },
-          emailRedirectTo: `${import.meta.env.VITE_SITE_URL || window.location.origin}/settings/dashboard`
+          emailRedirectTo: `${window.location.origin}/settings/dashboard`
         }
       });
 
@@ -164,9 +164,7 @@ const MainAuth: React.FC<MainAuthProps> = ({ isOpen, onClose, defaultTab = 'sign
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      // Use VITE_SITE_URL (production URL) if set, otherwise fall back to current origin
-      const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
-      const redirectUrl = `${siteUrl}/settings/dashboard`;
+      const redirectUrl = `${window.location.origin}/settings/dashboard`;
       
       console.log('Google OAuth redirect URL:', redirectUrl);
       
@@ -387,7 +385,7 @@ const MainAuth: React.FC<MainAuthProps> = ({ isOpen, onClose, defaultTab = 'sign
               try {
                 const { error } = await supabase.auth.signInWithOAuth({
                   provider: 'facebook',
-                  options: { redirectTo: `${import.meta.env.VITE_SITE_URL || window.location.origin}/settings/dashboard` }
+                  options: { redirectTo: `${window.location.origin}/settings/dashboard` }
                 });
                 if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
               } finally {
@@ -409,7 +407,7 @@ const MainAuth: React.FC<MainAuthProps> = ({ isOpen, onClose, defaultTab = 'sign
               try {
                 const { error } = await supabase.auth.signInWithOAuth({
                   provider: 'twitter',
-                  options: { redirectTo: `${import.meta.env.VITE_SITE_URL || window.location.origin}/settings/dashboard` }
+                  options: { redirectTo: `${window.location.origin}/settings/dashboard` }
                 });
                 if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
               } finally {
@@ -431,7 +429,7 @@ const MainAuth: React.FC<MainAuthProps> = ({ isOpen, onClose, defaultTab = 'sign
               try {
                 const { error } = await supabase.auth.signInWithOAuth({
                   provider: 'linkedin_oidc',
-                  options: { redirectTo: `${import.meta.env.VITE_SITE_URL || window.location.origin}/settings/dashboard` }
+                  options: { redirectTo: `${window.location.origin}/settings/dashboard` }
                 });
                 if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
               } finally {
