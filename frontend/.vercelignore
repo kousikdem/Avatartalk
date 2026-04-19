@@ -1,0 +1,17 @@
+# Vercel - Prevent npm from being used
+# Force Vercel to respect yarn.lock
+
+# Ignore npm lockfile
+package-lock.json
+
+# Ignore node_modules (already in .gitignore but adding for clarity)
+node_modules/
+
+# Ignore build artifacts
+dist/
+.vite/
+
+# Ignore env files
+.env
+.env.local
+.env.production

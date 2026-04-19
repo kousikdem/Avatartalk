@@ -3,7 +3,7 @@
   "buildCommand": "yarn build",
   "outputDirectory": "dist",
   "devCommand": "yarn dev",
-  "installCommand": "yarn install",
+  "installCommand": "yarn install --frozen-lockfile",
   "framework": "vite",
   "rewrites": [
     {
@@ -40,6 +40,11 @@
     "VITE_SUPABASE_URL": "https://hnxnvdzrwbtmcohdptfq.supabase.co",
     "VITE_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_uaL-zelOHdGlOlvaWuIa1A_wtL7mx3p",
     "VITE_SUPABASE_PROJECT_ID": "hnxnvdzrwbtmcohdptfq",
-    "VITE_SITE_URL": "https://avatartalk-37t7l9b23-kousik-kars-projects.vercel.app"
+    "VITE_SITE_URL": "https://avatartalk-37t7l9b23-kousik-kars-projects.vercel.app",
+    "ENABLE_EXPERIMENTAL_COREPACK": "0"
+  },
+  "regions": ["iad1"],
+  "functions": {
+    "maxDuration": 10
   }
 }

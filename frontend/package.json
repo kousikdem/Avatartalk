@@ -3,13 +3,20 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "packageManager": "yarn@1.22.22",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": "please-use-yarn",
+    "yarn": ">=1.22.0"
+  },
   "scripts": {
     "dev": "vite",
     "start": "vite --host 0.0.0.0 --port 3000",
     "build": "NODE_OPTIONS='--max-old-space-size=8192' vite build",
     "build:dev": "NODE_OPTIONS='--max-old-space-size=8192' vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "preinstall": "npx only-allow yarn"
   },
   "dependencies": {
     "@11labs/react": "^0.1.4",
