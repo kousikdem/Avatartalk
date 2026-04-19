@@ -143,7 +143,7 @@ const SettingsPage = () => {
       setCurrentUser(authUser);
       loadUserData();
     }
-  }, [authUser]);
+  }, [authUser]); // Note: loadUserData is defined below, dependency will be added after it's memoized
 
   // Profession options with icons
   const professionOptions: ProfessionOption[] = [

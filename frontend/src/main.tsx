@@ -67,14 +67,26 @@ try {
   );
 } catch (error) {
   console.error('Failed to render app:', error);
-  rootElement.innerHTML = `
-    <div style="display: flex; align-items: center; justify-content: center; height: 100vh; flex-direction: column; font-family: system-ui;">
-      <h1 style="font-size: 24px; margin-bottom: 16px;">Failed to load application</h1>
-      <p style="color: #666; margin-bottom: 16px;">Please check your internet connection and refresh.</p>
-      <button onclick="window.location.reload()" style="padding: 12px 24px; background: #000; color: #fff; border: none; border-radius: 6px; cursor: pointer;">
-        Refresh Page
-      </button>
-    </div>
-  `;
+  // Safe DOM manipulation without innerHTML
+  const errorDiv = document.createElement('div');
+  errorDiv.style.cssText = 'display: flex; align-items: center; justify-content: center; height: 100vh; flex-direction: column; font-family: system-ui;';
+  
+  const title = document.createElement('h1');
+  title.style.cssText = 'font-size: 24px; margin-bottom: 16px;';
+  title.textContent = 'Failed to load application';
+  
+  const message = document.createElement('p');
+  message.style.cssText = 'color: #666; margin-bottom: 16px;';
+  message.textContent = 'Please check your internet connection and refresh.';
+  
+  const button = document.createElement('button');
+  button.style.cssText = 'padding: 12px 24px; background: #000; color: #fff; border: none; border-radius: 6px; cursor: pointer;';
+  button.textContent = 'Refresh Page';
+  button.addEventListener('click', () => window.location.reload());
+  
+  errorDiv.appendChild(title);
+  errorDiv.appendChild(message);
+  errorDiv.appendChild(button);
+  rootElement.appendChild(errorDiv);
 }
 

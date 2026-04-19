@@ -229,41 +229,134 @@ const VirtualCollaborationPage = () => {
       const meta = b as any;
       return meta.product_id === product.id;
     });
-    printWindow.document.write(`
-      <html><head><title>${product.title} - Details</title>
-      <style>
-        body { font-family: Arial, sans-serif; padding: 40px; color: #333; max-width: 700px; margin: 0 auto; }
-        h1 { color: #6366f1; } h2 { color: #374151; margin-top: 24px; }
-        .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3f4f6; }
-        .label { color: #6b7280; } .value { font-weight: 600; }
-        .badge { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #ede9fe; color: #7c3aed; }
-        @media print { body { padding: 20px; } }
-      </style></head><body>
-      <h1>${product.title}</h1>
-      <span class="badge">${product.product_type.replace('_', ' ')}</span>
-      <p style="color:#6b7280;margin-top:8px;">${product.description || 'Virtual collaboration session'}</p>
-      <h2>Details</h2>
-      <div class="info-row"><span class="label">Duration</span><span class="value">${product.duration_mins} minutes</span></div>
-      <div class="info-row"><span class="label">Capacity</span><span class="value">${product.capacity} participants</span></div>
-      <div class="info-row"><span class="label">Provider</span><span class="value">${product.provider}</span></div>
-      <div class="info-row"><span class="label">Status</span><span class="value">${product.status}</span></div>
-      ${product.event_date ? `<div class="info-row"><span class="label">Event Date</span><span class="value">${new Date(product.event_date).toLocaleString()}</span></div>` : ''}
-      ${product.join_url ? `<div class="info-row"><span class="label">Meeting Link</span><span class="value"><a href="${product.join_url}">${product.join_url}</a></span></div>` : ''}
-      <div class="info-row"><span class="label">Price</span><span class="value">${product.price > 0 ? '₹' + (product.price / 100).toFixed(0) : 'Free'}</span></div>
-      <div class="info-row"><span class="label">Created</span><span class="value">${new Date(product.created_at).toLocaleDateString()}</span></div>
-      <h2>Bookings (${bookingsForProduct.length})</h2>
-      ${bookingsForProduct.length === 0 ? '<p style="color:#9ca3af;">No bookings yet</p>' : bookingsForProduct.map(b => `
-        <div style="border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin:8px 0;">
-          <div class="info-row"><span class="label">Status</span><span class="value">${b.status}</span></div>
-          <div class="info-row"><span class="label">Date</span><span class="value">${new Date(b.scheduled_at).toLocaleString()}</span></div>
-          <div class="info-row"><span class="label">Amount</span><span class="value">₹${(b.amount / 100).toFixed(0)}</span></div>
-          ${b.buyer_info?.full_name ? `<div class="info-row"><span class="label">Customer</span><span class="value">${b.buyer_info.full_name}</span></div>` : ''}
-        </div>
-      `).join('')}
-      <p style="text-align:center;color:#9ca3af;margin-top:24px;font-size:12px;">Printed on ${new Date().toLocaleString()}</p>
-      </body></html>
-    `);
-    printWindow.document.close();
+    
+    // Safe DOM manipulation without document.write()
+    const doc = printWindow.document;
+    
+    // Create HTML structure safely
+    const html = doc.createElement('html');
+    const head = doc.createElement('head');
+    const title = doc.createElement('title');
+    title.textContent = `${product.title} - Details`;
+    
+    const style = doc.createElement('style');
+    style.textContent = `
+      body { font-family: Arial, sans-serif; padding: 40px; color: #333; max-width: 700px; margin: 0 auto; }
+      h1 { color: #6366f1; } h2 { color: #374151; margin-top: 24px; }
+      .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3f4f6; }
+      .label { color: #6b7280; } .value { font-weight: 600; }
+      .badge { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #ede9fe; color: #7c3aed; }
+      @media print { body { padding: 20px; } }
+    `;
+    
+    head.appendChild(title);
+    head.appendChild(style);
+    
+    const body = doc.createElement('body');
+    
+    // Title
+    const h1 = doc.createElement('h1');
+    h1.textContent = product.title;
+    body.appendChild(h1);
+    
+    // Badge
+    const badge = doc.createElement('span');
+    badge.className = 'badge';
+    badge.textContent = product.product_type.replace('_', ' ');
+    body.appendChild(badge);
+    
+    // Description
+    const desc = doc.createElement('p');
+    desc.style.cssText = 'color:#6b7280;margin-top:8px;';
+    desc.textContent = product.description || 'Virtual collaboration session';
+    body.appendChild(desc);
+    
+    // Details section
+    const h2Details = doc.createElement('h2');
+    h2Details.textContent = 'Details';
+    body.appendChild(h2Details);
+    
+    // Helper function to create info rows
+    const createInfoRow = (label: string, value: string) => {
+      const row = doc.createElement('div');
+      row.className = 'info-row';
+      
+      const labelSpan = doc.createElement('span');
+      labelSpan.className = 'label';
+      labelSpan.textContent = label;
+      
+      const valueSpan = doc.createElement('span');
+      valueSpan.className = 'value';
+      valueSpan.textContent = value;
+      
+      row.appendChild(labelSpan);
+      row.appendChild(valueSpan);
+      return row;
+    };
+    
+    body.appendChild(createInfoRow('Duration', `${product.duration_mins} minutes`));
+    body.appendChild(createInfoRow('Capacity', `${product.capacity} participants`));
+    body.appendChild(createInfoRow('Provider', product.provider));
+    body.appendChild(createInfoRow('Status', product.status));
+    
+    if (product.event_date) {
+      body.appendChild(createInfoRow('Event Date', new Date(product.event_date).toLocaleString()));
+    }
+    
+    if (product.join_url) {
+      const row = doc.createElement('div');
+      row.className = 'info-row';
+      const labelSpan = doc.createElement('span');
+      labelSpan.className = 'label';
+      labelSpan.textContent = 'Meeting Link';
+      const valueSpan = doc.createElement('span');
+      valueSpan.className = 'value';
+      const link = doc.createElement('a');
+      link.href = product.join_url;
+      link.textContent = product.join_url;
+      valueSpan.appendChild(link);
+      row.appendChild(labelSpan);
+      row.appendChild(valueSpan);
+      body.appendChild(row);
+    }
+    
+    body.appendChild(createInfoRow('Price', product.price > 0 ? '₹' + (product.price / 100).toFixed(0) : 'Free'));
+    body.appendChild(createInfoRow('Created', new Date(product.created_at).toLocaleDateString()));
+    
+    // Bookings section
+    const h2Bookings = doc.createElement('h2');
+    h2Bookings.textContent = `Bookings (${bookingsForProduct.length})`;
+    body.appendChild(h2Bookings);
+    
+    if (bookingsForProduct.length === 0) {
+      const noBookings = doc.createElement('p');
+      noBookings.style.color = '#9ca3af';
+      noBookings.textContent = 'No bookings yet';
+      body.appendChild(noBookings);
+    } else {
+      bookingsForProduct.forEach(b => {
+        const bookingDiv = doc.createElement('div');
+        bookingDiv.style.cssText = 'border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin:8px 0;';
+        bookingDiv.appendChild(createInfoRow('Status', b.status));
+        bookingDiv.appendChild(createInfoRow('Date', new Date(b.scheduled_at).toLocaleString()));
+        bookingDiv.appendChild(createInfoRow('Amount', `₹${(b.amount / 100).toFixed(0)}`));
+        if (b.buyer_info?.full_name) {
+          bookingDiv.appendChild(createInfoRow('Customer', b.buyer_info.full_name));
+        }
+        body.appendChild(bookingDiv);
+      });
+    }
+    
+    // Footer
+    const footer = doc.createElement('p');
+    footer.style.cssText = 'text-align:center;color:#9ca3af;margin-top:24px;font-size:12px;';
+    footer.textContent = `Printed on ${new Date().toLocaleString()}`;
+    body.appendChild(footer);
+    
+    html.appendChild(head);
+    html.appendChild(body);
+    doc.appendChild(html);
+    doc.close();
     printWindow.focus();
     printWindow.print();
   };
