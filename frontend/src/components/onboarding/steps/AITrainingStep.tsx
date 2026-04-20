@@ -96,7 +96,10 @@ const AITrainingStep: React.FC<AITrainingStepProps> = ({ onComplete }) => {
         tags: tags.length > 0 ? tags : undefined,
       });
       setQaQuestion(''); setQaAnswer(''); setQaLink(''); setQaLinkLabel(''); setQaKeywords('');
-    } catch { /* handled by hook */ }
+    } catch (error) {
+      console.error('Failed to add Q&A:', error);
+      toast({ title: 'Error', description: 'Failed to add Q&A entry', variant: 'destructive' });
+    }
   };
 
   const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,7 +113,10 @@ const AITrainingStep: React.FC<AITrainingStepProps> = ({ onComplete }) => {
     try {
       await scrapeUrl(webUrl);
       setWebUrl('');
-    } catch { /* handled by hook */ }
+    } catch (error) {
+      console.error('Failed to scrape URL:', error);
+      toast({ title: 'Error', description: 'Failed to scrape webpage', variant: 'destructive' });
+    }
   };
 
   const handleVoiceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,7 +133,10 @@ const AITrainingStep: React.FC<AITrainingStepProps> = ({ onComplete }) => {
     try {
       await startVoiceCloning(recordings[0].file_path, {});
       toast({ title: 'Voice training started!' });
-    } catch { /* handled by hook */ }
+    } catch (error) {
+      console.error('Failed to start voice training:', error);
+      toast({ title: 'Error', description: 'Failed to start voice training', variant: 'destructive' });
+    }
   };
 
   const handleStartTraining = () => {

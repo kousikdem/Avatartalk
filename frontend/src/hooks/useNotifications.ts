@@ -22,7 +22,8 @@ const playNotificationSound = () => {
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 0.4);
   } catch (e) {
-    // Audio not available, silently fail
+    // Audio not available - this is expected on some browsers/devices
+    console.debug('Notification sound unavailable:', e);
   }
 };
 

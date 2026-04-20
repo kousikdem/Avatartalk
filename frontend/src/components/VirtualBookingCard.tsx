@@ -93,51 +93,165 @@ const VirtualBookingCard: React.FC<VirtualBookingCardProps> = ({ booking, type, 
     if (!printContent) return;
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
-    printWindow.document.write(`
-      <html><head><title>Booking Details</title>
-      <style>
-        body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
-        h1 { color: #6366f1; margin-bottom: 4px; }
-        .section { margin: 16px 0; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; }
-        .row { display: flex; justify-content: space-between; padding: 6px 0; }
-        .label { color: #6b7280; font-size: 14px; }
-        .value { font-weight: 600; font-size: 14px; }
-        .divider { border-top: 1px solid #e5e7eb; margin: 12px 0; }
-        .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
-        .green { background: #dcfce7; color: #166534; }
-        .yellow { background: #fef3c7; color: #92400e; }
-        .blue { background: #dbeafe; color: #1e40af; }
-        @media print { body { padding: 20px; } }
-      </style></head><body>
-      <h1>${productTitle || 'Virtual Collaboration'}</h1>
-      <p style="color:#6b7280;">Booking ID: ${booking.id.slice(0, 8)}...</p>
-      <div class="section">
-        <div class="row"><span class="label">Status</span><span class="badge ${booking.status === 'confirmed' ? 'green' : booking.status === 'pending' ? 'yellow' : 'blue'}">${booking.status}</span></div>
-        <div class="row"><span class="label">Payment</span><span class="badge ${booking.payment_status === 'captured' ? 'green' : 'yellow'}">${booking.payment_status === 'captured' ? 'Paid' : booking.payment_status}</span></div>
-      </div>
-      <div class="section">
-        <div class="row"><span class="label">Date</span><span class="value">${formatDate(booking.scheduled_at)}</span></div>
-        <div class="row"><span class="label">Time</span><span class="value">${formatTime(booking.scheduled_at)}</span></div>
-        <div class="row"><span class="label">Duration</span><span class="value">${booking.duration_mins} minutes</span></div>
-      </div>
-      ${booking.buyer_info?.full_name ? `<div class="section">
-        <div class="row"><span class="label">Name</span><span class="value">${booking.buyer_info.full_name}</span></div>
-        ${booking.buyer_info.email ? `<div class="row"><span class="label">Email</span><span class="value">${booking.buyer_info.email}</span></div>` : ''}
-        ${booking.buyer_info.phone ? `<div class="row"><span class="label">Phone</span><span class="value">${booking.buyer_info.phone}</span></div>` : ''}
-      </div>` : ''}
-      <div class="section">
-        <div class="row"><span class="label">Amount</span><span class="value">${formatCurrency(booking.amount)}</span></div>
-        ${type === 'received' ? `
-          <div class="row"><span class="label">Platform Fee</span><span class="value">${formatCurrency(booking.platform_fee)}</span></div>
-          <div class="row"><span class="label">Earnings</span><span class="value" style="color:#16a34a">${formatCurrency(booking.seller_earnings)}</span></div>
-        ` : ''}
-        ${booking.discount_amount > 0 ? `<div class="row"><span class="label">Discount</span><span class="value" style="color:#ea580c">${formatCurrency(booking.discount_amount)}</span></div>` : ''}
-      </div>
-      ${booking.join_url ? `<div class="section"><div class="row"><span class="label">Meeting Link</span><span class="value"><a href="${booking.join_url}">${booking.join_url}</a></span></div></div>` : ''}
-      <p style="text-align:center;color:#9ca3af;margin-top:24px;font-size:12px;">Printed on ${new Date().toLocaleString()}</p>
-      </body></html>
-    `);
-    printWindow.document.close();
+    
+    // Safe DOM manipulation without document.write()
+    const doc = printWindow.document;
+    
+    // Create HTML structure safely
+    const html = doc.createElement('html');
+    const head = doc.createElement('head');
+    const title = doc.createElement('title');
+    title.textContent = 'Booking Details';
+    
+    const style = doc.createElement('style');
+    style.textContent = `
+      body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
+      h1 { color: #6366f1; margin-bottom: 4px; }
+      .section { margin: 16px 0; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; }
+      .row { display: flex; justify-content: space-between; padding: 6px 0; }
+      .label { color: #6b7280; font-size: 14px; }
+      .value { font-weight: 600; font-size: 14px; }
+      .divider { border-top: 1px solid #e5e7eb; margin: 12px 0; }
+      .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+      .green { background: #dcfce7; color: #166534; }
+      .yellow { background: #fef3c7; color: #92400e; }
+      .blue { background: #dbeafe; color: #1e40af; }
+      @media print { body { padding: 20px; } }
+    `;
+    
+    head.appendChild(title);
+    head.appendChild(style);
+    
+    const body = doc.createElement('body');
+    
+    // Title
+    const h1 = doc.createElement('h1');
+    h1.textContent = productTitle || 'Virtual Collaboration';
+    body.appendChild(h1);
+    
+    // Booking ID
+    const bookingId = doc.createElement('p');
+    bookingId.style.cssText = 'color:#6b7280;';
+    bookingId.textContent = `Booking ID: ${booking.id.slice(0, 8)}...`;
+    body.appendChild(bookingId);
+    
+    // Status section
+    const statusSection = doc.createElement('div');
+    statusSection.className = 'section';
+    
+    const statusRow = doc.createElement('div');
+    statusRow.className = 'row';
+    const statusLabel = doc.createElement('span');
+    statusLabel.className = 'label';
+    statusLabel.textContent = 'Status';
+    const statusBadge = doc.createElement('span');
+    statusBadge.className = `badge ${booking.status === 'confirmed' ? 'green' : booking.status === 'pending' ? 'yellow' : 'blue'}`;
+    statusBadge.textContent = booking.status;
+    statusRow.appendChild(statusLabel);
+    statusRow.appendChild(statusBadge);
+    
+    const paymentRow = doc.createElement('div');
+    paymentRow.className = 'row';
+    const paymentLabel = doc.createElement('span');
+    paymentLabel.className = 'label';
+    paymentLabel.textContent = 'Payment';
+    const paymentBadge = doc.createElement('span');
+    paymentBadge.className = `badge ${booking.payment_status === 'captured' ? 'green' : 'yellow'}`;
+    paymentBadge.textContent = booking.payment_status === 'captured' ? 'Paid' : booking.payment_status;
+    paymentRow.appendChild(paymentLabel);
+    paymentRow.appendChild(paymentBadge);
+    
+    statusSection.appendChild(statusRow);
+    statusSection.appendChild(paymentRow);
+    body.appendChild(statusSection);
+    
+    // Date/Time section
+    const dateSection = doc.createElement('div');
+    dateSection.className = 'section';
+    
+    const createRow = (label: string, value: string) => {
+      const row = doc.createElement('div');
+      row.className = 'row';
+      const labelSpan = doc.createElement('span');
+      labelSpan.className = 'label';
+      labelSpan.textContent = label;
+      const valueSpan = doc.createElement('span');
+      valueSpan.className = 'value';
+      valueSpan.textContent = value;
+      row.appendChild(labelSpan);
+      row.appendChild(valueSpan);
+      return row;
+    };
+    
+    dateSection.appendChild(createRow('Date', formatDate(booking.scheduled_at)));
+    dateSection.appendChild(createRow('Time', formatTime(booking.scheduled_at)));
+    dateSection.appendChild(createRow('Duration', `${booking.duration_mins} minutes`));
+    body.appendChild(dateSection);
+    
+    // Buyer info section
+    if (booking.buyer_info?.full_name) {
+      const buyerSection = doc.createElement('div');
+      buyerSection.className = 'section';
+      buyerSection.appendChild(createRow('Name', booking.buyer_info.full_name));
+      if (booking.buyer_info.email) {
+        buyerSection.appendChild(createRow('Email', booking.buyer_info.email));
+      }
+      if (booking.buyer_info.phone) {
+        buyerSection.appendChild(createRow('Phone', booking.buyer_info.phone));
+      }
+      body.appendChild(buyerSection);
+    }
+    
+    // Payment section
+    const paymentSection = doc.createElement('div');
+    paymentSection.className = 'section';
+    paymentSection.appendChild(createRow('Amount', formatCurrency(booking.amount)));
+    
+    if (type === 'received') {
+      paymentSection.appendChild(createRow('Platform Fee', formatCurrency(booking.platform_fee)));
+      const earningsRow = createRow('Earnings', formatCurrency(booking.seller_earnings));
+      earningsRow.querySelector('.value')!.setAttribute('style', 'color:#16a34a');
+      paymentSection.appendChild(earningsRow);
+    }
+    
+    if (booking.discount_amount > 0) {
+      const discountRow = createRow('Discount', formatCurrency(booking.discount_amount));
+      discountRow.querySelector('.value')!.setAttribute('style', 'color:#ea580c');
+      paymentSection.appendChild(discountRow);
+    }
+    body.appendChild(paymentSection);
+    
+    // Meeting link
+    if (booking.join_url) {
+      const linkSection = doc.createElement('div');
+      linkSection.className = 'section';
+      const linkRow = doc.createElement('div');
+      linkRow.className = 'row';
+      const linkLabel = doc.createElement('span');
+      linkLabel.className = 'label';
+      linkLabel.textContent = 'Meeting Link';
+      const linkValue = doc.createElement('span');
+      linkValue.className = 'value';
+      const link = doc.createElement('a');
+      link.href = booking.join_url;
+      link.textContent = booking.join_url;
+      linkValue.appendChild(link);
+      linkRow.appendChild(linkLabel);
+      linkRow.appendChild(linkValue);
+      linkSection.appendChild(linkRow);
+      body.appendChild(linkSection);
+    }
+    
+    // Footer
+    const footer = doc.createElement('p');
+    footer.style.cssText = 'text-align:center;color:#9ca3af;margin-top:24px;font-size:12px;';
+    footer.textContent = `Printed on ${new Date().toLocaleString()}`;
+    body.appendChild(footer);
+    
+    html.appendChild(head);
+    html.appendChild(body);
+    doc.appendChild(html);
+    doc.close();
     printWindow.focus();
     printWindow.print();
   };
