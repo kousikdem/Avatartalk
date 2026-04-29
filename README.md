@@ -42,9 +42,9 @@ yarn build
 
 2. **Set Environment Variables**:
    ```
-   VITE_SUPABASE_URL=https://hnxnvdzrwbtmcohdptfq.supabase.co
-   VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-   VITE_SUPABASE_PROJECT_ID=hnxnvdzrwbtmcohdptfq
+   VITE_SUPABASE_URL=your-supabase-url-here
+   VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-key-here
+   VITE_SUPABASE_PROJECT_ID=your-project-id-here
    NODE_OPTIONS=--max-old-space-size=8192
    ```
 
@@ -164,9 +164,9 @@ Status:            ✅ SUCCESS
 ### Required for Deployment
 
 ```env
-VITE_SUPABASE_URL=https://hnxnvdzrwbtmcohdptfq.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueG52ZHpyd2J0bWNvaGRwdGZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2MjA1MzMsImV4cCI6MjA2NjE5NjUzM30.bJerrLVY2DdTkaDurRoVBZIqmLRVYt-sxAH9sUDWgu8
-VITE_SUPABASE_PROJECT_ID=hnxnvdzrwbtmcohdptfq
+VITE_SUPABASE_URL=your-supabase-url-here
+VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-key-here
+VITE_SUPABASE_PROJECT_ID=your-project-id-here
 NODE_OPTIONS=--max-old-space-size=8192
 ```
 

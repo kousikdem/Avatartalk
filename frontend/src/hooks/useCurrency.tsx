@@ -105,8 +105,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         localStorage.setItem(RATES_TIMESTAMP_KEY, Date.now().toString());
       }
     } catch (error) {
-      console.error('Failed to fetch exchange rates:', error);
-      // Use fallback rates
+      // Silently ignore - non-critical
       setExchangeRates(FALLBACK_RATES);
     } finally {
       setLoading(false);

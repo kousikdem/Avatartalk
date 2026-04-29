@@ -9,17 +9,12 @@ const __dirname = path.dirname(__filename);
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "::",
+    host: "0.0.0.0",
     port: 3000,
-    allowedHosts: [
-      '.emergentagent.com',
-      '.emergentcf.cloud',
-      '.preview.emergentagent.com',
-      'localhost'
-    ],
+    allowedHosts: "all",
     hmr: {
-      clientPort: 443,
-      protocol: 'wss'
+      protocol: "wss",
+      clientPort: 443
     }
   },
   plugins: [
