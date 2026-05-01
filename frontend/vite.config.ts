@@ -12,6 +12,14 @@ export default defineConfig(({ mode }) => ({
     host: "0.0.0.0",
     port: 3000,
     strictPort: true,
+    allowedHosts: [
+      "auth-redirect-fix-19.cluster-12.preview.emergentcf.cloud",
+      ".emergentcf.cloud",
+      ".preview.emergentcf.cloud",
+      ".emergentagent.com",
+      ".preview.emergentagent.com",
+      "localhost",
+    ],
     hmr: {
       host: "0.0.0.0",
       port: 3000,
