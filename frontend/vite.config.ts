@@ -11,11 +11,16 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "0.0.0.0",
     port: 3000,
-    allowedHosts: "all",
+    strictPort: true,
     hmr: {
+      host: "0.0.0.0",
+      port: 3000,
       protocol: "wss",
-      clientPort: 443
-    }
+      clientPort: 443,
+    },
+    watch: {
+      usePolling: false,
+    },
   },
   plugins: [
     react(),
