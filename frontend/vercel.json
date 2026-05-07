@@ -3,7 +3,7 @@
   "buildCommand": "yarn build",
   "outputDirectory": "dist",
   "devCommand": "yarn dev",
-  "installCommand": "yarn install --frozen-lockfile",
+  "installCommand": "yarn install --frozen-lockfile --network-timeout 300000",
   "framework": "vite",
   "rewrites": [
     {

@@ -100,4 +100,18 @@ VITE_SUPABASE_PROJECT_ID=hnxnvdzrwbtmcohdptfq
 
 ---
 
-*Last Updated: March 8, 2026*
+*Last Updated: Feb, 2026*
+
+---
+
+## Vercel Build Warnings Fix (Feb 2026)
+Fixed Vercel deployment warnings:
+- Added `license: "UNLICENSED"` + `private: true` to root `/app/package.json` (silences "No license field")
+- Added `license: "UNLICENSED"` to `/app/frontend/package.json`
+- Removed `preinstall: npx only-allow yarn` script (was triggering npm + propagating yarn env vars as unknown npm config warnings: `ignore-engines`, `network-timeout`, `version-git-*`, etc.)
+- Removed `"npm": "please-use-yarn"` from engines (no longer needed since preinstall removed)
+- Added `@types/three@^0.184.1` devDep (fixes `unmet peer dependency @types/three` for `@react-three/drei`)
+- Added yarn `resolutions: { "three-mesh-bvh": "^0.8.3" }` (fixes `three-mesh-bvh@0.7.8 deprecated` warning)
+- Cleaned up `/app/frontend/.yarnrc` (removed `network-timeout`, `ignore-engines`, `progress` — moved network-timeout to vercel.json install/build commands as `--network-timeout 300000` flag)
+- Updated both `/app/vercel.json` and `/app/frontend/vercel.json` install/build commands to use `--frozen-lockfile --network-timeout 300000`
+- Verified: `yarn install` and `yarn build` produce zero warnings locally; build size unchanged.

@@ -2,11 +2,11 @@
   "name": "vite_react_shadcn_ts",
   "private": true,
   "version": "0.0.0",
+  "license": "UNLICENSED",
   "type": "module",
   "packageManager": "yarn@1.22.22",
   "engines": {
     "node": ">=20.0.0",
-    "npm": "please-use-yarn",
     "yarn": ">=1.22.0"
   },
   "scripts": {
@@ -15,8 +15,10 @@
     "build": "NODE_OPTIONS='--max-old-space-size=8192' vite build",
     "build:dev": "NODE_OPTIONS='--max-old-space-size=8192' vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "preinstall": "npx only-allow yarn"
+    "preview": "vite preview"
+  },
+  "resolutions": {
+    "three-mesh-bvh": "^0.8.3"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -91,6 +93,7 @@
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@types/simple-peer": "^9.11.9",
+    "@types/three": "^0.184.1",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.9.0",
