@@ -104,7 +104,12 @@ VITE_SUPABASE_PROJECT_ID=hnxnvdzrwbtmcohdptfq
 
 ---
 
-## Vercel Build Warnings Fix (Feb 2026)
+## Vercel Build Warnings Fix (Round 2 — Feb 2026)
+Eliminated remaining Vercel build warnings:
+- **`engine "pnpm/deno/bun" appears to be invalid`** for `autolinker@4.1.5`, `@spz-loader/core@0.3.1`, `@zip.js/zip.js@2.8.26` → all transitives of `gltf-pipeline → cesium`. Removed `gltf-pipeline` package since `GLTFExporter` from `three-stdlib` already returns binary GLB ArrayBuffer natively when `{binary: true}` is passed (the gltf-pipeline call was unreachable dead code). Cleaned up `/app/frontend/src/hooks/useAvatarBuilder.ts` accordingly. Bonus: removed cesium from bundle (was massive).
+- **`Workspaces can only be enabled in private projects`** → resolved as a side-effect of removing gltf-pipeline (it had a `workspaces` field that was triggering yarn's check).
+- **`info No lockfile found.`** → `frontend/yarn.lock` exists locally (199KB) but is **untracked in git**. User must commit it via "Save to GitHub" so Vercel can use `--frozen-lockfile` for reproducible builds. `.gitignore` does NOT block it.
+- Verified: `yarn install` and `yarn build` produce **zero warnings** locally; bundle size unchanged for chunks (cesium was tree-shaken from gltf-pipeline before).
 Fixed Vercel deployment warnings:
 - Added `license: "UNLICENSED"` + `private: true` to root `/app/package.json` (silences "No license field")
 - Added `license: "UNLICENSED"` to `/app/frontend/package.json`

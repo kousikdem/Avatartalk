@@ -3,8 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import * as THREE from 'three';
 import { GLTFExporter } from 'three-stdlib';
-// @ts-ignore - gltf-pipeline doesn't have types
-import gltfPipeline from 'gltf-pipeline';
 
 interface AvatarBuildOptions {
   format: 'json' | 'gif' | 'glb' | 'gltf' | 'fbx';
@@ -130,28 +128,13 @@ export const useAvatarBuilder = () => {
         async (result) => {
           try {
             if (result instanceof ArrayBuffer) {
-              // Already binary GLB format
+              // GLTFExporter returns binary GLB ArrayBuffer when {binary:true}
               resolve(result);
             } else {
-              // GLTF JSON format - optionally optimize with gltf-pipeline
-              if (binary) {
-                // Convert to GLB using gltf-pipeline
-                try {
-                  const glbResult = await gltfPipeline.gltfToGlb(result);
-                  resolve(glbResult.glb.buffer);
-                } catch (pipelineError) {
-                  console.warn('gltf-pipeline conversion failed, using fallback:', pipelineError);
-                  // Fallback: manual conversion
-                  const json = JSON.stringify(result);
-                  const buffer = new TextEncoder().encode(json);
-                  resolve(buffer.buffer);
-                }
-              } else {
-                // Return as JSON
-                const json = JSON.stringify(result);
-                const buffer = new TextEncoder().encode(json);
-                resolve(buffer.buffer);
-              }
+              // JSON GLTF format - return as encoded JSON buffer
+              const json = JSON.stringify(result);
+              const buffer = new TextEncoder().encode(json);
+              resolve(buffer.buffer);
             }
           } catch (error) {
             reject(error);
