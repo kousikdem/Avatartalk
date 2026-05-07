@@ -104,7 +104,27 @@ VITE_SUPABASE_PROJECT_ID=hnxnvdzrwbtmcohdptfq
 
 ---
 
-## Vercel Build Warnings Fix (Round 2 — Feb 2026)
+## Vercel Build Warnings + Loading Screen Fix (Round 3 — Feb 2026)
+**Critical issue resolved**: Production deploy at `avatartalk-beige.vercel.app` was stuck on loading screen forever because `createClient("", "")` threw `supabaseUrl is required` — Vite couldn't read VITE_* env vars at build time.
+
+### Fixes:
+- **Env vars at build time**: Moved VITE_* vars into `vercel.json` `build.env` (proper build-time location, Vercel's `env` block is for runtime/serverless functions). Created `/app/frontend/.env.production` as redundant fallback (Vite reads it automatically during `vite build`). These are PUBLIC Supabase anon keys — safe to commit.
+- **`.gitignore` cleanup**: Wholly rewrote — removed ~15 duplicate `-e` rogue blocks and consolidated env-file rules into one clean section. Explicitly whitelist `.env.production` and `.env.example`.
+- **Loading screen never disappeared**: `window.__REACT_MOUNTED__()` was referenced in `index.html` but **never called from React** anywhere. Added the call in `main.tsx` (after `createRoot().render()`) AND in `App.tsx` (inside the `authChecked` effect). Also added `visibility: hidden` to the loaded-state CSS so the loader fully exits the layout.
+- **Defensive Supabase client**: `client.ts` now fails fast with a visible "Configuration Error" page instead of throwing a silent `supabaseUrl is required` crash.
+- **`NODE_NO_WARNINGS=1`** added to vercel.json `build.env` to silence the DEP0169 url.parse() warning emitted by yarn 1.22.19's internals.
+- **Removed hardcoded Supabase URL** from `index.html` (was in `<link rel="preconnect">`).
+
+### Verified (production build):
+- Built dist/ served via `python -m http.server` → renders full landing page ✓
+- `body.app-loaded` class applied ✓
+- Inline loader `visibility: hidden` ✓
+- React root has 1 child ✓
+
+### User must:
+**Click "Save to GitHub"** to push these changes. Then redeploy Vercel — the loading screen will disappear and the full site will be visible.
+
+
 Eliminated remaining Vercel build warnings:
 - **`engine "pnpm/deno/bun" appears to be invalid`** for `autolinker@4.1.5`, `@spz-loader/core@0.3.1`, `@zip.js/zip.js@2.8.26` → all transitives of `gltf-pipeline → cesium`. Removed `gltf-pipeline` package since `GLTFExporter` from `three-stdlib` already returns binary GLB ArrayBuffer natively when `{binary: true}` is passed (the gltf-pipeline call was unreachable dead code). Cleaned up `/app/frontend/src/hooks/useAvatarBuilder.ts` accordingly. Bonus: removed cesium from bundle (was massive).
 - **`Workspaces can only be enabled in private projects`** → resolved as a side-effect of removing gltf-pipeline (it had a `workspaces` field that was triggering yarn's check).

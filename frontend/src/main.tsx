@@ -65,6 +65,10 @@ try {
       <App />
     </ErrorBoundary>
   );
+  // Notify the inline loader in index.html that React has mounted so it can fade out
+  if (typeof window !== "undefined" && typeof (window as any).__REACT_MOUNTED__ === "function") {
+    (window as any).__REACT_MOUNTED__();
+  }
 } catch (error) {
   console.error('Failed to render app:', error);
   // Safe DOM manipulation without innerHTML

@@ -363,6 +363,15 @@ const App = () => {
   useEffect(() => {
     if (!authChecked) return;
 
+    // Notify the inline #app-loader in index.html so it fades out (it has z-index:9999
+    // and otherwise covers the whole site even after React mounts)
+    const w = window as unknown as { __REACT_MOUNTED__?: () => void };
+    if (typeof w.__REACT_MOUNTED__ === "function") {
+      w.__REACT_MOUNTED__();
+    } else {
+      document.body.classList.add("app-loaded");
+    }
+
     const raf = requestAnimationFrame(() => {
       const timer = setTimeout(() => {
         setOverlayVisible(false);
