@@ -96,3 +96,12 @@ credentials.json
 !.env.example
 !.env.production
 !frontend/.env.production
+-e 
+# Environment and credential files
+.env
+.env.*
+*.env
+credentials.json
+*.pem
+*.key
+.credentials
