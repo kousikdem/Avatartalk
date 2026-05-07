@@ -1,245 +1,192 @@
-
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AvatarTalk.Co</title>
-    
-    <!-- Preconnect to external domains for faster loading -->
-    <link rel="preconnect" href="https://hnxnvdzrwbtmcohdptfq.supabase.co" crossorigin>
-    <link rel="dns-prefetch" href="https://hnxnvdzrwbtmcohdptfq.supabase.co">
-    
-    <!-- Social meta tags -->
-    <meta property="og:title" content="AvatarTalk.Co">
-    <meta name="twitter:title" content="AvatarTalk.Co">
-    <meta name="description" content="Create AI avatars that talk, sell & engage visitors 24/7">
-    <meta property="og:description" content="Create AI avatars that talk, sell & engage visitors 24/7">
-    <meta name="twitter:description" content="Create AI avatars that talk, sell & engage visitors 24/7">
-    <meta property="og:image" content="https://avatartalk.co/og-image.png">
-    <meta name="twitter:image" content="https://avatartalk.co/og-image.png">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta property="og:type" content="website">
-    
-    <!-- Inline critical CSS for instant render -->
+
+    <!-- Preconnect to Supabase for faster loading -->
+    <link rel="preconnect" href="https://hnxnvdzrwbtmcohdptfq.supabase.co" crossorigin />
+    <link rel="dns-prefetch" href="https://hnxnvdzrwbtmcohdptfq.supabase.co" />
+
+    <!-- Critical CSS - Inline for instant render -->
     <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      html, body { height: 100%; }
-      body { 
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        background: #000;
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: #fff;
       }
-      #root { 
-        min-height: 100vh; 
-        display: flex;
-        flex-direction: column;
+
+      #root {
+        min-height: 100vh;
       }
-      /* Initial loading state */
+
+      /* Branded loading screen */
       #app-loader {
         position: fixed;
         inset: 0;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         z-index: 9999;
+        transition: opacity 0.3s ease-out;
       }
-      .loader-content {
-        text-align: center;
+
+      #app-loader.hidden {
+        opacity: 0;
+        pointer-events: none;
       }
-      
-      /* Animated AvatarTalk Logo */
+
+      /* Avatar logo */
       .loader-logo {
         position: relative;
-        width: 120px;
-        height: 120px;
-        margin: 0 auto 24px;
+        width: 80px;
+        height: 80px;
+        margin-bottom: 24px;
       }
-      
-      /* Outer rotating ring */
-      .logo-ring {
+
+      .loader-logo-inner {
         position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 110px;
-        height: 110px;
-        border: 2px solid transparent;
-        border-top-color: #667eea;
-        border-right-color: #764ba2;
+        inset: 0;
         border-radius: 50%;
-        animation: rotate 1.5s linear infinite;
-      }
-      
-      /* Second slower ring */
-      .logo-ring-2 {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 90px;
-        height: 90px;
-        border: 1.5px solid transparent;
-        border-bottom-color: #a78bfa;
-        border-left-color: #60a5fa;
-        border-radius: 50%;
-        animation: rotate 2.5s linear infinite reverse;
-      }
-      
-      /* Brand logo square - matches the actual Logo component */
-      .logo-icon {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 64px;
-        height: 64px;
-        border-radius: 14px;
-        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #4f46e5 100%);
+        background: rgba(255, 255, 255, 0.95);
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 8px 32px rgba(139, 92, 246, 0.4);
-        animation: logoPulse 2s ease-in-out infinite;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        animation: pulse 2s ease-in-out infinite;
       }
-      
-      .logo-bot-icon {
-        width: 36px;
-        height: 36px;
-      }
-      
-      .logo-sparkle {
-        position: absolute;
-        top: -5px;
-        right: -5px;
-        width: 18px;
-        height: 18px;
-      }
-      
-      /* Speed progress bar below logo */
-      .loader-progress {
-        width: 120px;
-        height: 3px;
-        background: rgba(255,255,255,0.1);
-        border-radius: 99px;
-        overflow: hidden;
-        margin: 8px auto 16px;
-      }
-      
-      .loader-progress-bar {
-        height: 100%;
-        border-radius: 99px;
-        background: linear-gradient(90deg, #3b82f6, #8b5cf6, #4f46e5);
-        animation: speedBar 1.8s ease-in-out infinite;
-      }
-      
-      @keyframes speedBar {
-        0%   { width: 0%;   margin-left: 0%;   opacity: 1; }
-        60%  { width: 80%;  margin-left: 10%;  opacity: 1; }
-        90%  { width: 15%;  margin-left: 85%;  opacity: 0.6; }
-        100% { width: 0%;   margin-left: 100%; opacity: 0; }
-      }
-      
-      @keyframes logoPulse {
-        0%, 100% { transform: translate(-50%, -50%) scale(1);    box-shadow: 0 8px 32px rgba(139, 92, 246, 0.4); }
-        50%       { transform: translate(-50%, -50%) scale(1.06); box-shadow: 0 12px 40px rgba(139, 92, 246, 0.7); }
-      }
-      
-      .loader-text {
-        font-size: 24px;
-        font-weight: 700;
+
+      .loader-avatar {
+        width: 48px;
+        height: 48px;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        margin-bottom: 8px;
-        animation: fadeInOut 2s ease-in-out infinite;
+        border-radius: 50%;
+        position: relative;
       }
-      
+
+      .loader-avatar::before {
+        content: '';
+        position: absolute;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 24px;
+        height: 24px;
+        background: white;
+        border-radius: 50%;
+      }
+
+      .loader-avatar::after {
+        content: '';
+        position: absolute;
+        bottom: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 32px;
+        height: 16px;
+        background: white;
+        border-radius: 50% 50% 0 0;
+      }
+
+      /* Spinning ring */
+      .loader-ring {
+        position: absolute;
+        inset: -8px;
+        border: 3px solid transparent;
+        border-top-color: rgba(255, 255, 255, 0.8);
+        border-right-color: rgba(255, 255, 255, 0.6);
+        border-radius: 50%;
+        animation: spin 1.2s linear infinite;
+      }
+
+      /* Loading text */
+      .loader-text {
+        font-size: 18px;
+        font-weight: 600;
+        color: white;
+        text-align: center;
+        margin-bottom: 8px;
+        animation: fadeInOut 1.5s ease-in-out infinite;
+      }
+
       .loader-subtext {
         font-size: 14px;
-        color: #94a3b8;
-        font-weight: 500;
+        color: rgba(255, 255, 255, 0.8);
+        text-align: center;
       }
-      
-      @keyframes rotate {
-        from { transform: translate(-50%, -50%) rotate(0deg); }
-        to { transform: translate(-50%, -50%) rotate(360deg); }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
       }
-      
+
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+      }
+
       @keyframes fadeInOut {
-        0%, 100% { opacity: 0.7; }
+        0%, 100% { opacity: 0.6; }
         50% { opacity: 1; }
       }
-      
-      /* Hide loader when app loads */
-      .app-loaded #app-loader {
+
+      /* Hide loader when React app is ready */
+      body.app-loaded #app-loader {
         opacity: 0;
         pointer-events: none;
-        transition: opacity 0.3s;
       }
     </style>
   </head>
   <body>
-    <!-- Initial loading screen -->
+    <!-- Branded loading screen -->
     <div id="app-loader">
-      <div class="loader-content">
-        <div class="loader-logo">
-          <!-- Outer rotating rings -->
-          <div class="logo-ring"></div>
-          <div class="logo-ring-2"></div>
-          <!-- Brand logo square (matches Logo.tsx exactly) -->
-          <div class="logo-icon">
-            <!-- Bot SVG matching favicon.svg + Logo component -->
-            <svg class="logo-bot-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="7" y="8" width="10" height="9" rx="1.5" fill="white" opacity="0.95"/>
-              <circle cx="10" cy="11" r="0.8" fill="#3b82f6"/>
-              <circle cx="14" cy="11" r="0.8" fill="#3b82f6"/>
-              <rect x="10.5" y="14" width="3" height="0.6" rx="0.3" fill="#3b82f6"/>
-              <circle cx="12" cy="6.5" r="1" fill="white" opacity="0.95"/>
-              <rect x="11.5" y="6.5" width="1" height="1.5" fill="white" opacity="0.95"/>
-            </svg>
-            <!-- Sparkle dot (top-right like Logo component) -->
-            <svg class="logo-sparkle" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="9" cy="9" r="6" fill="#fde047"/>
-              <line x1="6" y1="7" x2="8" y2="9" stroke="#fde047" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="12" y1="7" x2="10" y2="9" stroke="#fde047" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-          </div>
+      <div class="loader-logo">
+        <div class="loader-ring"></div>
+        <div class="loader-logo-inner">
+          <div class="loader-avatar"></div>
         </div>
-        <!-- Speed progress bar instead of text -->
-        <div class="loader-progress">
-          <div class="loader-progress-bar"></div>
-        </div>
-        <div class="loader-text">AvatarTalk.Co</div>
-        <div class="loader-subtext">Loading your AI avatar...</div>
       </div>
+      <div class="loader-text">AvatarTalk.Co</div>
+      <div class="loader-subtext">Loading your AI experience...</div>
     </div>
-    
+
+    <!-- React root -->
     <div id="root"></div>
-    
-    <!-- Hide HTML loader once React's LoadingOverlay takes over -->
-    <script>
-      // The React LoadingOverlay (fixed, z-9999) renders on top and handles
-      // the transition. We hide the HTML loader shortly after React starts
-      // painting so there's no double-loader visible.
-      window.addEventListener('DOMContentLoaded', function() {
-        // React's LoadingOverlay appears within ~50ms of JS executing.
-        // Hide the HTML loader after 300ms so the React overlay is already visible.
-        setTimeout(function() {
-          document.body.classList.add('app-loaded');
-        }, 300);
-      });
-      
-      // Hard fallback: remove HTML loader after 6 seconds regardless
-      setTimeout(function() {
-        var loader = document.getElementById('app-loader');
-        if (loader) { loader.style.opacity = '0'; loader.style.transition = 'opacity 0.3s'; }
-      }, 6000);
-    </script>
-    
+
+    <!-- Vite dev client -->
     <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Fallback: Remove loader after 5 seconds if React fails -->
+    <script>
+      (function() {
+        var loader = document.getElementById('app-loader');
+        var timeout = setTimeout(function() {
+          if (loader) {
+            document.body.classList.add('app-loaded');
+            console.warn('Loading took longer than expected');
+          }
+        }, 5000);
+
+        // React will call this when it mounts
+        window.__REACT_MOUNTED__ = function() {
+          clearTimeout(timeout);
+          setTimeout(function() {
+            document.body.classList.add('app-loaded');
+          }, 100);
+        };
+      })();
+    </script>
   </body>
 </html>

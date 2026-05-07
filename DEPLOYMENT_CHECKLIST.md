@@ -24,7 +24,7 @@
 ### For Vercel Dashboard
 
 ```
-VITE_SUPABASE_URL=https://hnxnvdzrwbtmcohdptfq.supabase.co
+VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueG52ZHpyd2J0bWNvaGRwdGZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2MjA1MzMsImV4cCI6MjA2NjE5NjUzM30.bJerrLVY2DdTkaDurRoVBZIqmLRVYt-sxAH9sUDWgu8
 VITE_SUPABASE_PROJECT_ID=hnxnvdzrwbtmcohdptfq
 NODE_OPTIONS=--max-old-space-size=8192

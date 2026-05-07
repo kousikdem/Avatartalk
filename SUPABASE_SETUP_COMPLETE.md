@@ -8,7 +8,7 @@ Successfully updated Supabase connection in `/app/frontend/.env`:
 ```env
 VITE_SUPABASE_PROJECT_ID="hnxnvdzrwbtmcohdptfq"
 VITE_SUPABASE_PUBLISHABLE_KEY="sb_publishable_uaL-zelOHdGlOlvaWuIa1A_wtL7mx3p"
-VITE_SUPABASE_URL="https://hnxnvdzrwbtmcohdptfq.supabase.co"
+VITE_SUPABASE_URL="https://your-project.supabase.co"
 ```
 
 ### What This Means
@@ -122,7 +122,7 @@ Add these environment variables in deployment dashboard:
 ```env
 VITE_SUPABASE_PROJECT_ID=hnxnvdzrwbtmcohdptfq
 VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_uaL-zelOHdGlOlvaWuIa1A_wtL7mx3p
-VITE_SUPABASE_URL=https://hnxnvdzrwbtmcohdptfq.supabase.co
+VITE_SUPABASE_URL=https://your-project.supabase.co
 NODE_OPTIONS=--max-old-space-size=8192
 ```
 

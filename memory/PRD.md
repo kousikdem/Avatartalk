@@ -93,7 +93,7 @@ AvatarTalk.Co is a full-stack web application for creating AI-powered avatar bio
 
 ## Environment Variables
 ```
-VITE_SUPABASE_URL=https://hnxnvdzrwbtmcohdptfq.supabase.co
+VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_uaL-zelOHdGlOlvaWuIa1A_wtL7mx3p
 VITE_SUPABASE_PROJECT_ID=hnxnvdzrwbtmcohdptfq
 ```

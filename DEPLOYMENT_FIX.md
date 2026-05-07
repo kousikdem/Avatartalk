@@ -136,7 +136,7 @@ yarn build
 2. Netlify will auto-detect `netlify.toml`
 3. Set environment variables:
    ```
-   VITE_SUPABASE_URL=https://hnxnvdzrwbtmcohdptfq.supabase.co
+   VITE_SUPABASE_URL=https://your-project.supabase.co
    VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
    VITE_SUPABASE_PROJECT_ID=hnxnvdzrwbtmcohdptfq
    ```

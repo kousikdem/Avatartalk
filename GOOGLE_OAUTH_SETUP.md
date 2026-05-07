@@ -25,7 +25,7 @@
 Add these redirect URIs:
 
 ```
-https://hnxnvdzrwbtmcohdptfq.supabase.co/auth/v1/callback
+https://your-project.supabase.co/auth/v1/callback
 
 # For local development
 http://localhost:3000/auth/v1/callback
@@ -69,7 +69,7 @@ Client Secret: [paste from Google Console]
 
 Supabase callback URL (automatically set):
 ```
-https://hnxnvdzrwbtmcohdptfq.supabase.co/auth/v1/callback
+https://your-project.supabase.co/auth/v1/callback
 ```
 
 ### 2.4 Save Changes
@@ -204,7 +204,7 @@ Profile should have:
 1. Check Google Console authorized redirect URIs
 2. Must include Supabase callback URL exactly:
    ```
-   https://hnxnvdzrwbtmcohdptfq.supabase.co/auth/v1/callback
+   https://your-project.supabase.co/auth/v1/callback
    ```
 
 ### Issue 3: "User logged in but no profile"
@@ -279,7 +279,7 @@ const { error } = await supabase.auth.signInWithOAuth({
 
 ### Supabase Project
 ```
-URL: https://hnxnvdzrwbtmcohdptfq.supabase.co
+URL: https://your-project.supabase.co
 Project ID: hnxnvdzrwbtmcohdptfq
 ```
 

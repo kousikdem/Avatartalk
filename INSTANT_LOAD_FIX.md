@@ -55,8 +55,8 @@ if (!isReady) return <AppLoadingScreen />;
 
 1. **Preconnect to Supabase**
    ```html
-   <link rel="preconnect" href="https://hnxnvdzrwbtmcohdptfq.supabase.co" crossorigin>
-   <link rel="dns-prefetch" href="https://hnxnvdzrwbtmcohdptfq.supabase.co">
+   <link rel="preconnect" href="https://your-project.supabase.co" crossorigin>
+   <link rel="dns-prefetch" href="https://your-project.supabase.co">
    ```
 
 2. **Inline Critical CSS**

@@ -214,7 +214,7 @@ In Vercel project settings:
 **Output Directory:** `dist`
 
 **Environment Variables:**
-- `VITE_SUPABASE_URL`: `https://hnxnvdzrwbtmcohdptfq.supabase.co`
+- `VITE_SUPABASE_URL`: `https://your-project.supabase.co`
 - `VITE_SUPABASE_PUBLISHABLE_KEY`: `sb_publishable_uaL-zelOHdGlOlvaWuIa1A_wtL7mx3p`
 - `VITE_SUPABASE_PROJECT_ID`: `hnxnvdzrwbtmcohdptfq`
 - `VITE_SITE_URL`: `https://avatartalk-37t7l9b23-kousik-kars-projects.vercel.app`
