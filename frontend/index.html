@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AvatarTalk.Co</title>
 
@@ -13,7 +13,7 @@
         padding: 0;
         box-sizing: border-box;
       }
-      
+
       body {
         margin: 0;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -23,9 +23,7 @@
         color: #fff;
       }
 
-      #root {
-        min-height: 100vh;
-      }
+      #root { min-height: 100vh; }
 
       /* Branded loading screen */
       #app-loader {
@@ -37,105 +35,95 @@
         justify-content: center;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         z-index: 9999;
-        transition: opacity 0.3s ease-out;
+        transition: opacity 0.4s ease-out;
       }
 
-      #app-loader.hidden {
-        opacity: 0;
-        pointer-events: none;
-      }
-
-      /* Avatar logo */
+      /* Logo wrapper (gradient rounded square — matches in-app brand mark) */
       .loader-logo {
         position: relative;
         width: 80px;
         height: 80px;
-        margin-bottom: 24px;
+        margin-bottom: 28px;
       }
 
       .loader-logo-inner {
         position: absolute;
-        inset: 0;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.95);
+        inset: 8px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #6366f1 100%);
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 10px 30px rgba(99, 102, 241, 0.45);
         animation: pulse 2s ease-in-out infinite;
       }
 
-      .loader-avatar {
-        width: 48px;
-        height: 48px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 50%;
-        position: relative;
+      .loader-logo-inner svg {
+        width: 40px;
+        height: 40px;
       }
 
-      .loader-avatar::before {
-        content: '';
-        position: absolute;
-        top: 12px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 24px;
-        height: 24px;
-        background: white;
-        border-radius: 50%;
-      }
-
-      .loader-avatar::after {
-        content: '';
-        position: absolute;
-        bottom: 8px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 32px;
-        height: 16px;
-        background: white;
-        border-radius: 50% 50% 0 0;
-      }
-
-      /* Spinning ring */
+      /* Concentric spinning rings */
       .loader-ring {
         position: absolute;
-        inset: -8px;
-        border: 3px solid transparent;
-        border-top-color: rgba(255, 255, 255, 0.8);
-        border-right-color: rgba(255, 255, 255, 0.6);
-        border-radius: 50%;
+        inset: 0;
+        border: 2px solid transparent;
+        border-top-color: rgba(255, 255, 255, 0.9);
+        border-right-color: rgba(255, 255, 255, 0.5);
+        border-radius: 20px;
         animation: spin 1.2s linear infinite;
       }
 
-      /* Loading text */
+      .loader-ring-outer {
+        position: absolute;
+        inset: -8px;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 24px;
+        animation: spin 3s linear infinite reverse;
+      }
+
+      /* Brand text */
       .loader-text {
-        font-size: 18px;
-        font-weight: 600;
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
         color: white;
         text-align: center;
-        margin-bottom: 8px;
-        animation: fadeInOut 1.5s ease-in-out infinite;
+        margin-bottom: 6px;
       }
 
       .loader-subtext {
-        font-size: 14px;
-        color: rgba(255, 255, 255, 0.8);
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.75);
         text-align: center;
+        margin-bottom: 28px;
+        letter-spacing: 0.02em;
       }
 
-      @keyframes spin {
-        to { transform: rotate(360deg); }
+      /* Progress bar */
+      .loader-progress {
+        width: 240px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 999px;
+        overflow: hidden;
+        position: relative;
       }
 
+      .loader-progress-bar {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, #ffffff 0%, rgba(255, 255, 255, 0.7) 100%);
+        border-radius: 999px;
+        width: 0%;
+        transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
+      }
+
+      @keyframes spin { to { transform: rotate(360deg); } }
       @keyframes pulse {
         0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-      }
-
-      @keyframes fadeInOut {
-        0%, 100% { opacity: 0.6; }
-        50% { opacity: 1; }
+        50% { transform: scale(1.04); }
       }
 
       /* Hide loader when React app is ready */
@@ -150,38 +138,56 @@
     <!-- Branded loading screen -->
     <div id="app-loader">
       <div class="loader-logo">
+        <div class="loader-ring-outer"></div>
         <div class="loader-ring"></div>
         <div class="loader-logo-inner">
-          <div class="loader-avatar"></div>
+          <!-- AvatarTalk brand mark: chat-window avatar with sparkle -->
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="6.5" y="7.5" width="11" height="10" rx="2" fill="#ffffff" opacity="0.96"/>
+            <circle cx="9.6" cy="11.2" r="0.9" fill="#6366f1"/>
+            <circle cx="14.4" cy="11.2" r="0.9" fill="#6366f1"/>
+            <rect x="10.3" y="14.2" width="3.4" height="0.7" rx="0.35" fill="#6366f1"/>
+            <circle cx="12" cy="5.7" r="1.05" fill="#ffffff" opacity="0.96"/>
+            <rect x="11.55" y="5.7" width="0.9" height="1.6" fill="#ffffff" opacity="0.96"/>
+            <circle cx="18.2" cy="4.2" r="1.6" fill="#fde047"/>
+          </svg>
         </div>
       </div>
-      <div class="loader-text">AvatarTalk.Co</div>
-      <div class="loader-subtext">Loading your AI experience...</div>
+      <div class="loader-text">AvatarTalk</div>
+      <div class="loader-subtext">Preparing your AI experience…</div>
+      <div class="loader-progress" role="progressbar" aria-label="Loading">
+        <div class="loader-progress-bar" id="app-loader-progress"></div>
+      </div>
     </div>
 
     <!-- React root -->
     <div id="root"></div>
 
-    <!-- Vite dev client -->
+    <!-- Vite entry -->
     <script type="module" src="/src/main.tsx"></script>
 
-    <!-- Fallback: Remove loader after 5 seconds if React fails -->
+    <!-- Simulated progress + safety fallback -->
     <script>
       (function() {
-        var loader = document.getElementById('app-loader');
-        var timeout = setTimeout(function() {
-          if (loader) {
-            document.body.classList.add('app-loaded');
-            console.warn('Loading took longer than expected');
-          }
+        var bar = document.getElementById('app-loader-progress');
+        var stages = [10, 28, 52, 74, 88];
+        var delays = [120, 320, 700, 1200, 1800];
+        var timeouts = stages.map(function(pct, i) {
+          return setTimeout(function() { if (bar) bar.style.width = pct + '%'; }, delays[i]);
+        });
+
+        // Fallback: force-hide loader after 5s if React never mounts
+        var fallback = setTimeout(function() {
+          if (bar) bar.style.width = '100%';
+          document.body.classList.add('app-loaded');
         }, 5000);
 
-        // React will call this when it mounts
+        // React calls this when ready
         window.__REACT_MOUNTED__ = function() {
-          clearTimeout(timeout);
-          setTimeout(function() {
-            document.body.classList.add('app-loaded');
-          }, 100);
+          clearTimeout(fallback);
+          timeouts.forEach(clearTimeout);
+          if (bar) bar.style.width = '100%';
+          setTimeout(function() { document.body.classList.add('app-loaded'); }, 180);
         };
       })();
     </script>

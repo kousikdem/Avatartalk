@@ -3,7 +3,7 @@
 ## 🔐 Complete Google Login Integration
 
 ### Prerequisites
-- Supabase project: hnxnvdzrwbtmcohdptfq
+- Supabase project: <YOUR_SUPABASE_PROJECT_ID>
 - Google Cloud Console access
 - Your deployment URL
 
@@ -52,7 +52,7 @@ After creating, you'll get:
 ### 2.1 Enable Google Provider
 
 1. Go to [Supabase Dashboard](https://supabase.com/dashboard)
-2. Select project: **hnxnvdzrwbtmcohdptfq**
+2. Select project: **<YOUR_SUPABASE_PROJECT_ID>**
 3. Navigate to **Authentication** → **Providers**
 4. Find **Google** and enable it
 
@@ -280,7 +280,7 @@ const { error } = await supabase.auth.signInWithOAuth({
 ### Supabase Project
 ```
 URL: https://your-project.supabase.co
-Project ID: hnxnvdzrwbtmcohdptfq
+Project ID: <YOUR_SUPABASE_PROJECT_ID>
 ```
 
 ### Code Implementation

@@ -42,7 +42,7 @@
       "VITE_SUPABASE_URL": "https://hnxnvdzrwbtmcohdptfq.supabase.co",
       "VITE_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_uaL-zelOHdGlOlvaWuIa1A_wtL7mx3p",
       "VITE_SUPABASE_PROJECT_ID": "hnxnvdzrwbtmcohdptfq",
-      "VITE_SITE_URL": "https://avatartalk-beige.vercel.app",
+      "VITE_SITE_URL": "https://avatartalk.co",
       "ENABLE_EXPERIMENTAL_COREPACK": "0"
     }
   },
@@ -50,7 +50,7 @@
     "VITE_SUPABASE_URL": "https://hnxnvdzrwbtmcohdptfq.supabase.co",
     "VITE_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_uaL-zelOHdGlOlvaWuIa1A_wtL7mx3p",
     "VITE_SUPABASE_PROJECT_ID": "hnxnvdzrwbtmcohdptfq",
-    "VITE_SITE_URL": "https://avatartalk-beige.vercel.app"
+    "VITE_SITE_URL": "https://avatartalk.co"
   },
   "regions": ["iad1"],
   "functions": {

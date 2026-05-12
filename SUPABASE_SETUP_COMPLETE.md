@@ -6,8 +6,8 @@
 Successfully updated Supabase connection in `/app/frontend/.env`:
 
 ```env
-VITE_SUPABASE_PROJECT_ID="hnxnvdzrwbtmcohdptfq"
-VITE_SUPABASE_PUBLISHABLE_KEY="sb_publishable_uaL-zelOHdGlOlvaWuIa1A_wtL7mx3p"
+VITE_SUPABASE_PROJECT_ID="<YOUR_SUPABASE_PROJECT_ID>"
+VITE_SUPABASE_PUBLISHABLE_KEY="sb_publishable_<your_anon_key>"
 VITE_SUPABASE_URL="https://your-project.supabase.co"
 ```
 
@@ -120,8 +120,8 @@ Key chunks:
 Add these environment variables in deployment dashboard:
 
 ```env
-VITE_SUPABASE_PROJECT_ID=hnxnvdzrwbtmcohdptfq
-VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_uaL-zelOHdGlOlvaWuIa1A_wtL7mx3p
+VITE_SUPABASE_PROJECT_ID=<YOUR_SUPABASE_PROJECT_ID>
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_<your_anon_key>
 VITE_SUPABASE_URL=https://your-project.supabase.co
 NODE_OPTIONS=--max-old-space-size=8192
 ```

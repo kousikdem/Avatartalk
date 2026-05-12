@@ -104,7 +104,37 @@ VITE_SUPABASE_PROJECT_ID=hnxnvdzrwbtmcohdptfq
 
 ---
 
-## Vercel Build Warnings + Loading Screen Fix (Round 3 — Feb 2026)
+## Code Review Fixes Round 4 (Feb 2026)
+
+### Issue 1 — Domain redirects to emergentagent.com after login (FIXED)
+- Updated `vercel.json` (both root + frontend) `VITE_SITE_URL` → `https://avatartalk.co`
+- Updated `frontend/.env.production` → `https://avatartalk.co`
+- `AuthModal.tsx`: all 4 OAuth providers (Google, Facebook, Twitter, LinkedIn) `redirectTo` now uses `${import.meta.env.VITE_SITE_URL || window.location.origin}` (so production redirects always go to avatartalk.co, dev falls back to current origin)
+- `VisitorAuth.tsx` already used `VITE_SITE_URL` fallback — no change needed
+- Note: User must update Supabase Dashboard → Authentication → URL Config: Site URL = `https://avatartalk.co`, redirect URLs = `https://avatartalk.co/**` + `https://avatartalk-beige.vercel.app/**` (remove `*.emergentagent.com`)
+
+### Issue 2 — Single loading screen with progress bar (FIXED)
+- **Removed** the duplicate React `LoadingOverlay` component from `App.tsx` entirely (was showing a second loader after inline #app-loader faded)
+- Inline `#app-loader` in `index.html` is now the **single** full-screen loader; it stays visible until `authChecked=true` triggers `window.__REACT_MOUNTED__()`
+- Redesigned inline loader with: gradient rounded-square brand mark (matching in-app brand SVG), concentric spinning rings, **animated progress bar** (5 stages: 10→28→52→74→88%, jumps to 100% on mount)
+- Falls back to forcing 100% + fade after 5s if React never mounts
+
+### Issue 3 — Static hero animations (FIXED)
+- Audited `LandingPage.tsx` and `pages/Index.tsx` — hero h1/p/buttons have NO framer-motion or `animate-slide-down` classes already; they were static. The "top-to-bottom" feel was caused by the loader fade-out
+- Changed Tailwind `fade-in` keyframe in `tailwind.config.ts` from `translateY(10px → 0)` to **opacity-only** (so any future use cannot slide)
+- Smoother loader→content transition (0.4s ease-out fade instead of 0.3s)
+
+### Issue 4 — API key cleanup (FIXED)
+- Redacted hardcoded Supabase project ID + publishable key from: `API_KEY_SECURITY.md`, `GOOGLE_OAUTH_SETUP.md`, `SUPABASE_SETUP_COMPLETE.md`, `DEPLOYMENT_CHECKLIST.md`, `VERCEL_DEPENDENCY_FIX.md`, `DEPLOYMENT_FIX.md` → replaced with `<YOUR_SUPABASE_PROJECT_ID>` / `sb_publishable_<your_anon_key>`
+- Razorpay & Gemini keys are NOT exposed client-side — already proxied through Supabase Edge Functions (`IntegrationOAuthManager.tsx`, `IntegrationSecretsManager.tsx`); no VITE_RAZORPAY_* or VITE_GEMINI_* env vars exist in frontend
+- Supabase URL + anon key remain in `vercel.json` and `.env.production` — these are **public** (designed to be in client bundles); rotation not required, but user should still move them to Vercel Dashboard env vars for cleaner repo
+
+### Verified locally (production build):
+- `inline_loader: hidden`, `body_classes: 'app-loaded'`, `progress_width: '100%'`, full landing page renders ✓
+- `yarn build` produces zero warnings ✓
+- No `emergentagent` strings in any source file ✓
+
+
 **Critical issue resolved**: Production deploy at `avatartalk-beige.vercel.app` was stuck on loading screen forever because `createClient("", "")` threw `supabaseUrl is required` — Vite couldn't read VITE_* env vars at build time.
 
 ### Fixes:

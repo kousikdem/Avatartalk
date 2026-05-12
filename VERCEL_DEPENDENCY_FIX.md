@@ -215,8 +215,8 @@ In Vercel project settings:
 
 **Environment Variables:**
 - `VITE_SUPABASE_URL`: `https://your-project.supabase.co`
-- `VITE_SUPABASE_PUBLISHABLE_KEY`: `sb_publishable_uaL-zelOHdGlOlvaWuIa1A_wtL7mx3p`
-- `VITE_SUPABASE_PROJECT_ID`: `hnxnvdzrwbtmcohdptfq`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`: `sb_publishable_<your_anon_key>`
+- `VITE_SUPABASE_PROJECT_ID`: `<YOUR_SUPABASE_PROJECT_ID>`
 - `VITE_SITE_URL`: `https://avatartalk-37t7l9b23-kousik-kars-projects.vercel.app`
 - `NODE_OPTIONS`: `--max-old-space-size=4096`
 - `ENABLE_EXPERIMENTAL_COREPACK`: `0`

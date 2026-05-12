@@ -58,53 +58,6 @@ const queryClient = new QueryClient({
   },
 });
 
-// ─── Loading overlay with progress bar ──────────────────────────────────────────
-const LoadingOverlay = memo(({ visible }: { visible: boolean }) => {
-  useEffect(() => {
-    if (visible) {
-      NProgress.start();
-    } else {
-      NProgress.done();
-    }
-  }, [visible]);
-
-  return (
-    <div
-      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-4 bg-background pointer-events-none"
-      style={{
-        opacity: visible ? 1 : 0,
-        transition: 'opacity 0.35s ease-out',
-        visibility: visible ? 'visible' : 'hidden',
-      }}
-    >
-      {/* Brand logo + spinning ring */}
-      <div className="relative w-16 h-16">
-        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 border-r-purple-500 animate-spin" />
-        <div
-          className="absolute inset-[-6px] rounded-full border border-purple-400/20 animate-spin"
-          style={{ animationDuration: '3s', animationDirection: 'reverse' }}
-        />
-        <div className="absolute inset-2 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/40">
-          <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-            <rect x="7" y="8" width="10" height="9" rx="1.5" fill="white" opacity="0.95"/>
-            <circle cx="10" cy="11" r="0.8" fill="#3b82f6"/>
-            <circle cx="14" cy="11" r="0.8" fill="#3b82f6"/>
-            <rect x="10.5" y="14" width="3" height="0.6" rx="0.3" fill="#3b82f6"/>
-            <circle cx="12" cy="6.5" r="1" fill="white" opacity="0.95"/>
-            <rect x="11.5" y="6.5" width="1" height="1.5" fill="white" opacity="0.95"/>
-            <circle cx="18" cy="4" r="2" fill="#fde047"/>
-          </svg>
-        </div>
-      </div>
-      {/* Loading text */}
-      <div className="text-sm text-muted-foreground animate-pulse">
-        Loading AvatarTalk...
-      </div>
-    </div>
-  );
-});
-LoadingOverlay.displayName = 'LoadingOverlay';
-
 // ─── Thin top-bar fallback for lazy route loading ───────────────────────────────
 const PageFallback = memo(() => {
   useEffect(() => {
@@ -262,7 +215,6 @@ const App = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [authChecked, setAuthChecked] = useState(false);  // NEW: Auth check flag
-  const [overlayVisible, setOverlayVisible] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
 
   const currentUserIdRef = useRef<string | null>(null);
@@ -359,26 +311,16 @@ const App = () => {
     };
   }, []);
 
-  // Fade out loading overlay after auth is ready
+  // Notify the inline #app-loader in index.html so it fades out when auth check completes
   useEffect(() => {
     if (!authChecked) return;
 
-    // Notify the inline #app-loader in index.html so it fades out (it has z-index:9999
-    // and otherwise covers the whole site even after React mounts)
     const w = window as unknown as { __REACT_MOUNTED__?: () => void };
     if (typeof w.__REACT_MOUNTED__ === "function") {
       w.__REACT_MOUNTED__();
     } else {
       document.body.classList.add("app-loaded");
     }
-
-    const raf = requestAnimationFrame(() => {
-      const timer = setTimeout(() => {
-        setOverlayVisible(false);
-      }, 100);
-      return () => clearTimeout(timer);
-    });
-    return () => cancelAnimationFrame(raf);
   }, [authChecked]);
 
   // Memoize auth context value
@@ -401,9 +343,6 @@ const App = () => {
             <Sonner />
             <BrowserRouter>
               <AuthProvider value={authValue}>
-                {/* Loading overlay */}
-                <LoadingOverlay visible={overlayVisible} />
-
                 {/* Loading timeout */}
                 <LoadingTimeout
                   isLoading={isLoading}
