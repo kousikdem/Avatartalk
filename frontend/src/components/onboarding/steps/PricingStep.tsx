@@ -194,6 +194,15 @@ const PricingStep: React.FC<PricingStepProps> = ({ onComplete }) => {
       };
 
       const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', (resp: any) => {
+        const err = resp?.error || {};
+        toast({
+          title: 'Payment Failed',
+          description: err.description || err.reason || err.code || 'Payment could not be completed.',
+          variant: 'destructive',
+        });
+        setPurchasing(false);
+      });
       rzp.open();
     } catch (err: any) {
       console.error('Checkout error:', err);

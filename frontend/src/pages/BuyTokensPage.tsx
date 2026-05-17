@@ -124,12 +124,21 @@ const BuyTokensPage: React.FC = () => {
             toast({ title: "Success!", description: `${formatTokens(verifyData.tokens_credited)} tokens added` });
             await refetch();
           } else {
-            toast({ title: "Verification Failed", variant: "destructive" });
+            toast({ title: "Verification Failed", description: verifyData?.error || verifyError?.message || "Please contact support if amount was debited.", variant: "destructive" });
           }
           setProcessing(false);
         },
         theme: { color: "#f59e0b" },
         modal: { ondismiss: () => setProcessing(false) }
+      });
+      razorpay.on('payment.failed', (resp: any) => {
+        const err = resp?.error || {};
+        toast({
+          title: "Payment Failed",
+          description: err.description || err.reason || err.code || 'Payment could not be completed.',
+          variant: "destructive",
+        });
+        setProcessing(false);
       });
       razorpay.open();
     } catch (error) {

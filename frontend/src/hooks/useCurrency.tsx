@@ -33,7 +33,14 @@ interface CurrencyContextType {
   refreshRates: () => Promise<void>;
   convertFromINR: (amountINR: number) => number;
   convertToINR: (amount: number) => number;
+  /** Convert an arbitrary amount in `fromCurrency` to INR (base) */
+  convertAnyToINR: (amount: number, fromCurrency: string) => number;
+  /** Convert an arbitrary amount in `fromCurrency` to currently selected display currency */
+  convertAnyToDisplay: (amount: number, fromCurrency: string) => number;
+  /** Format an INR-base amount in the selected currency */
   formatPrice: (amountINR: number, showSymbol?: boolean) => string;
+  /** Format an amount given in its own native currency (no conversion) */
+  formatInCurrency: (amount: number, currencyCode: string) => string;
   getCurrencyInfo: () => CurrencyInfo;
 }
 
@@ -131,6 +138,34 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return amount / rate;
   }, [currency, exchangeRates]);
 
+  /**
+   * Convert an arbitrary amount in `fromCurrency` to INR (base).
+   * Falls back gracefully when the rate is unavailable.
+   */
+  const convertAnyToINR = useCallback((amount: number, fromCurrency: string): number => {
+    if (!amount || isNaN(amount)) return 0;
+    const code = (fromCurrency || 'INR').toUpperCase();
+    if (code === 'INR') return amount;
+    const rate = exchangeRates[code];
+    if (!rate || rate <= 0) {
+      // Unknown currency — use fallback rate or assume already INR rather than corrupting totals
+      const fb = (FALLBACK_RATES as ExchangeRates)[code];
+      if (fb && fb > 0) return amount / fb;
+      return amount;
+    }
+    return amount / rate;
+  }, [exchangeRates]);
+
+  /**
+   * Convert an arbitrary amount in `fromCurrency` to the currently selected
+   * display currency. Goes via INR internally.
+   */
+  const convertAnyToDisplay = useCallback((amount: number, fromCurrency: string): number => {
+    const inr = convertAnyToINR(amount, fromCurrency);
+    const rate = exchangeRates[currency] || 1;
+    return inr * rate;
+  }, [convertAnyToINR, currency, exchangeRates]);
+
   const getCurrencyInfo = useCallback((): CurrencyInfo => {
     return CURRENCIES.find(c => c.code === currency) || CURRENCIES[0];
   }, [currency]);
@@ -147,6 +182,19 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return showSymbol ? `${info.symbol}${formatted}` : formatted;
   }, [currency, convertFromINR, getCurrencyInfo]);
 
+  /**
+   * Format an amount in its native currency, without any conversion.
+   * Useful when displaying the original transaction value.
+   */
+  const formatInCurrency = useCallback((amount: number, currencyCode: string): string => {
+    const code = (currencyCode || 'INR').toUpperCase();
+    const info = CURRENCIES.find(c => c.code === code) || { code, symbol: code + ' ', name: code } as CurrencyInfo;
+    const formatted = code === 'JPY'
+      ? Math.round(amount).toLocaleString()
+      : amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return `${info.symbol}${formatted}`;
+  }, []);
+
   const value = useMemo(() => ({
     currency,
     setCurrency,
@@ -156,9 +204,12 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     refreshRates: fetchExchangeRates,
     convertFromINR,
     convertToINR,
+    convertAnyToINR,
+    convertAnyToDisplay,
     formatPrice,
+    formatInCurrency,
     getCurrencyInfo,
-  }), [currency, setCurrency, exchangeRates, loading, lastUpdated, fetchExchangeRates, convertFromINR, convertToINR, formatPrice, getCurrencyInfo]);
+  }), [currency, setCurrency, exchangeRates, loading, lastUpdated, fetchExchangeRates, convertFromINR, convertToINR, convertAnyToINR, convertAnyToDisplay, formatPrice, formatInCurrency, getCurrencyInfo]);
 
   return (
     <CurrencyContext.Provider value={value}>

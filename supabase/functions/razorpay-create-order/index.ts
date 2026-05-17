@@ -69,21 +69,35 @@ Deno.serve(async (req) => {
     // Use authenticated user.id as the buyer identity
     const authenticatedBuyerId = user.id;
 
-    // Validate amount - must be at least 100 paise (₹1)
-    let amountInPaise = amount;
-    
-    // If amount seems to be in rupees (less than 100), convert to paise
-    // Otherwise assume it's already in paise
-    if (amountInPaise > 0 && amountInPaise < 100) {
-      amountInPaise = amountInPaise * 100;
-    }
-    
-    // Ensure minimum amount of ₹1 (100 paise)
-    if (amountInPaise < 100) {
-      amountInPaise = 100; // Minimum ₹1
+    // Validate amount — Razorpay expects the smallest unit of the currency
+    // (paise for INR, cents for USD/EUR, etc.). All callers are expected to
+    // send `amount` already in the smallest unit, but we guard against bad data.
+    const currencyCode = (currency || 'INR').toUpperCase();
+    let amountInSmallestUnit = Number(amount);
+
+    if (!Number.isFinite(amountInSmallestUnit) || amountInSmallestUnit <= 0) {
+      return new Response(
+        JSON.stringify({ error: `Invalid amount: ${amount}` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
 
-    console.log('Creating Razorpay order, amount:', amountInPaise, 'paise, user:', user.id.substring(0, 8) + '...');
+    // Round to integer because Razorpay rejects floats
+    amountInSmallestUnit = Math.round(amountInSmallestUnit);
+
+    // Razorpay minimum is 100 paise (₹1) for INR, ~50 cents for USD.
+    // Don't silently bump 1 paise → 100 paise (used to mis-handle small amounts).
+    const minAmount = currencyCode === 'INR' ? 100 : 50;
+    if (amountInSmallestUnit < minAmount) {
+      return new Response(
+        JSON.stringify({
+          error: `Amount too small. Minimum ${minAmount} ${currencyCode === 'INR' ? 'paise (₹1)' : 'cents'} required, received ${amountInSmallestUnit}.`,
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+
+    console.log('Creating Razorpay order, amount:', amountInSmallestUnit, currencyCode, 'user:', user.id.substring(0, 8) + '...');
 
     // Build notes based on order type — always use authenticated user ID
     const notes: Record<string, string> = {};
@@ -100,6 +114,11 @@ Deno.serve(async (req) => {
       notes.sellerId = sellerId || '';
       notes.orderType = 'product';
     }
+    if (metadata && typeof metadata === 'object') {
+      for (const [k, v] of Object.entries(metadata)) {
+        if (v != null) notes[k] = String(v).slice(0, 256);
+      }
+    }
 
     // Create Razorpay order
     const orderResponse = await fetch('https://api.razorpay.com/v1/orders', {
@@ -109,8 +128,8 @@ Deno.serve(async (req) => {
         'Authorization': 'Basic ' + btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)
       },
       body: JSON.stringify({
-        amount: amountInPaise,
-        currency: currency,
+        amount: amountInSmallestUnit,
+        currency: currencyCode,
         receipt: `order_${Date.now()}`,
         notes: notes
       })
@@ -119,8 +138,21 @@ Deno.serve(async (req) => {
     const orderData = await orderResponse.json();
 
     if (!orderResponse.ok) {
-      console.error('Razorpay order creation failed, status:', orderResponse.status);
-      throw new Error(orderData.error?.description || 'Failed to create Razorpay order');
+      // Surface the real Razorpay error so the UI can show something actionable.
+      const rzpError = orderData?.error || {};
+      const message =
+        rzpError.description ||
+        rzpError.reason ||
+        rzpError.code ||
+        `Razorpay returned HTTP ${orderResponse.status}`;
+      console.error('Razorpay order creation failed:', { status: orderResponse.status, rzpError });
+      return new Response(
+        JSON.stringify({
+          error: `Failed to create order: ${message}`,
+          razorpay: rzpError,
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
 
     console.log('Razorpay order created:', orderData.id);
@@ -139,9 +171,10 @@ Deno.serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error creating order:', error instanceof Error ? error.message : 'Unknown error');
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error creating order:', message);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: `Failed to create order: ${message}` }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,

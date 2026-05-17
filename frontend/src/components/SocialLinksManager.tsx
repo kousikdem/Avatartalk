@@ -86,7 +86,11 @@ const SocialLinksManager: React.FC = () => {
         const rawCustom = (data as any).custom_links;
         if (rawCustom) {
           try {
-            setCustomLinks(JSON.parse(rawCustom) || []);
+            if (typeof rawCustom === 'string') {
+              setCustomLinks(JSON.parse(rawCustom) || []);
+            } else if (Array.isArray(rawCustom)) {
+              setCustomLinks(rawCustom);
+            }
           } catch { /* */ }
         }
       } else {
@@ -106,24 +110,43 @@ const SocialLinksManager: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const updates: any = {
-        user_id: user.id,
-        custom_links: JSON.stringify(customLinks),
-      };
+      const baseUpdates: any = { user_id: user.id };
       SOCIAL_PLATFORMS.forEach(platform => {
-        updates[platform.id] = socialLinks[platform.id] || null;
+        baseUpdates[platform.id] = socialLinks[platform.id] || null;
       });
 
-      const { error } = await supabase
+      // First try with custom_links (works after migration is applied)
+      const fullUpdates = { ...baseUpdates, custom_links: customLinks };
+      let { error } = await supabase
         .from('social_links')
-        .upsert(updates, { onConflict: 'user_id' });
+        .upsert(fullUpdates, { onConflict: 'user_id' });
+
+      // Fallback: retry without custom_links if that column doesn't exist yet
+      if (error && /custom_links/i.test(error.message || '')) {
+        console.warn('social_links.custom_links column missing — saving without custom links. Apply the migration to enable custom links.');
+        const retry = await supabase
+          .from('social_links')
+          .upsert(baseUpdates, { onConflict: 'user_id' });
+        error = retry.error;
+        if (!error && customLinks.length > 0) {
+          toast({
+            title: 'Saved (partial)',
+            description: 'Custom links could not be saved — DB migration pending.',
+          });
+          return;
+        }
+      }
 
       if (error) throw error;
 
       toast({ title: 'Success', description: 'Social links saved successfully' });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving social links:', error);
-      toast({ title: 'Error', description: 'Failed to save social links', variant: 'destructive' });
+      toast({
+        title: 'Failed to save social links',
+        description: error?.message || 'Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setSaving(false);
     }

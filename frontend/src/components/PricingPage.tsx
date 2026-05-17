@@ -145,14 +145,23 @@ const TokenPurchaseAddon = ({ currSymbol }: { currSymbol: string }) => {
             }
           });
           if (!verifyError && verifyData?.success) {
-            toast({ title: "🎉 Success!", description: `${formatTokens(verifyData.tokens_credited)} tokens added to your account!` });
+            toast({ title: "Success!", description: `${formatTokens(verifyData.tokens_credited)} tokens added to your account!` });
           } else {
-            toast({ title: "Verification Failed", variant: "destructive" });
+            toast({ title: "Verification Failed", description: verifyData?.error || verifyError?.message || 'Please contact support.', variant: "destructive" });
           }
           setProcessing(false);
         },
         theme: { color: "#f59e0b" },
         modal: { ondismiss: () => setProcessing(false) }
+      });
+      razorpay.on('payment.failed', (resp: any) => {
+        const err = resp?.error || {};
+        toast({
+          title: "Payment Failed",
+          description: err.description || err.reason || err.code || 'Payment could not be completed.',
+          variant: "destructive",
+        });
+        setProcessing(false);
       });
       razorpay.open();
     } catch (error) {
@@ -408,12 +417,21 @@ const PricingPage = () => {
       };
 
       const razorpay = new window.Razorpay(options);
+      razorpay.on('payment.failed', (resp: any) => {
+        const err = resp?.error || {};
+        toast({
+          title: "Payment Failed",
+          description: err.description || err.reason || err.code || 'Payment could not be completed.',
+          variant: "destructive",
+        });
+        setProcessing(false);
+      });
       razorpay.open();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Purchase error:', error);
       toast({
         title: "Error",
-        description: "Failed to initiate payment. Please try again.",
+        description: error?.message || "Failed to initiate payment. Please try again.",
         variant: "destructive",
       });
     } finally {

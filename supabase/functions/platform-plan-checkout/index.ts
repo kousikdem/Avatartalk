@@ -108,7 +108,12 @@ Deno.serve(async (req) => {
     if (!razorpayResponse.ok) {
       const errorText = await razorpayResponse.text();
       console.error('Razorpay order creation failed:', errorText);
-      throw new Error('Failed to create payment order');
+      let rzpReason = errorText;
+      try {
+        const parsed = JSON.parse(errorText);
+        rzpReason = parsed?.error?.description || parsed?.error?.reason || parsed?.error?.code || errorText;
+      } catch { /* keep raw */ }
+      throw new Error(`Failed to create order: ${rzpReason}`);
     }
 
     const razorpayOrder = await razorpayResponse.json();

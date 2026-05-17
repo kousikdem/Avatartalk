@@ -240,7 +240,7 @@ Deno.serve(async (req) => {
 
     if (orderError || !order) {
       console.error('Order creation error:', orderError);
-      throw new Error('Failed to create order');
+      throw new Error(`Failed to create order: ${orderError?.message || 'unknown DB error'}`);
     }
 
     // Create Razorpay order
@@ -251,6 +251,12 @@ Deno.serve(async (req) => {
       throw new Error('Razorpay credentials not configured');
     }
 
+    // Razorpay expects an integer amount in the smallest currency unit (paise/cents).
+    const razorpayAmount = Math.round(Number(totalAmount));
+    if (!Number.isFinite(razorpayAmount) || razorpayAmount <= 0) {
+      throw new Error(`Invalid order amount: ${totalAmount}`);
+    }
+
     const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
       headers: {
@@ -258,7 +264,7 @@ Deno.serve(async (req) => {
         'Authorization': 'Basic ' + btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)
       },
       body: JSON.stringify({
-        amount: totalAmount,
+        amount: razorpayAmount,
         currency: currency,
         receipt: order.id.substring(0, 40), // Razorpay receipt max 40 chars
         notes: {
@@ -274,7 +280,9 @@ Deno.serve(async (req) => {
 
     if (!razorpayResponse.ok) {
       console.error('Razorpay error:', razorpayOrder);
-      throw new Error('Failed to create Razorpay order');
+      const rzpError = razorpayOrder?.error || {};
+      const msg = rzpError.description || rzpError.reason || rzpError.code || `HTTP ${razorpayResponse.status}`;
+      throw new Error(`Failed to create order: ${msg}`);
     }
 
     // Update order with Razorpay order ID

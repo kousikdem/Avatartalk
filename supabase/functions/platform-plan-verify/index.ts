@@ -170,17 +170,34 @@ Deno.serve(async (req) => {
       console.error('Transaction update error:', txUpdateError);
     }
 
-    // Token amounts per plan (matches frontend usePlatformPricingPlans)
-    const planTokens: Record<string, number> = {
+    // Token amounts per plan PER MONTH (matches frontend usePlatformPricingPlans)
+    const planTokensPerMonth: Record<string, number> = {
       free: 10000,
-      creator: 1000000,  // 1M
-      pro: 2000000,      // 2M
-      business: 5000000, // 5M
+      creator: 1000000,  // 1M / month
+      pro: 2000000,      // 2M / month
+      business: 5000000, // 5M / month
     };
 
-    // Credit tokens based on plan key
-    const tokensToAdd = planTokens[plan.plan_key] || plan.ai_tokens_monthly || 0;
-    if (tokensToAdd > 0) {
+    // Monthly drip strategy:
+    //   - On first purchase / renewal, credit ONLY the first month's tokens.
+    //   - The remaining months are credited every 30 days by the scheduled
+    //     `credit_monthly_plan_tokens()` DB function (see migration).
+    const monthlyTokens = planTokensPerMonth[plan.plan_key] || plan.ai_tokens_monthly || 0;
+    const nowIso = new Date().toISOString();
+    const nextCreditAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    // Persist drip metadata on the subscription so the cron knows what to do.
+    await supabase
+      .from('user_platform_subscriptions')
+      .update({
+        monthly_token_amount: monthlyTokens,
+        last_monthly_credit_at: nowIso,
+        next_monthly_credit_at: nextCreditAt,
+        months_credited: 1,
+      })
+      .eq('user_id', user.id);
+
+    if (monthlyTokens > 0) {
       // Get current token balance
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -192,9 +209,9 @@ Deno.serve(async (req) => {
         console.error('Profile fetch error:', profileError);
       } else {
         const currentBalance = profile?.token_balance || 0;
-        const newBalance = currentBalance + tokensToAdd;
+        const newBalance = currentBalance + monthlyTokens;
 
-        // Update token balance
+        // Update token balance (first month credit)
         const { error: updateError } = await supabase
           .from('profiles')
           .update({ 
@@ -206,7 +223,7 @@ Deno.serve(async (req) => {
         if (updateError) {
           console.error('Token update error:', updateError);
         } else {
-          console.log(`Plan tokens credited: ${tokensToAdd} (${currentBalance} -> ${newBalance}) for ${plan.plan_key} plan`);
+          console.log(`Plan first-month tokens credited: ${monthlyTokens} (${currentBalance} -> ${newBalance}) for ${plan.plan_key} plan (${billingCycleMonths} month(s) total).`);
         }
 
         // Log the token event
@@ -214,9 +231,9 @@ Deno.serve(async (req) => {
           .from('token_events')
           .insert([{
             user_id: user.id,
-            change: tokensToAdd,
+            change: monthlyTokens,
             balance_after: newBalance,
-            reason: `plan_purchase_${plan.plan_key}_tokens_${tokensToAdd}`,
+            reason: `plan_purchase_${plan.plan_key}_month_1_of_${billingCycleMonths}`,
           }]);
       }
     }

@@ -294,11 +294,15 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
       razorpay.open();
 
       razorpay.on('payment.failed', function (response: any) {
+        const err = response?.error || {};
+        const reason = err.description || err.reason || err.code || 'Payment could not be completed';
+        const step = err.step ? ` (step: ${err.step})` : '';
         toast({
           title: "Payment Failed",
-          description: response.error.description,
+          description: `${reason}${step}. Please try again or use a different method.`,
           variant: "destructive",
         });
+        console.error('Razorpay payment.failed:', err);
       });
 
     } catch (error: any) {

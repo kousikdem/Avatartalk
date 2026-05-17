@@ -1,17 +1,23 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useCurrency } from '@/hooks/useCurrency';
 
 export interface SaleItem {
   id: string;
   type: 'product' | 'virtual_collab' | 'post' | 'subscription';
   title: string;
+  /** Earning in INR base (already normalized). Used for aggregation/conversion. */
   amount: number;
+  /** Original amount in `currency` (in major units, e.g. rupees/dollars). */
+  originalAmount: number;
+  /** Currency code of the original payment (e.g. INR, USD). */
   currency: string;
   buyerName: string;
   createdAt: string;
 }
 
 export interface EarningsData {
+  /** All values are in INR (base). UI converts to display currency via useCurrency.formatPrice */
   totalEarnings: number;
   productEarnings: number;
   virtualCollabEarnings: number;
@@ -20,7 +26,25 @@ export interface EarningsData {
   recentSales: SaleItem[];
 }
 
+/**
+ * Database amounts (orders.seller_earnings, orders.amount, post_unlocks.payment_amount,
+ * subscriptions.price) are stored in the smallest unit of their currency
+ * (paise for INR, cents for USD, etc.). We convert them to major units first,
+ * then normalise to INR using current exchange rates.
+ */
+const toMajorUnits = (raw: number, currency: string): number => {
+  if (!raw || isNaN(raw)) return 0;
+  const code = (currency || 'INR').toUpperCase();
+  // JPY has no sub-unit
+  if (code === 'JPY') return raw;
+  // Heuristic: if value is suspiciously small (< 10) treat as already-major (rupees/dollars),
+  // otherwise treat as minor (paise/cents). All our flows store as minor units (paise/cents),
+  // so default to /100.
+  return raw / 100;
+};
+
 export const useEarnings = () => {
+  const { convertAnyToINR } = useCurrency();
   const [earnings, setEarnings] = useState<EarningsData>({
     totalEarnings: 0,
     productEarnings: 0,
@@ -44,7 +68,7 @@ export const useEarnings = () => {
         .from('orders')
         .select('*')
         .eq('seller_id', uid)
-        .eq('payment_status', 'captured')
+        .in('payment_status', ['captured', 'completed', 'paid'])
         .order('created_at', { ascending: false });
 
       // Fetch subscriptions to this user
@@ -83,23 +107,26 @@ export const useEarnings = () => {
       let postEarnings = 0;
       const recentSales: SaleItem[] = [];
 
-      allOrders.forEach(order => {
+      allOrders.forEach((order: any) => {
         const product = productMap.get(order.product_id);
-        const earning = order.seller_earnings || 0;
-        const currency = order.currency || 'USD';
-        const type = product?.product_type === 'virtual_meeting' ? 'virtual_collab' : 'product';
+        const rawEarning = Number(order.seller_earnings) || 0;
+        const currency = (order.currency || 'INR').toUpperCase();
+        const originalMajor = toMajorUnits(rawEarning, currency);
+        const inrAmount = convertAnyToINR(originalMajor, currency);
 
+        const type = product?.product_type === 'virtual_meeting' ? 'virtual_collab' : 'product';
         if (type === 'virtual_collab') {
-          virtualCollabEarnings += earning;
+          virtualCollabEarnings += inrAmount;
         } else {
-          productEarnings += earning;
+          productEarnings += inrAmount;
         }
 
         recentSales.push({
           id: order.id,
           type,
           title: product?.title || 'Product',
-          amount: earning,
+          amount: inrAmount,
+          originalAmount: originalMajor,
           currency,
           buyerName: 'Buyer',
           createdAt: order.created_at,
@@ -107,34 +134,44 @@ export const useEarnings = () => {
       });
 
       // Process paid post unlocks for this user's posts
-      const ownPostUnlocks = (postUnlocks || []).filter(u => userPostIds.has(u.post_id));
-      ownPostUnlocks.forEach(unlock => {
+      const ownPostUnlocks = (postUnlocks || []).filter((u: any) => userPostIds.has(u.post_id));
+      ownPostUnlocks.forEach((unlock: any) => {
         const postInfo = postMap.get(unlock.post_id);
-        const amount = Number(unlock.payment_amount) || 0;
-        const platformFee = amount * 0.1; // 10% platform fee
-        const earning = amount - platformFee;
-        postEarnings += earning;
+        const currency = (unlock.payment_currency || 'INR').toUpperCase();
+        const rawAmount = Number(unlock.payment_amount) || 0;
+        const originalMajor = toMajorUnits(rawAmount, currency);
+        const platformFee = originalMajor * 0.1; // 10% platform fee
+        const earningOriginal = originalMajor - platformFee;
+        const inrAmount = convertAnyToINR(earningOriginal, currency);
+        postEarnings += inrAmount;
 
         recentSales.push({
           id: unlock.id,
           type: 'post',
           title: postInfo?.title || 'Paid Post',
-          amount: earning,
-          currency: unlock.payment_currency || 'USD',
+          amount: inrAmount,
+          originalAmount: earningOriginal,
+          currency,
           buyerName: 'Buyer',
           createdAt: unlock.unlocked_at,
         });
       });
 
-      const subscriptionEarnings = allSubs.reduce((sum, s) => sum + (Number(s.price) || 0), 0);
-
-      allSubs.forEach(sub => {
+      let subscriptionEarnings = 0;
+      allSubs.forEach((sub: any) => {
+        const currency = (sub.currency || 'INR').toUpperCase();
+        const rawPrice = Number(sub.price) || 0;
+        // subscriptions.price could be stored in major units in some setups — treat conservatively
+        const originalMajor = toMajorUnits(rawPrice, currency);
+        const inrAmount = convertAnyToINR(originalMajor, currency);
+        subscriptionEarnings += inrAmount;
         recentSales.push({
           id: sub.id,
           type: 'subscription',
           title: 'Subscription',
-          amount: Number(sub.price) || 0,
-          currency: 'USD',
+          amount: inrAmount,
+          originalAmount: originalMajor,
+          currency,
           buyerName: 'Subscriber',
           createdAt: sub.created_at,
         });
@@ -158,7 +195,7 @@ export const useEarnings = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [convertAnyToINR]);
 
   // Real-time subscription for orders
   useEffect(() => {

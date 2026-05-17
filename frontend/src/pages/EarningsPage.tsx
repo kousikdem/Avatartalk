@@ -16,17 +16,8 @@ const typeLabels: Record<string, { label: string; color: string; icon: any }> = 
 
 const EarningsPage = () => {
   const { earnings, loading } = useEarnings();
-  const { formatPrice, getCurrencyInfo } = useCurrency();
+  const { formatPrice, formatInCurrency, getCurrencyInfo } = useCurrency();
   const currencyInfo = getCurrencyInfo();
-
-  // Format amount in original payment currency
-  const formatOriginal = (amount: number, currency: string) => {
-    const symbols: Record<string, string> = {
-      INR: '₹', USD: '$', EUR: '€', GBP: '£', AUD: 'A$', CAD: 'C$', SGD: 'S$', AED: 'د.إ', JPY: '¥',
-    };
-    const sym = symbols[currency] || '$';
-    return `${sym}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
 
   if (loading) {
     return null;
@@ -113,7 +104,7 @@ const EarningsPage = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className="font-bold text-emerald-600">{formatOriginal(sale.amount, sale.currency)}</span>
+                      <span className="font-bold text-emerald-600">{formatInCurrency(sale.originalAmount, sale.currency)}</span>
                       {sale.currency !== currencyInfo.code && (
                         <p className="text-[10px] text-muted-foreground">
                           ≈ {formatPrice(sale.amount)}

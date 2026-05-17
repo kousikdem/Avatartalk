@@ -67,7 +67,13 @@ const SocialLinksStep: React.FC<SocialLinksStepProps> = ({ onComplete }) => {
 
           const rawCustom = (data as any).custom_links;
           if (rawCustom) {
-            try { setCustomLinks(JSON.parse(rawCustom) || []); } catch { /* */ }
+            try {
+              if (typeof rawCustom === 'string') {
+                setCustomLinks(JSON.parse(rawCustom) || []);
+              } else if (Array.isArray(rawCustom)) {
+                setCustomLinks(rawCustom as CustomLink[]);
+              }
+            } catch { /* */ }
           }
         }
       } catch (err) {
@@ -147,14 +153,39 @@ const SocialLinksStep: React.FC<SocialLinksStepProps> = ({ onComplete }) => {
     if (!user) return;
     setSaving(true);
     try {
-      const updates: any = { user_id: user.id, custom_links: JSON.stringify(customLinks) };
-      ALL_PLATFORMS.forEach(p => { updates[p.id] = socialLinks[p.id] || null; });
-      const { error } = await supabase.from('social_links').upsert(updates, { onConflict: 'user_id' });
+      const baseUpdates: any = { user_id: user.id };
+      ALL_PLATFORMS.forEach(p => { baseUpdates[p.id] = socialLinks[p.id] || null; });
+
+      // First attempt: include custom_links (works once the migration is applied)
+      const fullUpdates = { ...baseUpdates, custom_links: customLinks };
+      let { error } = await supabase.from('social_links').upsert(fullUpdates, { onConflict: 'user_id' });
+
+      // If the custom_links column doesn't exist yet, retry without it so the rest is saved.
+      if (error && /custom_links/i.test(error.message || '')) {
+        console.warn('social_links.custom_links column missing — saving without custom links. Apply the migration to enable.');
+        const retry = await supabase.from('social_links').upsert(baseUpdates, { onConflict: 'user_id' });
+        error = retry.error;
+        if (!error && customLinks.length > 0) {
+          toast({
+            title: 'Saved (partial)',
+            description: 'Custom links could not be saved — your DB migration is pending.',
+          });
+          setSaved(true);
+          return;
+        }
+      }
+
       if (error) throw error;
+
       setSaved(true);
       toast({ title: 'Social links saved!' });
-    } catch {
-      toast({ title: 'Error', description: 'Failed to save.', variant: 'destructive' });
+    } catch (err: any) {
+      console.error('Failed to save social links:', err);
+      toast({
+        title: 'Failed to save social links',
+        description: err?.message || 'Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setSaving(false);
     }
