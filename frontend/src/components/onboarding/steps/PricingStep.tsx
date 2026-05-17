@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth';
 import { supabase } from '@/integrations/supabase/client';
+import { extractFunctionsError } from '@/lib/supabase-errors';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface PricingStepProps {
@@ -147,9 +148,11 @@ const PricingStep: React.FC<PricingStepProps> = ({ onComplete }) => {
         body: { planId: plan.id, billingCycleMonths: months, currency },
       });
 
-      if (response.error) throw new Error(response.error.message || 'Checkout failed');
       const orderData = response.data;
-      if (!orderData?.success) throw new Error(orderData?.error || 'Failed to create order');
+      if (response.error || !orderData?.orderId) {
+        const reason = await extractFunctionsError(response.error, orderData);
+        throw new Error(reason);
+      }
 
       const options = {
         key: orderData.keyId,
@@ -170,19 +173,18 @@ const PricingStep: React.FC<PricingStepProps> = ({ onComplete }) => {
               },
             });
 
-            if (verifyRes.error) throw new Error(verifyRes.error.message || 'Verification failed');
             const verifyData = verifyRes.data;
-
-            if (verifyData?.success) {
-              toast({ title: `${plan.plan_name} Plan Activated!`, description: `Active until ${new Date(verifyData.expiresAt).toLocaleDateString()}` });
-              setPurchasing(false);
-              onComplete(selectedPlan);
-            } else {
-              throw new Error(verifyData?.error || 'Verification failed');
+            if (verifyRes.error || !verifyData?.success) {
+              const reason = await extractFunctionsError(verifyRes.error, verifyData);
+              throw new Error(reason);
             }
+
+            toast({ title: `${plan.plan_name} Plan Activated!`, description: `Active until ${new Date(verifyData.expiresAt).toLocaleDateString()}` });
+            setPurchasing(false);
+            onComplete(selectedPlan);
           } catch (err: any) {
             console.error('Verify error:', err);
-            toast({ title: 'Verification Error', description: err.message, variant: 'destructive' });
+            toast({ title: 'Verification Failed', description: err?.message || 'Please contact support.', variant: 'destructive' });
             setPurchasing(false);
           }
         },
@@ -206,7 +208,7 @@ const PricingStep: React.FC<PricingStepProps> = ({ onComplete }) => {
       rzp.open();
     } catch (err: any) {
       console.error('Checkout error:', err);
-      toast({ title: 'Error', description: err.message || 'Failed to start payment', variant: 'destructive' });
+      toast({ title: 'Failed to start checkout', description: err?.message || 'Please try again.', variant: 'destructive' });
       setPurchasing(false);
     }
   };

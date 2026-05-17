@@ -112,13 +112,26 @@ const PersonalInfoStep: React.FC<PersonalInfoStepProps> = ({ onComplete }) => {
     setLoading(true);
 
     try {
+      // Normalise the payload:
+      //   - empty strings → null (PostgreSQL date/numeric columns reject "")
+      //   - trim whitespace on username
+      //   - lowercase username (since uniqueness is case-sensitive in pg)
+      const sanitized: Record<string, any> = { id: user.id, updated_at: new Date().toISOString() };
+      for (const [key, value] of Object.entries(formData)) {
+        if (typeof value === 'string') {
+          const trimmed = value.trim();
+          sanitized[key] = trimmed === '' ? null : trimmed;
+        } else {
+          sanitized[key] = value;
+        }
+      }
+      if (sanitized.username) {
+        sanitized.username = String(sanitized.username).toLowerCase().replace(/\s+/g, '');
+      }
+
       const { error } = await supabase
         .from('profiles')
-        .upsert({
-          id: user.id,
-          ...formData,
-          updated_at: new Date().toISOString(),
-        });
+        .upsert(sanitized, { onConflict: 'id' });
 
       if (error) throw error;
 
@@ -126,11 +139,21 @@ const PersonalInfoStep: React.FC<PersonalInfoStepProps> = ({ onComplete }) => {
         title: 'Profile updated!',
         description: 'Your personal information has been saved.',
       });
-      onComplete(formData);
-    } catch (error) {
+      onComplete(sanitized);
+    } catch (error: any) {
+      console.error('Failed to update profile:', error);
+      let description = error?.message || 'Failed to update profile. Please try again.';
+      // Friendly message for the most common DB errors
+      if (/duplicate key|unique constraint/i.test(description) && /username/i.test(description)) {
+        description = 'That username is already taken. Please pick another one.';
+      } else if (/invalid input syntax for type date/i.test(description)) {
+        description = 'Date of birth looks invalid. Please re-check or leave it blank.';
+      } else if (/row-level security|new row violates/i.test(description)) {
+        description = 'You don\'t have permission to update this profile. Please sign in again.';
+      }
       toast({
-        title: 'Error',
-        description: 'Failed to update profile. Please try again.',
+        title: 'Failed to update profile',
+        description,
         variant: 'destructive',
       });
     } finally {

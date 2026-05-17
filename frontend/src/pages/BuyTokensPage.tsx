@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { extractFunctionsError } from '@/lib/supabase-errors';
 import { useTokens } from '@/hooks/useTokens';
 import { useTokenPrice } from '@/hooks/useTokenPrice';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -102,7 +103,10 @@ const BuyTokensPage: React.FC = () => {
         body: { tokens: tokenAmount, amount_inr: priceInINR, user_id: user.id }
       });
 
-      if (orderError || !orderData?.success) throw new Error(orderData?.error || 'Failed to create order');
+      if (orderError || !orderData?.success) {
+        const reason = await extractFunctionsError(orderError, orderData);
+        throw new Error(reason);
+      }
       if (!window.Razorpay) {
         toast({ title: "Error", description: "Payment system not loaded", variant: "destructive" });
         setProcessing(false);
@@ -124,7 +128,8 @@ const BuyTokensPage: React.FC = () => {
             toast({ title: "Success!", description: `${formatTokens(verifyData.tokens_credited)} tokens added` });
             await refetch();
           } else {
-            toast({ title: "Verification Failed", description: verifyData?.error || verifyError?.message || "Please contact support if amount was debited.", variant: "destructive" });
+            const reason = await extractFunctionsError(verifyError, verifyData);
+            toast({ title: "Verification Failed", description: reason || "Please contact support if amount was debited.", variant: "destructive" });
           }
           setProcessing(false);
         },
@@ -141,8 +146,13 @@ const BuyTokensPage: React.FC = () => {
         setProcessing(false);
       });
       razorpay.open();
-    } catch (error) {
-      toast({ title: "Error", description: error instanceof Error ? error.message : "Failed", variant: "destructive" });
+    } catch (error: any) {
+      console.error('Token purchase error:', error);
+      toast({
+        title: "Failed to create order",
+        description: error?.message || 'Please try again or contact support.',
+        variant: "destructive",
+      });
       setProcessing(false);
     }
   };

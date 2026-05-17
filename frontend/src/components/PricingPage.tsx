@@ -17,6 +17,7 @@ import { usePlatformPricingPlans, useUserPlatformSubscription, PlatformFeature }
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useTokenPrice } from '@/hooks/useTokenPrice';
+import { extractFunctionsError } from '@/lib/supabase-errors';
 import MainAuth from './MainAuth';
 import ShareModal from './ShareModal';
 import {
@@ -119,7 +120,10 @@ const TokenPurchaseAddon = ({ currSymbol }: { currSymbol: string }) => {
         body: { tokens: tokenAmount, amount_inr: priceInINR, user_id: user.id }
       });
 
-      if (orderError || !orderData?.success) throw new Error(orderData?.error || 'Failed to create order');
+      if (orderError || !orderData?.success) {
+        const reason = await extractFunctionsError(orderError, orderData);
+        throw new Error(reason);
+      }
       
       if (!window.Razorpay) {
         toast({ title: "Error", description: "Payment system not loaded", variant: "destructive" });
@@ -147,7 +151,8 @@ const TokenPurchaseAddon = ({ currSymbol }: { currSymbol: string }) => {
           if (!verifyError && verifyData?.success) {
             toast({ title: "Success!", description: `${formatTokens(verifyData.tokens_credited)} tokens added to your account!` });
           } else {
-            toast({ title: "Verification Failed", description: verifyData?.error || verifyError?.message || 'Please contact support.', variant: "destructive" });
+            const reason = await extractFunctionsError(verifyError, verifyData);
+            toast({ title: "Verification Failed", description: reason || 'Please contact support.', variant: "destructive" });
           }
           setProcessing(false);
         },
@@ -164,8 +169,13 @@ const TokenPurchaseAddon = ({ currSymbol }: { currSymbol: string }) => {
         setProcessing(false);
       });
       razorpay.open();
-    } catch (error) {
-      toast({ title: "Error", description: error instanceof Error ? error.message : "Failed", variant: "destructive" });
+    } catch (error: any) {
+      console.error('Token purchase error:', error);
+      toast({
+        title: "Failed to create order",
+        description: error?.message || 'Please try again.',
+        variant: "destructive",
+      });
       setProcessing(false);
     }
   };
@@ -373,7 +383,10 @@ const PricingPage = () => {
         },
       });
 
-      if (error) throw error;
+      if (error || !data?.orderId) {
+        const reason = await extractFunctionsError(error, data);
+        throw new Error(reason);
+      }
 
       const options = {
         key: data.keyId,
@@ -384,7 +397,7 @@ const PricingPage = () => {
         order_id: data.orderId,
         handler: async (response: any) => {
           try {
-            const { error: verifyError } = await supabase.functions.invoke('platform-plan-verify', {
+            const { data: verifyData, error: verifyError } = await supabase.functions.invoke('platform-plan-verify', {
               body: {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
@@ -394,20 +407,23 @@ const PricingPage = () => {
               },
             });
 
-            if (verifyError) throw verifyError;
+            if (verifyError || !verifyData?.success) {
+              const reason = await extractFunctionsError(verifyError, verifyData);
+              throw new Error(reason);
+            }
 
             toast({
-              title: "🎉 Subscription Activated!",
+              title: "Subscription Activated",
               description: `Welcome to ${data.planName}! ${formatTokens(plan.ai_tokens_monthly)} tokens have been added to your account.`,
             });
 
             refetchSubscription();
             navigate('/settings/dashboard');
-          } catch (err) {
+          } catch (err: any) {
             console.error('Verification error:', err);
             toast({
-              title: "Error",
-              description: "Payment verification failed. Please contact support.",
+              title: "Payment verification failed",
+              description: err?.message || "Please contact support if the amount was debited.",
               variant: "destructive",
             });
           }
@@ -430,8 +446,8 @@ const PricingPage = () => {
     } catch (error: any) {
       console.error('Purchase error:', error);
       toast({
-        title: "Error",
-        description: error?.message || "Failed to initiate payment. Please try again.",
+        title: "Failed to start checkout",
+        description: error?.message || "Please try again.",
         variant: "destructive",
       });
     } finally {

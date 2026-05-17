@@ -54,24 +54,37 @@ export interface Product {
 export const useProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     try {
+      // Only fetch products belonging to the authenticated user.
+      // (Previously this fetched the entire products table, causing slow
+      // loads and leaking other creators' data via RLS-friendly queries.)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setProducts([]);
+        setCurrentUserId(null);
+        return;
+      }
+      setCurrentUserId(user.id);
+
       const { data, error } = await supabase
         .from('products')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       setProducts((data || []) as Product[]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching products:', error);
       toast({
-        title: "Error",
-        description: "Failed to load products",
-        variant: "destructive",
+        title: 'Failed to load products',
+        description: error?.message || 'Please refresh the page.',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -80,9 +93,13 @@ export const useProducts = () => {
 
   const createProduct = async (productData: Omit<Product, 'id' | 'created_at' | 'updated_at' | 'views_count'>) => {
     try {
+      // Always stamp current user as owner (RLS requires it)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('You must be signed in to create a product.');
+
       const { data, error } = await supabase
         .from('products')
-        .insert([productData])
+        .insert([{ ...productData, user_id: user.id }])
         .select()
         .single();
 
@@ -94,11 +111,11 @@ export const useProducts = () => {
       });
       
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating product:', error);
       toast({
-        title: "Error",
-        description: "Failed to create product",
+        title: "Failed to create product",
+        description: error?.message || 'Please try again.',
         variant: "destructive",
       });
       throw error;
@@ -198,42 +215,53 @@ export const useProducts = () => {
   useEffect(() => {
     fetchProducts();
 
-    // Set up realtime subscription for products with REPLICA IDENTITY FULL
-    const channel = supabase
-      .channel('products-realtime-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'products'
-        },
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setProducts(prev => {
-              // Avoid duplicates
-              if (prev.some(p => p.id === (payload.new as any).id)) return prev;
-              return [payload.new as Product, ...prev];
-            });
-          } else if (payload.eventType === 'UPDATE') {
-            setProducts(prev => prev.map(product => 
-              product.id === (payload.new as any).id ? payload.new as Product : product
-            ));
-          } else if (payload.eventType === 'DELETE') {
-            setProducts(prev => prev.filter(product => product.id !== (payload.old as any).id));
+    let channel: any;
+    let mounted = true;
+
+    // Subscribe to realtime only for the current user's products to avoid
+    // receiving updates for unrelated rows.
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !mounted) return;
+
+      channel = supabase
+        .channel('products-realtime-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'products',
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload) => {
+            if (payload.eventType === 'INSERT') {
+              setProducts(prev => {
+                if (prev.some(p => p.id === (payload.new as any).id)) return prev;
+                return [payload.new as Product, ...prev];
+              });
+            } else if (payload.eventType === 'UPDATE') {
+              setProducts(prev => prev.map(product =>
+                product.id === (payload.new as any).id ? payload.new as Product : product
+              ));
+            } else if (payload.eventType === 'DELETE') {
+              setProducts(prev => prev.filter(product => product.id !== (payload.old as any).id));
+            }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe();
+    })();
 
     return () => {
-      supabase.removeChannel(channel);
+      mounted = false;
+      if (channel) supabase.removeChannel(channel);
     };
   }, [fetchProducts]);
 
   return {
     products,
     isLoading,
+    currentUserId,
     fetchProducts,
     createProduct,
     updateProduct,

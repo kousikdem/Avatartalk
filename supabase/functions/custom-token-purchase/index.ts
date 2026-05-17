@@ -184,11 +184,16 @@ Deno.serve(async (req) => {
     if (!razorpayResponse.ok) {
       const errorText = await razorpayResponse.text();
       console.error('Razorpay order creation failed:', errorText);
+      let rzpReason = `HTTP ${razorpayResponse.status}`;
+      try {
+        const parsed = JSON.parse(errorText);
+        rzpReason = parsed?.error?.description || parsed?.error?.reason || parsed?.error?.code || rzpReason;
+      } catch { rzpReason = errorText || rzpReason; }
       return new Response(JSON.stringify({
         success: false,
-        error: 'Failed to create payment order'
+        error: `Failed to create payment order: ${rzpReason}`
       }), {
-        status: 500,
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
@@ -225,10 +230,11 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error in custom-token-purchase:', error);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('Error in custom-token-purchase:', msg);
     return new Response(JSON.stringify({
       success: false,
-      error: 'Internal server error'
+      error: msg || 'Internal server error'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
