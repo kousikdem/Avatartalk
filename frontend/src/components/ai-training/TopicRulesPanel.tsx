@@ -199,7 +199,7 @@ export const TopicRulesPanel: React.FC<TopicRulesPanelProps> = ({
           </Label>
           <div className="flex flex-wrap gap-2 mt-2">
             {topic.keywords.map((keyword, idx) => (
-              <Badge key={idx} variant="secondary" className="gap-1">
+              <Badge key={`${keyword}-${idx}`} variant="secondary" className="gap-1">
                 {keyword}
                 <button onClick={() => removeKeyword(idx, topicId)}>
                   <X className="w-3 h-3" />
@@ -229,7 +229,7 @@ export const TopicRulesPanel: React.FC<TopicRulesPanelProps> = ({
           </Label>
           <div className="space-y-2 mt-2">
             {topic.doRules.map((rule, idx) => (
-              <div key={idx} className="flex items-center gap-2 p-2 bg-green-50 rounded">
+              <div key={`do-${rule}-${idx}`} className="flex items-center gap-2 p-2 bg-green-50 rounded">
                 <Lightbulb className="w-4 h-4 text-green-600 flex-shrink-0" />
                 <span className="flex-1 text-sm">{rule}</span>
                 <button onClick={() => removeRule('do', idx, topicId)}>
@@ -260,7 +260,7 @@ export const TopicRulesPanel: React.FC<TopicRulesPanelProps> = ({
           </Label>
           <div className="space-y-2 mt-2">
             {topic.avoidRules.map((rule, idx) => (
-              <div key={idx} className="flex items-center gap-2 p-2 bg-red-50 rounded">
+              <div key={`avoid-${rule}-${idx}`} className="flex items-center gap-2 p-2 bg-red-50 rounded">
                 <X className="w-4 h-4 text-red-600 flex-shrink-0" />
                 <span className="flex-1 text-sm">{rule}</span>
                 <button onClick={() => removeRule('avoid', idx, topicId)}>

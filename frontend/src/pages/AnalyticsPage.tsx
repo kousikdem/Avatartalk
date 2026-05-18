@@ -50,7 +50,7 @@ const ModernTooltip = ({ active, payload, label, fmtValue }: any) => {
     <div className="rounded-2xl border border-white/10 bg-slate-900/95 backdrop-blur-xl p-4 shadow-2xl shadow-black/60 min-w-[160px]">
       <p className="text-xs text-slate-400 font-medium mb-3 pb-2 border-b border-white/8">{displayLabel}</p>
       {payload.map((e: any, i: number) => (
-        <div key={i} className="flex items-center justify-between gap-4 mb-1.5">
+        <div key={`${e.dataKey || e.name || 'series'}-${i}`} className="flex items-center justify-between gap-4 mb-1.5">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: e.color || e.fill }} />
             <span className="text-xs text-slate-400">{e.name}</span>
@@ -162,7 +162,7 @@ const DonutCenter = ({ data, colors, centerLabel, centerValue, fmtValue }: {
         <PieChart>
           <defs>
             {colors.map((c, i) => (
-              <radialGradient key={i} id={`dg${i}`} cx="50%" cy="50%" r="50%">
+              <radialGradient key={`${c}-${i}`} id={`dg${i}`} cx="50%" cy="50%" r="50%">
                 <stop offset="0%" stopColor={c} stopOpacity={1} />
                 <stop offset="100%" stopColor={c} stopOpacity={0.6} />
               </radialGradient>
@@ -174,8 +174,8 @@ const DonutCenter = ({ data, colors, centerLabel, centerValue, fmtValue }: {
             dataKey="value" strokeWidth={0}
             paddingAngle={3}
           >
-            {data.map((_, i) => (
-              <Cell key={i} fill={`url(#dg${i})`}
+            {data.map((d, i) => (
+              <Cell key={d?.name ? `${d.name}-${i}` : `cell-${i}`} fill={`url(#dg${i})`}
                 style={{ filter: `drop-shadow(0 0 6px ${colors[i % colors.length]}80)` }} />
             ))}
           </Pie>

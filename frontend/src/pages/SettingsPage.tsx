@@ -226,9 +226,9 @@ const SettingsPage = () => {
     show_online_status: true,
   });
 
-  useEffect(() => {
-    loadUserData();
-  }, []);
+  // Data loading is handled by the `useEffect` above keyed off `authUser`;
+  // a separate `[]` effect would either fire before `authUser` is ready
+  // (no-op) or duplicate the load. Intentionally omitted.
 
   const loadUserData = async () => {
     try {

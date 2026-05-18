@@ -538,8 +538,8 @@ const VirtualCollaborationPage = () => {
             { label: 'Total Earnings', value: formatCurrency(totalEarnings, selectedCurrency), icon: DollarSign, color: 'text-green-500' },
             { label: 'Platform Fee (10%)', value: formatCurrency(platformFees, selectedCurrency), icon: Percent, color: 'text-red-500', valueColor: 'text-red-600' },
             { label: 'Net Earnings', value: formatCurrency(netEarnings, selectedCurrency), icon: TrendingUp, color: 'text-green-500', valueColor: 'text-green-600' },
-          ].map((stat, i) => (
-            <Card key={i} className="border-2">
+          ].map((stat) => (
+            <Card key={stat.label} className="border-2">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -751,7 +751,7 @@ const VirtualCollaborationPage = () => {
                   <ScrollArea className="max-h-64">
                     <div className="space-y-2">
                       {meetingsForDate.map((meeting, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30 hover:bg-muted/60 transition-colors">
+                        <div key={meeting.id || `${meeting.title}-${meeting.time}-${idx}`} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30 hover:bg-muted/60 transition-colors">
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">{meeting.title}</p>
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">

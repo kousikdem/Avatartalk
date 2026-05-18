@@ -206,7 +206,7 @@ export const FollowUpQuestionsPanel: React.FC<FollowUpQuestionsPanelProps> = ({
             </Label>
             <div className="flex flex-wrap gap-2 mt-2">
               {followUp.choices.map((choice, idx) => (
-                <Badge key={idx} variant="secondary" className="gap-1">
+                <Badge key={`${choice}-${idx}`} variant="secondary" className="gap-1">
                   {choice}
                   <button onClick={() => removeChoice(idx, followUpId)}>
                     <X className="w-3 h-3" />

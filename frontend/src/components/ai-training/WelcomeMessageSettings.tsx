@@ -186,7 +186,7 @@ export const WelcomeMessageSettingsComponent: React.FC<WelcomeMessageSettingsPro
                 ))}
                 {localSettings.customVariables.map((v, idx) => (
                   <Badge
-                    key={idx}
+                    key={`${v.name}-${idx}`}
                     variant="outline"
                     className="cursor-pointer hover:bg-primary/20 transition-colors gap-1"
                     onClick={() => insertVariable(v.name)}
