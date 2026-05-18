@@ -357,45 +357,96 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-white text-black">
-      {/* Hero Section */}
-      <section className="pt-24 pb-16 px-4 bg-gradient-to-br from-blue-50 via-purple-50 to-white">
+      {/* Fixed Header with Pricing Button */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/85 backdrop-blur-md border-b border-gray-100 shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo + Brand */}
+            <Link to="/" className="flex items-center gap-2 group">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-blue-700 flex items-center justify-content-center items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
+                <Sparkles className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                AvatarTalk
+              </span>
+            </Link>
+
+            {/* Right - Nav links + CTA */}
+            <div className="flex items-center gap-2 sm:gap-4">
+              <Link
+                to="/pricing"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors rounded-lg hover:bg-blue-50"
+              >
+                <Tag className="w-4 h-4" />
+                Pricing
+              </Link>
+              <Link
+                to="/pricing"
+                className="sm:hidden inline-flex items-center justify-center w-9 h-9 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                aria-label="Pricing"
+              >
+                <Tag className="w-4 h-4" />
+              </Link>
+              <Button
+                size="sm"
+                variant="outline"
+                className="hidden md:inline-flex border-gray-300 hover:bg-gray-50 hover:border-blue-400 hover:text-blue-600 text-sm"
+                onClick={() => setIsVisitorAuthOpen(true)}
+              >
+                <Users className="w-4 h-4 mr-1.5" />
+                Visit Profile
+              </Button>
+              <Button
+                size="sm"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg transition-all text-sm px-4"
+                onClick={() => setIsMainAuthOpen(true)}
+              >
+                Sign In
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero Section — positioned at eye-level, compact, professional, no slide animation */}
+      <section className="pt-20 md:pt-24 pb-10 md:pb-14 px-4 bg-gradient-to-br from-blue-50 via-purple-50 to-white">
         <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col lg:flex-row items-center lg:items-center gap-8 lg:gap-16">
+        <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8 lg:gap-12">
             {/* Left Side - Text & CTA */}
-            <div className="flex-1 text-center lg:text-left order-1">
-              <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white mb-6 px-4 py-2 text-sm font-medium">
-                <Sparkles className="w-4 h-4 mr-2" />
+            <div className="flex-1 text-center lg:text-left order-1 lg:pt-4">
+              <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white mb-4 px-4 py-1.5 text-xs font-semibold tracking-wider">
+                <Sparkles className="w-3.5 h-3.5 mr-1.5" />
                 INTRODUCING
               </Badge>
-              
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent leading-tight">
+
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent leading-[1.15]">
                 AI Avatar for Bio-Link<br />in 60 Sec
               </h1>
-              
-              <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-xl leading-relaxed">
+
+              <p className="text-base md:text-lg text-gray-600 mb-6 max-w-xl leading-relaxed">
                 Create Smart 🎙️ Talking AI Avatar, 🧠 Intelligent Responses, 🛒 E-Commerce, 🔁 Membership Plans, 🎥 Live Collaboration, 📊 Lead Management, 💰 unlock new earning opportunities 24/7 — all in one smart link.
               </p>
-              
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center mb-8">
-                <Button 
+
+              <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start items-center mb-6">
+                <Button
                   size="lg"
-                  className="gradient-button px-8 py-4 text-lg"
+                  className="gradient-button px-7 py-3.5 text-base"
                   onClick={() => setIsMainAuthOpen(true)}
                 >
                   Free Early Access
                 </Button>
-                
-                <Button 
+
+                <Button
                   size="lg"
                   variant="outline"
-                  className="px-8 py-4 text-lg border-gray-300 hover:bg-gray-50"
+                  className="px-7 py-3.5 text-base border-gray-300 hover:bg-gray-50"
                 >
                   See Example
                 </Button>
               </div>
 
               {/* Trust badges */}
-              <div className="hidden lg:flex items-center gap-6 text-sm text-gray-500 mt-4">
+              <div className="hidden lg:flex items-center gap-6 text-sm text-gray-500 mt-2">
                 <div className="flex items-center gap-2">
                   <Shield className="w-4 h-4 text-green-500" />
                   <span>Free to start</span>
