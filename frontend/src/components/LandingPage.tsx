@@ -364,7 +364,7 @@ const LandingPage = () => {
             {/* Logo + Brand */}
             <Link to="/" className="flex items-center gap-2 group">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-blue-700 flex items-center justify-content-center items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-                <Sparkles className="w-5 h-5 text-white" />
+                <Bot className="w-5 h-5 text-white" />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 AvatarTalk
@@ -389,15 +389,6 @@ const LandingPage = () => {
               </Link>
               <Button
                 size="sm"
-                variant="outline"
-                className="hidden md:inline-flex border-gray-300 hover:bg-gray-50 hover:border-blue-400 hover:text-blue-600 text-sm"
-                onClick={() => setIsVisitorAuthOpen(true)}
-              >
-                <Users className="w-4 h-4 mr-1.5" />
-                Visit Profile
-              </Button>
-              <Button
-                size="sm"
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg transition-all text-sm px-4"
                 onClick={() => setIsMainAuthOpen(true)}
               >
@@ -414,10 +405,12 @@ const LandingPage = () => {
         <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8 lg:gap-12">
             {/* Left Side - Text & CTA */}
             <div className="flex-1 text-center lg:text-left order-1 lg:pt-4">
-              <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white mb-4 px-4 py-1.5 text-xs font-semibold tracking-wider">
-                <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                INTRODUCING
-              </Badge>
+              <div className="flex justify-center lg:justify-start mb-4">
+                <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-1.5 text-xs font-semibold tracking-wider">
+                  <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                  INTRODUCING
+                </Badge>
+              </div>
 
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent leading-[1.15]">
                 AI Avatar for Bio-Link<br />in 60 Sec
@@ -471,7 +464,7 @@ const LandingPage = () => {
                 <div className="relative">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px] shadow-lg">
                     <div className={`w-full h-full rounded-full ${isDemoThemeDark ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center`}>
-                      <span className={`text-lg font-bold ${isDemoThemeDark ? 'text-white' : 'text-gray-900'}`}>DA</span>
+                      <span className={`text-lg font-bold ${isDemoThemeDark ? 'text-white' : 'text-gray-900'}`}>KK</span>
                     </div>
                   </div>
                   <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 ${isDemoThemeDark ? 'border-slate-900' : 'border-white'} shadow-sm`} />
@@ -479,8 +472,8 @@ const LandingPage = () => {
               </div>
               
               <div className="flex-1 min-w-0 text-left ml-3">
-                <h3 className={`text-xl font-bold leading-tight mb-0.5 truncate ${isDemoThemeDark ? 'text-white' : 'text-gray-900'}`}>Demo Avatar</h3>
-                <p className={`text-sm ${isDemoThemeDark ? 'text-slate-400' : 'text-gray-600'}`}>@demouser</p>
+                <h3 className={`text-xl font-bold leading-tight mb-0.5 truncate ${isDemoThemeDark ? 'text-white' : 'text-gray-900'}`}>Kousik Kar</h3>
+                <p className={`text-sm ${isDemoThemeDark ? 'text-slate-400' : 'text-gray-600'}`}>@kousik</p>
               </div>
               
               {/* Right Side: Theme Toggle and Profile Button */}

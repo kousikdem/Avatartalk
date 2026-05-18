@@ -755,6 +755,62 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  // Update document title and meta tags for SEO when profile loads
+  useEffect(() => {
+    if (profile) {
+      const title = `${profile.display_name || profile.username} (@${profile.username}) | AvatarTalk`;
+      const description = profile.bio || `Check out ${profile.display_name || profile.username}'s AI Avatar profile on AvatarTalk. Chat with AI, explore products, and more!`;
+      const url = `https://avatartalk.co/${profile.username}`;
+      const imageUrl = profile.profile_pic_url || profile.avatar_url || 'https://avatartalk.co/og-image.png';
+      
+      // Update document title
+      document.title = title;
+      
+      // Update or create meta tags
+      const updateMetaTag = (name: string, content: string, property = false) => {
+        const attribute = property ? 'property' : 'name';
+        let tag = document.querySelector(`meta[${attribute}="${name}"]`);
+        if (!tag) {
+          tag = document.createElement('meta');
+          tag.setAttribute(attribute, name);
+          document.head.appendChild(tag);
+        }
+        tag.setAttribute('content', content);
+      };
+      
+      // Standard meta tags
+      updateMetaTag('description', description);
+      updateMetaTag('robots', 'index, follow');
+      
+      // Open Graph tags
+      updateMetaTag('og:title', title, true);
+      updateMetaTag('og:description', description, true);
+      updateMetaTag('og:url', url, true);
+      updateMetaTag('og:type', 'profile', true);
+      updateMetaTag('og:image', imageUrl, true);
+      
+      // Twitter Card tags
+      updateMetaTag('twitter:card', 'summary_large_image');
+      updateMetaTag('twitter:title', title);
+      updateMetaTag('twitter:description', description);
+      updateMetaTag('twitter:image', imageUrl);
+      
+      // Canonical URL
+      let canonicalLink = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
+      if (!canonicalLink) {
+        canonicalLink = document.createElement('link');
+        canonicalLink.rel = 'canonical';
+        document.head.appendChild(canonicalLink);
+      }
+      canonicalLink.href = url;
+    }
+    
+    // Cleanup: reset to default when component unmounts
+    return () => {
+      document.title = 'AvatarTalk.Co';
+    };
+  }, [profile]);
+
   const handleFollow = async () => {
     if (!profile || !currentUser) return;
     
