@@ -91,7 +91,7 @@ If Vercel shows login page:
 
 ## Support URLs
 
-- Preview: https://avatartalk-payments.preview.emergentagent.com
+- Preview: https://logo-replace-update.preview.emergentagent.com
 - Vercel: https://avatartalk-p1ia4t6zc-kousik-kars-projects.vercel.app
 - Docs: `/app/DEPLOYMENT.md`
 

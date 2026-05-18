@@ -5,7 +5,7 @@
 
 ## How to create a test account
 
-1. Open the preview URL (e.g. `https://avatartalk-payments.preview.emergentagent.com/`).
+1. Open the preview URL (e.g. `https://logo-replace-update.preview.emergentagent.com/`).
 2. Click **Sign In** → switch to **Sign Up** tab.
 3. Use any disposable email + password (>= 6 chars).
 4. Complete the email verification step if Supabase email confirmation is enabled.
