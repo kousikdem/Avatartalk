@@ -202,6 +202,9 @@ const PublicRoutes = memo(() => (
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
           <Route path="/refund-policy" element={<RefundPolicyPage />} />
           <Route path="/:username" element={<Suspense fallback={<ProfileFallback />}><UsernameRedirect /></Suspense>} />
+          {/* Protected routes — bounce unauthenticated visitors to the home page with auth modal */}
+          <Route path="/settings/*" element={<Navigate to="/?auth=login" replace />} />
+          <Route path="/onboarding" element={<Navigate to="/?auth=login" replace />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

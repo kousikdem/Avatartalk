@@ -46,17 +46,18 @@ interface CurrencyContextType {
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
-// Fallback rates (INR base) - these are approximate
+// Fallback rates (INR base) - rough approximations used only when the live
+// API is unreachable. Live rates auto-refresh hourly from exchangerate-api.
 const FALLBACK_RATES: ExchangeRates = {
   INR: 1,
-  USD: 0.012,
-  EUR: 0.011,
-  GBP: 0.0095,
-  AUD: 0.018,
-  CAD: 0.017,
-  SGD: 0.016,
-  AED: 0.044,
-  JPY: 1.78,
+  USD: 0.0104,
+  EUR: 0.0090,
+  GBP: 0.0078,
+  AUD: 0.016,
+  CAD: 0.015,
+  SGD: 0.014,
+  AED: 0.038,
+  JPY: 1.62,
 };
 
 const STORAGE_KEY = 'user_preferred_currency';
@@ -73,17 +74,19 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  const fetchExchangeRates = useCallback(async () => {
-    // Check cache first
-    const cachedRates = localStorage.getItem(RATES_CACHE_KEY);
-    const cachedTimestamp = localStorage.getItem(RATES_TIMESTAMP_KEY);
-    
-    if (cachedRates && cachedTimestamp) {
-      const timestamp = parseInt(cachedTimestamp);
-      if (Date.now() - timestamp < CACHE_DURATION) {
-        setExchangeRates(JSON.parse(cachedRates));
-        setLastUpdated(new Date(timestamp));
-        return;
+  const fetchExchangeRates = useCallback(async (force = false) => {
+    // Check cache first (skipped when caller explicitly forces a refresh)
+    if (!force) {
+      const cachedRates = localStorage.getItem(RATES_CACHE_KEY);
+      const cachedTimestamp = localStorage.getItem(RATES_TIMESTAMP_KEY);
+
+      if (cachedRates && cachedTimestamp) {
+        const timestamp = parseInt(cachedTimestamp);
+        if (Date.now() - timestamp < CACHE_DURATION) {
+          setExchangeRates(JSON.parse(cachedRates));
+          setLastUpdated(new Date(timestamp));
+          return;
+        }
       }
     }
 
@@ -201,7 +204,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     exchangeRates,
     loading,
     lastUpdated,
-    refreshRates: fetchExchangeRates,
+    refreshRates: () => fetchExchangeRates(true),
     convertFromINR,
     convertToINR,
     convertAnyToINR,

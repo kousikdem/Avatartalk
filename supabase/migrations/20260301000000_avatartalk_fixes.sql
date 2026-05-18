@@ -16,6 +16,46 @@
 ALTER TABLE IF EXISTS public.social_links
   ADD COLUMN IF NOT EXISTS custom_links jsonb DEFAULT '[]'::jsonb;
 
+-- Ensure owners can manage their own social_links rows even after the
+-- public-read migration. (Some older schemas only created a SELECT policy
+-- which left users unable to upsert their own row.)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='social_links') THEN
+    EXECUTE 'ALTER TABLE public.social_links ENABLE ROW LEVEL SECURITY';
+
+    EXECUTE 'DROP POLICY IF EXISTS "Owners can insert their social links" ON public.social_links';
+    EXECUTE $sql$
+      CREATE POLICY "Owners can insert their social links"
+      ON public.social_links
+      FOR INSERT
+      TO authenticated
+      WITH CHECK (auth.uid() = user_id);
+    $sql$;
+
+    EXECUTE 'DROP POLICY IF EXISTS "Owners can update their social links" ON public.social_links';
+    EXECUTE $sql$
+      CREATE POLICY "Owners can update their social links"
+      ON public.social_links
+      FOR UPDATE
+      TO authenticated
+      USING (auth.uid() = user_id)
+      WITH CHECK (auth.uid() = user_id);
+    $sql$;
+
+    EXECUTE 'DROP POLICY IF EXISTS "Owners can delete their social links" ON public.social_links';
+    EXECUTE $sql$
+      CREATE POLICY "Owners can delete their social links"
+      ON public.social_links
+      FOR DELETE
+      TO authenticated
+      USING (auth.uid() = user_id);
+    $sql$;
+
+    EXECUTE 'GRANT INSERT, UPDATE, DELETE ON public.social_links TO authenticated';
+  END IF;
+END $$;
+
 -- ---------------------------------------------------------------------
 -- 2) user_platform_subscriptions: monthly drip columns
 -- ---------------------------------------------------------------------

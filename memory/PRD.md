@@ -104,6 +104,67 @@ VITE_SUPABASE_PROJECT_ID=hnxnvdzrwbtmcohdptfq
 
 ---
 
+## Session: Feb 2026 — Fix Pack #3
+
+### Code-level improvements (NO migration needed)
+
+1. **Protected routes redirect to login**
+   - PublicRoutes now redirects `/settings/*` → `/?auth=login` with auth modal auto-open, instead of showing a generic 404.
+   - `Index.tsx` detects `?auth=login` query param and opens the VisitorAuth modal immediately.
+
+2. **Self-healing monthly token drip**
+   - New hook `useMonthlyTokenDrip` calls the `monthly-token-credit` Supabase Edge Function lazily on dashboard load (max once per hour per browser).
+   - Wired into `Dashboard.tsx` so users on yearly/multi-month plans get their monthly drip even if pg_cron isn't scheduled. Fully idempotent — the underlying SQL function only credits subscriptions whose `next_monthly_credit_at <= now()`.
+
+3. **Force-refresh exchange rates UI**
+   - `useCurrency.fetchExchangeRates(force?: boolean)` now bypasses the 1-hour cache when `force` is true.
+   - `EarningsPage` ships a Refresh-rates button + "updated X minutes ago" indicator next to the currency selector.
+   - Updated `FALLBACK_RATES` to closer-to-current values (USD 0.0104, EUR 0.0090, GBP 0.0078, JPY 1.62) — only used when the live API fails.
+
+4. **Robust social-link save**
+   - `SocialLinksStep` (onboarding popup) and `SocialLinksManager` (settings page) now:
+     - Retry without `custom_links` if the column is missing.
+     - **NEW**: Retry with explicit insert/update if the upsert is blocked by RLS.
+     - Surface precise, actionable error messages (column missing → "apply migration X"; RLS denial → exact guidance).
+
+### Database migration changes
+
+- `supabase/migrations/20260301000000_avatartalk_fixes.sql` now also installs
+  owner INSERT / UPDATE / DELETE policies on `public.social_links` so users
+  can actually upsert their own row after the public-read migration is applied.
+
+### Files touched (this session)
+
+- `frontend/src/App.tsx` — Protected route redirect
+- `frontend/src/pages/Index.tsx` — `?auth=login` handler
+- `frontend/src/hooks/useMonthlyTokenDrip.ts` — NEW
+- `frontend/src/components/Dashboard.tsx` — Drip hook wiring
+- `frontend/src/pages/EarningsPage.tsx` — Refresh-rates UI
+- `frontend/src/hooks/useCurrency.tsx` — Force-refresh + fresher fallback rates
+- `frontend/src/components/SocialLinksManager.tsx` — RLS fallback + precise errors
+- `frontend/src/components/onboarding/steps/SocialLinksStep.tsx` — Same
+- `supabase/migrations/20260301000000_avatartalk_fixes.sql` — Owner RLS policies for social_links
+- `memory/test_credentials.md` — Re-created with current test guidance
+
+### Required user actions (cannot be automated from this container)
+
+1. Apply migration `supabase/migrations/20260301000000_avatartalk_fixes.sql`
+   in Supabase SQL editor (adds `custom_links`, monthly drip columns,
+   `credit_monthly_plan_tokens()` SQL function, **and now owner RLS
+   policies on `social_links`**).
+2. Apply migration `supabase/migrations/20260301000001_public_profiles_and_rls.sql`
+   for public profile + published-products visibility.
+3. Redeploy edge functions: `razorpay-create-order`, `product-checkout`,
+   `platform-plan-checkout`, `platform-plan-verify`,
+   `monthly-token-credit`, `custom-token-purchase`.
+4. (Optional but recommended) Schedule the monthly drip via `pg_cron` —
+   see `/app/AVATARTALK_FIXES_README.md`. The frontend now also calls it
+   lazily, so missing the cron is no longer catastrophic.
+
+
+
+---
+
 ## Code Review Fixes Round 4 (Feb 2026)
 
 ### Issue 1 — Domain redirects to emergentagent.com after login (FIXED)

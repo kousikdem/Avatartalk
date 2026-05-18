@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, ShoppingBag, Video, FileText, Users, TrendingUp, Clock, Globe } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { DollarSign, ShoppingBag, Video, FileText, Users, TrendingUp, Clock, Globe, RefreshCw } from 'lucide-react';
 import { useEarnings } from '@/hooks/useEarnings';
 import { useCurrency } from '@/hooks/useCurrency';
 import { formatDistanceToNow } from 'date-fns';
@@ -16,7 +17,7 @@ const typeLabels: Record<string, { label: string; color: string; icon: any }> = 
 
 const EarningsPage = () => {
   const { earnings, loading } = useEarnings();
-  const { formatPrice, formatInCurrency, getCurrencyInfo } = useCurrency();
+  const { formatPrice, formatInCurrency, getCurrencyInfo, refreshRates, lastUpdated, loading: ratesLoading } = useCurrency();
   const currencyInfo = getCurrencyInfo();
 
   if (loading) {
@@ -40,10 +41,27 @@ const EarningsPage = () => {
       />
 
       {/* Currency conversion info */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
         <Globe className="h-4 w-4" />
-        <span>Totals converted to <strong>{currencyInfo.code}</strong> in real-time.</span>
+        <span>Totals converted to <strong>{currencyInfo.code}</strong> at live rates.</span>
         <CurrencySelector compact />
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => refreshRates()}
+          disabled={ratesLoading}
+          data-testid="refresh-rates-btn"
+          className="h-7 px-2 text-xs"
+          title={lastUpdated ? `Rates updated ${formatDistanceToNow(lastUpdated, { addSuffix: true })}` : 'Refresh exchange rates'}
+        >
+          <RefreshCw className={`h-3.5 w-3.5 mr-1 ${ratesLoading ? 'animate-spin' : ''}`} />
+          {ratesLoading ? 'Refreshing…' : 'Refresh rates'}
+        </Button>
+        {lastUpdated && (
+          <span className="text-[11px] opacity-70">
+            (updated {formatDistanceToNow(lastUpdated, { addSuffix: true })})
+          </span>
+        )}
       </div>
 
       {/* Stats Grid */}

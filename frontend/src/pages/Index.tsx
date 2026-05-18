@@ -13,11 +13,22 @@ export type IndexMode = 'public' | 'authed';
 const Index: React.FC<{ mode?: IndexMode }> = ({ mode }) => {
   const [searchParams] = useSearchParams();
   const view = searchParams.get('view');
+  const authParam = searchParams.get('auth');
   const [showVisitorAuth, setShowVisitorAuth] = useState(false);
+
+  // If user was redirected here from a protected route (?auth=login),
+  // open the auth modal straight away.
+  useEffect(() => {
+    if (mode === 'public' && authParam === 'login') {
+      setShowVisitorAuth(true);
+      localStorage.setItem('hasSeenVisitorAuth', 'true');
+    }
+  }, [authParam, mode]);
 
   // Public-only visitor auth popup (first visit)
   useEffect(() => {
     if (mode !== 'public') return;
+    if (authParam === 'login') return; // already handled above
     if (localStorage.getItem('hasSeenVisitorAuth')) return;
 
     const t = setTimeout(() => {
@@ -26,7 +37,7 @@ const Index: React.FC<{ mode?: IndexMode }> = ({ mode }) => {
     }, 2000);
 
     return () => clearTimeout(t);
-  }, [mode]);
+  }, [mode, authParam]);
 
   // Authenticated mode: never re-check session here (App already decided).
   if (mode === 'authed') {

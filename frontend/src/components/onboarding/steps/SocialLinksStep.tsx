@@ -175,15 +175,47 @@ const SocialLinksStep: React.FC<SocialLinksStepProps> = ({ onComplete }) => {
         }
       }
 
+      // If RLS blocked the upsert, fall back to explicit insert/update so we
+      // can give a precise error if both fail.
+      if (error && /(row-level security|permission denied|policy)/i.test(error.message || '')) {
+        console.warn('Upsert blocked by RLS — retrying with explicit insert/update.');
+        const { data: existing } = await supabase
+          .from('social_links')
+          .select('user_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (existing) {
+          const upd = await supabase
+            .from('social_links')
+            .update(customLinks.length ? fullUpdates : baseUpdates)
+            .eq('user_id', user.id);
+          error = upd.error;
+        } else {
+          const ins = await supabase
+            .from('social_links')
+            .insert(customLinks.length ? fullUpdates : baseUpdates);
+          error = ins.error;
+        }
+      }
+
       if (error) throw error;
 
       setSaved(true);
       toast({ title: 'Social links saved!' });
     } catch (err: any) {
       console.error('Failed to save social links:', err);
+      const raw = err?.message || '';
+      // Translate common Supabase errors into actionable guidance
+      let description = raw || 'Please try again.';
+      if (/row-level security|permission denied|policy/i.test(raw)) {
+        description = 'Permission denied. Your database row-level security policies block this update — please apply migration `20260301000000_avatartalk_fixes.sql` in Supabase SQL editor.';
+      } else if (/custom_links/i.test(raw)) {
+        description = 'Database schema is missing `custom_links` column. Apply the latest migration in Supabase.';
+      }
       toast({
         title: 'Failed to save social links',
-        description: err?.message || 'Please try again.',
+        description,
         variant: 'destructive',
       });
     } finally {

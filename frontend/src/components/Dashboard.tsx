@@ -15,6 +15,7 @@ import DashboardPlanUpgrade from './DashboardPlanUpgrade';
 import { useFollows } from '@/hooks/useFollows';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useMonthlyTokenDrip } from '@/hooks/useMonthlyTokenDrip';
 import TokenDisplay from './TokenDisplay';
 import CurrencySelector from './CurrencySelector';
 import EnhancedCreatePostModal from './EnhancedCreatePostModal';
@@ -34,6 +35,10 @@ const Dashboard = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+
+  // Self-healing monthly token drip — credits multi-month subscriptions whose
+  // next_monthly_credit_at is due. Idempotent, runs at most once per hour.
+  useMonthlyTokenDrip(!!profileData?.id);
 
   // Fetch upcoming collaborations and meetings
   useEffect(() => {
