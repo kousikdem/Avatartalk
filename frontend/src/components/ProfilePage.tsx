@@ -667,18 +667,79 @@ const ProfilePage: React.FC = () => {
       setLoading(true);
       console.log('[ProfilePage] Fetching profile for username:', username);
 
-      // Single RPC call — SECURITY DEFINER bypasses RLS, works for anon + logged-in users
+      // TRY METHOD 1: RPC call (works after migration applied)
       const { data: profileRows, error: profileError } = await supabase
         .rpc('get_public_profile_by_username', { p_username: username });
 
       console.log('[ProfilePage] RPC result:', { profileRows, profileError });
 
+      // If RPC function doesn't exist, fallback to direct table query
+      if (profileError && (profileError.message?.includes('function') || profileError.code === '42883')) {
+        console.warn('[ProfilePage] RPC function not found, using fallback method');
+        
+        // FALLBACK METHOD 2: Direct table query (works without migration)
+        const { data: fallbackProfile, error: fallbackError } = await supabase
+          .from('profiles')
+          .select('id, username, display_name, full_name, bio, profession, avatar_id, avatar_url, profile_pic_url, country, location, website, followers_count, following_count, created_at, updated_at')
+          .eq('username', username)
+          .maybeSingle();
+
+        console.log('[ProfilePage] Fallback result:', { fallbackProfile, fallbackError });
+
+        if (fallbackError) {
+          console.error('[ProfilePage] Fallback error:', fallbackError);
+          throw new Error('Unable to load profile. Please try again later.');
+        }
+
+        if (!fallbackProfile) {
+          console.warn('[ProfilePage] No profile found for username:', username);
+          throw new Error('Profile not found');
+        }
+
+        // Use fallback data
+        const profileId = fallbackProfile.id;
+        console.log('[ProfilePage] Profile loaded via fallback:', { username, profileId });
+
+        // Fetch related data
+        const [statsResult, productsResult, eventsResult, avatarResult, socialLinksResult] =
+          await Promise.all([
+            supabase.from('user_stats').select('*').eq('user_id', profileId).maybeSingle(),
+            supabase.from('products').select('*').eq('user_id', profileId).eq('status', 'published')
+              .order('created_at', { ascending: false }).limit(6),
+            supabase.from('events').select('*').eq('user_id', profileId)
+              .in('status', ['published', 'upcoming']).order('created_at', { ascending: false }).limit(6),
+            supabase.from('avatar_configurations').select('*').eq('user_id', profileId)
+              .eq('is_active', true).maybeSingle(),
+            supabase.from('social_links').select('*').eq('user_id', profileId).maybeSingle(),
+          ]);
+
+        console.log('[ProfilePage] Related data loaded via fallback');
+
+        setProfile(fallbackProfile);
+        setUserStats(statsResult.data || { 
+          total_conversations: 0,
+          followers_count: 0,
+          profile_views: 0,
+          engagement_score: 0
+        });
+        setProducts(productsResult.data || []);
+        setEvents(eventsResult.data || []);
+        setAvatarConfig(avatarResult.data);
+        setSocialLinks(socialLinksResult.data);
+        setLoading(false);
+        
+        // Show info toast about applying migration
+        toast({
+          title: "Profile loaded successfully",
+          description: "For better performance, please apply the database migration. See documentation.",
+          variant: "default",
+        });
+        return;
+      }
+
+      // Handle other RPC errors
       if (profileError) {
         console.error('[ProfilePage] RPC Error:', profileError);
-        // Check if function doesn't exist
-        if (profileError.message?.includes('function') || profileError.code === '42883') {
-          throw new Error('Profile system not configured. Please contact support.');
-        }
         throw profileError;
       }
       
@@ -689,7 +750,7 @@ const ProfilePage: React.FC = () => {
 
       const profileData = profileRows[0];
       const profileId = profileData.id;
-      console.log('[ProfilePage] Profile loaded:', { username, profileId });
+      console.log('[ProfilePage] Profile loaded via RPC:', { username, profileId });
 
       // Fetch all related public data in parallel
       const [statsResult, productsResult, eventsResult, avatarResult, socialLinksResult] =
