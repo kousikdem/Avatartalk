@@ -12,15 +12,38 @@ if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     "Missing Supabase environment variables. Set VITE_SUPABASE_URL and " +
     "VITE_SUPABASE_PUBLISHABLE_KEY in your hosting provider's build env " +
     "(Vercel: Settings → Environment Variables).";
-  // Render an error page directly so users don't see a perpetual loader.
-  if (typeof document !== "undefined") {
-    document.documentElement.innerHTML = `
-      <body style="margin:0;font-family:system-ui,sans-serif;background:#0f172a;color:#f1f5f9;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;text-align:center">
-        <div style="max-width:520px">
-          <h1 style="font-size:20px;margin:0 0 12px">Configuration Error</h1>
-          <p style="font-size:14px;line-height:1.5;color:#cbd5e1">${msg}</p>
-        </div>
-      </body>`;
+  
+  console.error(msg);
+  
+  // Hide loading screen immediately
+  if (typeof window !== 'undefined' && (window as any).__REACT_MOUNTED__) {
+    try {
+      (window as any).__REACT_MOUNTED__();
+    } catch (e) {
+      console.error('Failed to hide loader:', e);
+    }
+  }
+  
+  // Force hide loading screen via DOM
+  if (typeof document !== 'undefined') {
+    setTimeout(() => {
+      const loader = document.getElementById('app-loader');
+      if (loader) {
+        loader.style.display = 'none';
+      }
+      document.body.classList.add('app-loaded');
+    }, 100);
+    
+    // Render error page
+    setTimeout(() => {
+      document.documentElement.innerHTML = `
+        <body style="margin:0;font-family:system-ui,sans-serif;background:#0f172a;color:#f1f5f9;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;text-align:center">
+          <div style="max-width:520px">
+            <h1 style="font-size:20px;margin:0 0 12px">Configuration Error</h1>
+            <p style="font-size:14px;line-height:1.5;color:#cbd5e1">${msg}</p>
+          </div>
+        </body>`;
+    }, 200);
   }
   throw new Error(msg);
 }
