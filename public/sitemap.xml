@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Home Page -->
+  <url>
+    <loc>https://avatartalk.co/</loc>
+    <lastmod>2026-05-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  
+  <!-- Pricing Page -->
+  <url>
+    <loc>https://avatartalk.co/pricing</loc>
+    <lastmod>2026-05-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- Terms Page -->
+  <url>
+    <loc>https://avatartalk.co/terms</loc>
+    <lastmod>2026-05-18</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  
+  <!-- Privacy Policy -->
+  <url>
+    <loc>https://avatartalk.co/privacy-policy</loc>
+    <lastmod>2026-05-18</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  
+  <!-- Refund Policy -->
+  <url>
+    <loc>https://avatartalk.co/refund-policy</loc>
+    <lastmod>2026-05-18</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  
+  <!-- 
+  ══════════════════════════════════════════════════════════════════════
+  DYNAMIC USER PROFILES
+  ══════════════════════════════════════════════════════════════════════
+  
+  User profile URLs follow the pattern: https://avatartalk.co/:username
+  
+  Example profiles:
+  - https://avatartalk.co/kousik
+  - https://avatartalk.co/fosik
+  
+  TODO: Generate this section dynamically using a Supabase Edge Function or server-side script.
+  
+  Implementation suggestions:
+  1. Create a Supabase Edge Function that queries the profiles table:
+     SELECT username, updated_at FROM profiles WHERE username IS NOT NULL ORDER BY updated_at DESC
+  
+  2. Generate XML entries for each profile:
+     <url>
+       <loc>https://avatartalk.co/{username}</loc>
+       <lastmod>{updated_at}</lastmod>
+       <changefreq>weekly</changefreq>
+       <priority>0.6</priority>
+     </url>
+  
+  3. Deploy the function at /sitemap-profiles.xml and reference it here with:
+     <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+       <sitemap>
+         <loc>https://avatartalk.co/sitemap.xml</loc>
+       </sitemap>
+       <sitemap>
+         <loc>https://avatartalk.co/sitemap-profiles.xml</loc>
+       </sitemap>
+     </sitemapindex>
+  
+  For now, manually add high-priority profiles below:
+  ══════════════════════════════════════════════════════════════════════
+  -->
+  
+  <!-- Example User Profiles (Add more as needed) -->
+  <url>
+    <loc>https://avatartalk.co/kousik</loc>
+    <lastmod>2026-05-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://avatartalk.co/fosik</loc>
+    <lastmod>2026-05-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+</urlset>

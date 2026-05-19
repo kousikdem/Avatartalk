@@ -1875,6 +1875,38 @@ const ProfilePage: React.FC = () => {
         </Card>
       </motion.div>
       
+      {/* Join AvatarTalk CTA - Only shown to non-logged-in users */}
+      {!currentUser && (
+        <motion.div
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 1, duration: 0.5 }}
+          className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 sm:pb-6"
+        >
+          <div className="max-w-lg mx-auto">
+            <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 rounded-2xl shadow-2xl backdrop-blur-xl border border-white/20 overflow-hidden">
+              <div className="p-4 sm:p-5 flex items-center justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-white font-bold text-base sm:text-lg mb-1">
+                    Create Your AI Avatar
+                  </h3>
+                  <p className="text-blue-100 text-xs sm:text-sm">
+                    Build your smart bio-link with AI chat, products & more
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => setIsMainAuthOpen(true)}
+                  className="bg-white text-blue-600 hover:bg-blue-50 font-bold shadow-lg hover:shadow-xl transition-all whitespace-nowrap px-4 sm:px-6"
+                >
+                  Join Free
+                </Button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+      
       {/* Enhanced Share Modal */}
       <EnhancedShareModal
         isOpen={isShareModalOpen}
