@@ -665,18 +665,31 @@ const ProfilePage: React.FC = () => {
   const fetchProfile = async () => {
     try {
       setLoading(true);
+      console.log('[ProfilePage] Fetching profile for username:', username);
 
       // Single RPC call — SECURITY DEFINER bypasses RLS, works for anon + logged-in users
       const { data: profileRows, error: profileError } = await supabase
         .rpc('get_public_profile_by_username', { p_username: username });
 
-      if (profileError) throw profileError;
+      console.log('[ProfilePage] RPC result:', { profileRows, profileError });
+
+      if (profileError) {
+        console.error('[ProfilePage] RPC Error:', profileError);
+        // Check if function doesn't exist
+        if (profileError.message?.includes('function') || profileError.code === '42883') {
+          throw new Error('Profile system not configured. Please contact support.');
+        }
+        throw profileError;
+      }
+      
       if (!profileRows || profileRows.length === 0) {
+        console.warn('[ProfilePage] No profile found for username:', username);
         throw new Error('Profile not found');
       }
 
       const profileData = profileRows[0];
       const profileId = profileData.id;
+      console.log('[ProfilePage] Profile loaded:', { username, profileId });
 
       // Fetch all related public data in parallel
       const [statsResult, productsResult, eventsResult, avatarResult, socialLinksResult] =
@@ -691,6 +704,8 @@ const ProfilePage: React.FC = () => {
           supabase.from('social_links').select('*').eq('user_id', profileId).maybeSingle(),
         ]);
 
+      console.log('[ProfilePage] Related data loaded');
+
       setProfile(profileData);
       setUserStats(statsResult.data || { 
         total_conversations: 0,
@@ -704,7 +719,7 @@ const ProfilePage: React.FC = () => {
       setSocialLinks(socialLinksResult.data);
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('[ProfilePage] Error fetching profile:', error);
       toast({
         title: "Error loading profile",
         description: error instanceof Error ? error.message : "Failed to load user profile",
