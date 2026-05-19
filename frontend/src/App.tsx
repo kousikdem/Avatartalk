@@ -44,6 +44,7 @@ const PricingPage = lazy(() => import("./components/PricingPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
 const RefundPolicyPage = lazy(() => import("./pages/RefundPolicyPage"));
+const DatabaseTestPage = lazy(() => import("./components/DatabaseTestPage"));
 
 // Stable QueryClient outside component — never recreated
 const queryClient = new QueryClient({
@@ -201,6 +202,7 @@ const PublicRoutes = memo(() => (
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
           <Route path="/refund-policy" element={<RefundPolicyPage />} />
+          <Route path="/db-test" element={<DatabaseTestPage />} />
           <Route path="/:username" element={<Suspense fallback={<ProfileFallback />}><UsernameRedirect /></Suspense>} />
           {/* Protected routes — bounce unauthenticated visitors to the home page with auth modal */}
           <Route path="/settings/*" element={<Navigate to="/?auth=login" replace />} />
