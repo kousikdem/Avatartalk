@@ -554,20 +554,6 @@ const ProfilePage: React.FC = () => {
   useEffect(() => {
     if (username) {
       fetchProfile();
-      
-      // Show auth popup for unauthenticated users
-      const checkAndShowVisitorAuth = async () => {
-        const { data } = await supabase.auth.getUser();
-        
-        // Show popup for users who aren't authenticated
-        if (!data.user) {
-          setTimeout(() => {
-            setIsVisitorAuthOpen(true);
-          }, 1000);
-        }
-      };
-      
-      checkAndShowVisitorAuth();
     }
   }, [username]);
 
@@ -678,57 +664,33 @@ const ProfilePage: React.FC = () => {
 
   const fetchProfile = async () => {
     try {
-      console.log('Fetching profile for username:', username);
-      
-      // Step 1: Get profile by username
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('username', username)
-        .maybeSingle();
-      
-      console.log('Profile query result:', { profileData, profileError });
-      
-      if (profileError) {
-        console.error('Profile fetch error:', profileError);
-        throw profileError;
+      setLoading(true);
+
+      // Single RPC call — SECURITY DEFINER bypasses RLS, works for anon + logged-in users
+      const { data: profileRows, error: profileError } = await supabase
+        .rpc('get_public_profile_by_username', { p_username: username });
+
+      if (profileError) throw profileError;
+      if (!profileRows || profileRows.length === 0) {
+        throw new Error('Profile not found');
       }
-      
-      if (!profileData) {
-        console.error('No profile found for username:', username);
-        toast({
-          title: "Profile not found",
-          description: `No user profile found with username: ${username}`,
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-      
+
+      const profileData = profileRows[0];
       const profileId = profileData.id;
-      console.log('Found profile ID:', profileId);
-      
-      // Step 2: Get current user for comparison
-      const { data: { user: currentUserData } } = await supabase.auth.getUser();
-      
-      // Step 3: Fetch all related data in parallel
-      const [statsResult, productsResult, eventsResult, avatarResult, socialLinksResult] = await Promise.all([
-        supabase.from('user_stats').select('*').eq('user_id', profileId).maybeSingle(),
-        supabase.from('products').select('*').eq('user_id', profileId).eq('status', 'published').order('created_at', { ascending: false }).limit(6),
-        supabase.from('events').select('*').eq('user_id', profileId).in('status', ['published', 'upcoming']).order('created_at', { ascending: false }).limit(6),
-        supabase.from('avatar_configurations').select('*').eq('user_id', profileId).eq('is_active', true).maybeSingle(),
-        supabase.from('social_links').select('*').eq('user_id', profileId).maybeSingle()
-      ]);
-      
-      console.log('Related data fetched:', {
-        stats: statsResult.data,
-        products: productsResult.data?.length,
-        events: eventsResult.data?.length,
-        avatar: avatarResult.data ? 'found' : 'none',
-        socialLinks: socialLinksResult.data ? 'found' : 'none'
-      });
-      
-      // Set all state at once to minimize re-renders
+
+      // Fetch all related public data in parallel
+      const [statsResult, productsResult, eventsResult, avatarResult, socialLinksResult] =
+        await Promise.all([
+          supabase.from('user_stats').select('*').eq('user_id', profileId).maybeSingle(),
+          supabase.from('products').select('*').eq('user_id', profileId).eq('status', 'published')
+            .order('created_at', { ascending: false }).limit(6),
+          supabase.from('events').select('*').eq('user_id', profileId)
+            .in('status', ['published', 'upcoming']).order('created_at', { ascending: false }).limit(6),
+          supabase.from('avatar_configurations').select('*').eq('user_id', profileId)
+            .eq('is_active', true).maybeSingle(),
+          supabase.from('social_links').select('*').eq('user_id', profileId).maybeSingle(),
+        ]);
+
       setProfile(profileData);
       setUserStats(statsResult.data || { 
         total_conversations: 0,
@@ -741,9 +703,6 @@ const ProfilePage: React.FC = () => {
       setAvatarConfig(avatarResult.data);
       setSocialLinks(socialLinksResult.data);
       setLoading(false);
-      
-      console.log('Profile loaded successfully');
-
     } catch (error) {
       console.error('Error fetching profile:', error);
       toast({

@@ -32,6 +32,7 @@ const BuyTokensPage: React.FC = () => {
   const [customPriceInput, setCustomPriceInput] = useState<string>('');
   const [customTokenInput, setCustomTokenInput] = useState<string>('');
   const [processing, setProcessing] = useState(false);
+  const [razorpayReady, setRazorpayReady] = useState(false);
   const [activeTab, setActiveTab] = useState('buy');
   const [userSearch, setUserSearch] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -47,12 +48,15 @@ const BuyTokensPage: React.FC = () => {
   const MIN_TOKENS = useMemo(() => Math.floor(MIN_AMOUNT_INR * tokensPerRupee), [tokensPerRupee]);
 
   useEffect(() => {
-    if (!document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]')) {
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.async = true;
-      document.body.appendChild(script);
-    }
+    if (window.Razorpay) { setRazorpayReady(true); return; }
+    const existing = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+    if (existing) { existing.addEventListener('load', () => setRazorpayReady(true)); return; }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => setRazorpayReady(true);
+    script.onerror = () => console.error('Failed to load Razorpay');
+    document.body.appendChild(script);
   }, []);
 
   const priceInINR = useMemo(() => (tokenAmount / 1000000) * pricePerMillion, [tokenAmount, pricePerMillion]);
@@ -100,15 +104,16 @@ const BuyTokensPage: React.FC = () => {
       }
 
       const { data: orderData, error: orderError } = await supabase.functions.invoke('custom-token-purchase', {
-        body: { tokens: tokenAmount, amount_inr: priceInINR, user_id: user.id }
+        body: { tokens: tokenAmount, amount_inr: priceInINR }
       });
 
       if (orderError || !orderData?.success) {
         const reason = await extractFunctionsError(orderError, orderData);
         throw new Error(reason);
       }
-      if (!window.Razorpay) {
-        toast({ title: "Error", description: "Payment system not loaded", variant: "destructive" });
+      
+      if (!razorpayReady || !window.Razorpay) {
+        toast({ title: "Loading payment system...", description: "Please wait a moment and try again." });
         setProcessing(false);
         return;
       }
@@ -122,7 +127,7 @@ const BuyTokensPage: React.FC = () => {
         order_id: orderData.order_id,
         handler: async (response: any) => {
           const { data: verifyData, error: verifyError } = await supabase.functions.invoke('custom-token-verify', {
-            body: { razorpay_payment_id: response.razorpay_payment_id, razorpay_order_id: response.razorpay_order_id, razorpay_signature: response.razorpay_signature, user_id: user.id, purchase_id: orderData.purchase_id }
+            body: { razorpay_payment_id: response.razorpay_payment_id, razorpay_order_id: response.razorpay_order_id, razorpay_signature: response.razorpay_signature, purchase_id: orderData.purchase_id }
           });
           if (!verifyError && verifyData?.success) {
             toast({ title: "Success!", description: `${formatTokens(verifyData.tokens_credited)} tokens added` });

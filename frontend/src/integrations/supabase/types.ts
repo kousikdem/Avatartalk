@@ -5122,6 +5122,27 @@ export type Database = {
           username: string
         }[]
       }
+      get_public_profile_by_username: {
+        Args: { p_username: string }
+        Returns: {
+          id: string
+          username: string
+          display_name: string
+          full_name: string
+          bio: string
+          profession: string
+          avatar_id: string
+          avatar_url: string
+          profile_pic_url: string
+          country: string
+          location: string
+          website: string
+          followers_count: number
+          following_count: number
+          created_at: string
+          updated_at: string
+        }[]
+      }
       get_safe_profile_fields: {
         Args: { profile_id: string }
         Returns: {

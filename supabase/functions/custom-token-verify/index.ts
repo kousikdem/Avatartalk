@@ -6,173 +6,134 @@ const corsHeaders = {
 };
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    const { 
-      razorpay_payment_id, 
-      razorpay_order_id, 
-      razorpay_signature,
-      user_id,
-      purchase_id 
-    } = await req.json();
-
-    if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature || !user_id) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Missing required fields'
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    // ── Auth ──────────────────────────────────────────────────────────
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return Response.json({ success: false, error: 'Authentication required' },
+        { status: 401, headers: corsHeaders });
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseUrl        = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey    = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
+    const razorpayKeySecret  = Deno.env.get('RAZORPAY_KEY_SECRET')!;
 
     if (!razorpayKeySecret) {
-      console.error('Razorpay secret not configured');
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Payment verification not configured'
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      return Response.json({ success: false, error: 'Payment verification not configured' },
+        { status: 500, headers: corsHeaders });
     }
 
-    // Verify signature
-    const payload = `${razorpay_order_id}|${razorpay_payment_id}`;
-    const encoder = new TextEncoder();
-    const keyData = encoder.encode(razorpayKeySecret);
-    const messageData = encoder.encode(payload);
-    
+    const anonClient = createClient(supabaseUrl, supabaseAnonKey,
+      { global: { headers: { Authorization: authHeader } } });
+    const { data: { user }, error: authError } = await anonClient.auth.getUser();
+    if (authError || !user) {
+      return Response.json({ success: false, error: 'Invalid token' },
+        { status: 401, headers: corsHeaders });
+    }
+
+    const userId = user.id;
+
+    // ── Validate body ─────────────────────────────────────────────────
+    const { razorpay_payment_id, razorpay_order_id, razorpay_signature, purchase_id } =
+      await req.json();
+
+    if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
+      return Response.json({ success: false, error: 'Missing payment fields' },
+        { status: 400, headers: corsHeaders });
+    }
+
+    // ── Verify Razorpay signature ─────────────────────────────────────
+    const payload   = `${razorpay_order_id}|${razorpay_payment_id}`;
+    const encoder   = new TextEncoder();
     const cryptoKey = await crypto.subtle.importKey(
-      "raw",
-      keyData,
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign"]
+      'raw', encoder.encode(razorpayKeySecret),
+      { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
     );
-    
-    const signatureBuffer = await crypto.subtle.sign("HMAC", cryptoKey, messageData);
-    const expectedSignature = Array.from(new Uint8Array(signatureBuffer))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
+    const sigBuf = await crypto.subtle.sign('HMAC', cryptoKey, encoder.encode(payload));
+    const expectedSig = Array.from(new Uint8Array(sigBuf))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
 
-    const providedSignature = String(razorpay_signature).trim().toLowerCase();
-
-    if (expectedSignature !== providedSignature) {
-      console.error('Signature verification failed');
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Payment verification failed - invalid signature'
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    if (expectedSig !== razorpay_signature.trim().toLowerCase()) {
+      return Response.json({ success: false, error: 'Invalid payment signature' },
+        { status: 400, headers: corsHeaders });
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Find the purchase record
-    const { data: purchaseData, error: purchaseError } = await supabase
+    // ── Find purchase record ──────────────────────────────────────────
+    const { data: purchase, error: purchaseError } = await supabase
       .from('custom_token_purchases')
       .select('*')
       .eq('razorpay_order_id', razorpay_order_id)
-      .eq('user_id', user_id)
-      .single();
+      .eq('user_id', userId)  // MUST match JWT user
+      .maybeSingle();
 
-    if (purchaseError || !purchaseData) {
-      console.error('Purchase record not found:', purchaseError);
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Purchase record not found'
-      }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    if (purchaseError || !purchase) {
+      // Fallback: find by order_id only (for backward compat)
+      const { data: fallback } = await supabase
+        .from('custom_token_purchases')
+        .select('*')
+        .eq('razorpay_order_id', razorpay_order_id)
+        .maybeSingle();
+      if (!fallback) {
+        return Response.json({ success: false, error: 'Purchase record not found' },
+          { status: 404, headers: corsHeaders });
+      }
     }
 
-    // Check if already processed (idempotency)
-    if (purchaseData.status === 'completed') {
-      console.log('Purchase already processed:', razorpay_order_id);
-      return new Response(JSON.stringify({
-        success: true,
-        tokens_credited: purchaseData.tokens_requested,
-        message: 'Purchase already processed'
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    const purchaseRecord = purchase;
+
+    // ── Idempotency check ─────────────────────────────────────────────
+    if (purchaseRecord?.status === 'completed') {
+      return Response.json({
+        success: true, tokens_credited: purchaseRecord.tokens_requested,
+        message: 'Already processed'
+      }, { headers: corsHeaders });
     }
 
-    const tokensToCredit = purchaseData.tokens_requested;
+    const tokensToCredit = purchaseRecord?.tokens_requested ?? 0;
 
-    // Credit tokens to user using the database function
+    // ── Credit tokens atomically ──────────────────────────────────────
     const { data: creditResult, error: creditError } = await supabase
       .rpc('credit_user_tokens', {
-        p_user_id: user_id,
+        p_user_id: userId,
         p_tokens: tokensToCredit,
-        p_reason: 'topup'
+        p_reason: 'topup',
       });
 
     if (creditError || !creditResult?.success) {
-      console.error('Failed to credit tokens:', creditError || creditResult?.error);
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Failed to credit tokens'
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      console.error('Failed to credit tokens:', creditError ?? creditResult?.error);
+      return Response.json({ success: false, error: 'Failed to credit tokens' },
+        { status: 500, headers: corsHeaders });
     }
 
-    // Update purchase record
-    const { error: updateError } = await supabase
-      .from('custom_token_purchases')
-      .update({
-        razorpay_payment_id,
-        razorpay_signature,
-        status: 'completed',
-        completed_at: new Date().toISOString()
-      })
-      .eq('id', purchaseData.id);
+    // ── Mark purchase complete ────────────────────────────────────────
+    await supabase.from('custom_token_purchases')
+      .update({ razorpay_payment_id, razorpay_signature, status: 'completed', completed_at: new Date().toISOString() })
+      .eq('razorpay_order_id', razorpay_order_id);
 
-    if (updateError) {
-      console.error('Failed to update purchase record:', updateError);
-    }
-
-    // Send notification to user
+    // ── Notify user ───────────────────────────────────────────────────
     await supabase.from('notifications').insert({
-      user_id: user_id,
+      user_id: userId,
       type: 'system',
       title: '💰 Tokens Purchased!',
       message: `${tokensToCredit.toLocaleString()} tokens have been added to your account.`,
-      data: { tokens_credited: tokensToCredit, new_balance: creditResult.balance }
-    });
+      data: { tokens_credited: tokensToCredit, new_balance: creditResult.balance },
+    }).then(() => {}).catch(() => {}); // Non-fatal
 
-    console.log(`Custom token purchase verified: ${tokensToCredit} tokens credited to user ${user_id}`);
-
-    return new Response(JSON.stringify({
+    return Response.json({
       success: true,
       tokens_credited: tokensToCredit,
       new_balance: creditResult.balance,
-      message: 'Tokens credited successfully'
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+      message: 'Tokens credited successfully',
+    }, { headers: corsHeaders });
 
   } catch (error) {
-    console.error('Error in custom-token-verify:', error);
-    return new Response(JSON.stringify({
-      success: false,
-      error: 'Internal server error'
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    console.error('custom-token-verify error:', error);
+    return Response.json({ success: false, error: 'Internal server error' },
+      { status: 500, headers: corsHeaders });
   }
 });
