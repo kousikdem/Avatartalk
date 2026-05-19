@@ -1351,7 +1351,7 @@ const ProfilePage: React.FC = () => {
                       <div className={`w-full h-full rounded-full ${isDarkTheme ? 'bg-slate-800' : 'bg-white'} flex items-center justify-center overflow-hidden`}>
                         {currentUser?.user_metadata?.avatar_url ? (
                           <img 
-                            src={currentUser.user_metadata.avatar_url} 
+                            src={currentUser?.user_metadata?.avatar_url || ''} 
                             alt="Your Profile"
                             className="w-full h-full object-cover"
                           />
@@ -1556,7 +1556,7 @@ const ProfilePage: React.FC = () => {
                              ) : (
                                currentUser?.user_metadata?.avatar_url ? (
                                  <img 
-                                   src={currentUser.user_metadata.avatar_url} 
+                                   src={currentUser?.user_metadata?.avatar_url || ''} 
                                    alt={message.senderName}
                                    className="w-full h-full object-cover"
                                  />
