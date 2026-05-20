@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth';
 import { supabase } from '@/integrations/supabase/client';
-import { extractFunctionsError } from '@/lib/supabase-errors';
+import { callPaymentApi } from '@/lib/payment-api';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface PricingStepProps {
@@ -144,14 +144,14 @@ const PricingStep: React.FC<PricingStepProps> = ({ onComplete }) => {
       const token = sessionData?.session?.access_token;
       if (!token) throw new Error('Not authenticated');
 
-      const response = await supabase.functions.invoke('platform-plan-checkout', {
-        body: { planId: plan.id, billingCycleMonths: months, currency },
+      const orderData = await callPaymentApi<any>('/api/payment/plan-checkout/create-order', {
+        planId: plan.id,
+        billingCycleMonths: months,
+        currency,
       });
 
-      const orderData = response.data;
-      if (response.error || !orderData?.orderId) {
-        const reason = await extractFunctionsError(response.error, orderData);
-        throw new Error(reason);
+      if (!orderData?.orderId) {
+        throw new Error('Failed to create order');
       }
 
       const options = {
@@ -163,20 +163,16 @@ const PricingStep: React.FC<PricingStepProps> = ({ onComplete }) => {
         order_id: orderData.orderId,
         handler: async (rzpResponse: any) => {
           try {
-            const verifyRes = await supabase.functions.invoke('platform-plan-verify', {
-              body: {
-                razorpay_order_id: rzpResponse.razorpay_order_id,
-                razorpay_payment_id: rzpResponse.razorpay_payment_id,
-                razorpay_signature: rzpResponse.razorpay_signature,
-                planId: plan.id,
-                billingCycleMonths: months,
-              },
+            const verifyData = await callPaymentApi<any>('/api/payment/plan-checkout/verify', {
+              razorpay_order_id: rzpResponse.razorpay_order_id,
+              razorpay_payment_id: rzpResponse.razorpay_payment_id,
+              razorpay_signature: rzpResponse.razorpay_signature,
+              planId: plan.id,
+              billingCycleMonths: months,
             });
 
-            const verifyData = verifyRes.data;
-            if (verifyRes.error || !verifyData?.success) {
-              const reason = await extractFunctionsError(verifyRes.error, verifyData);
-              throw new Error(reason);
+            if (!verifyData?.success) {
+              throw new Error(verifyData?.message || 'Verification failed');
             }
 
             toast({ title: `${plan.plan_name} Plan Activated!`, description: `Active until ${new Date(verifyData.expiresAt).toLocaleDateString()}` });
