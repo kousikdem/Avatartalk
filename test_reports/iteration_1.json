@@ -1,0 +1,48 @@
+{
+  "summary": "Backend-only testing of Razorpay payment routes after migration from Supabase Edge Functions to FastAPI. All 19 pytest tests pass: health check, auth gating (401 without/with-invalid bearer on all 4 endpoints), token-purchase create-order validations (tokens-too-low/high, amount-below-min, price-mismatch, valid create), token-purchase verify (invalid signature 400, valid HMAC signature credits tokens via credit_user_tokens RPC, idempotent 'already processed' on replay), and plan-checkout (404 for unknown plan UUID, 400 for invalid signature). Razorpay test order was successfully created against rzp_test_SpjjvTzWU5fO6F (amount 100000 paise = INR 1000 for 1M tokens). Signature verification HMAC math confirmed correct end-to-end (synthetic payment_id with real HMAC succeeded). credit_user_tokens RPC working - tokens_credited > 0 returned on verify.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "/api/payment/* (all four)",
+        "issue": "Because auth is checked inside the handler body (not via FastAPI Depends/Security), requests with empty/invalid JSON body return 422 (Pydantic validation) before reaching the 401 auth check. Real frontend clients always send valid bodies so they correctly receive 401, but unauthenticated probing/fuzzing will see 422 instead of 401. Consider extracting _get_user_from_token into a FastAPI dependency so auth runs first."
+      },
+      {
+        "endpoint": "/api/payment/token-purchase/create-order",
+        "issue": "If the custom_token_purchases insert silently fails (caught & logged), the endpoint still returns success with purchase_id=null. Verify path then 404s with 'Purchase record not found'. In tests the insert succeeded, but this swallowed error could surface in production. Consider failing the request when the insert fails."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_payment_routes.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(Optional) Convert _get_user_from_token into a FastAPI dependency so 401 fires before Pydantic 422 on bad bodies.",
+    "(Optional) Surface DB insert failures in /token-purchase/create-order instead of returning purchase_id=null and silently logging."
+  ],
+  "critical_code_review_comments": [
+    "auth is performed inside handler, not as a FastAPI dependency - leads to 422 before 401 on malformed requests.",
+    "custom_token_purchases insert errors are swallowed (try/except Exception, log only) - downstream verify will 404 with confusing 'Purchase record not found'.",
+    "_resolve_plan_price falls through to plan.price_inr for any months value not in {3,6,12} including 1 - intended behaviour but undocumented.",
+    "PLAN_TOKENS_PER_MONTH is hardcoded by plan_key; if a new plan_key is added in DB it silently falls back to plan.ai_tokens_monthly. OK but worth a code comment.",
+    "razorpay_client is module-level (created at import). RAZORPAY_KEY_ID/_SECRET are required via os.environ[...] - app will crash at import if missing (good fail-fast).",
+    "/api/payment/token-purchase/verify accepts any payment_id text - relies entirely on HMAC. This matches Razorpay's documented webhook verification pattern and is correct."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_payment_routes.py (new)",
+    "/app/backend/tests/__init__.py (new, empty)"
+  ],
+  "success_rate": {"backend": "100% (19/19)", "frontend": "N/A - not tested"},
+  "test_credentials": "Fresh Supabase user signed up per-run via /auth/v1/signup with email e2e+<hex>@avatartalk-test.io. Email confirmation is currently DISABLED (signup returns access_token directly).",
+  "seed_data_creation": "Each test run creates 1 Supabase auth user + 1 custom_token_purchases row (status=completed) + tokens credited via credit_user_tokens RPC. No cleanup performed (test data is namespaced by random email).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Run `pytest /app/backend/tests/test_payment_routes.py -v`. The signup fixture is session-scoped; if Supabase later enforces email confirmation, the fixture will pytest.skip with a clear message. Real Razorpay orders are created on each run (test mode, no charge). To test the plan-checkout happy path, seed a row in platform_pricing_plans and pass its id as planId with billingCycleMonths in {1,3,6,12}.",
+  "rca of the issue": "Original 'failed to create payment order' was because frontend was calling Supabase Edge Functions that were never deployed (no Supabase CLI in container). Migration to FastAPI /api/payment/* routes is now functional end-to-end: Razorpay order creation returns valid order_id, HMAC verification accepts correct signatures and rejects invalid ones, credit_user_tokens RPC credits tokens, and idempotency replay returns 'Already processed'."
+}

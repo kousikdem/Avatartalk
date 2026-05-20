@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { extractFunctionsError } from '@/lib/supabase-errors';
+import { callPaymentApi } from '@/lib/payment-api';
 import { useTokens } from '@/hooks/useTokens';
 import { useTokenPrice } from '@/hooks/useTokenPrice';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -103,14 +103,10 @@ const BuyTokensPage: React.FC = () => {
         return;
       }
 
-      const { data: orderData, error: orderError } = await supabase.functions.invoke('custom-token-purchase', {
-        body: { tokens: tokenAmount, amount_inr: priceInINR }
+      const orderData = await callPaymentApi<any>('/api/payment/token-purchase/create-order', {
+        tokens: tokenAmount,
+        amount_inr: priceInINR,
       });
-
-      if (orderError || !orderData?.success) {
-        const reason = await extractFunctionsError(orderError, orderData);
-        throw new Error(reason);
-      }
       
       if (!razorpayReady || !window.Razorpay) {
         toast({ title: "Loading payment system...", description: "Please wait a moment and try again." });
@@ -126,15 +122,17 @@ const BuyTokensPage: React.FC = () => {
         description: `${formatTokens(tokenAmount)} AI Tokens`,
         order_id: orderData.order_id,
         handler: async (response: any) => {
-          const { data: verifyData, error: verifyError } = await supabase.functions.invoke('custom-token-verify', {
-            body: { razorpay_payment_id: response.razorpay_payment_id, razorpay_order_id: response.razorpay_order_id, razorpay_signature: response.razorpay_signature, purchase_id: orderData.purchase_id }
-          });
-          if (!verifyError && verifyData?.success) {
+          try {
+            const verifyData = await callPaymentApi<any>('/api/payment/token-purchase/verify', {
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+              purchase_id: orderData.purchase_id,
+            });
             toast({ title: "Success!", description: `${formatTokens(verifyData.tokens_credited)} tokens added` });
             await refetch();
-          } else {
-            const reason = await extractFunctionsError(verifyError, verifyData);
-            toast({ title: "Verification Failed", description: reason || "Please contact support if amount was debited.", variant: "destructive" });
+          } catch (verr: any) {
+            toast({ title: "Verification Failed", description: verr?.message || "Please contact support if amount was debited.", variant: "destructive" });
           }
           setProcessing(false);
         },

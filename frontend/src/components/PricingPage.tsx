@@ -15,9 +15,9 @@ import {
 } from 'lucide-react';
 import { usePlatformPricingPlans, useUserPlatformSubscription, PlatformFeature } from '@/hooks/usePlatformPricingPlans';
 import { supabase } from '@/integrations/supabase/client';
+import { callPaymentApi } from '@/lib/payment-api';
 import { useToast } from '@/hooks/use-toast';
 import { useTokenPrice } from '@/hooks/useTokenPrice';
-import { extractFunctionsError } from '@/lib/supabase-errors';
 import MainAuth from './MainAuth';
 import ShareModal from './ShareModal';
 import {
@@ -116,14 +116,10 @@ const TokenPurchaseAddon = ({ currSymbol }: { currSymbol: string }) => {
         return;
       }
 
-      const { data: orderData, error: orderError } = await supabase.functions.invoke('custom-token-purchase', {
-        body: { tokens: tokenAmount, amount_inr: priceInINR, user_id: user.id }
+      const orderData = await callPaymentApi<any>('/api/payment/token-purchase/create-order', {
+        tokens: tokenAmount,
+        amount_inr: priceInINR,
       });
-
-      if (orderError || !orderData?.success) {
-        const reason = await extractFunctionsError(orderError, orderData);
-        throw new Error(reason);
-      }
       
       if (!window.Razorpay) {
         toast({ title: "Error", description: "Payment system not loaded", variant: "destructive" });
@@ -139,20 +135,16 @@ const TokenPurchaseAddon = ({ currSymbol }: { currSymbol: string }) => {
         description: `${formatTokens(tokenAmount)} AI Tokens`,
         order_id: orderData.order_id,
         handler: async (response: any) => {
-          const { data: verifyData, error: verifyError } = await supabase.functions.invoke('custom-token-verify', {
-            body: { 
-              razorpay_payment_id: response.razorpay_payment_id, 
-              razorpay_order_id: response.razorpay_order_id, 
-              razorpay_signature: response.razorpay_signature, 
-              user_id: user.id, 
-              purchase_id: orderData.purchase_id 
-            }
-          });
-          if (!verifyError && verifyData?.success) {
+          try {
+            const verifyData = await callPaymentApi<any>('/api/payment/token-purchase/verify', {
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+              purchase_id: orderData.purchase_id,
+            });
             toast({ title: "Success!", description: `${formatTokens(verifyData.tokens_credited)} tokens added to your account!` });
-          } else {
-            const reason = await extractFunctionsError(verifyError, verifyData);
-            toast({ title: "Verification Failed", description: reason || 'Please contact support.', variant: "destructive" });
+          } catch (verr: any) {
+            toast({ title: "Verification Failed", description: verr?.message || 'Please contact support.', variant: "destructive" });
           }
           setProcessing(false);
         },
@@ -375,17 +367,14 @@ const PricingPage = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase.functions.invoke('platform-plan-checkout', {
-        body: {
-          planId,
-          billingCycleMonths: billingCycle,
-          currency: selectedCurrency === 'INR' ? 'INR' : 'USD',
-        },
+      const data = await callPaymentApi<any>('/api/payment/plan-checkout/create-order', {
+        planId,
+        billingCycleMonths: billingCycle,
+        currency: selectedCurrency === 'INR' ? 'INR' : 'USD',
       });
 
-      if (error || !data?.orderId) {
-        const reason = await extractFunctionsError(error, data);
-        throw new Error(reason);
+      if (!data?.orderId) {
+        throw new Error('Failed to create order');
       }
 
       const options = {
@@ -397,19 +386,16 @@ const PricingPage = () => {
         order_id: data.orderId,
         handler: async (response: any) => {
           try {
-            const { data: verifyData, error: verifyError } = await supabase.functions.invoke('platform-plan-verify', {
-              body: {
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                planId,
-                billingCycleMonths: billingCycle,
-              },
+            const verifyData = await callPaymentApi<any>('/api/payment/plan-checkout/verify', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              planId,
+              billingCycleMonths: billingCycle,
             });
 
-            if (verifyError || !verifyData?.success) {
-              const reason = await extractFunctionsError(verifyError, verifyData);
-              throw new Error(reason);
+            if (!verifyData?.success) {
+              throw new Error(verifyData?.message || 'Verification failed');
             }
 
             toast({

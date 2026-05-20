@@ -125,6 +125,10 @@ async def get_status_checks(limit: int = 50, skip: int = 0, _user: dict = Depend
 # Include the router in the main app
 app.include_router(api_router)
 
+# Razorpay payment routes (token purchase + plan checkout)
+from payment_routes import router as payment_router  # noqa: E402
+app.include_router(payment_router)
+
 # -------------------------------------------------------
 # CORS — require explicit configuration; no wildcard default
 # -------------------------------------------------------
