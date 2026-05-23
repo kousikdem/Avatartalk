@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { callPaymentApi } from '@/lib/payment-api';
 
 interface TokenPackage {
   id: string;
@@ -142,25 +143,22 @@ export const useTokens = () => {
         return null;
       }
 
-      // Create Razorpay order
-      const { data: orderData, error: orderError } = await supabase.functions.invoke('token-purchase-create-order', {
-        body: {
-          packageId,
-          userId: user.id
-        }
+      // Create Razorpay order via FastAPI server-side endpoint
+      const totalTokens = selectedPackage.tokens + selectedPackage.bonus_tokens;
+      const orderData = await callPaymentApi<any>('/api/payment/token-purchase/create-order', {
+        tokens: totalTokens,
+        amount_inr: selectedPackage.price_inr,
+        package_id: packageId,
       });
-
-      if (orderError || !orderData?.success) {
-        throw new Error(orderData?.error || 'Failed to create order');
-      }
 
       return {
         orderId: orderData.order_id,
         amount: orderData.amount,
         currency: orderData.currency,
         keyId: orderData.key_id,
+        purchaseId: orderData.purchase_id,
         packageId,
-        tokens: selectedPackage.tokens + selectedPackage.bonus_tokens
+        tokens: totalTokens,
       };
     } catch (error) {
       console.error('Error creating token purchase:', error);
@@ -177,25 +175,16 @@ export const useTokens = () => {
     razorpayPaymentId: string,
     razorpayOrderId: string,
     razorpaySignature: string,
-    packageId: string
+    _packageId: string,
+    purchaseId?: string,
   ) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
-
-      const { data, error } = await supabase.functions.invoke('token-purchase-verify', {
-        body: {
-          razorpay_payment_id: razorpayPaymentId,
-          razorpay_order_id: razorpayOrderId,
-          razorpay_signature: razorpaySignature,
-          package_id: packageId,
-          user_id: user.id
-        }
+      const data = await callPaymentApi<any>('/api/payment/token-purchase/verify', {
+        razorpay_payment_id: razorpayPaymentId,
+        razorpay_order_id: razorpayOrderId,
+        razorpay_signature: razorpaySignature,
+        purchase_id: purchaseId,
       });
-
-      if (error || !data?.success) {
-        throw new Error(data?.error || 'Payment verification failed');
-      }
 
       toast({
         title: "Purchase Successful!",

@@ -121,6 +121,7 @@ def _verify_razorpay_signature(order_id: str, payment_id: str, signature: str) -
 class TokenOrderRequest(BaseModel):
     tokens: int = Field(..., gt=0)
     amount_inr: float = Field(..., gt=0)
+    package_id: Optional[str] = None
 
 
 class TokenVerifyRequest(BaseModel):
@@ -147,27 +148,44 @@ async def token_create_order(
     if amount_inr < MIN_AMOUNT_INR:
         raise HTTPException(status_code=400, detail=f"Minimum purchase is ₹{MIN_AMOUNT_INR}")
 
-    # Fetch price per million from DB
-    price_per_million = DEFAULT_PRICE_PER_MILLION_INR
-    try:
-        rows = await _supabase_get(
-            "ai_system_limits",
-            params={"select": "limit_value", "limit_key": "eq.gift_token_price_per_million"},
+    # Validate price. If package_id is provided, trust the package row.
+    # Otherwise use the per-million slider formula.
+    if body.package_id:
+        pkg_rows = await _supabase_get(
+            "token_packages",
+            params={"select": "*", "id": f"eq.{body.package_id}", "is_active": "eq.true"},
         )
-        if rows and isinstance(rows[0].get("limit_value"), dict):
-            limit = rows[0]["limit_value"].get("limit")
-            if isinstance(limit, (int, float)) and limit > 0:
-                price_per_million = float(limit)
-    except Exception as e:
-        logger.warning("Failed to fetch price_per_million, using default: %s", e)
+        if not pkg_rows:
+            raise HTTPException(status_code=404, detail="Token package not found")
+        pkg = pkg_rows[0]
+        expected_tokens = (pkg.get("tokens") or 0) + (pkg.get("bonus_tokens") or 0)
+        expected_price = float(pkg.get("price_inr") or 0)
+        if tokens != expected_tokens:
+            raise HTTPException(status_code=400, detail="Package token count mismatch")
+        if abs(amount_inr - expected_price) > 1:
+            raise HTTPException(status_code=400, detail="Package price mismatch")
+    else:
+        # Fetch price per million from DB
+        price_per_million = DEFAULT_PRICE_PER_MILLION_INR
+        try:
+            rows = await _supabase_get(
+                "ai_system_limits",
+                params={"select": "limit_value", "limit_key": "eq.gift_token_price_per_million"},
+            )
+            if rows and isinstance(rows[0].get("limit_value"), dict):
+                limit = rows[0]["limit_value"].get("limit")
+                if isinstance(limit, (int, float)) and limit > 0:
+                    price_per_million = float(limit)
+        except Exception as e:
+            logger.warning("Failed to fetch price_per_million, using default: %s", e)
 
-    expected = (tokens / 1_000_000) * price_per_million
-    tolerance = max(expected * 0.05, 1)
-    if abs(amount_inr - expected) > tolerance:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Price mismatch. Expected ~₹{expected:.0f} for {tokens:,} tokens",
-        )
+        expected = (tokens / 1_000_000) * price_per_million
+        tolerance = max(expected * 0.05, 1)
+        if abs(amount_inr - expected) > tolerance:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Price mismatch. Expected ~₹{expected:.0f} for {tokens:,} tokens",
+            )
 
     # Ensure profile exists
     profile = await _supabase_get(
