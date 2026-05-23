@@ -129,6 +129,10 @@ app.include_router(api_router)
 from payment_routes import router as payment_router  # noqa: E402
 app.include_router(payment_router)
 
+# Public profile bypass routes
+from profile_routes import router as profile_router  # noqa: E402
+app.include_router(profile_router)
+
 # -------------------------------------------------------
 # CORS — require explicit configuration; no wildcard default
 # -------------------------------------------------------
