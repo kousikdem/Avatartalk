@@ -42,8 +42,6 @@ verify_jwt = true
 [functions.token-purchase-verify]
 verify_jwt = true
 
-# custom-token-purchase moved to verify_jwt = false section below
-
 [functions.custom-token-verify]
 verify_jwt = true
 
@@ -60,10 +58,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.custom-token-purchase]
-verify_jwt = false
-
-[functions.token-purchase-create-order]
-verify_jwt = false
+verify_jwt = true
 
 [functions.platform-plan-checkout]
 verify_jwt = true

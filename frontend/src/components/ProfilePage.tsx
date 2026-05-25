@@ -667,47 +667,19 @@ const ProfilePage: React.FC = () => {
       setLoading(true);
       console.log('[ProfilePage] Fetching profile for username:', username);
 
-      // METHOD 0 (PRIMARY): Server-side bypass via FastAPI — works regardless
-      // of Supabase RLS state because it uses the service-role key.
-      try {
-        const backend = (import.meta as any).env?.VITE_BACKEND_URL
-          || (import.meta as any).env?.VITE_API_URL
-          || (typeof window !== 'undefined' ? window.location.origin : '');
-        if (backend && username) {
-          const r = await fetch(`${backend}/api/profile/by-username/${encodeURIComponent(username)}`);
-          if (r.status === 404) {
-            throw new Error('Profile not found');
-          }
-          if (r.ok) {
-            const j = await r.json();
-            if (j?.profile?.id) {
-              console.log('[ProfilePage] Profile loaded via server-side bypass');
-              setProfile(j.profile);
-              setUserStats(j.user_stats || {
-                total_conversations: 0,
-                followers_count: 0,
-                profile_views: 0,
-                engagement_score: 0,
-              });
-              setProducts(j.products || []);
-              setEvents(j.events || []);
-              setAvatarConfig(j.avatar_config || null);
-              setSocialLinks(j.social_links || null);
-              setLoading(false);
-              return;
-            }
-          }
-          // Non-OK & non-404 → fall through to Supabase methods below
-          console.warn('[ProfilePage] Server-side bypass returned', r.status, '— falling back to Supabase');
-        }
-      } catch (bypassErr: any) {
-        if (bypassErr?.message === 'Profile not found') {
-          throw bypassErr;
-        }
-        console.warn('[ProfilePage] Server-side bypass error, falling back:', bypassErr);
-      }
+      // NOTE: We previously had a "METHOD 0" that called the FastAPI
+      // backend at `${origin}/api/profile/by-username/...`. That path is
+      // ONLY available in the Emergent preview (via the Kubernetes
+      // ingress) — on Vercel the SPA rewrite `(.*) -> /index.html`
+      // catches it and returns HTML, which then poisons the JSON parse
+      // and breaks public profile loading for logged-out visitors.
+      //
+      // The Supabase RPC + RLS path below works for both anon and
+      // authenticated users (see migration
+      // 20260520000001_fix_public_profiles_visibility.sql) so we go
+      // straight to it.
 
-      // TRY METHOD 1: RPC call (works after migration applied)
+      // TRY METHOD 1: SECURITY DEFINER RPC (works for anon + auth users)
       const { data: profileRows, error: profileError } = await supabase
         .rpc('get_public_profile_by_username', { p_username: username });
 
@@ -721,7 +693,7 @@ const ProfilePage: React.FC = () => {
         const { data: fallbackProfile, error: fallbackError } = await supabase
           .from('profiles')
           .select('id, username, display_name, full_name, bio, profession, avatar_id, avatar_url, profile_pic_url, country, location, website, followers_count, following_count, created_at, updated_at')
-          .eq('username', username)
+          .ilike('username', username || '')
           .maybeSingle();
 
         console.log('[ProfilePage] Fallback result:', { fallbackProfile, fallbackError });

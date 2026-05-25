@@ -11,15 +11,48 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { 
-      razorpay_payment_id, 
-      razorpay_order_id, 
+    // ============================================================
+    // SECURITY: derive user_id from JWT, do NOT trust client-provided user_id.
+    // ============================================================
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Authentication required'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user: authUser }, error: authError } = await anonClient.auth.getUser();
+    if (authError || !authUser) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Invalid or expired token'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const user_id = authUser.id;
+
+    const {
+      razorpay_payment_id,
+      razorpay_order_id,
       razorpay_signature,
-      user_id,
-      purchase_id 
+      purchase_id
     } = await req.json();
 
-    if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature || !user_id) {
+    if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
       return new Response(JSON.stringify({
         success: false,
         error: 'Missing required fields'
@@ -29,8 +62,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
 
     if (!razorpayKeySecret) {
