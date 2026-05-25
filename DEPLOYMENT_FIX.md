@@ -118,7 +118,7 @@ yarn build
 ```
 
 ### Preview Site ✅
-- URL: https://logo-replace-update.preview.emergentagent.com
+- URL: https://subscription-fix-31.preview.emergentagent.com
 - Status: Working perfectly
 - Calendar component: Functional
 
