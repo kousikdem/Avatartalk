@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { callPaymentApi } from '@/lib/payment-api';
+import { ensureRazorpayLoaded } from '@/lib/razorpay-loader';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface PricingStepProps {
@@ -85,17 +86,6 @@ const PricingStep: React.FC<PricingStepProps> = ({ onComplete }) => {
 
   const isSamePlan = (planKey: string) => effectivePlanKey === planKey;
 
-  const loadRazorpay = (): Promise<boolean> => {
-    return new Promise((resolve) => {
-      if ((window as any).Razorpay) { resolve(true); return; }
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
-
   const handleChoosePlan = async () => {
     if (!selectedPlan || !user) {
       toast({ title: 'Please select a plan', variant: 'destructive' });
@@ -137,8 +127,8 @@ const PricingStep: React.FC<PricingStepProps> = ({ onComplete }) => {
       const months = parseInt(billingDuration);
       const pricing = getPrice(plan);
 
-      const loaded = await loadRazorpay();
-      if (!loaded) { toast({ title: 'Payment gateway failed', variant: 'destructive' }); setPurchasing(false); return; }
+      const loaded = await ensureRazorpayLoaded();
+      if (!loaded) { toast({ title: 'Payment gateway failed', description: 'Could not load Razorpay. Please disable ad-blockers and refresh.', variant: 'destructive' }); setPurchasing(false); return; }
 
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;

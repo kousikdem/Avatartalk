@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { callPaymentApi } from '@/lib/payment-api';
+import { ensureRazorpayLoaded } from '@/lib/razorpay-loader';
 import { useTokens } from '@/hooks/useTokens';
 import { useTokenPrice } from '@/hooks/useTokenPrice';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -32,7 +33,6 @@ const BuyTokensPage: React.FC = () => {
   const [customPriceInput, setCustomPriceInput] = useState<string>('');
   const [customTokenInput, setCustomTokenInput] = useState<string>('');
   const [processing, setProcessing] = useState(false);
-  const [razorpayReady, setRazorpayReady] = useState(false);
   const [activeTab, setActiveTab] = useState('buy');
   const [userSearch, setUserSearch] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -47,16 +47,11 @@ const BuyTokensPage: React.FC = () => {
   const currencyInfo = getCurrencyInfo();
   const MIN_TOKENS = useMemo(() => Math.floor(MIN_AMOUNT_INR * tokensPerRupee), [tokensPerRupee]);
 
+  // Warm up the Razorpay script on mount so opening the checkout is
+  // instant when the user clicks Buy. The actual click handler still
+  // awaits the loader so a slow page load can't break the flow.
   useEffect(() => {
-    if (window.Razorpay) { setRazorpayReady(true); return; }
-    const existing = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
-    if (existing) { existing.addEventListener('load', () => setRazorpayReady(true)); return; }
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    script.onload = () => setRazorpayReady(true);
-    script.onerror = () => console.error('Failed to load Razorpay');
-    document.body.appendChild(script);
+    ensureRazorpayLoaded().catch(() => undefined);
   }, []);
 
   const priceInINR = useMemo(() => (tokenAmount / 1000000) * pricePerMillion, [tokenAmount, pricePerMillion]);
@@ -108,8 +103,13 @@ const BuyTokensPage: React.FC = () => {
         amount_inr: priceInINR,
       });
       
-      if (!razorpayReady || !window.Razorpay) {
-        toast({ title: "Loading payment system...", description: "Please wait a moment and try again." });
+      const scriptLoaded = await ensureRazorpayLoaded();
+      if (!scriptLoaded || !window.Razorpay) {
+        toast({
+          title: "Payment system unavailable",
+          description: "Could not load Razorpay. Please disable ad-blockers and refresh.",
+          variant: "destructive",
+        });
         setProcessing(false);
         return;
       }

@@ -16,6 +16,7 @@ import {
 import { usePlatformPricingPlans, useUserPlatformSubscription, PlatformFeature } from '@/hooks/usePlatformPricingPlans';
 import { supabase } from '@/integrations/supabase/client';
 import { callPaymentApi } from '@/lib/payment-api';
+import { ensureRazorpayLoaded } from '@/lib/razorpay-loader';
 import { useToast } from '@/hooks/use-toast';
 import { useTokenPrice } from '@/hooks/useTokenPrice';
 import MainAuth from './MainAuth';
@@ -121,8 +122,13 @@ const TokenPurchaseAddon = ({ currSymbol }: { currSymbol: string }) => {
         amount_inr: priceInINR,
       });
       
-      if (!window.Razorpay) {
-        toast({ title: "Error", description: "Payment system not loaded", variant: "destructive" });
+      const scriptLoaded = await ensureRazorpayLoaded();
+      if (!scriptLoaded || !window.Razorpay) {
+        toast({
+          title: "Payment system unavailable",
+          description: "Could not load Razorpay. Please disable ad-blockers and refresh.",
+          variant: "destructive",
+        });
         setProcessing(false);
         return;
       }
@@ -265,10 +271,10 @@ const PricingPage = () => {
   const billingCycle = durationOptions[durationIndex];
 
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    document.body.appendChild(script);
+    // Warm up Razorpay script — the handlers below also call
+    // ensureRazorpayLoaded() and await its result, so a slow load can't
+    // throw "Razorpay is not a constructor" when the user clicks.
+    ensureRazorpayLoaded().catch(() => undefined);
 
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       setUser(user);
@@ -291,9 +297,6 @@ const PricingPage = () => {
 
     return () => {
       subscription.unsubscribe();
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
     };
   }, []);
 
@@ -375,6 +378,11 @@ const PricingPage = () => {
 
       if (!data?.orderId) {
         throw new Error('Failed to create order');
+      }
+
+      const scriptLoaded = await ensureRazorpayLoaded();
+      if (!scriptLoaded || !window.Razorpay) {
+        throw new Error('Could not load Razorpay. Please disable ad-blockers and refresh.');
       }
 
       const options = {

@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Product } from '@/hooks/useProducts';
 import { useOrders } from '@/hooks/useOrders';
+import { ensureRazorpayLoaded } from '@/lib/razorpay-loader';
 import { Loader2, Package, CreditCard, MapPin } from 'lucide-react';
 import { getShortTaxLabel, calculateTax, getTaxLabel } from '@/utils/taxCalculation';
 import { notificationService } from '@/utils/notificationService';
@@ -243,13 +244,15 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
         currency
       });
 
-      // Load Razorpay script if not already loaded
-      if (!window.Razorpay) {
-        const script = document.createElement('script');
-        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-        script.async = true;
-        document.body.appendChild(script);
-        await new Promise(resolve => script.onload = resolve);
+      // Load Razorpay script (centralised loader handles dedupe + timeout)
+      const scriptLoaded = await ensureRazorpayLoaded();
+      if (!scriptLoaded || !window.Razorpay) {
+        toast({
+          title: "Payment system unavailable",
+          description: "Could not load Razorpay. Please disable ad-blockers and refresh.",
+          variant: "destructive",
+        });
+        return;
       }
 
       // Initialize Razorpay checkout

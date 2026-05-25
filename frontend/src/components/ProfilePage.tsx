@@ -667,104 +667,81 @@ const ProfilePage: React.FC = () => {
       setLoading(true);
       console.log('[ProfilePage] Fetching profile for username:', username);
 
-      // NOTE: We previously had a "METHOD 0" that called the FastAPI
-      // backend at `${origin}/api/profile/by-username/...`. That path is
-      // ONLY available in the Emergent preview (via the Kubernetes
-      // ingress) — on Vercel the SPA rewrite `(.*) -> /index.html`
-      // catches it and returns HTML, which then poisons the JSON parse
-      // and breaks public profile loading for logged-out visitors.
+      // ───────────────────────────────────────────────────────────────
+      // Public profile pages MUST NOT depend on an authenticated session.
+      // We use a two-tier strategy that works for anon AND signed-in users:
       //
-      // The Supabase RPC + RLS path below works for both anon and
-      // authenticated users (see migration
-      // 20260520000001_fix_public_profiles_visibility.sql) so we go
-      // straight to it.
+      //   1. RPC `get_public_profile_by_username` — SECURITY DEFINER, so
+      //      it bypasses RLS entirely and only exposes safe columns
+      //      (no email / phone / dob). Defined in migration
+      //      20260520000001_fix_public_profiles_visibility.sql.
+      //
+      //   2. Direct table SELECT (case-insensitive) — used as a fallback
+      //      if the RPC function doesn't exist yet (migration not
+      //      applied) OR returns an unexpected error. Relies on the
+      //      "Anyone can view public profile fields" RLS policy from
+      //      the same migration.
+      //
+      // We removed the old FastAPI bypass (METHOD 0) because that route
+      // is only available in the Emergent preview via the K8s ingress —
+      // on Vercel the SPA rewrite returns HTML for it which poisoned
+      // the JSON parse and broke public profile loading.
+      // ───────────────────────────────────────────────────────────────
 
-      // TRY METHOD 1: SECURITY DEFINER RPC (works for anon + auth users)
-      const { data: profileRows, error: profileError } = await supabase
+      let profileData: Profile | null = null;
+      let usedFallback = false;
+
+      // TIER 1: SECURITY DEFINER RPC
+      const { data: profileRows, error: rpcError } = await supabase
         .rpc('get_public_profile_by_username', { p_username: username });
 
-      console.log('[ProfilePage] RPC result:', { profileRows, profileError });
+      if (rpcError) {
+        console.warn('[ProfilePage] RPC failed, will try direct query:', rpcError);
+      } else if (profileRows && profileRows.length > 0) {
+        profileData = profileRows[0];
+        console.log('[ProfilePage] Profile loaded via RPC');
+      } else {
+        console.log('[ProfilePage] RPC returned empty, trying direct query');
+      }
 
-      // If RPC function doesn't exist, fallback to direct table query
-      if (profileError && (profileError.message?.includes('function') || profileError.code === '42883')) {
-        console.warn('[ProfilePage] RPC function not found, using fallback method');
-        
-        // FALLBACK METHOD 2: Direct table query (works without migration)
-        const { data: fallbackProfile, error: fallbackError } = await supabase
+      // TIER 2: Direct table query (case-insensitive). Triggered when
+      // RPC failed OR returned empty rows. This is exactly the
+      // `getProfileByUsername(username)` pattern recommended for public
+      // profile pages — NO auth.uid() dependency.
+      if (!profileData) {
+        const { data: directProfile, error: directError } = await supabase
           .from('profiles')
           .select('id, username, display_name, full_name, bio, profession, avatar_id, avatar_url, profile_pic_url, country, location, website, followers_count, following_count, created_at, updated_at')
           .ilike('username', username || '')
           .maybeSingle();
 
-        console.log('[ProfilePage] Fallback result:', { fallbackProfile, fallbackError });
-
-        if (fallbackError) {
-          console.error('[ProfilePage] Fallback error:', fallbackError);
-          throw new Error('Unable to load profile. Please try again later.');
+        if (directError) {
+          console.error('[ProfilePage] Direct query error:', directError);
+          // If both tiers errored, surface a helpful message
+          throw new Error(
+            'Unable to load profile. Please ensure RLS policies are applied (see migration 20260520000001).',
+          );
         }
 
-        if (!fallbackProfile) {
-          console.warn('[ProfilePage] No profile found for username:', username);
-          throw new Error('Profile not found');
+        if (directProfile) {
+          profileData = directProfile as unknown as Profile;
+          usedFallback = true;
+          console.log('[ProfilePage] Profile loaded via direct query fallback');
         }
-
-        // Use fallback data
-        const profileId = fallbackProfile.id;
-        console.log('[ProfilePage] Profile loaded via fallback:', { username, profileId });
-
-        // Fetch related data
-        const [statsResult, productsResult, eventsResult, avatarResult, socialLinksResult] =
-          await Promise.all([
-            supabase.from('user_stats').select('*').eq('user_id', profileId).maybeSingle(),
-            supabase.from('products').select('*').eq('user_id', profileId).eq('status', 'published')
-              .order('created_at', { ascending: false }).limit(6),
-            supabase.from('events').select('*').eq('user_id', profileId)
-              .in('status', ['published', 'upcoming']).order('created_at', { ascending: false }).limit(6),
-            supabase.from('avatar_configurations').select('*').eq('user_id', profileId)
-              .eq('is_active', true).maybeSingle(),
-            supabase.from('social_links').select('*').eq('user_id', profileId).maybeSingle(),
-          ]);
-
-        console.log('[ProfilePage] Related data loaded via fallback');
-
-        setProfile(fallbackProfile);
-        setUserStats(statsResult.data || { 
-          total_conversations: 0,
-          followers_count: 0,
-          profile_views: 0,
-          engagement_score: 0
-        });
-        setProducts(productsResult.data || []);
-        setEvents(eventsResult.data || []);
-        setAvatarConfig(avatarResult.data);
-        setSocialLinks(socialLinksResult.data);
-        setLoading(false);
-        
-        // Show info toast about applying migration
-        toast({
-          title: "Profile loaded successfully",
-          description: "For better performance, please apply the database migration. See documentation.",
-          variant: "default",
-        });
-        return;
       }
 
-      // Handle other RPC errors
-      if (profileError) {
-        console.error('[ProfilePage] RPC Error:', profileError);
-        throw profileError;
-      }
-      
-      if (!profileRows || profileRows.length === 0) {
+      if (!profileData) {
         console.warn('[ProfilePage] No profile found for username:', username);
         throw new Error('Profile not found');
       }
 
-      const profileData = profileRows[0];
       const profileId = profileData.id;
-      console.log('[ProfilePage] Profile loaded via RPC:', { username, profileId });
 
-      // Fetch all related public data in parallel
+      // Fetch all related public data in parallel. Each table has its
+      // own RLS policy granting SELECT to anon for the public subset
+      // (status='published' for products/events, is_active=true for
+      // avatar_configurations, etc.). If any of these fail individually
+      // we still render the profile — they're best-effort enhancements.
       const [statsResult, productsResult, eventsResult, avatarResult, socialLinksResult] =
         await Promise.all([
           supabase.from('user_stats').select('*').eq('user_id', profileId).maybeSingle(),
@@ -777,20 +754,22 @@ const ProfilePage: React.FC = () => {
           supabase.from('social_links').select('*').eq('user_id', profileId).maybeSingle(),
         ]);
 
-      console.log('[ProfilePage] Related data loaded');
-
       setProfile(profileData);
-      setUserStats(statsResult.data || { 
+      setUserStats(statsResult.data || {
         total_conversations: 0,
         followers_count: 0,
         profile_views: 0,
-        engagement_score: 0
+        engagement_score: 0,
       });
       setProducts(productsResult.data || []);
       setEvents(eventsResult.data || []);
       setAvatarConfig(avatarResult.data);
       setSocialLinks(socialLinksResult.data);
       setLoading(false);
+
+      if (usedFallback) {
+        console.info('[ProfilePage] Loaded via fallback path — apply migration 20260520000001 for the optimised RPC route.');
+      }
     } catch (error) {
       console.error('[ProfilePage] Error fetching profile:', error);
       toast({
