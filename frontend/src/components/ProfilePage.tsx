@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { readProfileCache, writeProfileCache } from '@/lib/profile-cache';
 import { useFollows } from '@/hooks/useFollows';
 import { usePersonalizedAI } from '@/hooks/usePersonalizedAI';
 import { usePosts } from '@/hooks/usePosts';
@@ -664,7 +665,33 @@ const ProfilePage: React.FC = () => {
 
   const fetchProfile = async () => {
     try {
-      setLoading(true);
+      // ─── Cache-first stale-while-revalidate ──────────────────────────
+      // If we have a recent (<60s) entry for this username, paint it
+      // immediately so the user sees the profile within the same frame.
+      // The fetch still continues in the background and overwrites the
+      // state once fresh data arrives. This is what makes refresh/back-
+      // navigation feel instant for authenticated AND anonymous users.
+      const cached = readProfileCache<{
+        profile: Profile;
+        userStats: any;
+        products: any[];
+        events: any[];
+        avatarConfig: any;
+        socialLinks: any;
+      }>(username || '');
+      if (cached?.profile) {
+        setProfile(cached.profile);
+        setUserStats(cached.userStats);
+        setProducts(cached.products || []);
+        setEvents(cached.events || []);
+        setAvatarConfig(cached.avatarConfig);
+        setSocialLinks(cached.socialLinks);
+        setLoading(false);
+        // Continue below to refresh in the background — do NOT return.
+      } else {
+        setLoading(true);
+      }
+
       console.log('[ProfilePage] Fetching profile for username:', username);
 
       // ───────────────────────────────────────────────────────────────
@@ -717,7 +744,11 @@ const ProfilePage: React.FC = () => {
 
         if (directError) {
           console.error('[ProfilePage] Direct query error:', directError);
-          // If both tiers errored, surface a helpful message
+          // If we already painted from cache, keep that and bail quietly.
+          if (cached?.profile) {
+            console.warn('[ProfilePage] Keeping cached profile on background fetch error.');
+            return;
+          }
           throw new Error(
             'Unable to load profile. Please ensure RLS policies are applied (see migration 20260520000001).',
           );
@@ -731,6 +762,12 @@ const ProfilePage: React.FC = () => {
       }
 
       if (!profileData) {
+        if (cached?.profile) {
+          // Background revalidate found nothing — likely a transient
+          // hiccup. Keep the cached view.
+          console.warn('[ProfilePage] Revalidation returned empty; keeping cached profile.');
+          return;
+        }
         console.warn('[ProfilePage] No profile found for username:', username);
         throw new Error('Profile not found');
       }
@@ -754,18 +791,30 @@ const ProfilePage: React.FC = () => {
           supabase.from('social_links').select('*').eq('user_id', profileId).maybeSingle(),
         ]);
 
-      setProfile(profileData);
-      setUserStats(statsResult.data || {
+      const finalStats = statsResult.data || {
         total_conversations: 0,
         followers_count: 0,
         profile_views: 0,
         engagement_score: 0,
-      });
+      };
+
+      setProfile(profileData);
+      setUserStats(finalStats);
       setProducts(productsResult.data || []);
       setEvents(eventsResult.data || []);
       setAvatarConfig(avatarResult.data);
       setSocialLinks(socialLinksResult.data);
       setLoading(false);
+
+      // Persist to sessionStorage so the next visit is instant.
+      writeProfileCache(username || '', {
+        profile: profileData,
+        userStats: finalStats,
+        products: productsResult.data || [],
+        events: eventsResult.data || [],
+        avatarConfig: avatarResult.data,
+        socialLinks: socialLinksResult.data,
+      });
 
       if (usedFallback) {
         console.info('[ProfilePage] Loaded via fallback path — apply migration 20260520000001 for the optimised RPC route.');

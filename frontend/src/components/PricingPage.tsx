@@ -134,7 +134,7 @@ const TokenPurchaseAddon = ({ currSymbol }: { currSymbol: string }) => {
       }
 
       const razorpay = new window.Razorpay({
-        key: orderData.key_id,
+        key: orderData.key_id || (import.meta as any).env?.VITE_RAZORPAY_KEY_ID,
         amount: orderData.amount,
         currency: orderData.currency,
         name: "AvatarTalk.Co",
@@ -386,7 +386,7 @@ const PricingPage = () => {
       }
 
       const options = {
-        key: data.keyId,
+        key: data.keyId || (import.meta as any).env?.VITE_RAZORPAY_KEY_ID,
         amount: data.amount * 100,
         currency: data.currency,
         name: 'AvatarTalk',

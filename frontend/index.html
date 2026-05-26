@@ -9,6 +9,17 @@
     <meta property="og:site_name" content="AvatarTalk.Co">
     <meta property="og:locale" content="en_US">
     <link rel="canonical" href="https://avatartalk.co/">
+    <!--
+      Razorpay checkout warmup — preconnect to Razorpay CDN and DNS-prefetch
+      the checkout origin so when the user hits Buy Tokens / Subscribe the
+      script.js download is near-instant. The actual <script> is injected
+      lazily by ensureRazorpayLoaded() so we don't ship the SDK on first
+      paint for visitors who never reach a payment page.
+    -->
+    <link rel="preconnect" href="https://checkout.razorpay.com" crossorigin>
+    <link rel="dns-prefetch" href="https://api.razorpay.com">
+    <link rel="dns-prefetch" href="https://lumberjack.razorpay.com">
+    <link rel="preconnect" href="https://hnxnvdzrwbtmcohdptfq.supabase.co" crossorigin>
     <title>AvatarTalk.Co</title>
 
     <!-- Critical CSS - Inline for instant render -->

@@ -115,7 +115,12 @@ const BuyTokensPage: React.FC = () => {
       }
 
       const razorpay = new window.Razorpay({
-        key: orderData.key_id,
+        // `key_id` is returned by the edge function from the server-side
+        // RAZORPAY_KEY_ID Supabase secret. We also accept a Vercel-side
+        // VITE_RAZORPAY_KEY_ID as a redundant fallback so the modal still
+        // opens if the edge function ever returns a payload missing the
+        // key field (older deploy versions).
+        key: orderData.key_id || (import.meta as any).env?.VITE_RAZORPAY_KEY_ID,
         amount: orderData.amount,
         currency: orderData.currency,
         name: "AvatarTalk.Co",
