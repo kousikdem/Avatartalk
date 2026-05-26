@@ -6,10 +6,10 @@
  *   purchase_id?: string, package_id?: string
  * }
  *
- * Verifies the Razorpay HMAC signature, credits tokens to the user's
- * balance, and marks the purchase row as 'completed'. Idempotent — if
- * the purchase is already completed, returns success without double-
- * crediting.
+ * Verifies the Razorpay HMAC signature, credits tokens to
+ * profiles.token_balance, writes a token_events audit row, and marks
+ * the purchase row as 'completed'. Idempotent — re-running verify on
+ * an already-completed purchase is a no-op.
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import {
@@ -37,8 +37,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     razorpay_payment_id?: string;
     razorpay_signature?: string;
     purchase_id?: string;
-    package_id?: string;
-    packageId?: string;
   };
 
   const {
@@ -46,19 +44,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     razorpay_payment_id,
     razorpay_signature,
   } = body;
-  const packageId = body.package_id || body.packageId || null;
 
   if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
     return sendError(res, 400, 'Missing required Razorpay fields');
   }
 
-  // ── HMAC verify ──
-  const signatureOk = verifyRazorpaySignature(
-    razorpay_order_id,
-    razorpay_payment_id,
-    razorpay_signature,
-  );
-  if (!signatureOk) {
+  if (
+    !verifyRazorpaySignature(
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+    )
+  ) {
     return sendError(res, 400, 'Invalid payment signature');
   }
 
@@ -72,87 +69,82 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // ── Find the purchase row ──
   const { data: purchase, error: lookupErr } = await admin
     .from('token_purchases')
-    .select('id, user_id, tokens, status, package_id')
+    .select('id, user_id, tokens_purchased, status, package_id')
     .eq('razorpay_order_id', razorpay_order_id)
     .maybeSingle();
 
   if (lookupErr) return sendError(res, 500, lookupErr.message);
-
-  if (!purchase) {
-    return sendError(res, 404, 'Purchase record not found');
-  }
-
-  // Ensure the caller is the owner of the purchase
+  if (!purchase) return sendError(res, 404, 'Purchase record not found');
   if (purchase.user_id !== user.id) {
     return sendError(res, 403, 'Not allowed to verify this purchase');
   }
 
-  // Idempotency — already completed, return success
+  // Idempotency
   if (purchase.status === 'completed') {
     return res.status(200).json({
       success: true,
-      tokens_credited: purchase.tokens,
+      tokens_credited: purchase.tokens_purchased,
       already_processed: true,
     });
   }
 
-  // ── Credit tokens ──
-  // Try the canonical RPC if it exists; fall back to direct update.
-  let credited = false;
-  try {
-    const { error: rpcErr } = await admin.rpc('add_user_tokens', {
-      p_user_id: user.id,
-      p_tokens: purchase.tokens,
-      p_source: 'razorpay_token_purchase',
-      p_metadata: {
-        razorpay_order_id,
-        razorpay_payment_id,
-        purchase_id: purchase.id,
-        package_id: packageId ?? purchase.package_id,
-      },
-    });
-    if (!rpcErr) credited = true;
-  } catch {
-    /* RPC not present — falls back below */
+  const tokensToCredit = Number(purchase.tokens_purchased) || 0;
+
+  // ── Credit tokens via read-modify-write on profiles.token_balance ──
+  const { data: profile, error: profileErr } = await admin
+    .from('profiles')
+    .select('token_balance')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (profileErr) {
+    console.error('[token verify] profile read failed:', profileErr);
+    return sendError(res, 500, 'Failed to read token balance');
   }
 
-  if (!credited) {
-    // Direct increment fallback. Assumes a `user_tokens` table with a
-    // `balance` column keyed on user_id. If your schema differs, adjust
-    // here.
-    const { data: existing } = await admin
-      .from('user_tokens')
-      .select('balance')
-      .eq('user_id', user.id)
-      .maybeSingle();
+  const previousBalance = Number(profile?.token_balance ?? 0);
+  const newBalance = previousBalance + tokensToCredit;
 
-    const newBalance = (existing?.balance ?? 0) + purchase.tokens;
-    const { error: upsertErr } = await admin.from('user_tokens').upsert(
-      {
-        user_id: user.id,
-        balance: newBalance,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id' },
-    );
-    if (upsertErr) {
-      console.error('[token verify] balance upsert failed:', upsertErr);
-      return sendError(res, 500, 'Failed to credit tokens');
-    }
+  const { error: updateErr } = await admin
+    .from('profiles')
+    .update({
+      token_balance: newBalance,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', user.id);
+
+  if (updateErr) {
+    console.error('[token verify] balance update failed:', updateErr);
+    return sendError(res, 500, 'Failed to credit tokens');
   }
 
-  // Mark purchase complete (idempotent)
+  // ── Audit log ──
+  await admin.from('token_events').insert({
+    user_id: user.id,
+    change: tokensToCredit,
+    balance_after: newBalance,
+    reason: 'razorpay_token_purchase',
+    metadata: {
+      razorpay_order_id,
+      razorpay_payment_id,
+      purchase_id: purchase.id,
+      package_id: purchase.package_id,
+    },
+  });
+
+  // ── Mark purchase complete ──
   await admin
     .from('token_purchases')
     .update({
       status: 'completed',
       razorpay_payment_id,
-      completed_at: new Date().toISOString(),
+      razorpay_signature,
     })
     .eq('id', purchase.id);
 
   return res.status(200).json({
     success: true,
-    tokens_credited: purchase.tokens,
+    tokens_credited: tokensToCredit,
+    new_balance: newBalance,
   });
 }

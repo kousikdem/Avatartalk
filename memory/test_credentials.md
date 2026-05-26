@@ -1,14 +1,38 @@
 # AvatarTalk Test Credentials
 
-> Backend uses Supabase Auth. There is no seeded test user — create one via the
-> sign-up flow on the live preview before testing protected flows.
+> Backend uses Supabase Auth. There is no seeded public test user,
+> but the fork agent created a working dev account that can be
+> reused for automated tests.
 
-## How to create a test account
+## Pre-created Test Account (Supabase Auth)
 
-1. Open the preview URL (e.g. `https://subscription-fix-31.preview.emergentagent.com/`).
-2. Click **Sign In** → switch to **Sign Up** tab.
-3. Use any disposable email + password (>= 6 chars).
-4. Complete the email verification step if Supabase email confirmation is enabled.
+| Field | Value |
+|-------|-------|
+| Email | `avatartalk_test@example.com` |
+| Password | `TestPassword!234` |
+| User ID | `215a438c-135f-401e-b2f8-9ab889584af1` |
+
+Email is already confirmed via the Supabase admin API, so login works
+immediately on both the Emergent preview and the production Vercel
+URL.
+
+## How to login programmatically
+
+```bash
+TOKEN=$(curl -s -X POST \
+  "https://hnxnvdzrwbtmcohdptfq.supabase.co/auth/v1/token?grant_type=password" \
+  -H "apikey: sb_publishable_uaL-zelOHdGlOlvaWuIa1A_wtL7mx3p" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"avatartalk_test@example.com","password":"TestPassword!234"}' \
+  | python3 -c "import sys,json;print(json.load(sys.stdin).get('access_token',''))")
+```
+
+Use `Authorization: Bearer $TOKEN` on any `/api/payment/*` call.
+
+## Public Profile Test Username
+
+`entrepreneurkousik` — real profile, used to verify the public profile
+flow renders for logged-out visitors.
 
 ## Manual Razorpay Test Cards
 
@@ -17,13 +41,12 @@
 
 ## Notes
 
-- Razorpay keys are configured in Supabase Secrets (`RAZORPAY_KEY_ID` /
-  `RAZORPAY_KEY_SECRET`). The frontend never sees the secret.
-- Migrations `20260301000000_avatartalk_fixes.sql` and
-  `20260301000001_public_profiles_and_rls.sql` MUST be applied in the
-  Supabase SQL editor for the social-link save, public profile,
-  and monthly-drip flows to work end-to-end.
-- For real-time monthly token drip the user should also schedule
-  `monthly-token-credit` via pg_cron or an external cron service (see
-  `/app/AVATARTALK_FIXES_README.md`). The frontend now also calls this
-  function lazily on dashboard load (hourly debounce) as a safety net.
+- Razorpay keys in pod env: `RAZORPAY_KEY_ID=rzp_test_SpjjvTzWU5fO6F`,
+  `RAZORPAY_KEY_SECRET` is in `/app/backend/.env`. Production keys
+  must be set on Vercel (see `/app/VERCEL_API_ROUTES_GUIDE.md`).
+- On the Emergent preview the `/api/*` routes are served by FastAPI
+  (port 8001). On Vercel production they are served by the new
+  Vercel Serverless Functions under `/app/api/`.
+- Both implementations were verified against the same database
+  schema (`token_purchases`, `platform_pricing_plans`,
+  `user_platform_subscriptions`).

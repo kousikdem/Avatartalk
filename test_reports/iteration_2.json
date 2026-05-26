@@ -1,0 +1,44 @@
+{
+  "summary": "End-to-end UI + API verification of the three reported Vercel-bug fixes on the Emergent preview. All three flows now work: (1) GET /api/profile/by-username/entrepreneurkousik returns 200 with the full shape {profile, user_stats, products, events, avatar_config, social_links} for a logged-out visitor; the React ProfilePage renders 'Entrepreneur kousik' avatar, chat, follow widget — both on initial nav AND after a hard reload (no 'Profile Not Found', no logout). (2) Buy Tokens flow: clicking 'Buy Now' (1M tokens widget on /pricing — same callPaymentApi('/api/payment/token-purchase/create-order') as /settings/buy-tokens) fired POST to that endpoint, got HTTP 200 with {order_id, purchase_id, amount=100000 paise, currency=INR, key_id=rzp_test_SpjjvTzWU5fO6F, tokens=1000000}, then window.Razorpay was constructed and razorpay.open() was invoked successfully. (3) Plan Purchase flow on /pricing: clicking 'Subscribe Now' on Pro plan (1-year cycle) fired POST /api/payment/plan-checkout/create-order, returned HTTP 200 with {orderId, amount=182 (rupees/USD), currency, keyId, planName='Pro', billingCycleMonths=12}, frontend correctly multiplied by 100 (rzp opts.amount=18200) and razorpay.open() invoked. NO 'Failed to start checkout' or 'API route not deployed' toasts observed in any flow. Backend pytest from iteration 1 (19/19) still applicable. Tested against live Supabase via the preview proxy which serves /api/* via FastAPI.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/payment/plans", "issue": "Returns 404 — no list-plans endpoint exists on FastAPI side. Frontend doesn't currently use it (plans are read via Supabase directly), so non-blocking, but plan_key/plan list is duplicated between Supabase and the Vercel/FastAPI handlers."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "BuyTokensPage / PricingPage", "issue": "Missing data-testid on Pay/Buy Now/Subscribe Now buttons. Tests had to fall back to text selectors which is brittle.", "selector": "button:has-text('Pay ₹') / button:has-text('Buy Now') / button:has-text('Subscribe Now')", "priority": "LOW"},
+      {"component": "Onboarding modal (WelcomeWizard)", "issue": "After login the multi-step onboarding modal auto-opens on /settings/buy-tokens and the visible 'Skip' button only advances one step — user must click Skip on every step (Profile, Avatar, AI Training, …) before the underlying page becomes interactable. This modal also blocks programmatic clicks on buttons behind it. Consider a single 'Skip Tour' / dismiss-X.", "selector": "[role=dialog] button:has-text('Skip')", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "Realtime token balance subscription", "issue": "Repeated unhandled promise rejection 'cannot add postgres_changes callbacks for realtime:token-balance-changes after subscribe()'. Suggests a useEffect is calling channel.on() after channel.subscribe(), or a second mount races the first. Not user-blocking but logs noise and a latent bug.", "affected_selectors": ["console"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_payment_routes.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Add data-testid attributes on buy-tokens 'Pay ₹X' button, pricing 'Buy Now' (token widget) button, and per-plan 'Subscribe Now' buttons for stable automation.",
+    "Fix the realtime postgres_changes ordering bug in token-balance-changes channel (call .on() before .subscribe(), or guard against double-mount).",
+    "Make the WelcomeWizard onboarding modal one-click-skippable from any step — currently every Skip advances one step and overlays the entire app, blocking deep links like /settings/buy-tokens for first-time-feeling users.",
+    "(Optional) Add a GET /api/payment/plans endpoint or remove the dead route reference if any."
+  ],
+  "critical_code_review_comments": [
+    "BuyTokensPage.tsx / PricingPage.tsx: no data-testid attributes on critical CTAs (Pay, Buy Now, Subscribe Now).",
+    "Realtime channel 'token-balance-changes': handler.on() invoked after subscribe(), throws on every (re)mount. Likely in a hook like useTokenBalance — fix ordering or memoize the channel.",
+    "WelcomeWizard modal renders unconditionally on every entry to /settings/* until each step is individually skipped — bad UX and blocks tests + deep links.",
+    "BuyTokensPage handlePurchase posts the amount in INR rupees; backend already returns amount in paise. Code looks correct in production but verify there isn't a paise/rupee mismatch on the verify path.",
+    "PricingPage.handlePurchase multiplies the API response 'amount' by 100 before passing to Razorpay. Comment in /api/payment/plan-checkout/create-order.ts should be explicit that 'amount' is in rupees (the FastAPI route returns 999.0 / 182.0 — not paise). Already correct, just risky for future maintainers."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (19/19 pytest + 5/5 manual curl on live preview)", "frontend": "100% on the three reviewed flows (public profile load + reload, token buy → razorpay opens, plan subscribe → razorpay opens, no error toasts)"},
+  "test_credentials": "avatartalk_test@example.com / TestPassword!234 (Supabase). Public profile username: entrepreneurkousik.",
+  "seed_data_creation": "None — used existing test user and existing public profile. Each test run creates a real Razorpay test order against rzp_test_SpjjvTzWU5fO6F (no charge, test mode) and a row in custom_token_purchases.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Three review-request bugs are verified fixed on the Emergent preview. For the dedicated /settings/buy-tokens UI, you must first dismiss the WelcomeWizard onboarding modal on every step before the 'Pay ₹X' button is interactable — easier to test the same endpoint via the 'Buy Now' button on /pricing (uses the same callPaymentApi('/api/payment/token-purchase/create-order')). Login by seeding localStorage key 'sb-hnxnvdzrwbtmcohdptfq-auth-token' with the Supabase password-grant session JSON (avoids the auth-modal flow entirely). To detect Razorpay modal open without rendering it, stub `window.Razorpay = function(opts){ window.__rzp_opts=opts; return {open:()=>{window.__rzp_open=true},on:()=>{}}; }`.",
+  "rca of the issue": "Original three bugs were: (a) public profile 'Not Found' because ProfilePage's TIER-0 fetch hit a Vercel-only edge function before the migration; now resolved via /api/profile/by-username/[username] on Vercel and FastAPI mirror on preview — confirmed via console log '[ProfilePage] Profile resolved via tier: vercel-api'. (b) 'Failed to start checkout' on Buy Tokens — old code expected paise from a Supabase Edge Function that wasn't deployed; new FastAPI route returns {order_id, amount(paise), key_id, purchase_id} with shape exactly matching the new frontend, and Razorpay modal opens. (c) 'Failed to start checkout' on Plan Purchase — plan-checkout/create-order now returns {orderId, amount(rupees), keyId, planName, billingCycleMonths}; frontend correctly *100 to paise and passes to Razorpay; modal opens."
+}

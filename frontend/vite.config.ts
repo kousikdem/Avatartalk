@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { fileURLToPath } from "url";
+import { devApiPlugin } from "./vite-plugins/dev-api";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,8 +30,18 @@ export default defineConfig(({ mode }) => ({
     watch: {
       usePolling: false,
     },
+    fs: {
+      // Allow Vite to read files in /app/api when ssrLoadModule resolves
+      // the Vercel serverless function handlers in dev. Without this
+      // Vite's strict fs.allow would reject paths outside the project
+      // root.
+      allow: [
+        path.resolve(__dirname, ".."),
+      ],
+    },
   },
   plugins: [
+    devApiPlugin(),
     react(),
   ],
   resolve: {

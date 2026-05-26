@@ -2,19 +2,24 @@
  * POST /api/payment/plan-checkout/create-order
  *
  * Body: {
- *   planId: string,                  // matches platform_plans.id
+ *   planId: string,                   // matches platform_pricing_plans.id
  *   billingCycleMonths: 1 | 3 | 6 | 12,
- *   currency?: 'INR' | 'USD' | ...   // defaults to INR
+ *   currency?: 'INR' | 'USD'          // defaults to INR
  * }
  *
- * Returns: {
- *   success, orderId, amount (rupees), currency, keyId,
- *   planName, billingCycleMonths
- * }
+ * Returns (rupees / dollars — NOT paise):
+ *   { success, orderId, amount, currency, keyId, planName, billingCycleMonths }
  *
- * The frontend multiplies `amount` by 100 before passing to Razorpay
- * checkout (Razorpay needs paise). The order on Razorpay is already
- * created with paise — both halves agree.
+ * The frontend multiplies `amount` by 100 before opening Razorpay
+ * checkout (Razorpay wants paise/cents). The Razorpay order itself is
+ * already in paise — both halves agree.
+ *
+ * Schema reference (live DB):
+ *   platform_pricing_plans columns used:
+ *     id, plan_name, plan_key, is_active,
+ *     price_inr, price_3_month_inr, price_6_month_inr, price_12_month_inr,
+ *     price_usd, price_3_month_usd, price_6_month_usd, price_12_month_usd,
+ *     discount_3_month, discount_6_month, discount_12_month
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import {
@@ -26,6 +31,7 @@ import {
 } from '../../_lib/helpers';
 
 const VALID_CYCLES = new Set([1, 3, 6, 12]);
+const DEFAULT_DISCOUNTS: Record<number, number> = { 1: 0, 3: 10, 6: 15, 12: 20 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (applyCors(req, res)) return;
@@ -53,6 +59,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!VALID_CYCLES.has(billingCycleMonths)) {
     return sendError(res, 400, 'billingCycleMonths must be 1, 3, 6, or 12');
   }
+  if (currency !== 'INR' && currency !== 'USD') {
+    return sendError(res, 400, 'currency must be INR or USD');
+  }
 
   let admin;
   try {
@@ -61,49 +70,99 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return sendError(res, 500, e?.message || 'Server misconfiguration');
   }
 
-  // ── Look up the plan ──
   const { data: plan, error: planErr } = await admin
-    .from('platform_plans')
+    .from('platform_pricing_plans')
     .select(
-      'id, name, price_inr, price_inr_3mo, price_inr_6mo, price_inr_12mo, is_active',
+      [
+        'id',
+        'plan_name',
+        'plan_key',
+        'is_active',
+        'price_inr',
+        'price_usd',
+        'price_3_month_inr',
+        'price_6_month_inr',
+        'price_12_month_inr',
+        'price_3_month_usd',
+        'price_6_month_usd',
+        'price_12_month_usd',
+        'discount_3_month',
+        'discount_6_month',
+        'discount_12_month',
+      ].join(', '),
     )
     .eq('id', planId)
     .maybeSingle();
 
   if (planErr) return sendError(res, 500, planErr.message);
-  if (!plan || !plan.is_active) {
+  if (!plan || !(plan as any).is_active) {
     return sendError(res, 404, 'Plan not found or inactive');
   }
 
-  const cycleColumn = {
-    1: 'price_inr',
-    3: 'price_inr_3mo',
-    6: 'price_inr_6mo',
-    12: 'price_inr_12mo',
-  }[billingCycleMonths as 1 | 3 | 6 | 12];
+  if ((plan as any).plan_key === 'free') {
+    return sendError(res, 400, 'Free plan does not require checkout');
+  }
 
-  const priceInr = (plan as any)[cycleColumn];
-
-  if (!Number.isFinite(priceInr) || priceInr <= 0) {
+  // ── Compute the total amount for the chosen cycle ──
+  const p: any = plan;
+  const monthly = currency === 'INR' ? p.price_inr : p.price_usd;
+  if (!Number.isFinite(monthly) || monthly <= 0) {
     return sendError(
       res,
       400,
-      `Plan does not have a price configured for a ${billingCycleMonths}-month cycle`,
+      `Plan has no ${currency} price configured`,
     );
   }
 
-  // ── Create Razorpay order ──
+  let totalAmount = monthly;
+  if (billingCycleMonths === 1) {
+    totalAmount = monthly;
+  } else {
+    const presetKey =
+      currency === 'INR'
+        ? `price_${billingCycleMonths}_month_inr`
+        : `price_${billingCycleMonths}_month_usd`;
+    const preset = p[presetKey];
+    if (Number.isFinite(preset) && preset > 0) {
+      totalAmount = preset;
+    } else {
+      const discount =
+        p[`discount_${billingCycleMonths}_month`] ??
+        DEFAULT_DISCOUNTS[billingCycleMonths] ??
+        0;
+      totalAmount = Math.round(monthly * billingCycleMonths * (1 - discount / 100));
+    }
+  }
+
+  if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
+    return sendError(res, 400, 'Computed amount is invalid');
+  }
+
+  // Razorpay only accepts INR for accounts in India. If user picked
+  // USD we still create the order in INR (Razorpay can't accept USD
+  // without a special account). Convert at a flat rate for now.
+  // TODO: replace with live FX once Razorpay International is enabled.
+  let razorpayCurrency = 'INR';
+  let razorpayAmount = totalAmount;
+  if (currency === 'USD') {
+    // 1 USD ≈ 83 INR (conservative)
+    razorpayAmount = Math.round(totalAmount * 83);
+  }
+
   let order;
   try {
     order = await createRazorpayOrder({
-      amount: Math.round(priceInr * 100),
-      currency,
+      amount: Math.round(razorpayAmount * 100),
+      currency: razorpayCurrency,
       receipt: `pln_${Date.now()}_${user.id.slice(0, 8)}`,
       notes: {
         user_id: user.id,
         plan_id: planId,
+        plan_key: p.plan_key,
+        plan_name: p.plan_name,
         billing_cycle_months: String(billingCycleMonths),
-        plan_name: plan.name,
+        display_currency: currency,
+        display_amount: String(totalAmount),
       },
     });
   } catch (e: any) {
@@ -113,10 +172,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   return res.status(200).json({
     success: true,
     orderId: order.id,
-    amount: priceInr, // rupees — frontend multiplies by 100 before checkout
-    currency: order.currency,
+    amount: totalAmount,
+    currency,
     keyId: process.env.RAZORPAY_KEY_ID,
-    planName: plan.name,
+    planName: p.plan_name,
+    planKey: p.plan_key,
     billingCycleMonths,
   });
 }

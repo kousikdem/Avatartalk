@@ -11,6 +11,23 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 
+/**
+ * Node < 22 doesn't have a native global WebSocket, but
+ * @supabase/realtime-js@2.106+ requires one when RealtimeClient is
+ * constructed. Vercel runs Node 22+ in production so this branch is a
+ * no-op there; locally (Node 20) we polyfill from the `ws` package via
+ * top-level await dynamic import (Vite ESM-friendly).
+ */
+if (typeof (globalThis as any).WebSocket === 'undefined') {
+  try {
+    const wsMod: any = await import('ws');
+    const Ws = wsMod.WebSocket || wsMod.default || wsMod;
+    (globalThis as any).WebSocket = Ws;
+  } catch {
+    /* ws not installed — production Node 22 path */
+  }
+}
+
 /** ---------- CORS ---------- */
 export function applyCors(req: VercelRequest, res: VercelResponse): boolean {
   // The frontend lives on the same Vercel domain so technically we don't
