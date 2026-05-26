@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { readProfileCache, writeProfileCache } from '@/lib/profile-cache';
+import { fetchPublicProfile } from '@/lib/payment-api';
 import { useFollows } from '@/hooks/useFollows';
 import { usePersonalizedAI } from '@/hooks/usePersonalizedAI';
 import { usePosts } from '@/hooks/usePosts';
@@ -695,46 +696,72 @@ const ProfilePage: React.FC = () => {
       console.log('[ProfilePage] Fetching profile for username:', username);
 
       // ───────────────────────────────────────────────────────────────
-      // Public profile pages MUST NOT depend on an authenticated session.
-      // We use a two-tier strategy that works for anon AND signed-in users:
+      // Public profile fetch strategy (in order of preference):
       //
-      //   1. RPC `get_public_profile_by_username` — SECURITY DEFINER, so
-      //      it bypasses RLS entirely and only exposes safe columns
-      //      (no email / phone / dob). Defined in migration
-      //      20260520000001_fix_public_profiles_visibility.sql.
+      //   TIER 0: GET /api/profile/by-username/:username
+      //           Vercel serverless route using the Supabase service
+      //           role. Bypasses RLS entirely → works for ANYONE
+      //           (anonymous visitors, signed-in users, etc.) and does
+      //           NOT require the public-profile RLS migration to be
+      //           applied. This is the new primary path.
       //
-      //   2. Direct table SELECT (case-insensitive) — used as a fallback
-      //      if the RPC function doesn't exist yet (migration not
-      //      applied) OR returns an unexpected error. Relies on the
-      //      "Anyone can view public profile fields" RLS policy from
-      //      the same migration.
+      //   TIER 1: Supabase RPC `get_public_profile_by_username`
+      //           SECURITY DEFINER function. Used only if /api/ failed
+      //           (e.g. SUPABASE_SERVICE_ROLE_KEY not yet set on
+      //           Vercel). Needs the migration to be applied.
       //
-      // We removed the old FastAPI bypass (METHOD 0) because that route
-      // is only available in the Emergent preview via the K8s ingress —
-      // on Vercel the SPA rewrite returns HTML for it which poisoned
-      // the JSON parse and broke public profile loading.
+      //   TIER 2: Direct `profiles` table SELECT (case-insensitive)
+      //           Last-resort fallback. Needs the "Anyone can view
+      //           public profile fields" RLS policy to be applied.
+      //
+      // We removed the old FastAPI bypass — that route only existed in
+      // the Emergent preview via the K8s ingress, not on Vercel.
       // ───────────────────────────────────────────────────────────────
 
       let profileData: Profile | null = null;
-      let usedFallback = false;
+      let userStatsData: any = null;
+      let productsData: any[] = [];
+      let eventsData: any[] = [];
+      let avatarConfigData: any = null;
+      let socialLinksData: any = null;
+      let resolutionTier = 'none';
 
-      // TIER 1: SECURITY DEFINER RPC
-      const { data: profileRows, error: rpcError } = await supabase
-        .rpc('get_public_profile_by_username', { p_username: username });
-
-      if (rpcError) {
-        console.warn('[ProfilePage] RPC failed, will try direct query:', rpcError);
-      } else if (profileRows && profileRows.length > 0) {
-        profileData = profileRows[0];
-        console.log('[ProfilePage] Profile loaded via RPC');
-      } else {
-        console.log('[ProfilePage] RPC returned empty, trying direct query');
+      // TIER 0 — Vercel API route
+      try {
+        const result = await fetchPublicProfile(username || '');
+        if (result?.profile) {
+          profileData = result.profile;
+          userStatsData = result.user_stats;
+          productsData = result.products || [];
+          eventsData = result.events || [];
+          avatarConfigData = result.avatar_config;
+          socialLinksData = result.social_links;
+          resolutionTier = 'vercel-api';
+          console.log('[ProfilePage] Profile loaded via /api/profile/by-username');
+        } else if (result === null) {
+          // 404 from /api → profile genuinely doesn't exist OR API route
+          // not deployed yet. Fall through to Supabase tiers.
+          console.log('[ProfilePage] /api returned 404, trying Supabase RPC');
+        }
+      } catch (apiErr: any) {
+        console.warn('[ProfilePage] /api route failed, falling back:', apiErr?.message);
       }
 
-      // TIER 2: Direct table query (case-insensitive). Triggered when
-      // RPC failed OR returned empty rows. This is exactly the
-      // `getProfileByUsername(username)` pattern recommended for public
-      // profile pages — NO auth.uid() dependency.
+      // TIER 1 — SECURITY DEFINER RPC
+      if (!profileData) {
+        const { data: profileRows, error: rpcError } = await supabase
+          .rpc('get_public_profile_by_username', { p_username: username });
+
+        if (rpcError) {
+          console.warn('[ProfilePage] RPC failed, will try direct query:', rpcError);
+        } else if (profileRows && profileRows.length > 0) {
+          profileData = profileRows[0];
+          resolutionTier = 'supabase-rpc';
+          console.log('[ProfilePage] Profile loaded via Supabase RPC');
+        }
+      }
+
+      // TIER 2 — direct table query
       if (!profileData) {
         const { data: directProfile, error: directError } = await supabase
           .from('profiles')
@@ -744,27 +771,24 @@ const ProfilePage: React.FC = () => {
 
         if (directError) {
           console.error('[ProfilePage] Direct query error:', directError);
-          // If we already painted from cache, keep that and bail quietly.
           if (cached?.profile) {
             console.warn('[ProfilePage] Keeping cached profile on background fetch error.');
             return;
           }
           throw new Error(
-            'Unable to load profile. Please ensure RLS policies are applied (see migration 20260520000001).',
+            'Unable to load profile. Please ensure SUPABASE_SERVICE_ROLE_KEY is set on Vercel, OR apply migration 20260520000001.',
           );
         }
 
         if (directProfile) {
           profileData = directProfile as unknown as Profile;
-          usedFallback = true;
+          resolutionTier = 'supabase-direct';
           console.log('[ProfilePage] Profile loaded via direct query fallback');
         }
       }
 
       if (!profileData) {
         if (cached?.profile) {
-          // Background revalidate found nothing — likely a transient
-          // hiccup. Keep the cached view.
           console.warn('[ProfilePage] Revalidation returned empty; keeping cached profile.');
           return;
         }
@@ -774,24 +798,29 @@ const ProfilePage: React.FC = () => {
 
       const profileId = profileData.id;
 
-      // Fetch all related public data in parallel. Each table has its
-      // own RLS policy granting SELECT to anon for the public subset
-      // (status='published' for products/events, is_active=true for
-      // avatar_configurations, etc.). If any of these fail individually
-      // we still render the profile — they're best-effort enhancements.
-      const [statsResult, productsResult, eventsResult, avatarResult, socialLinksResult] =
-        await Promise.all([
-          supabase.from('user_stats').select('*').eq('user_id', profileId).maybeSingle(),
-          supabase.from('products').select('*').eq('user_id', profileId).eq('status', 'published')
-            .order('created_at', { ascending: false }).limit(6),
-          supabase.from('events').select('*').eq('user_id', profileId)
-            .in('status', ['published', 'upcoming']).order('created_at', { ascending: false }).limit(6),
-          supabase.from('avatar_configurations').select('*').eq('user_id', profileId)
-            .eq('is_active', true).maybeSingle(),
-          supabase.from('social_links').select('*').eq('user_id', profileId).maybeSingle(),
-        ]);
+      // If the Vercel route already gave us related data, skip the
+      // parallel re-fetch. Otherwise fetch directly via Supabase.
+      if (resolutionTier !== 'vercel-api') {
+        const [statsResult, productsResult, eventsResult, avatarResult, socialLinksResult] =
+          await Promise.all([
+            supabase.from('user_stats').select('*').eq('user_id', profileId).maybeSingle(),
+            supabase.from('products').select('*').eq('user_id', profileId).eq('status', 'published')
+              .order('created_at', { ascending: false }).limit(6),
+            supabase.from('events').select('*').eq('user_id', profileId)
+              .in('status', ['published', 'upcoming']).order('created_at', { ascending: false }).limit(6),
+            supabase.from('avatar_configurations').select('*').eq('user_id', profileId)
+              .eq('is_active', true).maybeSingle(),
+            supabase.from('social_links').select('*').eq('user_id', profileId).maybeSingle(),
+          ]);
 
-      const finalStats = statsResult.data || {
+        userStatsData = statsResult.data;
+        productsData = productsResult.data || [];
+        eventsData = eventsResult.data || [];
+        avatarConfigData = avatarResult.data;
+        socialLinksData = socialLinksResult.data;
+      }
+
+      const finalStats = userStatsData || {
         total_conversations: 0,
         followers_count: 0,
         profile_views: 0,
@@ -800,25 +829,22 @@ const ProfilePage: React.FC = () => {
 
       setProfile(profileData);
       setUserStats(finalStats);
-      setProducts(productsResult.data || []);
-      setEvents(eventsResult.data || []);
-      setAvatarConfig(avatarResult.data);
-      setSocialLinks(socialLinksResult.data);
+      setProducts(productsData);
+      setEvents(eventsData);
+      setAvatarConfig(avatarConfigData);
+      setSocialLinks(socialLinksData);
       setLoading(false);
 
-      // Persist to sessionStorage so the next visit is instant.
       writeProfileCache(username || '', {
         profile: profileData,
         userStats: finalStats,
-        products: productsResult.data || [],
-        events: eventsResult.data || [],
-        avatarConfig: avatarResult.data,
-        socialLinks: socialLinksResult.data,
+        products: productsData,
+        events: eventsData,
+        avatarConfig: avatarConfigData,
+        socialLinks: socialLinksData,
       });
 
-      if (usedFallback) {
-        console.info('[ProfilePage] Loaded via fallback path — apply migration 20260520000001 for the optimised RPC route.');
-      }
+      console.info(`[ProfilePage] Profile resolved via tier: ${resolutionTier}`);
     } catch (error) {
       console.error('[ProfilePage] Error fetching profile:', error);
       toast({

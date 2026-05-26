@@ -1,7 +1,18 @@
 {
   "name": "avatar-talk-root",
   "version": "1.0.0",
-  "description": "Avatar Talk monorepo root (frontend build target lives in /frontend)",
+  "description": "Avatar Talk monorepo root — frontend build lives in /frontend, Vercel serverless API routes live in /api",
   "private": true,
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "@vercel/node": "^3.2.0",
+    "typescript": "^5.5.0"
+  }
 }
