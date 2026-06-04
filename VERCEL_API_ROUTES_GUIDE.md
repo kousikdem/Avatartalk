@@ -11,6 +11,34 @@ three flows that historically broke on `avatartalk.co`:
 | `POST /api/payment/plan-checkout/create-order` | Creates a Razorpay order for a plan in `platform_pricing_plans`. |
 | `POST /api/payment/plan-checkout/verify` | HMAC-verifies, upserts `user_platform_subscriptions`, credits monthly tokens × cycle, audits via `platform_plan_transactions`. Idempotent. |
 
+## ⚠️ Known recurring blocker: Supabase project pause
+
+If `/api/profile/by-username/...` returns `TypeError: fetch failed`
+(server logs) or the page shows the new "Loading profile…" spinner
+indefinitely, the most common cause is that the **Supabase project is
+paused**. Free-tier projects auto-pause after ~1 week of inactivity.
+
+**Fix**: open the Supabase Dashboard → Project → **Resume project**.
+After ~30 seconds the API resumes and the AvatarTalk flows work again.
+
+## ⚠️ FUNCTION_INVOCATION_FAILED on Vercel — fixed 2026-06-04
+
+Symptom: every `/api/*` call on `avatartalk.co` returns plain-text
+`A server error has occurred / FUNCTION_INVOCATION_FAILED`. Frontend
+toast says "Failed to create order".
+
+Root cause: `/app/api/_lib/helpers.ts` used a **top-level
+`await import('ws')`** for the Node-20 WebSocket polyfill. Vercel's
+`@vercel/node` runtime compiles TS to CommonJS by default, and CJS
+does NOT support top-level await — the module crashes at import time
+on every cold start.
+
+Fix applied: moved the polyfill into a lazy `function
+ensureWebSocketPolyfill()` that uses synchronous `require('ws')`,
+invoked from inside `getSupabaseAdmin()` / `getSupabaseAnon()`.
+The Vite dev plugin installs the polyfill at plugin startup so local
+testing is unaffected.
+
 ## 1. Required Vercel Environment Variables
 
 Set these under **Vercel → Project Settings → Environment Variables**

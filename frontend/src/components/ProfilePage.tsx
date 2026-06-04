@@ -470,9 +470,12 @@ const ProfilePage: React.FC = () => {
   // Check if this is the user's own profile
   const isOwnProfile = currentUser?.id === profile?.id;
 
-  // First-time visitor gift popup - ask visitors to gift tokens
+  // First-time visitor gift popup — asks LOGGED-IN visitors to gift
+  // tokens. Anonymous (unknown) visitors never see this popup; they
+  // see a clean read-only profile until they sign in.
   useEffect(() => {
     if (!profile?.id || isOwnProfile || hasShownFirstTimeGiftPopup || !loading) return;
+    if (!currentUser) return; // anonymous → skip entirely
     
     const checkAndShowGiftPopup = async () => {
       // Check localStorage for first-time visit
@@ -504,7 +507,7 @@ const ProfilePage: React.FC = () => {
     };
     
     checkAndShowGiftPopup();
-  }, [profile, isOwnProfile, hasShownFirstTimeGiftPopup, loading]);
+  }, [profile, isOwnProfile, hasShownFirstTimeGiftPopup, loading, currentUser]);
 
   // Real-time follower count updates from database
   useEffect(() => {
@@ -1311,9 +1314,19 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  // No loading screen for user profile - instant load
+  // Show a lightweight skeleton while the profile is being fetched —
+  // previously returned null, which left the page blank for the full
+  // duration of the API call (especially noticeable on slow networks
+  // or when the upstream is degraded).
   if (loading) {
-    return null; // Return nothing while loading
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-16 h-16 rounded-full border-4 border-blue-500/30 border-t-blue-500 animate-spin" />
+          <p className="text-slate-400 text-sm">Loading profile…</p>
+        </div>
+      </div>
+    );
   }
 
   if (!profile) {
@@ -1322,7 +1335,17 @@ const ProfilePage: React.FC = () => {
         <Card className="bg-slate-900/80 border-slate-700/50 backdrop-blur-xl max-w-md w-full">
           <CardContent className="p-8 text-center">
             <h1 className="text-2xl font-bold text-white mb-2">Profile Not Found</h1>
-            <p className="text-slate-400">The requested profile could not be found.</p>
+            <p className="text-slate-400 mb-4">
+              We couldn't load <span className="text-white">@{username}</span>.
+              The profile may not exist, or the server is temporarily unavailable.
+            </p>
+            <Button
+              onClick={() => window.location.reload()}
+              variant="outline"
+              className="border-slate-600 text-slate-200 hover:bg-slate-800"
+            >
+              Retry
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -1447,14 +1470,12 @@ const ProfilePage: React.FC = () => {
                 isTalking={isTalking}
                 onAvatarClick={currentUser?.id === profile?.id ? () => navigate('/settings/avatar') : undefined}
                 onTalkClick={handleTalkToMeClick}
-                showGiftButton={currentUser?.id !== profile?.id}
-                onGiftClick={() => {
-                  if (!currentUser) {
-                    setIsMainAuthOpen(true);
-                    return;
-                  }
-                  setIsGiftModalOpen(true);
-                }}
+                // Gift button: shown ONLY to logged-in (known) visitors
+                // who aren't the profile owner. Anonymous / unknown
+                // visitors see the avatar without the gift CTA — they
+                // can still chat (limited) and read the profile.
+                showGiftButton={Boolean(currentUser) && currentUser?.id !== profile?.id}
+                onGiftClick={() => setIsGiftModalOpen(true)}
               />
             </div>
 

@@ -15,16 +15,21 @@ import crypto from 'crypto';
  * Node < 22 doesn't have a native global WebSocket, but
  * @supabase/realtime-js@2.106+ requires one when RealtimeClient is
  * constructed. Vercel runs Node 22+ in production so this branch is a
- * no-op there; locally (Node 20) we polyfill from the `ws` package via
- * top-level await dynamic import (Vite ESM-friendly).
+ * no-op there; locally (Node 20) we polyfill from the `ws` package.
+ *
+ * IMPORTANT: must be a sync `require()` inside a function — NOT a
+ * top-level `await import()` — because Vercel's @vercel/node runtime
+ * compiles to CommonJS and top-level await causes
+ * FUNCTION_INVOCATION_FAILED on every request.
  */
-if (typeof (globalThis as any).WebSocket === 'undefined') {
+function ensureWebSocketPolyfill(): void {
+  if (typeof (globalThis as any).WebSocket !== 'undefined') return;
   try {
-    const wsMod: any = await import('ws');
-    const Ws = wsMod.WebSocket || wsMod.default || wsMod;
-    (globalThis as any).WebSocket = Ws;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const ws = require('ws');
+    (globalThis as any).WebSocket = ws.WebSocket || ws.default || ws;
   } catch {
-    /* ws not installed — production Node 22 path */
+    /* ws not installed — production Node 22+ path */
   }
 }
 
@@ -52,6 +57,7 @@ let _anon: SupabaseClient | null = null;
 
 export function getSupabaseAdmin(): SupabaseClient {
   if (_admin) return _admin;
+  ensureWebSocketPolyfill();
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url) throw new Error('SUPABASE_URL env var is missing');
@@ -69,6 +75,7 @@ export function getSupabaseAdmin(): SupabaseClient {
 
 export function getSupabaseAnon(): SupabaseClient {
   if (_anon) return _anon;
+  ensureWebSocketPolyfill();
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const key =
     process.env.SUPABASE_ANON_KEY ||

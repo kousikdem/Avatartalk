@@ -71,6 +71,12 @@ async function readErrorMessage(res: Response): Promise<string> {
     if (text.trim().startsWith('<')) {
       return `HTTP ${res.status} — API route not deployed yet. Push to main on Vercel.`;
     }
+    // Vercel's "FUNCTION_INVOCATION_FAILED" plain-text response. This
+    // happens when a serverless function throws at top-level (e.g.
+    // top-level await in CJS, missing env var at import time, etc.).
+    if (text.includes('FUNCTION_INVOCATION_FAILED') || text.includes('server error has occurred')) {
+      return `Server error (${res.status}). The payment service is misconfigured. Please contact support.`;
+    }
     return text.slice(0, 240);
   }
 }

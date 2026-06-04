@@ -60,6 +60,27 @@ function loadBackendEnv() {
 }
 
 /**
+ * Node < 22 needs a WebSocket polyfill for @supabase/realtime-js. On
+ * Vercel production Node 22+ this is a native global; here in the
+ * Emergent dev environment (Node 20) we install it onto globalThis at
+ * plugin-startup so the Vercel handlers don't have to worry about it.
+ */
+async function ensureWebSocketGlobal() {
+  if (typeof (globalThis as any).WebSocket !== 'undefined') return;
+  try {
+    const { createRequire } = await import('module');
+    const req = createRequire(import.meta.url);
+    const ws = req('ws');
+    // `ws` exports the WebSocket class as both default (CJS) and as
+    // `.WebSocket` named. Take the class, NOT the whole module — the
+    // module-as-global would interfere with undici's fetch internals.
+    (globalThis as any).WebSocket = ws.WebSocket || ws;
+  } catch (e) {
+    console.warn('[dev-api] ws polyfill failed:', e);
+  }
+}
+
+/**
  * Resolve the URL pathname (e.g. "/api/profile/by-username/alice") to
  * an absolute filesystem path under /app/api. Supports dynamic `[name]`
  * segments — the captured value is stored on `query[name]`.
@@ -176,8 +197,9 @@ export function devApiPlugin(): Plugin {
   return {
     name: 'avatartalk:dev-api',
     apply: 'serve',
-    configResolved() {
+    async configResolved() {
       loadBackendEnv();
+      await ensureWebSocketGlobal();
     },
     configureServer(server: ViteDevServer) {
       const middleware: Connect.NextHandleFunction = async (
