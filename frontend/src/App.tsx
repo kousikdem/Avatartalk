@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState, useEffect, useRef, useMemo, startTransition, memo } from "react";
+import React, { Suspense, lazy, useState, useEffect, useLayoutEffect, useRef, useMemo, startTransition, memo } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -136,7 +136,10 @@ const AuthenticatedRoutes = memo(() => {
     };
   }, [user?.id]);
 
-  if (needsOnboarding === null) return <PageFallback />;
+  if (needsOnboarding === null) {
+    // Don't block rendering — onboarding popup will show on top once check completes
+    // This prevents the blank-page flash while onboarding status is being fetched
+  }
 
   return (
     <>
@@ -217,25 +220,24 @@ PublicRoutes.displayName = 'PublicRoutes';
 
 // ─── Root App ────────────────────────────────────────────────────────────────────
 const App = () => {
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [authChecked, setAuthChecked] = useState(false);  // NEW: Auth check flag
-  const [isLoading, setIsLoading] = useState(true);
+  // ── Lazy-initialize from localStorage cache so the UI renders on the FIRST
+  //    React paint — no loading spinner on return visits.
+  const [session, setSession] = useState<Session | null>(() => {
+    try { return getCachedAuth()?.session ?? null; } catch { return null; }
+  });
+  const [user, setUser] = useState<User | null>(() => {
+    try { return getCachedAuth()?.user ?? null; } catch { return null; }
+  });
+  const [authChecked, setAuthChecked] = useState<boolean>(() => {
+    try { return getCachedAuth()?.user != null; } catch { return false; }
+  });
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    try { return getCachedAuth()?.user == null; } catch { return true; }
+  });
 
   const currentUserIdRef = useRef<string | null>(null);
   const initialLoadDoneRef = useRef(false);
   const mountedRef = useRef(true);
-
-  // Load cached auth state immediately on mount
-  useEffect(() => {
-    const cached = getCachedAuth();
-    if (cached && cached.user) {
-      console.log('✅ Loading from auth cache');
-      setUser(cached.user);
-      setSession(cached.session);
-      currentUserIdRef.current = cached.user?.id || null;
-    }
-  }, []);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -292,9 +294,11 @@ const App = () => {
           setAuthChecked(true);  // Auth check complete
           setIsLoading(false);
 
-          // Cache the auth state
+          // Cache or clear the auth state
           if (initialSession?.user) {
             setCachedAuth(initialSession.user, initialSession);
+          } else {
+            clearAuthCache();  // Session expired — clear stale cache
           }
         });
       } catch (error) {
@@ -317,7 +321,9 @@ const App = () => {
   }, []);
 
   // Notify the inline #app-loader in index.html so it fades out when auth check completes
-  useEffect(() => {
+  // useLayoutEffect runs synchronously after DOM mutations — fires faster than useEffect
+  // so the HTML loader hides in the same paint cycle as the app content appearing.
+  useLayoutEffect(() => {
     if (!authChecked) return;
 
     const w = window as unknown as { __REACT_MOUNTED__?: () => void };
@@ -351,7 +357,7 @@ const App = () => {
                 {/* Loading timeout */}
                 <LoadingTimeout
                   isLoading={isLoading}
-                  timeout={8000}
+                  timeout={20000}
                   onRetry={handleRetry}
                   message="Taking longer than expected. Please check your internet connection."
                 />

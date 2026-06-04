@@ -892,12 +892,14 @@ const ProfilePage: React.FC = () => {
       updateMetaTag('og:url', url, true);
       updateMetaTag('og:type', 'profile', true);
       updateMetaTag('og:image', imageUrl, true);
+      updateMetaTag('og:site_name', 'AvatarTalk', true);
       
       // Twitter Card tags
       updateMetaTag('twitter:card', 'summary_large_image');
       updateMetaTag('twitter:title', title);
       updateMetaTag('twitter:description', description);
       updateMetaTag('twitter:image', imageUrl);
+      updateMetaTag('twitter:site', '@avatartalk');
       
       // Canonical URL
       let canonicalLink = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
@@ -907,11 +909,43 @@ const ProfilePage: React.FC = () => {
         document.head.appendChild(canonicalLink);
       }
       canonicalLink.href = url;
+
+      // JSON-LD Structured Data (Person schema) for rich search results
+      const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'ProfilePage',
+        'name': title,
+        'url': url,
+        'mainEntity': {
+          '@type': 'Person',
+          'name': profile.display_name || profile.username,
+          'alternateName': `@${profile.username}`,
+          'description': description,
+          'image': imageUrl,
+          'url': url,
+          'sameAs': [],
+          ...(profile.profession ? { 'jobTitle': profile.profession } : {}),
+        }
+      };
+      let scriptTag = document.querySelector('script[data-schema="profile"]') as HTMLScriptElement;
+      if (!scriptTag) {
+        scriptTag = document.createElement('script');
+        scriptTag.type = 'application/ld+json';
+        scriptTag.setAttribute('data-schema', 'profile');
+        document.head.appendChild(scriptTag);
+      }
+      scriptTag.textContent = JSON.stringify(jsonLd);
     }
     
     // Cleanup: reset to default when component unmounts
     return () => {
       document.title = 'AvatarTalk.Co';
+      // Remove JSON-LD tag on unmount
+      const scriptTag = document.querySelector('script[data-schema="profile"]');
+      if (scriptTag) scriptTag.remove();
+      // Reset canonical
+      const canonicalLink = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
+      if (canonicalLink) canonicalLink.href = 'https://avatartalk.co/';
     };
   }, [profile]);
 

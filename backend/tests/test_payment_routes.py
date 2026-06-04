@@ -17,7 +17,7 @@ import pytest
 import requests
 
 BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://subscription-fix-31.preview.emergentagent.com"
+    "REACT_APP_BACKEND_URL", "https://token-optimizer-13.preview.emergentagent.com"
 ).rstrip("/")
 
 SUPABASE_URL = "https://hnxnvdzrwbtmcohdptfq.supabase.co"
