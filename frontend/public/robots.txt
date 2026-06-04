@@ -13,6 +13,5 @@ Allow: /
 User-agent: *
 Allow: /
 
-# Sitemaps
+# Sitemap
 Sitemap: https://avatartalk.co/sitemap.xml
-Sitemap: https://avatartalk.co/api/sitemap/profiles

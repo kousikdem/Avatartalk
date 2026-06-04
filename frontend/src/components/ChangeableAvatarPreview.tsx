@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, Suspense } from 'react';
+import React, { useRef, useState, useEffect, Suspense, Component } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -10,6 +10,31 @@ import { OrbitControls, ContactShadows } from '@react-three/drei';
 import AdvancedAvatarPreview from './AdvancedAvatarPreview';
 import FuturisticAvatar3D from './FuturisticAvatar3D';
 import { useAvatarSettings } from '@/hooks/useAvatarSettings';
+
+// Local error boundary for 3D/WebGL — prevents a Canvas crash from crashing the whole profile page
+class AvatarErrorBoundary extends Component<
+  { children: React.ReactNode; fallback?: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode; fallback?: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(e: Error) { console.warn('[AvatarPreview] 3D render error (non-fatal):', e.message); }
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback ?? (
+        <div className="w-full h-full flex items-center justify-center rounded-2xl bg-gradient-to-br from-violet-900/40 to-blue-900/40">
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center text-white text-3xl font-bold opacity-80">
+            AI
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 interface ChangeableAvatarPreviewProps {
   userId?: string;
@@ -264,26 +289,28 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
           ) : shouldRenderConfiguredAvatar() ? (
             // Render the actual configured 3D avatar from dashboard
             <div className="relative h-full">
-              <Canvas camera={{ position: [0, 0, 9], fov: 45 }}>
-                <ambientLight intensity={0.6} />
-                <directionalLight position={[10, 10, 5]} intensity={1} />
-                <spotLight position={[-10, -10, -5]} intensity={0.3} />
-                
-                <Suspense fallback={null}>
-                  <AdvancedAvatarPreview config={avatarData} />
-                </Suspense>
-                
-                <OrbitControls 
-                  enablePan={false}
-                  enableZoom={false}
-                  minDistance={7}
-                  maxDistance={12}
-                  maxPolarAngle={Math.PI / 1.8}
-                  autoRotate={!isTalking}
-                  autoRotateSpeed={0.5}
-                />
-                <ContactShadows position={[0, -2.5, 0]} scale={8} blur={3} far={3} />
-              </Canvas>
+              <AvatarErrorBoundary>
+                <Canvas camera={{ position: [0, 0, 9], fov: 45 }}>
+                  <ambientLight intensity={0.6} />
+                  <directionalLight position={[10, 10, 5]} intensity={1} />
+                  <spotLight position={[-10, -10, -5]} intensity={0.3} />
+                  
+                  <Suspense fallback={null}>
+                    <AdvancedAvatarPreview config={avatarData} />
+                  </Suspense>
+                  
+                  <OrbitControls 
+                    enablePan={false}
+                    enableZoom={false}
+                    minDistance={7}
+                    maxDistance={12}
+                    maxPolarAngle={Math.PI / 1.8}
+                    autoRotate={!isTalking}
+                    autoRotateSpeed={0.5}
+                  />
+                  <ContactShadows position={[0, -2.5, 0]} scale={8} blur={3} far={3} />
+                </Canvas>
+              </AvatarErrorBoundary>
               {isTalking && (
                 <div className="absolute inset-0 border-4 border-blue-400/60 rounded-2xl animate-pulse pointer-events-none"></div>
               )}
@@ -291,14 +318,16 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
           ) : (
             // Fallback to default futuristic avatar if no configuration exists
             <div className="relative animate-[float_6s_ease-in-out_infinite]">
-              <FuturisticAvatar3D
-                isLarge={isLarge}
-                isTalking={isTalking}
-                avatarStyle={(settings?.avatar_type as any) || 'realistic'}
-                mood={(settings?.avatar_mood as any) || 'friendly'}
-                className="w-full h-full"
-                onInteraction={() => {}}
-              />
+              <AvatarErrorBoundary>
+                <FuturisticAvatar3D
+                  isLarge={isLarge}
+                  isTalking={isTalking}
+                  avatarStyle={(settings?.avatar_type as any) || 'realistic'}
+                  mood={(settings?.avatar_mood as any) || 'friendly'}
+                  className="w-full h-full"
+                  onInteraction={() => {}}
+                />
+              </AvatarErrorBoundary>
             </div>
           )}
 
