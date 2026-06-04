@@ -17,8 +17,8 @@ from fastapi import APIRouter, HTTPException
 
 logger = logging.getLogger(__name__)
 
-SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
-SUPABASE_SERVICE_ROLE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
+SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 
 SERVICE_HEADERS = {
     "apikey": SUPABASE_SERVICE_ROLE_KEY,
