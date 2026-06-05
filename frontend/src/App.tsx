@@ -1,4 +1,39 @@
-import React, { Suspense, lazy, useState, useEffect, useLayoutEffect, useRef, useMemo, startTransition, memo } from "react";
+import React, { Suspense, lazy, useState, useEffect, useLayoutEffect, useRef, useMemo, startTransition, memo, Component } from "react";
+
+// ─── Profile-specific Error Boundary ───────────────────────────────────────────
+// Catches any render error from ProfilePage/ChangeableAvatarPreview so it never
+// reaches the top-level ErrorBoundary in main.tsx.
+class ProfileErrorBoundary extends Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(e: Error) {
+    console.warn('[ProfileErrorBoundary] Non-fatal:', e?.message);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-4">
+          <div className="text-center max-w-sm">
+            <div className="w-14 h-14 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-4 text-2xl">👤</div>
+            <h2 className="text-white text-xl font-semibold mb-2">Profile temporarily unavailable</h2>
+            <p className="text-slate-400 text-sm mb-5">This profile couldn't load. Please try again.</p>
+            <button
+              onClick={() => this.setState({ hasError: false })}
+              className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors"
+            >Try again</button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -176,7 +211,7 @@ const AuthenticatedRoutes = memo(() => {
                 <Route path="/settings/buy-tokens" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><BuyTokensPage /></DashboardPageLayout></Suspense>} />
                 <Route path="/pricing" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><PricingPage /></DashboardPageLayout></Suspense>} />
                 <Route path="/settings/notifications" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><Index mode="authed" /></DashboardPageLayout></Suspense>} />
-                <Route path="/:username" element={<Suspense fallback={<ProfileFallback />}><UsernameRedirect /></Suspense>} />
+                <Route path="/:username" element={<ProfileErrorBoundary><Suspense fallback={<ProfileFallback />}><UsernameRedirect /></Suspense></ProfileErrorBoundary>} />
                 <Route path="*" element={<Suspense fallback={<PageFallback />}><NotFound /></Suspense>} />
               </Routes>
             </Suspense>
@@ -206,7 +241,7 @@ const PublicRoutes = memo(() => (
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
           <Route path="/refund-policy" element={<RefundPolicyPage />} />
           <Route path="/db-test" element={<DatabaseTestPage />} />
-          <Route path="/:username" element={<Suspense fallback={<ProfileFallback />}><UsernameRedirect /></Suspense>} />
+          <Route path="/:username" element={<ProfileErrorBoundary><Suspense fallback={<ProfileFallback />}><UsernameRedirect /></Suspense></ProfileErrorBoundary>} />
           {/* Protected routes — bounce unauthenticated visitors to the home page with auth modal */}
           <Route path="/settings/*" element={<Navigate to="/?auth=login" replace />} />
           <Route path="/onboarding" element={<Navigate to="/?auth=login" replace />} />

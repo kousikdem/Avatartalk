@@ -5,47 +5,57 @@ import { Component } from 'react'
 import App from './App.tsx'
 import './index.css'
 
-// Error boundary for production
-class ErrorBoundary extends Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
-  constructor(props: {children: React.ReactNode}) {
+// Top-level error boundary — catches any uncaught React rendering error.
+// For profile pages we auto-redirect to home rather than showing a dead end.
+class ErrorBoundary extends Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode }) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false };
   }
-  
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
   }
-  
-  componentDidCatch(error: Error, errorInfo: any) {
-    console.error('App Error:', error, errorInfo);
+
+  componentDidCatch(error: Error, info: any) {
+    console.error('[ErrorBoundary] Caught:', error?.message, info?.componentStack?.split('\n')?.[1]);
+
+    // If error is on a profile page, auto-navigate home and reset in 100ms
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      const isProfileRoute = path.length > 1 && !path.startsWith('/settings') && !path.startsWith('/pricing') && !path.startsWith('/terms') && !path.startsWith('/privacy') && !path.startsWith('/refund');
+      if (isProfileRoute) {
+        // Don't show the error screen — navigate home and reset the boundary
+        window.history.pushState({}, '', '/');
+        setTimeout(() => this.setState({ hasError: false }), 100);
+        return;
+      }
+    }
   }
-  
+
   render() {
     if (this.state.hasError) {
       return (
         <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100vh',
-          flexDirection: 'column',
-          fontFamily: 'system-ui',
-          padding: '20px'
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          height: '100vh', flexDirection: 'column', fontFamily: 'system-ui',
+          padding: '20px', background: '#0f172a', color: '#fff'
         }}>
-          <h1 style={{ fontSize: '24px', marginBottom: '16px' }}>Something went wrong</h1>
-          <p style={{ color: '#666', marginBottom: '16px' }}>Please refresh the page to try again.</p>
-          <button 
-            onClick={() => window.location.reload()}
+          <h1 style={{ fontSize: '20px', marginBottom: '12px', fontWeight: 600 }}>Something went wrong</h1>
+          <p style={{ color: '#94a3b8', marginBottom: '20px', textAlign: 'center', maxWidth: 360 }}>
+            An unexpected error occurred. Click below to go back to the home page.
+          </p>
+          <button
+            onClick={() => { window.location.href = '/'; }}
             style={{
-              padding: '12px 24px',
-              background: '#000',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer'
+              padding: '10px 24px', background: '#6366f1', color: '#fff',
+              border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600
             }}
           >
-            Refresh Page
+            Go to Home
           </button>
         </div>
       );
