@@ -317,7 +317,7 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
             </div>
           ) : (
             // Fallback to default futuristic avatar if no configuration exists
-            <div className="relative animate-[float_6s_ease-in-out_infinite]">
+            <div className="relative">
               <AvatarErrorBoundary>
                 <FuturisticAvatar3D
                   isLarge={isLarge}
@@ -333,19 +333,19 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
 
         </div>
 
-        {/* Gift Button - Bottom Left - Icon Only */}
+        {/* Gift Button — vertically centered on the LEFT side of the avatar preview */}
         {showGiftButton && onGiftClick && (
-          <div className="absolute bottom-4 left-4 z-10">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10">
             <Button
               size="icon"
-              className="rounded-full w-12 h-12 bg-gradient-to-r from-pink-500 via-rose-500 to-purple-500 hover:from-pink-600 hover:via-rose-600 hover:to-purple-600 text-white shadow-xl hover:shadow-2xl animate-pulse hover:animate-none transition-all border-2 border-white/30"
+              className="rounded-full w-11 h-11 bg-gradient-to-r from-pink-500 via-rose-500 to-purple-500 hover:from-pink-600 hover:via-rose-600 hover:to-purple-600 text-white shadow-xl hover:shadow-2xl transition-all border-2 border-white/30"
               onClick={(e) => {
                 e.stopPropagation();
                 onGiftClick();
               }}
               title="Gift AI Tokens"
             >
-              <Gift className="w-6 h-6" />
+              <Gift className="w-5 h-5" />
             </Button>
           </div>
         )}

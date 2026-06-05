@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import VisitorAuth from './VisitorAuth';
 import MainAuth from './MainAuth';
@@ -21,8 +21,9 @@ import { useActiveSubscription } from '@/hooks/useActiveSubscription';
 import { useAIChatHistory } from '@/hooks/useAIChatHistory';
 import { useProfileEngagement } from '@/hooks/useProfileEngagement';
 import { useViewTracking } from '@/hooks/useViewTracking';
-import FuturisticAvatar3D from './FuturisticAvatar3D';
-import ChangeableAvatarPreview from './ChangeableAvatarPreview';
+// Lazy-load the 3D avatar preview so Three.js doesn't block initial paint
+// and any WebGL crash is isolated from the rest of the profile page.
+const ChangeableAvatarPreview = lazy(() => import('./ChangeableAvatarPreview'));
 import SocialFeed from './SocialFeed';
 import FollowButton from './FollowButton';
 import SubscribeButton from './SubscribeButton';
@@ -558,7 +559,9 @@ const ProfilePage: React.FC = () => {
 
   useEffect(() => {
     if (username) {
-      fetchProfile();
+      fetchProfile().catch(err =>
+        console.warn('[ProfilePage] Background fetch silently failed:', err?.message)
+      );
     }
   }, [username]);
 
@@ -778,9 +781,10 @@ const ProfilePage: React.FC = () => {
             console.warn('[ProfilePage] Keeping cached profile on background fetch error.');
             return;
           }
-          throw new Error(
-            'Unable to load profile. Please ensure SUPABASE_SERVICE_ROLE_KEY is set on Vercel, OR apply migration 20260520000001.',
-          );
+          // In background revalidation, don't throw — show toast only
+          console.warn('[ProfilePage] All profile tiers failed — no cache available.');
+          setLoading(false);
+          return;
         }
 
         if (directProfile) {
@@ -796,7 +800,8 @@ const ProfilePage: React.FC = () => {
           return;
         }
         console.warn('[ProfilePage] No profile found for username:', username);
-        throw new Error('Profile not found');
+        setLoading(false);
+        return;
       }
 
       const profileId = profileData.id;
@@ -1399,12 +1404,9 @@ const ProfilePage: React.FC = () => {
 
   return (
     <div className={`${bgClass} flex items-center justify-center p-0 sm:p-2`} style={{ height: '100dvh', minHeight: '-webkit-fill-available' }}>
-      <motion.div
+      <div
         className="w-full sm:max-w-lg mx-auto h-full sm:h-auto"
         style={{ height: '100%', maxHeight: '100dvh' }}
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6 }}
       >
         <Card className={`${cardClass} backdrop-blur-xl rounded-none sm:rounded-3xl overflow-hidden shadow-none sm:shadow-2xl sm:shadow-blue-950/50 h-full flex flex-col`}>
           <CardContent className="p-0 h-full flex flex-col overflow-hidden" style={{ display: 'flex', flexDirection: 'column' }}>
@@ -1494,23 +1496,27 @@ const ProfilePage: React.FC = () => {
               </p>
             </div>
 
-            {/* Changeable 3D Avatar Preview */}
+            {/* Changeable 3D Avatar Preview — lazy-loaded, isolated from page crash */}
             <div className="px-4 sm:px-6 pb-3">
-              <ChangeableAvatarPreview
-                userId={profile?.id}
-                isLarge={true}
-                showControls={currentUser?.id === profile?.id}
-                isInteractive={true}
-                isTalking={isTalking}
-                onAvatarClick={currentUser?.id === profile?.id ? () => navigate('/settings/avatar') : undefined}
-                onTalkClick={handleTalkToMeClick}
-                // Gift button: shown ONLY to logged-in (known) visitors
-                // who aren't the profile owner. Anonymous / unknown
-                // visitors see the avatar without the gift CTA — they
-                // can still chat (limited) and read the profile.
-                showGiftButton={Boolean(currentUser) && currentUser?.id !== profile?.id}
-                onGiftClick={() => setIsGiftModalOpen(true)}
-              />
+              <Suspense
+                fallback={
+                  <div className="relative w-full aspect-[4/3] rounded-2xl bg-gradient-to-br from-violet-900/40 to-blue-900/40 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full border-4 border-violet-500/30 border-t-violet-500 animate-spin" />
+                  </div>
+                }
+              >
+                <ChangeableAvatarPreview
+                  userId={profile?.id}
+                  isLarge={true}
+                  showControls={currentUser?.id === profile?.id}
+                  isInteractive={true}
+                  isTalking={isTalking}
+                  onAvatarClick={currentUser?.id === profile?.id ? () => navigate('/settings/avatar') : undefined}
+                  onTalkClick={handleTalkToMeClick}
+                  showGiftButton={Boolean(currentUser) && currentUser?.id !== profile?.id}
+                  onGiftClick={() => setIsGiftModalOpen(true)}
+                />
+              </Suspense>
             </div>
 
             {/* Compact Stats - Inline between avatar and tabs */}
@@ -2070,13 +2076,13 @@ const ProfilePage: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
       
       {/* Join AvatarTalk CTA - Only shown to non-logged-in users */}
       {!currentUser && (
-        <motion.div
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
+        <div
+          className="fixed bottom-0 left-0 right-0 z-50"
+          style={{ maxWidth: '512px', margin: '0 auto' }}
           transition={{ delay: 1, duration: 0.5 }}
           className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 sm:pb-6"
         >
@@ -2101,7 +2107,7 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
       
       {/* Enhanced Share Modal */}
