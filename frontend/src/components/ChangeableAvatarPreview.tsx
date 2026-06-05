@@ -48,6 +48,9 @@ interface ChangeableAvatarPreviewProps {
   onTalkClick?: () => void;
   onGiftClick?: () => void;
   showGiftButton?: boolean;
+  // Pass profile photo directly to skip an extra Supabase fetch on public pages
+  profilePicUrl?: string | null;
+  profileDisplayName?: string | null;
 }
 
 const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
@@ -61,20 +64,29 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
   onAvatarClick,
   onTalkClick,
   onGiftClick,
-  showGiftButton = false
+  showGiftButton = false,
+  profilePicUrl,
+  profileDisplayName,
 }) => {
   const [avatarData, setAvatarData] = useState<any>(null);
   const [profileData, setProfileData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  // If a profile photo was passed in directly, skip the Supabase fetch entirely
+  const [loading, setLoading] = useState(() => !profilePicUrl && !profileDisplayName);
   const hasLoadedOnceRef = useRef(false);
   const [isChangeModalOpen, setIsChangeModalOpen] = useState(false);
   const { settings } = useAvatarSettings();
 
-  // Fetch avatar configuration and profile data - works for ALL visitors
+  // Fetch avatar configuration and profile data — skipped for public profiles
+  // when profilePicUrl is already passed in from the parent (ProfilePage).
   const fetchAvatarData = async () => {
     try {
+      // Skip internal fetch for public views — use the prop directly.
+      if (profilePicUrl !== undefined) {
+        setLoading(false);
+        return;
+      }
+
       // Only show the blocking spinner on the very first load.
-      // Realtime updates should not blank/freeze the card.
       if (!hasLoadedOnceRef.current) setLoading(true);
       
       // Use the provided userId prop directly (this is the profile owner's ID)
@@ -224,7 +236,8 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
   }, [userId]);
 
   const getAvatarDisplay = () => {
-    // Priority order for 3D avatar display:
+    // Highest priority: photo passed directly from parent (ProfilePage) — instant, no extra fetch
+    if (profilePicUrl) return profilePicUrl;
     // 1. Custom uploaded model from avatar configuration (highest priority for custom uploads)
     if (avatarData?.model_url) return avatarData.model_url;
     // 2. Custom uploaded thumbnail from avatar configuration
@@ -237,28 +250,24 @@ const ChangeableAvatarPreview: React.FC<ChangeableAvatarPreviewProps> = ({
 
   const shouldRenderConfiguredAvatar = () => {
     // Render configured avatar if we have avatar configuration data but no uploaded images
-    return avatarData && !avatarData.model_url && !avatarData.thumbnail_url && !profileData?.avatar_url;
+    return avatarData && !avatarData.model_url && !avatarData.thumbnail_url && !profileData?.avatar_url && !profilePicUrl;
   };
 
   const handleAvatarClick = () => {
-    if (onAvatarClick) {
-      onAvatarClick();
-    }
-    // Removed modal opening since change button is removed
+    if (onAvatarClick) onAvatarClick();
   };
 
+  // No loading spinner when profile photo is passed in directly
   if (loading) {
     return (
-      <Card className="bg-slate-900/80 border-slate-700/50 backdrop-blur-sm p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
-        </div>
-      </Card>
+      <div className={`relative rounded-3xl bg-gradient-to-br from-slate-800/40 via-blue-900/20 to-slate-800/40 border border-slate-600/30 ${isLarge ? 'h-80' : 'h-64'} flex items-center justify-center`}>
+        <div className="w-8 h-8 rounded-full border-2 border-violet-500/30 border-t-violet-500 animate-spin" />
+      </div>
     );
   }
 
   const avatarImageUrl = getAvatarDisplay();
-  const hasUploadedAvatar = avatarData?.thumbnail_url || avatarData?.model_url || profileData?.avatar_url;
+  const hasUploadedAvatar = !!profilePicUrl || !!(avatarData?.thumbnail_url) || !!(avatarData?.model_url) || !!(profileData?.avatar_url);
 
   return (
     <>

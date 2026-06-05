@@ -163,6 +163,7 @@ const ProfilePage: React.FC = () => {
   const [events, setEvents] = useState<any[]>([]);
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfiguration | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isCtaDismissed, setIsCtaDismissed] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isTalking, setIsTalking] = useState(false);
@@ -1513,8 +1514,10 @@ const ProfilePage: React.FC = () => {
                   isTalking={isTalking}
                   onAvatarClick={currentUser?.id === profile?.id ? () => navigate('/settings/avatar') : undefined}
                   onTalkClick={handleTalkToMeClick}
-                  showGiftButton={Boolean(currentUser) && currentUser?.id !== profile?.id}
+                  showGiftButton={currentUser?.id !== profile?.id}
                   onGiftClick={() => setIsGiftModalOpen(true)}
+                  profilePicUrl={profile?.profile_pic_url || profile?.avatar_url}
+                  profileDisplayName={profile?.display_name || profile?.username}
                 />
               </Suspense>
             </div>
@@ -2078,24 +2081,23 @@ const ProfilePage: React.FC = () => {
         </Card>
       </div>
       
-      {/* Join AvatarTalk CTA - Only shown to non-logged-in users */}
-      {!currentUser && (
-        <div
-          className="fixed bottom-0 left-0 right-0 z-50"
-          style={{ maxWidth: '512px', margin: '0 auto' }}
-          transition={{ delay: 1, duration: 0.5 }}
-          className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 sm:pb-6"
-        >
+      {/* Join AvatarTalk CTA - Only shown to non-logged-in users who haven't dismissed it */}
+      {!currentUser && !isCtaDismissed && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 sm:pb-6">
           <div className="max-w-lg mx-auto">
-            <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 rounded-2xl shadow-2xl backdrop-blur-xl border border-white/20 overflow-hidden">
-              <div className="p-4 sm:p-5 flex items-center justify-between gap-4">
+            <div className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 rounded-2xl shadow-2xl backdrop-blur-xl border border-white/20 overflow-hidden">
+              {/* Close button - top right */}
+              <button
+                onClick={() => setIsCtaDismissed(true)}
+                className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors z-10"
+                title="Dismiss"
+              >
+                <span className="text-base leading-none font-bold">×</span>
+              </button>
+              <div className="p-4 sm:p-5 flex items-center justify-between gap-3 pr-10">
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-white font-bold text-base sm:text-lg mb-1">
-                    Create Your AI Avatar
-                  </h3>
-                  <p className="text-blue-100 text-xs sm:text-sm">
-                    Build your smart bio-link with AI chat, products & more
-                  </p>
+                  <h3 className="text-white font-bold text-base sm:text-lg mb-1">Create Your AI Avatar</h3>
+                  <p className="text-blue-100 text-xs sm:text-sm">Build your smart bio-link with AI chat, products & more</p>
                 </div>
                 <Button
                   size="sm"
