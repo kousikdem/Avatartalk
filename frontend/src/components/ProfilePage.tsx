@@ -1516,7 +1516,7 @@ const ProfilePage: React.FC = () => {
                   onTalkClick={handleTalkToMeClick}
                   showGiftButton={currentUser?.id !== profile?.id}
                   onGiftClick={() => setIsGiftModalOpen(true)}
-                  profilePicUrl={profile?.profile_pic_url || profile?.avatar_url}
+                  profilePicUrl={profile?.profile_pic_url || profile?.avatar_url || null}
                   profileDisplayName={profile?.display_name || profile?.username}
                 />
               </Suspense>
