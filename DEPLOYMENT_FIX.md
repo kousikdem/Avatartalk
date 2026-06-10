@@ -118,7 +118,7 @@ yarn build
 ```
 
 ### Preview Site ✅
-- URL: https://token-optimizer-13.preview.emergentagent.com
+- URL: https://payment-auth-config.preview.emergentagent.com
 - Status: Working perfectly
 - Calendar component: Functional
 

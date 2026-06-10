@@ -27,7 +27,7 @@ yarn build
 ```
 
 ### Preview Site
-**URL**: https://token-optimizer-13.preview.emergentagent.com  
+**URL**: https://payment-auth-config.preview.emergentagent.com  
 **Status**: ✅ Working perfectly
 
 ---
@@ -141,7 +141,7 @@ yarn build
 
 ## 🌐 URLs
 
-- **Preview**: https://token-optimizer-13.preview.emergentagent.com
+- **Preview**: https://payment-auth-config.preview.emergentagent.com
 - **Vercel**: https://avatartalk-p1ia4t6zc-kousik-kars-projects.vercel.app
 
 ---
