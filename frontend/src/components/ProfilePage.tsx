@@ -589,85 +589,101 @@ const ProfilePage: React.FC = () => {
   useEffect(() => {
     if (!profile?.id) return;
 
-    const channel = supabase
-      .channel(`profile-${profile.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'posts',
-          filter: `user_id=eq.${profile.id}`
-        },
-        () => {
-          fetchPosts();
+    let cleanup: (() => void) | undefined;
+    try {
+      // Use a unique channel name per mount so a previous channel instance
+      // can't throw "cannot add postgres_changes callbacks after subscribe()".
+      const channelName = `profile-${profile.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const channel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'posts',
+            filter: `user_id=eq.${profile.id}`
+          },
+          () => {
+            fetchPosts();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'products',
+            filter: `user_id=eq.${profile.id}`
+          },
+          async () => {
+            const { data } = await supabase
+              .from('products')
+              .select('*')
+              .eq('user_id', profile.id)
+              .eq('status', 'published')
+              .order('created_at', { ascending: false })
+              .limit(6);
+            if (data) setProducts(data);
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'profiles',
+            filter: `id=eq.${profile.id}`
+          },
+          async () => {
+            const { data } = await supabase
+              .rpc('get_public_profile', { profile_id: profile.id });
+            if (data && data.length > 0) setProfile(data[0]);
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'follows'
+          },
+          () => {
+            refetchFollows();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'user_stats',
+            filter: `user_id=eq.${profile.id}`
+          },
+          async () => {
+            const { data } = await supabase
+              .from('user_stats')
+              .select('*')
+              .eq('user_id', profile.id)
+              .maybeSingle();
+            if (data) setUserStats(data);
+          }
+        )
+        .subscribe();
+
+      cleanup = () => {
+        try {
+          supabase.removeChannel(channel);
+        } catch (e) {
+          // ignore
         }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'products',
-          filter: `user_id=eq.${profile.id}`
-        },
-        async () => {
-          const { data } = await supabase
-            .from('products')
-            .select('*')
-            .eq('user_id', profile.id)
-            .eq('status', 'published')
-            .order('created_at', { ascending: false })
-            .limit(6);
-          if (data) setProducts(data);
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'profiles',
-          filter: `id=eq.${profile.id}`
-        },
-        async () => {
-          const { data } = await supabase
-            .rpc('get_public_profile', { profile_id: profile.id });
-          if (data && data.length > 0) setProfile(data[0]);
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'follows'
-        },
-        () => {
-          refetchFollows();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_stats',
-          filter: `user_id=eq.${profile.id}`
-        },
-        async () => {
-          const { data } = await supabase
-            .from('user_stats')
-            .select('*')
-            .eq('user_id', profile.id)
-            .maybeSingle();
-          if (data) setUserStats(data);
-        }
-      )
-      .subscribe();
+      };
+    } catch (err) {
+      console.warn('[ProfilePage] realtime subscription skipped:', (err as Error)?.message);
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      if (cleanup) cleanup();
     };
   }, [profile?.id, fetchPosts, refetchFollows]);
 

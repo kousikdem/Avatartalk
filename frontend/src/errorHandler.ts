@@ -1,15 +1,40 @@
 // Global error handler for production
+//
+// Filter list — these errors are NON-FATAL noise from Supabase realtime
+// subscriptions (mostly during React StrictMode double-mounts) and should
+// never blow away the entire React app or replace the UI with an error screen.
+const BENIGN_ERROR_PATTERNS = [
+  'postgres_changes',
+  'after `subscribe()`',
+  'after subscribe()',
+  'realtime:',
+  'RealtimeChannel',
+  'cannot add',
+  'WebSocket connection',
+  'Failed to construct \'WebSocket\'',
+];
+
+function isBenignError(err: unknown): boolean {
+  const msg = (err as any)?.message || String(err || '');
+  return BENIGN_ERROR_PATTERNS.some(p => msg.includes(p));
+}
+
 if (typeof window !== 'undefined') {
   window.addEventListener('error', (event) => {
+    if (isBenignError(event.error)) {
+      console.warn('[errorHandler] Ignored benign error:', event.error?.message);
+      event.preventDefault();
+      return;
+    }
     console.error('Global error:', event.error);
-    
+
     // Hide loading screen on error
     const loader = document.getElementById('app-loader');
     if (loader) {
       loader.style.display = 'none';
     }
     document.body.classList.add('app-loaded');
-    
+
     // Show error message
     const root = document.getElementById('root');
     if (root && root.children.length === 0) {
@@ -60,6 +85,11 @@ if (typeof window !== 'undefined') {
   });
 
   window.addEventListener('unhandledrejection', (event) => {
+    if (isBenignError(event.reason)) {
+      console.warn('[errorHandler] Ignored benign promise rejection:', (event.reason as any)?.message);
+      event.preventDefault();
+      return;
+    }
     console.error('Unhandled promise rejection:', event.reason);
   });
 }

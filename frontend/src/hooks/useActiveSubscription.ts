@@ -76,25 +76,37 @@ export const useActiveSubscription = (subscriberId?: string, subscribedToId?: st
 
     fetchSubscription();
 
-    // Real-time subscription updates
-    const channel = supabase
-      .channel(`subscription-${subscriberId}-${subscribedToId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'subscriptions',
-          filter: `subscriber_id=eq.${subscriberId}`
-        },
-        () => {
-          fetchSubscription();
-        }
-      )
-      .subscribe();
+    // Real-time subscription updates — wrapped in try/catch and using a
+    // unique channel name so React StrictMode double-mount can't crash
+    // the page with "cannot add postgres_changes callbacks after subscribe()".
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      const channelName = `subscription-${subscriberId}-${subscribedToId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      channel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'subscriptions',
+            filter: `subscriber_id=eq.${subscriberId}`
+          },
+          () => {
+            fetchSubscription();
+          }
+        )
+        .subscribe();
+    } catch (err) {
+      console.warn('[useActiveSubscription] realtime subscription skipped:', (err as Error)?.message);
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      try {
+        if (channel) supabase.removeChannel(channel);
+      } catch (e) {
+        // ignore
+      }
     };
   }, [subscriberId, subscribedToId]);
 

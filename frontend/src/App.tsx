@@ -3,6 +3,26 @@ import React, { Suspense, lazy, useState, useEffect, useLayoutEffect, useRef, us
 // ─── Profile-specific Error Boundary ───────────────────────────────────────────
 // Catches any render error from ProfilePage/ChangeableAvatarPreview so it never
 // reaches the top-level ErrorBoundary in main.tsx.
+//
+// Supabase realtime errors ("cannot add postgres_changes callbacks after
+// subscribe()") are NON-FATAL — they only mean live updates won't work.
+// The profile itself has already loaded fine. We swallow them silently
+// instead of hiding the entire profile behind a "temporarily unavailable" wall.
+const REALTIME_BENIGN_PATTERNS = [
+  'postgres_changes',
+  'after `subscribe()`',
+  'after subscribe()',
+  'realtime:',
+  'channel',
+  'RealtimeChannel',
+  'WebSocket',
+];
+
+function isBenignRealtimeError(err: unknown): boolean {
+  const msg = (err as Error)?.message || String(err || '');
+  return REALTIME_BENIGN_PATTERNS.some(p => msg.includes(p));
+}
+
 class ProfileErrorBoundary extends Component<
   { children: React.ReactNode },
   { hasError: boolean }
@@ -11,8 +31,19 @@ class ProfileErrorBoundary extends Component<
     super(props);
     this.state = { hasError: false };
   }
-  static getDerivedStateFromError() { return { hasError: true }; }
+  static getDerivedStateFromError(error: Error) {
+    // Don't trigger the error UI for benign realtime issues — the profile
+    // already rendered successfully; only live updates are affected.
+    if (isBenignRealtimeError(error)) {
+      return { hasError: false };
+    }
+    return { hasError: true };
+  }
   componentDidCatch(e: Error) {
+    if (isBenignRealtimeError(e)) {
+      console.warn('[ProfileErrorBoundary] Ignored benign realtime error:', e?.message);
+      return;
+    }
     console.warn('[ProfileErrorBoundary] Non-fatal:', e?.message);
   }
   render() {

@@ -185,23 +185,45 @@ export const useFollows = (userId?: string): UseFollowsReturn => {
     }
     fetchFollows(userId);
 
-    // Realtime subscription
+    // Realtime subscription — wrapped in try/catch so a duplicate
+    // channel subscription (common with React StrictMode double-mount)
+    // never crashes the page.
+    let cleanup: (() => void) | undefined;
     const setupSubscription = async () => {
-      const uid = userId || (await supabase.auth.getSession()).data.session?.user?.id;
-      if (!uid) return;
+      try {
+        const uid = userId || (await supabase.auth.getSession()).data.session?.user?.id;
+        if (!uid) return;
 
-      const channel = supabase
-        .channel(`follows-${uid}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'follows', filter: `follower_id=eq.${uid}` }, 
-          () => fetchFollows(userId, true))
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'follows', filter: `following_id=eq.${uid}` }, 
-          () => fetchFollows(userId, true))
-        .subscribe();
+        // Use a unique channel name per mount so reused channel instances
+        // can't throw "cannot add postgres_changes callbacks after subscribe()".
+        const channelName = `follows-${uid}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const channel = supabase
+          .channel(channelName)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'follows', filter: `follower_id=eq.${uid}` },
+            () => fetchFollows(userId, true))
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'follows', filter: `following_id=eq.${uid}` },
+            () => fetchFollows(userId, true))
+          .subscribe();
 
-      return () => { supabase.removeChannel(channel); };
+        cleanup = () => {
+          try {
+            supabase.removeChannel(channel);
+          } catch (e) {
+            // ignore - channel may already be removed
+          }
+        };
+      } catch (err) {
+        // Realtime subscription failures are non-fatal — the rest of the
+        // hook still works (just no live updates).
+        console.warn('[useFollows] realtime subscription skipped:', (err as Error)?.message);
+      }
     };
 
     setupSubscription();
+
+    return () => {
+      if (cleanup) cleanup();
+    };
   }, [userId, fetchFollows]);
 
   return {
