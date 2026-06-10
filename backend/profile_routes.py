@@ -4,16 +4,21 @@ to fetch profile + related public data, bypassing RLS.
 
 This exists as a workaround for projects where the public RLS policy on
 `profiles` hasn't been applied yet. It exposes ONLY safe public columns.
+
+Now includes an in-memory TTL cache (60s) so popular profile pages
+(SEO crawlers, viral links, repeat visits) hit Supabase at most once
+per minute.
 """
 from __future__ import annotations
 
 import asyncio
 import logging
 import os
-from typing import Any
+import time
+from typing import Any, Dict, Tuple
 
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +38,12 @@ PUBLIC_PROFILE_COLUMNS = (
     "followers_count,following_count,created_at,updated_at"
 )
 
+# ─── In-memory TTL cache ──────────────────────────────────────────────────
+# key: lowercased username  → (expires_at_epoch, payload)
+_CACHE: Dict[str, Tuple[float, dict]] = {}
+_CACHE_TTL_SECONDS = 60.0  # 1 min — long enough to absorb traffic spikes,
+                           # short enough that profile edits feel fresh.
+
 router = APIRouter(prefix="/api/profile", tags=["profile"])
 
 
@@ -47,22 +58,50 @@ async def _supabase_get(client: httpx.AsyncClient, path: str, params: dict) -> A
         return None
 
 
+def _cache_get(key: str) -> dict | None:
+    entry = _CACHE.get(key)
+    if not entry:
+        return None
+    expires_at, payload = entry
+    if time.time() > expires_at:
+        _CACHE.pop(key, None)
+        return None
+    return payload
+
+
+def _cache_set(key: str, payload: dict) -> None:
+    _CACHE[key] = (time.time() + _CACHE_TTL_SECONDS, payload)
+    # Best-effort eviction if cache grows unbounded.
+    if len(_CACHE) > 500:
+        # Drop the 100 oldest entries.
+        for k in sorted(_CACHE.items(), key=lambda kv: kv[1][0])[:100]:
+            _CACHE.pop(k[0], None)
+
+
 @router.get("/by-username/{username}")
-async def get_profile_by_username(username: str):
+async def get_profile_by_username(username: str, response: Response):
     """
     Returns a public profile + all related public data (stats, products, events,
     active avatar config, social links) in a single response. Uses service-role
     so it works even when RLS isn't fixed yet.
+
+    Cached in-memory for 60s per username to make repeat loads instant.
     """
     if not username or not username.strip():
         raise HTTPException(status_code=400, detail="Username required")
 
-    # Case-insensitive match. Postgres `ilike` via PostgREST: ?username=ilike.exact
-    # We use eq.<lower> with a small fallback for case mismatches.
     uname = username.strip()
+    cache_key = uname.lower()
+
+    # Cache hit ⇒ instant response.
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        response.headers["X-Cache"] = "HIT"
+        response.headers["Cache-Control"] = "public, max-age=30, stale-while-revalidate=60"
+        return cached
 
     async with httpx.AsyncClient(timeout=15) as cx:
-        # Profile lookup — try exact, then case-insensitive
+        # Profile lookup — try exact (fast), then case-insensitive (slower).
         rows = await _supabase_get(
             cx,
             "profiles",
@@ -83,7 +122,7 @@ async def get_profile_by_username(username: str):
 
         pid = profile["id"]
 
-        # Fetch related data in parallel
+        # Fetch ALL related data in parallel — single round-trip.
         results = await asyncio.gather(
             _supabase_get(cx, "user_stats", {"select": "*", "user_id": f"eq.{pid}", "limit": "1"}),
             _supabase_get(
@@ -129,7 +168,7 @@ async def get_profile_by_username(username: str):
 
     stats, products, events, avatar_cfg, social = results
 
-    return {
+    payload = {
         "profile": profile,
         "user_stats": _first(stats),
         "products": products if isinstance(products, list) else [],
@@ -137,3 +176,8 @@ async def get_profile_by_username(username: str):
         "avatar_config": _first(avatar_cfg),
         "social_links": _first(social),
     }
+
+    _cache_set(cache_key, payload)
+    response.headers["X-Cache"] = "MISS"
+    response.headers["Cache-Control"] = "public, max-age=30, stale-while-revalidate=60"
+    return payload
