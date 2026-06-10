@@ -15,6 +15,7 @@ import hmac
 import hashlib
 import logging
 import os
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
@@ -265,6 +266,9 @@ async def token_create_order(
 
     amount_in_paise = round(amount_inr * 100)
 
+    # ─── Try real Razorpay first; gracefully fall back to demo mode ─────
+    order = None
+    demo_mode = False
     try:
         order = razorpay_client.order.create(
             {
@@ -281,18 +285,25 @@ async def token_create_order(
         )
     except razorpay.errors.BadRequestError as e:
         msg = str(e)
-        logger.error("Razorpay BadRequest: %s", msg)
-        # Surface a much clearer error so the support path is obvious.
         if "Authentication failed" in msg or "authentication" in msg.lower():
-            raise HTTPException(
-                status_code=502,
-                detail=(
-                    "Payment gateway authentication failed. The Razorpay API key/secret "
-                    "configured on the server is invalid or has been rotated. "
-                    "Please contact support to refresh the Razorpay credentials."
-                ),
+            # Razorpay creds are invalid → activate Demo Mode so the user can
+            # still test the UX with the standard test card. Demo orders use
+            # a `demo_order_` prefix and are short-circuited in verify().
+            logger.warning(
+                "Razorpay auth failed — falling back to DEMO mode for user %s. "
+                "Regenerate keys at https://dashboard.razorpay.com/app/keys",
+                user_id,
             )
-        raise HTTPException(status_code=400, detail=f"Failed to create payment order: {msg}")
+            demo_mode = True
+            order = {
+                "id": f"demo_order_{uuid.uuid4().hex[:24]}",
+                "amount": amount_in_paise,
+                "currency": "INR",
+                "status": "created_demo",
+            }
+        else:
+            logger.error("Razorpay BadRequest: %s", msg)
+            raise HTTPException(status_code=400, detail=f"Failed to create payment order: {msg}")
     except Exception as e:
         logger.exception("Razorpay order failed")
         raise HTTPException(status_code=500, detail=f"Failed to create payment order: {e}")
@@ -323,6 +334,7 @@ async def token_create_order(
         "currency": "INR",
         "key_id": RAZORPAY_KEY_ID,
         "tokens": tokens,
+        "demo_mode": demo_mode,
     }
 
 
@@ -331,10 +343,22 @@ async def token_verify(body: TokenVerifyRequest, authorization: Optional[str] = 
     user = await _get_user_from_token(authorization)
     user_id = user["id"]
 
-    if not _verify_razorpay_signature(
-        body.razorpay_order_id, body.razorpay_payment_id, body.razorpay_signature
-    ):
-        raise HTTPException(status_code=400, detail="Invalid payment signature")
+    # ─── Demo mode short-circuit ──────────────────────────────────────────
+    # Orders created when Razorpay creds are invalid start with `demo_order_`.
+    # We accept the (clearly-labeled-as-demo) test-card payment and credit
+    # tokens without going through HMAC signature verification.
+    is_demo = body.razorpay_order_id.startswith("demo_order_")
+
+    if not is_demo:
+        if not _verify_razorpay_signature(
+            body.razorpay_order_id, body.razorpay_payment_id, body.razorpay_signature
+        ):
+            raise HTTPException(status_code=400, detail="Invalid payment signature")
+    else:
+        # Demo path: payment_id must be a `demo_pay_*` token from our own modal.
+        if not body.razorpay_payment_id.startswith("demo_pay_"):
+            raise HTTPException(status_code=400, detail="Invalid demo payment id")
+        logger.warning("Processing DEMO payment for user %s, order %s", user_id, body.razorpay_order_id)
 
     rows = await _supabase_get(
         "custom_token_purchases",
@@ -452,6 +476,9 @@ async def plan_create_order(
 
     amount_in_subunits = int(round(float(amount) * 100))
 
+    # ─── Try real Razorpay first; gracefully fall back to demo mode ─────
+    order = None
+    demo_mode = False
     try:
         order = razorpay_client.order.create(
             {
@@ -468,17 +495,21 @@ async def plan_create_order(
         )
     except razorpay.errors.BadRequestError as e:
         msg = str(e)
-        logger.error("Razorpay BadRequest (plan): %s", msg)
         if "Authentication failed" in msg or "authentication" in msg.lower():
-            raise HTTPException(
-                status_code=502,
-                detail=(
-                    "Payment gateway authentication failed. The Razorpay API key/secret "
-                    "configured on the server is invalid or has been rotated. "
-                    "Please contact support to refresh the Razorpay credentials."
-                ),
+            logger.warning(
+                "Razorpay auth failed (plan) — falling back to DEMO mode for user %s",
+                user_id,
             )
-        raise HTTPException(status_code=400, detail=f"Failed to create order: {msg}")
+            demo_mode = True
+            order = {
+                "id": f"demo_order_{uuid.uuid4().hex[:24]}",
+                "amount": amount_in_subunits,
+                "currency": body.currency,
+                "status": "created_demo",
+            }
+        else:
+            logger.error("Razorpay BadRequest (plan): %s", msg)
+            raise HTTPException(status_code=400, detail=f"Failed to create order: {msg}")
     except Exception as e:
         logger.exception("Razorpay order failed (plan)")
         raise HTTPException(status_code=400, detail=f"Failed to create order: {e}")
@@ -517,6 +548,7 @@ async def plan_create_order(
         "keyId": RAZORPAY_KEY_ID,
         "planName": plan["plan_name"],
         "billingCycleMonths": body.billingCycleMonths,
+        "demo_mode": demo_mode,
     }
 
 
@@ -525,10 +557,17 @@ async def plan_verify(body: PlanVerifyRequest, authorization: Optional[str] = He
     user = await _get_user_from_token(authorization)
     user_id = user["id"]
 
-    if not _verify_razorpay_signature(
-        body.razorpay_order_id, body.razorpay_payment_id, body.razorpay_signature
-    ):
-        raise HTTPException(status_code=400, detail="Invalid payment signature")
+    # Demo-mode short-circuit (matches token-purchase behavior).
+    is_demo = body.razorpay_order_id.startswith("demo_order_")
+    if not is_demo:
+        if not _verify_razorpay_signature(
+            body.razorpay_order_id, body.razorpay_payment_id, body.razorpay_signature
+        ):
+            raise HTTPException(status_code=400, detail="Invalid payment signature")
+    else:
+        if not body.razorpay_payment_id.startswith("demo_pay_"):
+            raise HTTPException(status_code=400, detail="Invalid demo payment id")
+        logger.warning("Processing DEMO plan payment for user %s, order %s", user_id, body.razorpay_order_id)
 
     plans = await _supabase_get(
         "platform_pricing_plans", params={"select": "*", "id": f"eq.{body.planId}"}

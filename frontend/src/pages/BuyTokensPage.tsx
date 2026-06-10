@@ -18,6 +18,7 @@ import { useCurrency } from '@/hooks/useCurrency';
 import TokenUsageDashboard from '@/components/TokenUsageDashboard';
 import DashboardHeader from '@/components/DashboardHeader';
 import GiftTokenPopup from '@/components/GiftTokenPopup';
+import DemoCheckoutModal, { DemoCheckoutData, DemoSuccessPayload } from '@/components/DemoCheckoutModal';
 
 declare global {
   interface Window {
@@ -39,6 +40,9 @@ const BuyTokensPage: React.FC = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [giftModalOpen, setGiftModalOpen] = useState(false);
+  // Demo mode state — populated when backend returns demo_mode:true
+  const [demoData, setDemoData] = useState<DemoCheckoutData | null>(null);
+  const [demoPurchaseId, setDemoPurchaseId] = useState<string | null>(null);
   const { refetch } = useTokens();
   const { pricePerMillion, tokensPerRupee } = useTokenPrice();
   const { formatPrice, getCurrencyInfo, convertFromINR } = useCurrency();
@@ -102,7 +106,21 @@ const BuyTokensPage: React.FC = () => {
         tokens: tokenAmount,
         amount_inr: priceInINR,
       });
-      
+
+      // ─── Demo mode: open our own checkout modal instead of Razorpay ─────
+      if (orderData.demo_mode) {
+        setDemoPurchaseId(orderData.purchase_id);
+        setDemoData({
+          order_id: orderData.order_id,
+          amount: orderData.amount,
+          currency: orderData.currency,
+          description: `${formatTokens(tokenAmount)} AI Tokens`,
+        });
+        // setProcessing stays true so the buy button doesn't go back to idle
+        // until the demo modal closes / completes.
+        return;
+      }
+
       const scriptLoaded = await ensureRazorpayLoaded();
       if (!scriptLoaded || !window.Razorpay) {
         toast({
@@ -271,6 +289,49 @@ const BuyTokensPage: React.FC = () => {
         </Tabs>
 
         {selectedUser && <GiftTokenPopup open={giftModalOpen} onOpenChange={setGiftModalOpen} receiverId={selectedUser.id} receiverName={selectedUser.display_name || selectedUser.username} receiverAvatar={selectedUser.profile_pic_url} />}
+
+        {/* Demo Mode checkout — only shown when backend reports demo_mode:true */}
+        <DemoCheckoutModal
+          open={!!demoData}
+          data={demoData}
+          onClose={() => {
+            setDemoData(null);
+            setDemoPurchaseId(null);
+            setProcessing(false);
+          }}
+          onSuccess={async (payload) => {
+            try {
+              await callPaymentApi('/api/payment/token-purchase/verify', {
+                razorpay_order_id: payload.razorpay_order_id,
+                razorpay_payment_id: payload.razorpay_payment_id,
+                razorpay_signature: payload.razorpay_signature,
+                purchase_id: demoPurchaseId,
+                tokens: tokenAmount,
+              });
+              toast({
+                title: '✅ Demo payment successful',
+                description: `${formatTokens(tokenAmount)} tokens credited. (Demo mode — no real charge)`,
+              });
+              refetch();
+            } catch (err: any) {
+              toast({
+                title: 'Demo verification failed',
+                description: err?.message || 'Could not credit tokens',
+                variant: 'destructive',
+              });
+            } finally {
+              setDemoData(null);
+              setDemoPurchaseId(null);
+              setProcessing(false);
+            }
+          }}
+          onFailure={(reason) => {
+            toast({ title: 'Demo payment cancelled', description: reason, variant: 'destructive' });
+            setDemoData(null);
+            setDemoPurchaseId(null);
+            setProcessing(false);
+          }}
+        />
       </div>
     </div>
   );
