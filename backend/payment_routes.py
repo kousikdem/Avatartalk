@@ -56,6 +56,61 @@ PLAN_TOKENS_PER_MONTH = {
 router = APIRouter(prefix="/api/payment", tags=["payment"])
 
 
+# ─── Diagnostic ────────────────────────────────────────────────────────────
+@router.get("/diagnostics")
+async def payment_diagnostics():
+    """
+    Quick health-check of the payment integration. Returns NON-SENSITIVE
+    status flags so the frontend (or any operator) can verify whether
+    Razorpay + Supabase are properly configured. Never leaks the secret.
+    """
+    import httpx as _httpx
+
+    diag = {
+        "razorpay_key_id_configured": bool(RAZORPAY_KEY_ID),
+        "razorpay_key_id_prefix": (RAZORPAY_KEY_ID[:12] + "…") if RAZORPAY_KEY_ID else None,
+        "razorpay_key_id_mode": (
+            "test" if RAZORPAY_KEY_ID.startswith("rzp_test_")
+            else "live" if RAZORPAY_KEY_ID.startswith("rzp_live_")
+            else "unknown"
+        ),
+        "razorpay_secret_configured": bool(RAZORPAY_KEY_SECRET),
+        "razorpay_secret_length": len(RAZORPAY_KEY_SECRET) if RAZORPAY_KEY_SECRET else 0,
+        "supabase_url_configured": bool(SUPABASE_URL),
+        "supabase_service_role_configured": bool(SUPABASE_SERVICE_ROLE_KEY),
+        "razorpay_auth_ok": False,
+        "razorpay_auth_error": None,
+    }
+
+    # Live-test the Razorpay credentials with a no-op auth check.
+    if RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET:
+        try:
+            async with _httpx.AsyncClient(timeout=8) as cx:
+                resp = await cx.get(
+                    "https://api.razorpay.com/v1/payments",
+                    params={"count": 1},
+                    auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET),
+                )
+            if resp.status_code == 200:
+                diag["razorpay_auth_ok"] = True
+            elif resp.status_code == 401:
+                try:
+                    err = resp.json().get("error", {})
+                    diag["razorpay_auth_error"] = err.get("description", "Authentication failed")
+                except Exception:
+                    diag["razorpay_auth_error"] = "Authentication failed (401)"
+            else:
+                diag["razorpay_auth_error"] = f"HTTP {resp.status_code}"
+        except Exception as e:
+            diag["razorpay_auth_error"] = f"Network error: {type(e).__name__}"
+
+    diag["ready"] = diag["razorpay_auth_ok"] and diag["supabase_service_role_configured"]
+    return diag
+
+
+
+
+
 # ─── Helpers ──────────────────────────────────────────────────────────────
 async def _get_user_from_token(authorization: Optional[str]) -> dict:
     """Validate bearer token by calling Supabase /auth/v1/user."""
@@ -225,8 +280,19 @@ async def token_create_order(
             }
         )
     except razorpay.errors.BadRequestError as e:
-        logger.error("Razorpay BadRequest: %s", e)
-        raise HTTPException(status_code=400, detail=f"Failed to create payment order: {e}")
+        msg = str(e)
+        logger.error("Razorpay BadRequest: %s", msg)
+        # Surface a much clearer error so the support path is obvious.
+        if "Authentication failed" in msg or "authentication" in msg.lower():
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    "Payment gateway authentication failed. The Razorpay API key/secret "
+                    "configured on the server is invalid or has been rotated. "
+                    "Please contact support to refresh the Razorpay credentials."
+                ),
+            )
+        raise HTTPException(status_code=400, detail=f"Failed to create payment order: {msg}")
     except Exception as e:
         logger.exception("Razorpay order failed")
         raise HTTPException(status_code=500, detail=f"Failed to create payment order: {e}")
@@ -400,6 +466,19 @@ async def plan_create_order(
                 },
             }
         )
+    except razorpay.errors.BadRequestError as e:
+        msg = str(e)
+        logger.error("Razorpay BadRequest (plan): %s", msg)
+        if "Authentication failed" in msg or "authentication" in msg.lower():
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    "Payment gateway authentication failed. The Razorpay API key/secret "
+                    "configured on the server is invalid or has been rotated. "
+                    "Please contact support to refresh the Razorpay credentials."
+                ),
+            )
+        raise HTTPException(status_code=400, detail=f"Failed to create order: {msg}")
     except Exception as e:
         logger.exception("Razorpay order failed (plan)")
         raise HTTPException(status_code=400, detail=f"Failed to create order: {e}")
