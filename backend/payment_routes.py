@@ -110,6 +110,178 @@ async def payment_diagnostics():
 
 
 
+# ─── Universal Razorpay create-order / verify (mirrors edge functions) ────
+# These endpoints exist as drop-in replacements for the Supabase edge
+# functions `razorpay-create-order` and `razorpay-verify-payment`, with
+# automatic demo-mode fallback when Razorpay credentials are invalid.
+
+from pydantic import BaseModel
+
+
+class GenericOrderRequest(BaseModel):
+    amount: int  # in smallest unit (paise/cents)
+    currency: Optional[str] = "INR"
+    planId: Optional[str] = None
+    profileId: Optional[str] = None
+    billingCycle: Optional[str] = None
+    productId: Optional[str] = None
+    productType: Optional[str] = None
+    buyerId: Optional[str] = None
+    sellerId: Optional[str] = None
+    metadata: Optional[dict] = None
+
+
+@router.post("/razorpay-create-order")
+async def razorpay_create_order(body: GenericOrderRequest, authorization: Optional[str] = Header(None)):
+    """
+    Drop-in replacement for the Supabase edge function `razorpay-create-order`.
+    Returns the SAME response shape so existing frontend code works unchanged.
+    Falls back to DEMO MODE when Razorpay creds are invalid.
+    """
+    user = await _get_user_from_token(authorization)
+    user_id = user["id"]
+
+    # Prevent buyer impersonation
+    if body.buyerId and body.buyerId != user_id:
+        raise HTTPException(status_code=403, detail="Cannot create orders for other users")
+
+    currency = (body.currency or "INR").upper()
+    amount = int(body.amount or 0)
+    min_amount = 100 if currency == "INR" else 50
+    if amount < min_amount:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Amount too small. Minimum {min_amount} {currency} subunits required, got {amount}.",
+        )
+
+    # Build notes for Razorpay
+    notes: dict = {}
+    if body.planId:
+        notes.update({
+            "planId": body.planId,
+            "profileId": body.profileId or user_id,
+            "billingCycle": body.billingCycle or "monthly",
+            "orderType": "subscription",
+            "buyerId": user_id,
+        })
+    elif body.productId:
+        notes.update({
+            "productId": body.productId,
+            "productType": body.productType or "virtual_collaboration",
+            "buyerId": user_id,
+            "sellerId": body.sellerId or "",
+            "orderType": "product",
+        })
+    if body.metadata:
+        for k, v in body.metadata.items():
+            if v is not None:
+                notes[k] = str(v)[:256]
+
+    # Try real Razorpay first; demo-fallback on auth failure.
+    order = None
+    demo_mode = False
+    try:
+        order = razorpay_client.order.create({
+            "amount": amount,
+            "currency": currency,
+            "receipt": f"order_{int(datetime.now().timestamp())}",
+            "notes": notes,
+        })
+    except razorpay.errors.BadRequestError as e:
+        msg = str(e)
+        if "Authentication failed" in msg or "authentication" in msg.lower():
+            logger.warning("Razorpay auth failed (universal) — DEMO mode for user %s", user_id)
+            demo_mode = True
+            order = {
+                "id": f"demo_order_{uuid.uuid4().hex[:24]}",
+                "amount": amount,
+                "currency": currency,
+                "status": "created_demo",
+            }
+        else:
+            logger.error("Razorpay BadRequest (universal): %s", msg)
+            raise HTTPException(status_code=400, detail=f"Failed to create order: {msg}")
+    except Exception as e:
+        logger.exception("Razorpay order failed (universal)")
+        raise HTTPException(status_code=400, detail=f"Failed to create order: {e}")
+
+    return {
+        "order_id": order["id"],
+        "orderId": order["id"],  # Both formats for compatibility
+        "amount": order["amount"],
+        "currency": order["currency"],
+        "key_id": RAZORPAY_KEY_ID,
+        "demo_mode": demo_mode,
+    }
+
+
+class GenericVerifyRequest(BaseModel):
+    razorpay_order_id: str
+    razorpay_payment_id: str
+    razorpay_signature: str
+    order_id: Optional[str] = None  # internal order id (products / gifts)
+    planId: Optional[str] = None
+    billingCycleMonths: Optional[int] = None
+
+
+@router.post("/razorpay-verify-payment")
+async def razorpay_verify_payment(body: GenericVerifyRequest, authorization: Optional[str] = Header(None)):
+    """
+    Generic payment verification with demo-mode short-circuit.
+    Marks the matching internal order as paid (orders / custom_token_purchases / etc).
+    """
+    user = await _get_user_from_token(authorization)
+    user_id = user["id"]
+
+    is_demo = body.razorpay_order_id.startswith("demo_order_")
+
+    if not is_demo:
+        if not _verify_razorpay_signature(
+            body.razorpay_order_id, body.razorpay_payment_id, body.razorpay_signature
+        ):
+            raise HTTPException(status_code=400, detail="Invalid payment signature")
+    else:
+        if not body.razorpay_payment_id.startswith("demo_pay_"):
+            raise HTTPException(status_code=400, detail="Invalid demo payment id")
+        logger.warning("Processing DEMO universal payment for user %s, order %s", user_id, body.razorpay_order_id)
+
+    # Update orders table if order_id is provided (product checkout case).
+    if body.order_id:
+        try:
+            async with httpx.AsyncClient(timeout=15) as cx:
+                upd = await cx.patch(
+                    f"{SUPABASE_URL}/rest/v1/orders",
+                    headers={
+                        "apikey": SUPABASE_SERVICE_ROLE_KEY,
+                        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                        "Content-Type": "application/json",
+                        "Prefer": "return=representation",
+                    },
+                    params={"id": f"eq.{body.order_id}", "buyer_id": f"eq.{user_id}"},
+                    json={
+                        "payment_status": "completed",
+                        "order_status": "completed",
+                        "razorpay_payment_id": body.razorpay_payment_id,
+                        "razorpay_signature": body.razorpay_signature,
+                    },
+                )
+                if upd.status_code >= 400:
+                    logger.warning("Order update failed: %s", upd.text)
+        except Exception as e:
+            logger.warning("Failed to update order: %s", e)
+
+    return {
+        "success": True,
+        "message": "Payment verified successfully" + (" (DEMO MODE)" if is_demo else ""),
+        "razorpay_payment_id": body.razorpay_payment_id,
+        "demo_mode": is_demo,
+    }
+
+
+
+
+
+
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────

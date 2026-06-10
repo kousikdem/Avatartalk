@@ -6,6 +6,7 @@ import { useFollows } from '@/hooks/useFollows';
 import { useSubscriptionPlans } from '@/hooks/useSubscriptionPlans';
 import { useActiveSubscription } from '@/hooks/useActiveSubscription';
 import { supabase } from '@/integrations/supabase/client';
+import { openRazorpayCheckout } from '@/lib/razorpay-checkout';
 import { Crown, Loader2, Check } from 'lucide-react';
 
 interface SubscribeButtonProps {
@@ -99,58 +100,52 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
 
       if (error) throw error;
 
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.async = true;
-      document.body.appendChild(script);
-
-      script.onload = () => {
-        const options = {
-          key: data.key_id,
-          amount: data.amount,
-          currency: data.currency,
-          name: 'AvatarTalk Subscription',
-          description: `${billingCycle === 'yearly' ? 'Yearly' : 'Monthly'} subscription to ${targetUsername}`,
-          order_id: data.order_id,
-          handler: async (response: any) => {
-            const { error: verifyError } = await supabase.functions.invoke('razorpay-verify-payment', {
-              body: {
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                planId: monthlyPlan.id,
-                profileId: targetUserId,
-                billingCycle: billingCycle
-              }
-            });
-
-            if (verifyError) {
-              console.error('Payment verification error:', verifyError);
-              toast({
-                title: "Payment Verification Failed",
-                description: verifyError.message || "Please contact support",
-                variant: "destructive",
-              });
-            } else {
-              toast({
-                title: "Subscription Active!",
-                description: `You are now subscribed to ${targetUsername}`,
-              });
-              // No hard reload: subscription status updates via realtime hooks
+      // Unified Razorpay opener — auto-handles demo mode if data.order_id
+      // starts with `demo_order_` (i.e. backend issued demo order because
+      // Razorpay creds are invalid).
+      await openRazorpayCheckout({
+        key: data.key_id,
+        amount: data.amount,
+        currency: data.currency,
+        name: 'AvatarTalk Subscription',
+        description: `${billingCycle === 'yearly' ? 'Yearly' : 'Monthly'} subscription to ${targetUsername}`,
+        order_id: data.order_id,
+        handler: async (response: any) => {
+          const { error: verifyError } = await supabase.functions.invoke('razorpay-verify-payment', {
+            body: {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              planId: monthlyPlan.id,
+              profileId: targetUserId,
+              billingCycle: billingCycle
             }
-          },
-          prefill: {
-            name: currentUserId,
-            email: '',
-          },
-          theme: {
-            color: '#6366f1'
-          }
-        };
+          });
 
-        const rzp = new (window as any).Razorpay(options);
-        rzp.open();
-      };
+          if (verifyError) {
+            console.error('Payment verification error:', verifyError);
+            toast({
+              title: "Payment Verification Failed",
+              description: verifyError.message || "Please contact support",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: data.demo_mode ? "✅ Demo Subscription Active" : "Subscription Active!",
+              description: data.demo_mode
+                ? `Demo subscription to ${targetUsername} created (no real charge)`
+                : `You are now subscribed to ${targetUsername}`,
+            });
+          }
+        },
+        prefill: {
+          name: currentUserId,
+          email: '',
+        },
+        theme: {
+          color: '#6366f1'
+        }
+      });
     } catch (error) {
       console.error('Error initiating subscription:', error);
       toast({

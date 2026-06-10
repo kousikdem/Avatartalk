@@ -84,3 +84,10 @@ Deleted obsolete Supabase Edge Function directories:
 
 ## Test Credentials
 See `/app/memory/test_credentials.md`. Razorpay test card: `4111 1111 1111 1111` (any future expiry, any CVV).
+
+## Implemented (2026-02-10) — Profile crash fix
+- **FollowButton React Hooks order fix** (`/app/frontend/src/components/FollowButton.tsx`): moved all hook calls (`useFollows`, `useState`, `useEffect`) above the conditional early-return for `currentUserId === targetUserId` and `!currentUserId`. Previously the component threw `Rendered more hooks than during the previous render` when a logged-in visitor viewed another user's profile, which tripped `ProfileErrorBoundary` → "Profile temporarily unavailable".
+- **Verification**: Screenshot of `/entrepreneurkousik` on the preview environment renders the full profile (avatar, bio, follow button, posts/chat/product tabs). No error boundary, no React hooks error in console.
+
+## Known caveats (carried over from prior session)
+- Razorpay test key `rzp_test_SpjjvTzWU5fO6F` returns `Authentication failed` from Razorpay API. A frontend "Demo Mode" interceptor (`/app/frontend/src/lib/razorpay-interceptor.ts`) + `DemoCheckoutPortal.tsx` simulates a successful checkout so the UI flow is unblocked. To switch back to real payments, the user must supply a working test Key ID + Secret, then the interceptor + backend `demo_mode` branches in `/app/backend/payment_routes.py` can be removed.

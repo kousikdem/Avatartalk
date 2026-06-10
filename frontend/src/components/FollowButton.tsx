@@ -22,17 +22,25 @@ const FollowButton: React.FC<FollowButtonProps> = ({
 }) => {
   const { toast } = useToast();
   const [optimisticFollowing, setOptimisticFollowing] = React.useState<boolean | null>(null);
-  
-  // Only initialize useFollows if user is authenticated
-  const followsHook = useFollows(currentUserId);
-  const { isFollowing, followUserOptimistic, unfollowUserOptimistic, loading } = currentUserId ? followsHook : {
-    isFollowing: () => false,
-    followUserOptimistic: async () => {},
-    unfollowUserOptimistic: async () => {},
-    loading: false
-  };
 
-  // Don't show follow button for own profile
+  // ALL HOOKS MUST BE CALLED UNCONDITIONALLY — Rules of Hooks.
+  // The previous version had early returns BEFORE the useEffect below,
+  // which triggered "Rendered more hooks than during the previous render"
+  // and crashed the ProfileErrorBoundary with "Profile temporarily unavailable".
+  const followsHook = useFollows(currentUserId);
+  const isFollowing = followsHook?.isFollowing ?? ((_id: string) => false);
+  const followUserOptimistic = followsHook?.followUserOptimistic ?? (async () => {});
+  const unfollowUserOptimistic = followsHook?.unfollowUserOptimistic ?? (async () => {});
+  const loading = followsHook?.loading ?? false;
+
+  // Reset optimistic state when actual state catches up (MUST be called every render).
+  React.useEffect(() => {
+    if (currentUserId && optimisticFollowing !== null && isFollowing(targetUserId) === optimisticFollowing) {
+      setOptimisticFollowing(null);
+    }
+  }, [isFollowing, targetUserId, optimisticFollowing, currentUserId]);
+
+  // Don't show follow button for own profile (safe to return after all hooks).
   if (currentUserId === targetUserId) {
     return null;
   }
@@ -58,12 +66,12 @@ const FollowButton: React.FC<FollowButtonProps> = ({
       window.dispatchEvent(new CustomEvent('show-visitor-auth'));
       return;
     }
-    
+
     const wasFollowing = optimisticFollowing ?? isFollowing(targetUserId);
-    
+
     // Instant optimistic update
     setOptimisticFollowing(!wasFollowing);
-    
+
     try {
       if (wasFollowing) {
         await unfollowUserOptimistic(targetUserId);
@@ -92,13 +100,6 @@ const FollowButton: React.FC<FollowButtonProps> = ({
 
   // Use optimistic state if set, otherwise use actual state
   const isUserFollowing = optimisticFollowing ?? isFollowing(targetUserId);
-  
-  // Reset optimistic state when actual state catches up
-  React.useEffect(() => {
-    if (optimisticFollowing !== null && isFollowing(targetUserId) === optimisticFollowing) {
-      setOptimisticFollowing(null);
-    }
-  }, [isFollowing, targetUserId, optimisticFollowing]);
 
   if (variant === 'compact') {
       return (
