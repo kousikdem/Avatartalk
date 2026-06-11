@@ -221,32 +221,82 @@ export const useTokens = () => {
 
     loadData();
 
-    // Subscribe to token balance changes
-    const setupSubscription = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return;
-      const user = session.user;
+    // -----------------------------------------------------------------
+    // Realtime subscription for token balance changes
+    // -----------------------------------------------------------------
+    // Bug fix (P2 backlog): the previous implementation declared an
+    // `async setupSubscription()` that returned a cleanup function and
+    // then called it from useEffect WITHOUT awaiting — so the cleanup
+    // was lost and the channel name `token-balance-changes` was reused
+    // across re-mounts. On React StrictMode double-mount the second
+    // `.on(...)` registration fired AFTER the first `.subscribe()` had
+    // already been called on the cached channel of the same name,
+    // producing the `cannot add postgres_changes callbacks after
+    // subscribe()` runtime error.
+    //
+    // Fix:
+    //  1) Generate a unique channel name per mount.
+    //  2) Capture the channel synchronously via a ref so the useEffect
+    //     cleanup can always remove it.
+    //  3) Wrap setup in try/catch — realtime failures must never crash
+    //     the hook (token balance still loads via fetchTokenBalance).
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
 
-      const channel = supabase
-        .channel('token-balance-changes')
-        .on('postgres_changes', {
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (cancelled || !session?.user) return;
+        const user = session.user;
+
+        const uniqueChannelName = `token-balance-changes:${user.id}:${
+          typeof crypto !== 'undefined' && 'randomUUID' in crypto
+            ? crypto.randomUUID()
+            : Math.random().toString(36).slice(2)
+        }`;
+
+        const ch = supabase.channel(uniqueChannelName);
+
+        // IMPORTANT: register the `.on(...)` listener BEFORE `.subscribe()`.
+        ch.on('postgres_changes', {
           event: 'UPDATE',
           schema: 'public',
           table: 'profiles',
-          filter: `id=eq.${user.id}`
+          filter: `id=eq.${user.id}`,
         }, (payload) => {
           if (payload.new && 'token_balance' in payload.new) {
             setTokenBalance(payload.new.token_balance as number);
           }
-        })
-        .subscribe();
+        });
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
+        ch.subscribe((status) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.warn(`[useTokens] realtime ${uniqueChannelName} status=${status}`);
+          }
+        });
+
+        if (cancelled) {
+          // hook unmounted between getSession() and here — clean up immediately
+          supabase.removeChannel(ch);
+          return;
+        }
+        channel = ch;
+      } catch (err) {
+        console.warn('[useTokens] realtime setup failed (non-fatal):', err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch (e) {
+          // ignore — realtime might already be torn down
+        }
+        channel = null;
+      }
     };
-
-    setupSubscription();
   }, [fetchTokenBalance, fetchPackages, fetchEvents, fetchDailyUsage]);
 
   return {

@@ -4,11 +4,9 @@ import { createRoot } from 'react-dom/client'
 import { Component } from 'react'
 import App from './App.tsx'
 import './index.css'
-import { installRazorpayInterceptor } from './lib/razorpay-interceptor';
 
-// Install Razorpay edge-function interceptor so all Razorpay calls
-// transparently route through FastAPI (with demo-mode fallback).
-installRazorpayInterceptor();
+// Note: The razorpay-interceptor was removed (P2 backlog cleanup) — all
+// Razorpay calls now invoke `/api/payment/*` directly via callPaymentApi.
 
 // Top-level error boundary — catches any uncaught React rendering error.
 // For profile pages we auto-redirect to home rather than showing a dead end.

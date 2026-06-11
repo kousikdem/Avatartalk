@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useTokens } from '@/hooks/useTokens';
 import { useToast } from '@/hooks/use-toast';
+import { openRazorpayCheckout } from '@/lib/razorpay-checkout';
 
 interface TokenPurchaseModalProps {
   open: boolean;
@@ -71,17 +72,8 @@ const TokenPurchaseModal: React.FC<TokenPurchaseModalProps> = ({
         return;
       }
 
-      if (!window.Razorpay) {
-        toast({
-          title: "Payment Error",
-          description: "Payment system not loaded. Please refresh and try again.",
-          variant: "destructive"
-        });
-        setProcessing(false);
-        return;
-      }
-
-      const options = {
+      // Smart opener — auto-routes to DemoCheckoutModal on demo_order_*.
+      await openRazorpayCheckout({
         key: orderData.keyId,
         amount: orderData.amount,
         currency: orderData.currency,
@@ -104,17 +96,14 @@ const TokenPurchaseModal: React.FC<TokenPurchaseModalProps> = ({
         },
         prefill: {},
         theme: {
-          color: "#f59e0b"
+          color: "#f59e0b",
         },
         modal: {
           ondismiss: () => {
             setProcessing(false);
-          }
-        }
-      };
-
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
+          },
+        },
+      });
 
     } catch (error) {
       console.error('Purchase error:', error);

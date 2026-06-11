@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFollows } from '@/hooks/useFollows';
 import { useSubscriptionPlans } from '@/hooks/useSubscriptionPlans';
 import { useActiveSubscription } from '@/hooks/useActiveSubscription';
-import { supabase } from '@/integrations/supabase/client';
+import { callPaymentApi } from '@/lib/payment-api';
 import { openRazorpayCheckout } from '@/lib/razorpay-checkout';
 import { Crown, Loader2, Check } from 'lucide-react';
 
@@ -88,17 +88,15 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
       const amount = selectedBillingCycle === 'yearly' ? yearlyPrice : monthlyPrice;
       const billingCycle = selectedBillingCycle;
 
-      const { data, error } = await supabase.functions.invoke('razorpay-create-order', {
-        body: {
-          planId: monthlyPlan.id,
-          amount: amount,
-          currency: monthlyPlan.currency,
-          profileId: targetUserId,
-          billingCycle: billingCycle
-        }
+      // P2 backlog cleanup: call FastAPI directly instead of going through
+      // razorpay-interceptor wrapping `supabase.functions.invoke()`.
+      const data = await callPaymentApi<any>('/api/payment/razorpay-create-order', {
+        planId: monthlyPlan.id,
+        amount: amount,
+        currency: monthlyPlan.currency,
+        profileId: targetUserId,
+        billingCycle: billingCycle,
       });
-
-      if (error) throw error;
 
       // Unified Razorpay opener — auto-handles demo mode if data.order_id
       // starts with `demo_order_` (i.e. backend issued demo order because
@@ -111,30 +109,27 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
         description: `${billingCycle === 'yearly' ? 'Yearly' : 'Monthly'} subscription to ${targetUsername}`,
         order_id: data.order_id,
         handler: async (response: any) => {
-          const { error: verifyError } = await supabase.functions.invoke('razorpay-verify-payment', {
-            body: {
+          try {
+            await callPaymentApi<any>('/api/payment/razorpay-verify-payment', {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
               planId: monthlyPlan.id,
               profileId: targetUserId,
-              billingCycle: billingCycle
-            }
-          });
-
-          if (verifyError) {
-            console.error('Payment verification error:', verifyError);
-            toast({
-              title: "Payment Verification Failed",
-              description: verifyError.message || "Please contact support",
-              variant: "destructive",
+              billingCycle: billingCycle,
             });
-          } else {
             toast({
               title: data.demo_mode ? "✅ Demo Subscription Active" : "Subscription Active!",
               description: data.demo_mode
                 ? `Demo subscription to ${targetUsername} created (no real charge)`
                 : `You are now subscribed to ${targetUsername}`,
+            });
+          } catch (verifyError: any) {
+            console.error('Payment verification error:', verifyError);
+            toast({
+              title: "Payment Verification Failed",
+              description: verifyError?.message || "Please contact support",
+              variant: "destructive",
             });
           }
         },
@@ -190,6 +185,7 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
         disabled={isProcessing}
         className={className}
         data-subscribe-button
+        data-testid="subscribe-button"
       >
         {isProcessing ? (
           <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -284,7 +280,7 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
             <Button variant="outline" onClick={() => setShowPlanModal(false)}>
               Cancel
             </Button>
-            <Button onClick={initiateSubscription} disabled={isProcessing}>
+            <Button onClick={initiateSubscription} disabled={isProcessing} data-testid="subscribe-confirm-button">
               {isProcessing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Continue - ₹{selectedBillingCycle === 'yearly' ? yearlyPrice : monthlyPrice}
             </Button>

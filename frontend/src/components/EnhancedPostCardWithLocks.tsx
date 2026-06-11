@@ -14,6 +14,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLikes } from '@/hooks/useLikes';
 import { supabase } from '@/integrations/supabase/client';
+import { callPaymentApi } from '@/lib/payment-api';
+import { openRazorpayCheckout } from '@/lib/razorpay-checkout';
 import { useToast } from '@/hooks/use-toast';
 import EditPostModal from './EditPostModal';
 import { useViewTracking } from '@/hooks/useViewTracking';
@@ -179,22 +181,20 @@ const EnhancedPostCardWithLocks: React.FC<EnhancedPostCardWithLocksProps> = ({
     try {
       const amount = Math.max((post.price || 0) * 100, 100); // Convert to paise, minimum ₹1
 
-      const { data: orderData, error: orderError } = await supabase.functions.invoke('razorpay-create-order', {
-        body: {
-          amount,
-          currency: post.currency || 'INR',
-          productId: post.id,
-          productType: 'post_unlock',
-          buyerId: currentUserId,
-          sellerId: post.user_id,
-          metadata: {
-            post_id: post.id,
-            post_title: post.title
-          }
-        }
+      // P2 backlog cleanup: call FastAPI directly instead of going through
+      // razorpay-interceptor wrapping `supabase.functions.invoke()`.
+      const orderData = await callPaymentApi<any>('/api/payment/razorpay-create-order', {
+        amount,
+        currency: post.currency || 'INR',
+        productId: post.id,
+        productType: 'post_unlock',
+        buyerId: currentUserId,
+        sellerId: post.user_id,
+        metadata: {
+          post_id: post.id,
+          post_title: post.title,
+        },
       });
-
-      if (orderError) throw orderError;
 
       const razorpayOrderId = orderData.order_id || orderData.orderId;
       const razorpayKeyId = orderData.key_id;
@@ -203,18 +203,8 @@ const EnhancedPostCardWithLocks: React.FC<EnhancedPostCardWithLocksProps> = ({
         throw new Error('Payment gateway not configured');
       }
 
-      // Load Razorpay if not loaded
-      if (typeof window.Razorpay === 'undefined') {
-        await new Promise<void>((resolve, reject) => {
-          const script = document.createElement('script');
-          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-          script.onload = () => resolve();
-          script.onerror = () => reject(new Error('Failed to load payment gateway'));
-          document.body.appendChild(script);
-        });
-      }
-
-      const options = {
+      // openRazorpayCheckout handles script loading + demo-mode routing.
+      await openRazorpayCheckout({
         key: razorpayKeyId,
         amount: orderData.amount,
         currency: orderData.currency || 'INR',
@@ -232,7 +222,7 @@ const EnhancedPostCardWithLocks: React.FC<EnhancedPostCardWithLocksProps> = ({
                 payment_amount: amount / 100,
                 payment_currency: post.currency || 'INR',
                 razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id
+                razorpay_payment_id: response.razorpay_payment_id,
               });
 
             if (unlockError) throw unlockError;
@@ -247,27 +237,15 @@ const EnhancedPostCardWithLocks: React.FC<EnhancedPostCardWithLocksProps> = ({
             toast({
               title: "Error",
               description: "Payment successful but failed to unlock. Please contact support.",
-              variant: "destructive"
+              variant: "destructive",
             });
           }
         },
         modal: {
-          ondismiss: () => setIsProcessingPayment(false)
+          ondismiss: () => setIsProcessingPayment(false),
         },
-        theme: { color: '#6366f1' }
-      };
-
-      // @ts-ignore
-      const razorpay = new window.Razorpay(options);
-      razorpay.on('payment.failed', function (response: any) {
-        toast({
-          title: "Payment Failed",
-          description: response.error?.description || "Payment could not be processed.",
-          variant: "destructive"
-        });
-        setIsProcessingPayment(false);
+        theme: { color: '#6366f1' },
       });
-      razorpay.open();
     } catch (error: any) {
       console.error('Payment error:', error);
       toast({

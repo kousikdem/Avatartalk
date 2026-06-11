@@ -234,6 +234,7 @@ const TokenPurchaseAddon = ({ currSymbol }: { currSymbol: string }) => {
             disabled={processing || priceInINR < MIN_AMOUNT_INR}
             size="lg"
             className="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-semibold px-8"
+            data-testid="buy-tokens-button"
           >
             {processing ? (
               <><Loader2 className="w-4 h-4 animate-spin mr-2" />Processing...</>
@@ -671,6 +672,7 @@ const PricingPage = () => {
                     variant={isCurrentPlan || plan.is_popular ? 'default' : 'outline'}
                     onClick={() => handlePurchase(plan.id)}
                     disabled={processing || isCurrentPlan}
+                    data-testid={`subscribe-plan-${plan.plan_key}-button`}
                   >
                     {processing ? (
                       <Loader2 className="w-4 h-4 animate-spin" />

@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Product } from '@/hooks/useProducts';
 import { useOrders } from '@/hooks/useOrders';
-import { ensureRazorpayLoaded } from '@/lib/razorpay-loader';
+import { openRazorpayCheckout } from '@/lib/razorpay-checkout';
 import { Loader2, Package, CreditCard, MapPin } from 'lucide-react';
 import { getShortTaxLabel, calculateTax, getTaxLabel } from '@/utils/taxCalculation';
 import { notificationService } from '@/utils/notificationService';
@@ -244,19 +244,10 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
         currency
       });
 
-      // Load Razorpay script (centralised loader handles dedupe + timeout)
-      const scriptLoaded = await ensureRazorpayLoaded();
-      if (!scriptLoaded || !window.Razorpay) {
-        toast({
-          title: "Payment system unavailable",
-          description: "Could not load Razorpay. Please disable ad-blockers and refresh.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Initialize Razorpay checkout
-      const options = {
+      // Initialise Razorpay checkout via the smart opener — auto-routes
+      // to DemoCheckoutModal when the backend issued a demo_order_* ID
+      // (e.g. when Razorpay creds are rejected by Razorpay's API).
+      await openRazorpayCheckout({
         key: checkoutData.key_id,
         amount: checkoutData.amount,
         currency: checkoutData.currency,
@@ -269,15 +260,15 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
-              order_id: checkoutData.order_id
+              order_id: checkoutData.order_id,
             });
-            
+
             onClose();
-            
+
             toast({
               title: "Success!",
-              description: isDigital 
-                ? "Purchase complete! Check your chat for download links." 
+              description: isDigital
+                ? "Purchase complete! Check your chat for download links."
                 : "Order placed successfully! You'll receive updates via email.",
             });
           } catch (error) {
@@ -289,23 +280,8 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
           contact: shippingAddress.phone,
         } : {},
         theme: {
-          color: '#6366f1'
-        }
-      };
-
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
-
-      razorpay.on('payment.failed', function (response: any) {
-        const err = response?.error || {};
-        const reason = err.description || err.reason || err.code || 'Payment could not be completed';
-        const step = err.step ? ` (step: ${err.step})` : '';
-        toast({
-          title: "Payment Failed",
-          description: `${reason}${step}. Please try again or use a different method.`,
-          variant: "destructive",
-        });
-        console.error('Razorpay payment.failed:', err);
+          color: '#6366f1',
+        },
       });
 
     } catch (error: any) {
@@ -593,6 +569,7 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
             disabled={isProcessing}
             className="w-full"
             size="lg"
+            data-testid="checkout-pay-button"
           >
             {isProcessing ? (
               <>

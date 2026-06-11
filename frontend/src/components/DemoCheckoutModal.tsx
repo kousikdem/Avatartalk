@@ -211,6 +211,7 @@ const DemoCheckoutModal: React.FC<Props> = ({ open, data, onClose, onSuccess, on
             onClick={handlePay}
             disabled={processing}
             className="w-full bg-amber-500 hover:bg-amber-600 text-white"
+            data-testid="demo-pay-button"
           >
             {processing ? (
               <>

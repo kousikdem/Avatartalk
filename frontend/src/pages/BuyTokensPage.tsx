@@ -243,7 +243,7 @@ const BuyTokensPage: React.FC = () => {
                   <span className="font-bold text-amber-600">{formatPrice(priceInINR)} <span className="text-xs text-muted-foreground">(₹{priceInINR.toFixed(0)})</span></span>
                 </div>
 
-                <Button onClick={handlePurchase} disabled={processing || priceInINR < MIN_AMOUNT_INR} className="w-full h-11 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600">
+                <Button onClick={handlePurchase} disabled={processing || priceInINR < MIN_AMOUNT_INR} className="w-full h-11 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600" data-testid="buy-tokens-button">
                   {processing ? 'Processing...' : <><CreditCard className="w-4 h-4 mr-2" />Pay {formatPrice(priceInINR)}</>}
                 </Button>
               </CardContent>
@@ -275,7 +275,7 @@ const BuyTokensPage: React.FC = () => {
                 )}
 
                 {selectedUser && (
-                  <Button onClick={() => setGiftModalOpen(true)} className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600">
+                  <Button onClick={() => setGiftModalOpen(true)} className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600" data-testid="gift-tokens-button">
                     <Gift className="w-4 h-4 mr-2" />Gift to {selectedUser.display_name || selectedUser.username}
                   </Button>
                 )}

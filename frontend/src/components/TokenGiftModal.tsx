@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Gift, Coins, AlertCircle, Loader2, Sparkles, Heart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { openRazorpayCheckout } from '@/lib/razorpay-checkout';
 
 declare global {
   interface Window {
@@ -130,8 +131,8 @@ const TokenGiftModal: React.FC<TokenGiftModalProps> = ({
         throw new Error(orderData?.error || 'Failed to create gift order');
       }
 
-      // Open Razorpay checkout
-      const options = {
+      // Open Razorpay checkout (smart opener handles demo mode).
+      await openRazorpayCheckout({
         key: orderData.key_id,
         amount: orderData.amount,
         currency: orderData.currency,
@@ -179,10 +180,7 @@ const TokenGiftModal: React.FC<TokenGiftModalProps> = ({
             setProcessing(false);
           }
         }
-      };
-
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
+      });
     } catch (error) {
       console.error('Gift error:', error);
       toast({

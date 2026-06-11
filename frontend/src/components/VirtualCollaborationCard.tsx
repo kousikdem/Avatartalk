@@ -14,6 +14,8 @@ import {
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { callPaymentApi } from '@/lib/payment-api';
+import { openRazorpayCheckout } from '@/lib/razorpay-checkout';
 import { notificationService } from '@/utils/notificationService';
 
 interface VirtualProduct {
@@ -217,28 +219,22 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
       // Paid products - use Razorpay
       const bookingAmount = Math.max(product.price, 100);
 
-      const { data: orderData, error: orderError } = await supabase.functions.invoke('razorpay-create-order', {
-        body: {
-          amount: bookingAmount,
-          currency: product.currency || 'INR',
-          productId: product.id,
-          productType: 'virtual_collaboration',
-          buyerId: currentUserId,
-          sellerId: product.user_id,
-          metadata: {
-            is_virtual_collaboration: true,
-            product_type: product.product_type,
-            duration_mins: product.duration_mins,
-            buyer_info: bookingForm,
-            event_date: product.event_date
-          }
-        }
+      // P2 backlog cleanup: call FastAPI directly (no edge function indirection).
+      const orderData = await callPaymentApi<any>('/api/payment/razorpay-create-order', {
+        amount: bookingAmount,
+        currency: product.currency || 'INR',
+        productId: product.id,
+        productType: 'virtual_collaboration',
+        buyerId: currentUserId,
+        sellerId: product.user_id,
+        metadata: {
+          is_virtual_collaboration: true,
+          product_type: product.product_type,
+          duration_mins: product.duration_mins,
+          buyer_info: bookingForm,
+          event_date: product.event_date,
+        },
       });
-
-      if (orderError) {
-        console.error('Order creation error:', orderError);
-        throw new Error(orderError.message || 'Failed to create order');
-      }
 
       if (!orderData?.order_id && !orderData?.orderId) {
         throw new Error('No order ID received from payment gateway');
@@ -251,17 +247,9 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
         throw new Error('Payment gateway not configured properly');
       }
 
-      if (typeof window.Razorpay === 'undefined') {
-        await new Promise<void>((resolve, reject) => {
-          const script = document.createElement('script');
-          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-          script.onload = () => resolve();
-          script.onerror = () => reject(new Error('Failed to load payment gateway'));
-          document.body.appendChild(script);
-        });
-      }
-
-      const options = {
+      // Smart opener — auto-routes to DemoCheckoutModal when backend
+      // returns a `demo_order_*` ID (i.e. Razorpay creds rejected).
+      await openRazorpayCheckout({
         key: razorpayKeyId,
         amount: orderData.amount,
         currency: orderData.currency || 'INR',
@@ -270,26 +258,14 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
         order_id: razorpayOrderId,
         handler: async function (response: any) {
           try {
-            const { error: verifyError } = await supabase.functions.invoke('razorpay-verify-payment', {
-              body: {
-                orderId: response.razorpay_order_id,
-                paymentId: response.razorpay_payment_id,
-                signature: response.razorpay_signature,
-                productId: product.id,
-                productType: 'virtual_collaboration',
-                buyerId: currentUserId,
-                sellerId: product.user_id,
-                amount: orderData.amount,
-                metadata: {
-                  is_virtual_collaboration: true,
-                  buyer_info: bookingForm,
-                  event_date: product.event_date,
-                  join_url: product.join_url
-                }
-              }
+            // P2 backlog cleanup: route verify through FastAPI directly.
+            // NOTE: snake_case keys match the GenericVerifyRequest pydantic model.
+            await callPaymentApi<any>('/api/payment/razorpay-verify-payment', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              order_id: response.razorpay_order_id,
             });
-
-            if (verifyError) throw verifyError;
 
             toast({
               title: "Booking Confirmed!",
@@ -320,20 +296,7 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
         theme: {
           color: '#6366f1'
         }
-      };
-
-      // @ts-ignore
-      const razorpay = new window.Razorpay(options);
-      razorpay.on('payment.failed', function (response: any) {
-        console.error('Payment failed:', response.error);
-        toast({
-          title: "Payment Failed",
-          description: response.error?.description || "Your payment could not be processed.",
-          variant: "destructive"
-        });
-        setIsProcessing(false);
       });
-      razorpay.open();
 
     } catch (error: any) {
       console.error('Booking error:', error);

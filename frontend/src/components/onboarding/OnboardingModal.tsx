@@ -158,17 +158,21 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({
                     Skip
                   </Button>
                 )}
-                {/* Only show close button for returning users */}
-                {!isFirstTime && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={onClose}
-                    className="h-7 w-7 text-white/70 hover:text-white hover:bg-white/10"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                )}
+                {/* Always-visible close affordance — P2 backlog: first-time
+                    users can now one-click dismiss the wizard. Progress is
+                    persisted so they can resume from OnboardingProgressButton
+                    in the dashboard. */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  className="h-7 w-7 text-white/70 hover:text-white hover:bg-white/10"
+                  aria-label={isFirstTime ? 'Dismiss welcome wizard' : 'Close'}
+                  title={isFirstTime ? 'Dismiss (resume anytime from dashboard)' : 'Close'}
+                  data-testid="onboarding-dismiss-button"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
             </div>
 
