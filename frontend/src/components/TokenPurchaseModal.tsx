@@ -72,7 +72,7 @@ const TokenPurchaseModal: React.FC<TokenPurchaseModalProps> = ({
         return;
       }
 
-      // Smart opener — auto-routes to DemoCheckoutModal on demo_order_*.
+      // Open the real Razorpay checkout window.
       await openRazorpayCheckout({
         key: orderData.keyId,
         amount: orderData.amount,

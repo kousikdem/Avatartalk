@@ -22,7 +22,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useTokenPrice } from '@/hooks/useTokenPrice';
 import MainAuth from './MainAuth';
 import ShareModal from './ShareModal';
-import DemoCheckoutModal, { DemoCheckoutData, DemoSuccessPayload } from '@/components/DemoCheckoutModal';
 import {
   Select,
   SelectContent,
@@ -124,8 +123,8 @@ const TokenPurchaseAddon = ({ currSymbol }: { currSymbol: string }) => {
         amount_inr: priceInINR,
       });
 
-      // openRazorpayCheckout auto-detects `demo_order_*` IDs and routes
-      // to DemoCheckoutModal (test card flow). Real orders go to Razorpay.
+      // openRazorpayCheckout loads the Razorpay JS SDK + opens the
+      // checkout modal. Test cards work in Razorpay's TEST MODE.
       await openRazorpayCheckout({
         key: orderData.key_id || (import.meta as any).env?.VITE_RAZORPAY_KEY_ID,
         amount: orderData.amount,
@@ -142,10 +141,8 @@ const TokenPurchaseAddon = ({ currSymbol }: { currSymbol: string }) => {
               purchase_id: orderData.purchase_id,
             });
             toast({
-              title: orderData.demo_mode ? "✅ Demo Purchase Successful" : "Success!",
-              description: orderData.demo_mode
-                ? `${formatTokens(verifyData.tokens_credited)} tokens added (demo mode — no real charge)`
-                : `${formatTokens(verifyData.tokens_credited)} tokens added to your account!`,
+              title: "Success!",
+              description: `${formatTokens(verifyData.tokens_credited)} tokens added to your account!`,
             });
           } catch (verr: any) {
             toast({ title: "Verification Failed", description: verr?.message || 'Please contact support.', variant: "destructive" });
@@ -256,14 +253,6 @@ const PricingPage = () => {
   const [user, setUser] = useState<any>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
-  // Demo mode state — populated when backend returns demo_mode:true on plan checkout
-  const [demoPlanData, setDemoPlanData] = useState<DemoCheckoutData | null>(null);
-  const [demoPlanContext, setDemoPlanContext] = useState<{
-    planId: string;
-    billingCycleMonths: number;
-    planName: string;
-    monthlyTokens: number;
-  } | null>(null);
 
   const billingCycle = durationOptions[durationIndex];
 
@@ -375,18 +364,6 @@ const PricingPage = () => {
 
       if (!data?.orderId) {
         throw new Error('Failed to create order');
-      }
-
-      // ─── Demo mode: open our own modal instead of Razorpay ─────────────
-      if (data.demo_mode) {
-        setDemoPlanData({
-          order_id: data.orderId,
-          amount: Math.round(data.amount * 100),
-          currency: data.currency,
-          description: `${data.planName} Plan - ${durationLabels[billingCycle]}`,
-        });
-        setDemoPlanContext({ planId, billingCycleMonths: billingCycle, planName: data.planName, monthlyTokens: plan.ai_tokens_monthly });
-        return;
       }
 
       const scriptLoaded = await ensureRazorpayLoaded();
@@ -756,54 +733,6 @@ const PricingPage = () => {
           <MainAuth isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
         </DialogContent>
       </Dialog>
-
-      {/* Demo Mode checkout — only shown when backend reports demo_mode:true */}
-      <DemoCheckoutModal
-        open={!!demoPlanData}
-        data={demoPlanData}
-        onClose={() => {
-          setDemoPlanData(null);
-          setDemoPlanContext(null);
-          setProcessing(false);
-        }}
-        onSuccess={async (payload: DemoSuccessPayload) => {
-          try {
-            if (!demoPlanContext) return;
-            const verifyData = await callPaymentApi<any>('/api/payment/plan-checkout/verify', {
-              razorpay_order_id: payload.razorpay_order_id,
-              razorpay_payment_id: payload.razorpay_payment_id,
-              razorpay_signature: payload.razorpay_signature,
-              planId: demoPlanContext.planId,
-              billingCycleMonths: demoPlanContext.billingCycleMonths,
-            });
-            if (!verifyData?.success) {
-              throw new Error(verifyData?.message || 'Verification failed');
-            }
-            toast({
-              title: '✅ Demo subscription activated',
-              description: `Welcome to ${demoPlanContext.planName}! Monthly tokens credited. (Demo mode — no real charge)`,
-            });
-            refetchSubscription();
-            navigate('/settings/dashboard');
-          } catch (err: any) {
-            toast({
-              title: 'Demo verification failed',
-              description: err?.message || 'Could not activate subscription',
-              variant: 'destructive',
-            });
-          } finally {
-            setDemoPlanData(null);
-            setDemoPlanContext(null);
-            setProcessing(false);
-          }
-        }}
-        onFailure={(reason) => {
-          toast({ title: 'Demo payment cancelled', description: reason, variant: 'destructive' });
-          setDemoPlanData(null);
-          setDemoPlanContext(null);
-          setProcessing(false);
-        }}
-      />
     </div>
   );
 };

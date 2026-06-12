@@ -1,0 +1,36 @@
+{
+  "summary": "Verified demo-mode/demo_order_ removal across backend and frontend. All 3 create-order endpoints (/api/payment/razorpay-create-order, /token-purchase/create-order, /plan-checkout/create-order) now return clean HTTP 400 with detail 'Failed to create [payment ]order: Authentication failed' surfaced from Razorpay (env keys are rejected by Razorpay). No 500s. Response bodies contain NO 'demo_mode' field and NO 'demo_order_' string. /api/payment/razorpay-verify-payment correctly returns 400 'Invalid payment signature' when given a razorpay_order_id starting with 'demo_order_' (bypass removed); same for /token-purchase/verify and /plan-checkout/verify. Frontend (/pricing) shows clean error toasts via SubscribeButton / PricingPage handlers — 'Failed to create order: Authentication failed' (Buy Now token widget) and 'Failed to start checkout / Failed to create order: Authentication failed' (Subscribe Now). window.Razorpay was stubbed to detect any modal-open attempt — it was NEVER invoked on failure (no demo Razorpay window or DemoCheckoutModal rendered). DOM regex check for /demo[_ ]?(mode|order_|checkout)/ returned false on every screen. Backend FastAPI service is healthy.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_demo_mode_removal.py",
+    "/app/backend/tests/test_payment_routes.py",
+    "/app/test_reports/pytest/pytest_demo_removal.xml"
+  ],
+  "action_items": [
+    "(Optional, low priority) Razorpay test keys in /app/backend/.env (rzp_test_SpjjvTzWU5fO6F) currently fail Razorpay auth — generate fresh test keys in Razorpay dashboard so real test orders can be created and the full Buy/Subscribe → Razorpay checkout flow can be QA'd end-to-end. Until then, every payment attempt will surface the Authentication-failed toast (which is the intended clean behaviour after demo-mode removal)."
+  ],
+  "critical_code_review_comments": [
+    "payment_routes.py is now 742 lines — consider splitting into per-feature modules (token_purchase.py, plan_checkout.py, razorpay_universal.py) and a shared razorpay_helpers.py for signature/HMAC.",
+    "razorpay_client is constructed once at import time with env creds. If RAZORPAY_KEY_ID/SECRET are rotated, the FastAPI worker must be restarted — consider building per-request or caching with a TTL.",
+    "All four create-order/verify endpoints duplicate the same try/except for razorpay.errors.BadRequestError + generic Exception, leaking detail=f'Failed to create order: {e}'. A small wrapper (e.g. raise_razorpay_error(e)) would DRY this and consistently return 502 (Bad Gateway) for Razorpay outages vs 400 for our validation.",
+    "Frontend /pricing pages still lack data-testid on 'Buy Now' and 'Subscribe Now' buttons — already flagged in iteration_2. Tests fall back to text selectors."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_demo_mode_removal.py (new — 7 regression tests for demo_mode removal, all passing)"
+  ],
+  "success_rate": {"backend": "100% (7/7 demo_mode regression + curl matrix all clean)", "frontend": "100% (Buy Now and Subscribe Now both show clean error toasts, no Razorpay/DemoCheckoutModal opened on failure)"},
+  "test_credentials": "avatartalk_test@example.com / TestPassword!234 (Supabase). Plan UUID used: 7bf6d169-4b85-4f33-bb85-7730009dd720 (Creator).",
+  "seed_data_creation": "None — used existing test user and existing platform_pricing_plans row.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Demo-mode is fully removed from /app/backend/payment_routes.py and /app/api/_lib/helpers.ts. Razorpay creds in env return Authentication failed — this is EXPECTED until fresh test keys are generated. Frontend correctly surfaces error toasts via callPaymentApi → makeError → SubscribeButton/PricingPage error.message. To re-test end-to-end with a real Razorpay window, the operator must put working rzp_test_* keys into /app/backend/.env and `sudo supervisorctl restart backend`. Test recipes: (1) seed localStorage 'sb-hnxnvdzrwbtmcohdptfq-auth-token' with the Supabase password-grant session JSON to bypass auth modal; (2) `await page.add_init_script` to stub window.Razorpay so you can detect modal-open intent without rendering the real iframe.",
+  "rca of the issue": "Original bug: previous fork agent had wired demo_mode fallbacks into both the Vercel helpers and FastAPI payment_routes so that whenever Razorpay errored (e.g. bad creds), the backend would silently mint a fake order_id beginning with 'demo_order_' and return demo_mode:true, which the frontend then rendered via DemoCheckoutModal (no real charge). Fix shipped in this iteration's review: helpers.ts now throws on Razorpay errors (no demo branch), payment_routes.py raises HTTPException 400 with the Razorpay error text, razorpay_verify_payment no longer short-circuits when razorpay_order_id startsWith 'demo_order_' (now HMAC-verifies and rejects with 'Invalid payment signature'), and DemoCheckoutModal is no longer reachable from razorpay-checkout.ts. All verified via the new test_demo_mode_removal.py suite plus live UI smoke on /pricing."
+}

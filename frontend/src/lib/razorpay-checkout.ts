@@ -1,13 +1,16 @@
 /**
- * Smart Razorpay checkout opener.
+ * Razorpay checkout opener.
  *
- * Behaves like `new window.Razorpay(options).open()` BUT if the order ID
- * starts with `demo_order_`, it opens our DemoCheckoutModal instead of
- * the real Razorpay modal (because the backend issued a fake order id
- * when Razorpay creds are invalid).
+ * Thin wrapper around `new window.Razorpay(options).open()` that:
+ *   1) ensures the Razorpay JS SDK is loaded (cached after the first call so
+ *      subsequent clicks open the modal instantly),
+ *   2) wires up a default `payment.failed` handler that surfaces the actual
+ *      Razorpay error to the caller's `modal.ondismiss`,
+ *   3) throws clear, user-friendly errors when the SDK / key is missing.
  *
- * The demo modal is mounted globally via DemoCheckoutPortal (in App.tsx),
- * communicating through window-level CustomEvents.
+ * ⚠️ The demo-mode / DemoCheckoutModal escape hatch was removed — every
+ * payment now opens the real Razorpay window (test-mode keys produce
+ * the same Razorpay modal, just with test cards enabled).
  */
 
 import { ensureRazorpayLoaded } from './razorpay-loader';
@@ -39,72 +42,40 @@ export interface RazorpayOptions {
   [key: string]: any;
 }
 
-const DEMO_EVENT_OPEN = 'demo-checkout:open';
-const DEMO_EVENT_RESULT = 'demo-checkout:result';
-
-let demoSeq = 0;
-
 export async function openRazorpayCheckout(options: RazorpayOptions): Promise<void> {
-  const isDemo = typeof options.order_id === 'string' && options.order_id.startsWith('demo_order_');
-
-  if (isDemo) {
-    // Demo flow — open the React-mounted DemoCheckoutModal via global event.
-    const requestId = `demo-req-${++demoSeq}-${Date.now()}`;
-
-    return new Promise((resolve) => {
-      const handleResult = (e: Event) => {
-        const detail = (e as CustomEvent).detail as {
-          requestId: string;
-          result: 'success' | 'cancel';
-          payload?: {
-            razorpay_payment_id: string;
-            razorpay_order_id: string;
-            razorpay_signature: string;
-          };
-        };
-        if (detail.requestId !== requestId) return;
-        window.removeEventListener(DEMO_EVENT_RESULT, handleResult);
-
-        if (detail.result === 'success' && detail.payload) {
-          options.handler(detail.payload);
-        } else if (options.modal?.ondismiss) {
-          options.modal.ondismiss();
-        }
-        resolve();
-      };
-
-      window.addEventListener(DEMO_EVENT_RESULT, handleResult);
-
-      window.dispatchEvent(
-        new CustomEvent(DEMO_EVENT_OPEN, {
-          detail: {
-            requestId,
-            data: {
-              order_id: options.order_id,
-              amount: options.amount,
-              currency: options.currency,
-              description: options.description || options.name,
-            },
-          },
-        }),
-      );
-    });
-  }
-
-  // Real Razorpay flow
   const loaded = await ensureRazorpayLoaded();
   if (!loaded || !window.Razorpay) {
-    throw new Error('Payment system unavailable. Please refresh and try again.');
+    throw new Error(
+      'Payment system unavailable. Please disable ad-blockers and refresh.',
+    );
   }
   if (!options.key) {
-    throw new Error('Razorpay key missing. Please contact support.');
+    throw new Error(
+      'Razorpay key missing on the server. Set RAZORPAY_KEY_ID in env vars.',
+    );
   }
+  if (!options.order_id) {
+    throw new Error('Order ID missing — cannot open checkout.');
+  }
+
   const rzp = new window.Razorpay(options);
+
+  // Surface Razorpay payment failures (network / declined card / cvv etc.)
+  rzp.on('payment.failed', (resp: any) => {
+    const err = resp?.error || {};
+    const msg =
+      err.description ||
+      err.reason ||
+      err.code ||
+      'Payment could not be completed.';
+    console.error('[razorpay] payment.failed:', err);
+    // Re-dispatch so callers can attach their own listener if they wish.
+    window.dispatchEvent(
+      new CustomEvent('razorpay:payment-failed', { detail: { message: msg, error: err } }),
+    );
+    // Also dismiss the modal so the caller's ondismiss runs.
+    options.modal?.ondismiss?.();
+  });
+
   rzp.open();
 }
-
-// Event constants — exported so DemoCheckoutPortal can subscribe.
-export const DEMO_EVENTS = {
-  OPEN: DEMO_EVENT_OPEN,
-  RESULT: DEMO_EVENT_RESULT,
-} as const;

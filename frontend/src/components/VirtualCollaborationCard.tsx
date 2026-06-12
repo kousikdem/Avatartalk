@@ -247,8 +247,9 @@ const VirtualCollaborationCard: React.FC<VirtualCollaborationCardProps> = ({
         throw new Error('Payment gateway not configured properly');
       }
 
-      // Smart opener — auto-routes to DemoCheckoutModal when backend
-      // returns a `demo_order_*` ID (i.e. Razorpay creds rejected).
+      // Opens the real Razorpay checkout window. Test cards work in
+      // Razorpay's TEST MODE (card 4111 1111 1111 1111, any future expiry,
+      // any CVV).
       await openRazorpayCheckout({
         key: razorpayKeyId,
         amount: orderData.amount,

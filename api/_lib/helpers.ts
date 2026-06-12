@@ -114,30 +114,10 @@ export interface RazorpayOrder {
   currency: string;
   receipt?: string;
   status: string;
-  /** true if the order was issued by our demo-mode fallback (Razorpay
-   * creds rejected). Verify endpoints short-circuit signature checks
-   * for these. */
-  demo?: boolean;
 }
 
 interface RazorpayErrorBody {
   error?: { code?: string; description?: string; reason?: string };
-}
-
-/** Order IDs created by our demo-mode fallback are prefixed with this. */
-export const DEMO_ORDER_PREFIX = 'demo_order_';
-
-/** Cheap UUID-ish generator (no `crypto.randomUUID` dependency for older Node). */
-function shortId(): string {
-  return (
-    Date.now().toString(36) +
-    Math.random().toString(36).slice(2, 10)
-  );
-}
-
-/** True if this is a demo-mode order issued by the auth-failure fallback. */
-export function isDemoOrder(orderId: string | null | undefined): boolean {
-  return typeof orderId === 'string' && orderId.startsWith(DEMO_ORDER_PREFIX);
 }
 
 export async function createRazorpayOrder(opts: {
@@ -156,36 +136,19 @@ export async function createRazorpayOrder(opts: {
   }
 
   const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
-  let resp: Response;
-  try {
-    resp = await fetch('https://api.razorpay.com/v1/orders', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Basic ${auth}`,
-      },
-      body: JSON.stringify({
-        amount: Math.round(opts.amount),
-        currency: opts.currency,
-        receipt: opts.receipt,
-        notes: opts.notes,
-      }),
-    });
-  } catch (networkErr: any) {
-    // Razorpay unreachable → fall back to demo so the UI doesn't dead-end.
-    console.warn(
-      '[razorpay] network error, opening demo-mode fallback:',
-      networkErr?.message,
-    );
-    return {
-      id: `${DEMO_ORDER_PREFIX}${shortId()}`,
+  const resp = await fetch('https://api.razorpay.com/v1/orders', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Basic ${auth}`,
+    },
+    body: JSON.stringify({
       amount: Math.round(opts.amount),
       currency: opts.currency,
       receipt: opts.receipt,
-      status: 'created',
-      demo: true,
-    };
-  }
+      notes: opts.notes,
+    }),
+  });
 
   if (resp.ok) {
     return (await resp.json()) as RazorpayOrder;
@@ -193,7 +156,6 @@ export async function createRazorpayOrder(opts: {
 
   // ── Razorpay returned non-2xx ──
   let detail = `Razorpay returned HTTP ${resp.status}`;
-  let code: string | undefined;
   try {
     const body = (await resp.json()) as RazorpayErrorBody;
     detail =
@@ -201,45 +163,14 @@ export async function createRazorpayOrder(opts: {
       body?.error?.reason ||
       body?.error?.code ||
       detail;
-    code = body?.error?.code;
   } catch {
     /* non-JSON body */
   }
 
-  // ── Demo-mode fallback for invalid/rejected credentials ──
-  // Razorpay returns HTTP 401 + description "Authentication failed" when
-  // the key+secret pair don't match (rotated, deleted, copy-paste error).
-  // Rather than dead-ending the user with "Failed to create order", we
-  // issue a demo order whose ID is prefixed with `demo_order_`. The
-  // companion verify endpoints recognise this prefix and skip the HMAC
-  // check (Demo Mode credits tokens/plans without a real charge). The
-  // frontend reads `demo_mode: true` in the response and opens the
-  // existing DemoCheckoutModal (test card flow).
-  const isAuthFailure =
-    resp.status === 401 ||
-    detail.toLowerCase().includes('authentication failed') ||
-    code === 'BAD_REQUEST_ERROR';
-
-  if (isAuthFailure) {
-    console.warn(
-      '[razorpay] credentials rejected by Razorpay (HTTP %s, %s) — ' +
-        'serving demo-mode order. User must regenerate keys at ' +
-        'https://dashboard.razorpay.com/app/keys to enable real payments.',
-      resp.status,
-      detail,
-    );
-    return {
-      id: `${DEMO_ORDER_PREFIX}${shortId()}`,
-      amount: Math.round(opts.amount),
-      currency: opts.currency,
-      receipt: opts.receipt,
-      status: 'created',
-      demo: true,
-    };
-  }
-
-  // Any other Razorpay error (bad amount, currency unsupported, etc.)
-  // is a genuine problem the caller should surface to the user.
+  // Surface the real Razorpay error to the caller so the UI can show
+  // an accurate message (e.g. "Authentication failed" when keys are
+  // invalid). No demo-mode fallback — payments must go through real
+  // Razorpay or fail loudly.
   throw new Error(detail);
 }
 
@@ -248,10 +179,6 @@ export function verifyRazorpaySignature(
   paymentId: string,
   signature: string,
 ): boolean {
-  // Demo-mode orders never went through Razorpay so there's no real
-  // signature to verify. The order_id prefix is the source of truth.
-  if (isDemoOrder(orderId)) return true;
-
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
   if (!keySecret) return false;
   const expected = crypto

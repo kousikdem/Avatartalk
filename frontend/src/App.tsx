@@ -78,7 +78,6 @@ import type { Session, User } from "@supabase/supabase-js";
 import { AuthProvider, useAuth } from "@/context/auth";
 import { LoadingTimeout } from "@/components/LoadingTimeout";
 import { getCachedAuth, setCachedAuth, clearAuthCache } from "@/utils/authCache";
-import DemoCheckoutPortal from "@/components/DemoCheckoutPortal";
 import NProgress from "nprogress";
 import "nprogress/nprogress.css";
 
@@ -419,9 +418,6 @@ const App = () => {
           <div className="min-h-screen bg-background text-foreground">
             <Toaster />
             <Sonner />
-            {/* Global Demo Checkout Portal — listens for demo-mode events
-                and renders DemoCheckoutModal app-wide. */}
-            <DemoCheckoutPortal />
             <BrowserRouter>
               <AuthProvider value={authValue}>
                 {/* Loading timeout */}

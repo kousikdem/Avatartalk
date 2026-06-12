@@ -244,9 +244,8 @@ export const CheckoutModal = ({ open, onClose, product, currency }: CheckoutModa
         currency
       });
 
-      // Initialise Razorpay checkout via the smart opener — auto-routes
-      // to DemoCheckoutModal when the backend issued a demo_order_* ID
-      // (e.g. when Razorpay creds are rejected by Razorpay's API).
+      // Open the real Razorpay checkout window. Test cards work in
+      // Razorpay's TEST MODE.
       await openRazorpayCheckout({
         key: checkoutData.key_id,
         amount: checkoutData.amount,

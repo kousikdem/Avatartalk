@@ -152,8 +152,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     key_id: process.env.RAZORPAY_KEY_ID,
     tokens,
     purchase_id: purchaseId,
-    // Frontend opens DemoCheckoutModal (test card flow) when true —
-    // happens when Razorpay creds are rejected by Razorpay's auth API.
-    demo_mode: order.demo === true,
   });
 }

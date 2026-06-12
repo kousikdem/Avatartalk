@@ -88,8 +88,8 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
       const amount = selectedBillingCycle === 'yearly' ? yearlyPrice : monthlyPrice;
       const billingCycle = selectedBillingCycle;
 
-      // P2 backlog cleanup: call FastAPI directly instead of going through
-      // razorpay-interceptor wrapping `supabase.functions.invoke()`.
+      // openRazorpayCheckout loads + opens the real Razorpay window.
+      // Test cards work in Razorpay TEST MODE.
       const data = await callPaymentApi<any>('/api/payment/razorpay-create-order', {
         planId: monthlyPlan.id,
         amount: amount,
@@ -98,9 +98,7 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
         billingCycle: billingCycle,
       });
 
-      // Unified Razorpay opener — auto-handles demo mode if data.order_id
-      // starts with `demo_order_` (i.e. backend issued demo order because
-      // Razorpay creds are invalid).
+      // Unified Razorpay opener — opens the real Razorpay checkout window.
       await openRazorpayCheckout({
         key: data.key_id,
         amount: data.amount,
@@ -119,10 +117,8 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
               billingCycle: billingCycle,
             });
             toast({
-              title: data.demo_mode ? "✅ Demo Subscription Active" : "Subscription Active!",
-              description: data.demo_mode
-                ? `Demo subscription to ${targetUsername} created (no real charge)`
-                : `You are now subscribed to ${targetUsername}`,
+              title: "Subscription Active!",
+              description: `You are now subscribed to ${targetUsername}`,
             });
           } catch (verifyError: any) {
             console.error('Payment verification error:', verifyError);
@@ -141,11 +137,11 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
           color: '#6366f1'
         }
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error initiating subscription:', error);
       toast({
-        title: "Error",
-        description: "Failed to initiate subscription",
+        title: "Payment Error",
+        description: error?.message || "Failed to initiate subscription",
         variant: "destructive",
       });
     } finally {
