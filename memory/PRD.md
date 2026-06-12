@@ -90,4 +90,10 @@ See `/app/memory/test_credentials.md`. Razorpay test card: `4111 1111 1111 1111`
 - **Verification**: Screenshot of `/entrepreneurkousik` on the preview environment renders the full profile (avatar, bio, follow button, posts/chat/product tabs). No error boundary, no React hooks error in console.
 
 ## Known caveats (carried over from prior session)
-- Razorpay test key `rzp_test_SpjjvTzWU5fO6F` returns `Authentication failed` from Razorpay API. A frontend "Demo Mode" interceptor (`/app/frontend/src/lib/razorpay-interceptor.ts`) + `DemoCheckoutPortal.tsx` simulates a successful checkout so the UI flow is unblocked. To switch back to real payments, the user must supply a working test Key ID + Secret, then the interceptor + backend `demo_mode` branches in `/app/backend/payment_routes.py` can be removed.
+- Razorpay test key `rzp_test_SpjjvTzWU5fO6F` returns `Authentication failed` from Razorpay API. Operator must supply fresh working test Key ID + Secret in `/app/backend/.env` and restart backend to enable real payments.
+
+## Implemented (2026-02-12) — Demo Mode fully removed
+- Removed demo-mode fallback from `/app/api/_lib/helpers.ts` (`createRazorpayOrder` now throws on Razorpay errors; `verifyRazorpaySignature` no longer skips HMAC for `demo_order_*` IDs; `DEMO_ORDER_PREFIX` / `isDemoOrder` deleted).
+- Removed demo-mode fallback from `/app/backend/payment_routes.py` (all 4 create-order/verify endpoints: `razorpay-create-order`, `token-purchase/create-order`, `plan-checkout/create-order`, plus their verify counterparts). No more `demo_mode` field in any response; verify endpoints HMAC-check every signature unconditionally.
+- Frontend `DemoCheckoutModal`/`DemoCheckoutPortal` and the razorpay-interceptor were removed in an earlier pass; the SubscribeButton catch-block now surfaces `error.message` (the real Razorpay reason) instead of a generic toast.
+- Regression suite: `/app/backend/tests/test_demo_mode_removal.py` (7/7 passing) — verifies all 4 endpoints return clean 400 errors with the Razorpay reason and that no response body contains `demo_mode` or `demo_order_`.
