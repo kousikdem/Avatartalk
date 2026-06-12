@@ -17,6 +17,7 @@ import { usePlatformPricingPlans, useUserPlatformSubscription, PlatformFeature }
 import { supabase } from '@/integrations/supabase/client';
 import { callPaymentApi } from '@/lib/payment-api';
 import { ensureRazorpayLoaded } from '@/lib/razorpay-loader';
+import { openRazorpayCheckout } from '@/lib/razorpay-checkout';
 import { useToast } from '@/hooks/use-toast';
 import { useTokenPrice } from '@/hooks/useTokenPrice';
 import MainAuth from './MainAuth';
@@ -122,19 +123,10 @@ const TokenPurchaseAddon = ({ currSymbol }: { currSymbol: string }) => {
         tokens: tokenAmount,
         amount_inr: priceInINR,
       });
-      
-      const scriptLoaded = await ensureRazorpayLoaded();
-      if (!scriptLoaded || !window.Razorpay) {
-        toast({
-          title: "Payment system unavailable",
-          description: "Could not load Razorpay. Please disable ad-blockers and refresh.",
-          variant: "destructive",
-        });
-        setProcessing(false);
-        return;
-      }
 
-      const razorpay = new window.Razorpay({
+      // openRazorpayCheckout auto-detects `demo_order_*` IDs and routes
+      // to DemoCheckoutModal (test card flow). Real orders go to Razorpay.
+      await openRazorpayCheckout({
         key: orderData.key_id || (import.meta as any).env?.VITE_RAZORPAY_KEY_ID,
         amount: orderData.amount,
         currency: orderData.currency,
@@ -149,25 +141,20 @@ const TokenPurchaseAddon = ({ currSymbol }: { currSymbol: string }) => {
               razorpay_signature: response.razorpay_signature,
               purchase_id: orderData.purchase_id,
             });
-            toast({ title: "Success!", description: `${formatTokens(verifyData.tokens_credited)} tokens added to your account!` });
+            toast({
+              title: orderData.demo_mode ? "✅ Demo Purchase Successful" : "Success!",
+              description: orderData.demo_mode
+                ? `${formatTokens(verifyData.tokens_credited)} tokens added (demo mode — no real charge)`
+                : `${formatTokens(verifyData.tokens_credited)} tokens added to your account!`,
+            });
           } catch (verr: any) {
             toast({ title: "Verification Failed", description: verr?.message || 'Please contact support.', variant: "destructive" });
           }
           setProcessing(false);
         },
         theme: { color: "#f59e0b" },
-        modal: { ondismiss: () => setProcessing(false) }
+        modal: { ondismiss: () => setProcessing(false) },
       });
-      razorpay.on('payment.failed', (resp: any) => {
-        const err = resp?.error || {};
-        toast({
-          title: "Payment Failed",
-          description: err.description || err.reason || err.code || 'Payment could not be completed.',
-          variant: "destructive",
-        });
-        setProcessing(false);
-      });
-      razorpay.open();
     } catch (error: any) {
       console.error('Token purchase error:', error);
       toast({
