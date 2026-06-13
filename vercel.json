@@ -61,7 +61,8 @@
       "VITE_SUPABASE_URL": "https://hnxnvdzrwbtmcohdptfq.supabase.co",
       "VITE_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_uaL-zelOHdGlOlvaWuIa1A_wtL7mx3p",
       "VITE_SUPABASE_PROJECT_ID": "hnxnvdzrwbtmcohdptfq",
-      "VITE_SITE_URL": "https://avatartalk.co"
+      "VITE_SITE_URL": "https://avatartalk.co",
+      "VITE_RAZORPAY_KEY_ID": "rzp_test_T13TSE5f1IdmAo"
     }
   },
   "env": {
@@ -69,10 +70,11 @@
     "VITE_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_uaL-zelOHdGlOlvaWuIa1A_wtL7mx3p",
     "VITE_SUPABASE_PROJECT_ID": "hnxnvdzrwbtmcohdptfq",
     "VITE_SITE_URL": "https://avatartalk.co",
+    "VITE_RAZORPAY_KEY_ID": "rzp_test_T13TSE5f1IdmAo",
     "SUPABASE_URL": "https://hnxnvdzrwbtmcohdptfq.supabase.co",
     "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueG52ZHpyd2J0bWNvaGRwdGZxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDYyMDUzMywiZXhwIjoyMDY2MTk2NTMzfQ.AojIrz_pa2xWbhOkZPgRtAWfYXGj7xXUNm2FoRzXWlY",
     "SUPABASE_ANON_KEY": "sb_publishable_uaL-zelOHdGlOlvaWuIa1A_wtL7mx3p",
-    "RAZORPAY_KEY_ID": "rzp_test_SpjjvTzWU5fO6F",
-    "RAZORPAY_KEY_SECRET": "Zd9BS5bLsydj927n39UApQ8U"
+    "RAZORPAY_KEY_ID": "rzp_test_T13TSE5f1IdmAo",
+    "RAZORPAY_KEY_SECRET": "9MTkCqKxYdIQH5bgNGTT7waZ"
   }
 }

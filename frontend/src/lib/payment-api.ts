@@ -31,20 +31,18 @@ import { supabase } from '@/integrations/supabase/client';
  *
  * When `VITE_PAYMENT_API_BASE` is set at build time, every
  * `/api/payment/*` request is routed there instead of `window.location.origin`.
- * This lets the production frontend on `avatartalk.co` call the FastAPI
- * backend (Emergent ingress) when the Vercel serverless functions are
- * misconfigured (e.g. Razorpay keys not yet updated on Vercel).
+ * This is an opt-in escape hatch — useful if Vercel's serverless
+ * functions ever break or need to be bypassed.
  *
- * Hardcoded fallback points to the stable Emergent preview backend so
- * the production frontend can fall back to it WITHOUT requiring any
- * Vercel dashboard changes — every `git push` ships the working URL.
- *
- * Empty string → same-origin (default Vercel-co-located behaviour).
+ * Default behaviour (empty string) → same-origin, i.e.
+ *   • Production:        `https://avatartalk.co/api/payment/*` → Vercel serverless
+ *   • Emergent preview:  routed by Kubernetes ingress to FastAPI on port 8001
+ *   • Local dev:         Vite dev proxy or Vercel CLI
  */
 const PAYMENT_API_BASE_OVERRIDE: string =
   ((import.meta as any)?.env?.VITE_PAYMENT_API_BASE as string | undefined) ||
   ((import.meta as any)?.env?.VITE_BACKEND_API_URL as string | undefined) ||
-  'https://supabase-connect-46.preview.emergentagent.com';
+  '';
 
 function apiBase(): string {
   // Same-origin in production (`https://avatartalk.co`) and in the
