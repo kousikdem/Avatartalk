@@ -22,7 +22,7 @@ BASE_URL = os.environ.get(
 
 SUPABASE_URL = "https://hnxnvdzrwbtmcohdptfq.supabase.co"
 SUPABASE_ANON = "sb_publishable_uaL-zelOHdGlOlvaWuIa1A_wtL7mx3p"
-RAZORPAY_KEY_SECRET = "Zd9BS5bLsydj927n39UApQ8U"
+RAZORPAY_KEY_SECRET = "9MTkCqKxYdIQH5bgNGTT7waZ"
 
 # Endpoint paths with a minimal-but-valid body so Pydantic validation passes
 # and the auth check inside the handler is actually exercised.
@@ -172,7 +172,7 @@ class TestTokenCreateOrder:
         assert body["order_id"].startswith("order_")
         assert body["amount"] == 100000  # 1000 INR * 100 paise
         assert body["currency"] == "INR"
-        assert body["key_id"] == "rzp_test_SpjjvTzWU5fO6F"
+        assert body["key_id"] == "rzp_test_T13TSE5f1IdmAo"
         assert body["tokens"] == 1_000_000
         # purchase_id may be None if insert failed but order should still be present
         # Stash order_id for verify test
