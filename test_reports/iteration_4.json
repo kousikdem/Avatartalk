@@ -1,0 +1,33 @@
+{
+  "summary": "Verified Razorpay retry/backoff parity across FastAPI (Emergent preview) and Vercel helpers. Backend pytest /app/backend/tests/test_payment_routes.py = 19/19 PASS (incl. test_valid_create_order which depends on the retry wrapper masking flaky test-key 401s). Node smoke /app/backend/tests/test_vercel_razorpay_retry.js = 8/8 PASS (happy path, retry-on-401, no-retry-on-400, give-up-after-maxAttempts, retry-on-5xx, HMAC accept/reject/malformed). GET /api/payment/diagnostics returns {razorpay_auth_ok:true, razorpay_key_id_mode:'test', ready:true}. UI: logged in as avatartalk_test@example.com via Supabase password-grant + localStorage seed, navigated to /settings/buy-tokens, slider default 1.0M tokens, button data-testid='buy-tokens-button' shows 'Pay $10.50' (INR 1000 server-side). Clicking the button issued POST /api/payment/token-purchase/create-order which returned 200 with {success:true, order_id:'order_T1eYPU6U53eqkj', purchase_id:'c63ac5ad-12e9-4e91-9d61-582730f12c06', amount:100000, currency:'INR', key_id:'rzp_test_T1aQ71lQOJYCaZ', tokens:1000000}. The real Razorpay test-mode modal opened (Payment Options: Cards/Netbanking/Wallet, AvatarTalk.Co branding, Price Summary 1000, 'Test Mode' ribbon, 'Secured by Razorpay'). No 401 leaked through to the UI.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "BuyTokensPage", "issues": ["Header button label displays USD ('Pay $10.50') while the order is created in INR (₹1000 → 100000 paise). Total row already shows '$10.50 (₹1000)' so the user has both, but the primary CTA only shows USD. Razorpay Checkout itself renders INR — minor UX mismatch worth a follow-up but not blocking."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_payment_routes.py",
+    "/app/backend/tests/test_vercel_razorpay_retry.js",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(Optional) Surface ₹ amount on the primary 'Pay' button on BuyTokensPage so users see the currency Razorpay will actually charge.",
+    "(Optional) The Razorpay checkout iframe pulls localhost:7070/localhost:37857 analytics pings causing harmless Mixed-Content + ERR_CONNECTION_REFUSED console noise — nothing actionable on our side (these are Razorpay's own dev-mode beacons in test keys)."
+  ],
+  "critical_code_review_comments": [
+    "payment_routes.py is now ~740 lines — still a candidate for splitting into per-feature modules + a shared razorpay_helpers.py (carried over from iteration_3).",
+    "Both /app/backend/payment_routes.py::_create_razorpay_order and /app/api/_lib/helpers.ts::createRazorpayOrder duplicate the same retry/backoff logic. Consider extracting the policy (maxAttempts, base delay, jitter, list of retryable HTTP codes) into a single config so future tuning doesn't drift between FastAPI and Vercel.",
+    "The Vercel-side retry tests live as a standalone Node script — fine for now, but would be more discoverable if wired into a `npm test` script in /app/api/package.json (currently there's no Node test runner config)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (19/19 pytest + 8/8 node)", "frontend": "100% (Buy-Tokens UI → real Razorpay test-mode modal opens with correct order_id/amount/currency)"},
+  "test_credentials": "avatartalk_test@example.com / TestPassword!234 (Supabase). Created token order: order_T1eYPU6U53eqkj, purchase_id c63ac5ad-12e9-4e91-9d61-582730f12c06.",
+  "seed_data_creation": "None — used existing Supabase test user. The valid_create_order test creates a real Razorpay test order per run; no DB cleanup needed (token_purchases row is left in 'pending' state on UI dismiss, which is correct).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Both FastAPI (Emergent preview) and Vercel (production) sides now use a retry+backoff wrapper around Razorpay /v1/orders to absorb the ~30% flaky 401s on the test keys. FastAPI path verified live via pytest TestTokenCreateOrder::test_valid_create_order. Vercel path verified via /app/backend/tests/test_vercel_razorpay_retry.js which transpiles /app/api/_lib/helpers.ts with esbuild and stubs global.fetch. Diagnostics endpoint now probes POST /v1/orders (matches FastAPI) and reports razorpay_auth_ok:true. UI Buy-Tokens flow opens the real Razorpay test-mode modal — confirmed visually. If diagnostics ever flips to razorpay_auth_ok:false even with retries, that IS a regression — flag it.",
+  "rca of the issue": "Original symptom: Buy-Tokens / Plan-Checkout intermittently failed with HTTP 400 'Authentication failed' because Razorpay's test keys return 401 ~30% of the time on /v1/orders. Fix shipped over the last two iterations: (a) FastAPI payment_routes._create_razorpay_order — exponential backoff with jitter, retries on 401/5xx, up to 4 attempts, gives up cleanly on real 400s. (b) Vercel /app/api/_lib/helpers.ts::createRazorpayOrder — same retry/backoff policy, verified by Node smoke. (c) /app/api/payment/diagnostics.ts switched its probe from GET /v1/payments to POST /v1/orders (matches the production path) and got the same retry treatment. End-to-end now: token-purchase create-order returns 200 reliably, Razorpay modal opens with the right order_id+amount, and verify endpoints continue to HMAC-check the signature correctly."
+}

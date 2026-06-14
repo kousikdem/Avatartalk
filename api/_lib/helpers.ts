@@ -120,11 +120,45 @@ interface RazorpayErrorBody {
   error?: { code?: string; description?: string; reason?: string };
 }
 
+/**
+ * Tiny sleep helper (Promise-based setTimeout).
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Heuristic — does this Razorpay error description look like a
+ * transient gateway hiccup we should retry, vs a real validation
+ * failure (bad amount, bad currency, etc.) we should surface
+ * immediately?
+ *
+ * Mirrors the FastAPI-side `_create_razorpay_order` logic in
+ * `/app/backend/payment_routes.py` so both backends behave the same
+ * way against the same flaky test keys.
+ */
+function isTransientRazorpayError(message: string, status: number): boolean {
+  const msg = (message || '').toLowerCase();
+  if (
+    msg.includes('authentication failed') ||
+    msg.includes('api key') ||
+    msg.includes('try again') ||
+    msg.includes('temporarily') ||
+    msg.includes('timeout')
+  ) {
+    return true;
+  }
+  // Treat 5xx and 408/429 as transient too.
+  if (status >= 500 || status === 408 || status === 429) return true;
+  return false;
+}
+
 export async function createRazorpayOrder(opts: {
   amount: number; // in paise
   currency: string;
   receipt?: string;
   notes?: Record<string, string>;
+  maxAttempts?: number;
 }): Promise<RazorpayOrder> {
   const keyId = process.env.RAZORPAY_KEY_ID;
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
@@ -135,43 +169,78 @@ export async function createRazorpayOrder(opts: {
     );
   }
 
+  const maxAttempts = Math.max(1, opts.maxAttempts ?? 4);
   const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
-  const resp = await fetch('https://api.razorpay.com/v1/orders', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Basic ${auth}`,
-    },
-    body: JSON.stringify({
-      amount: Math.round(opts.amount),
-      currency: opts.currency,
-      receipt: opts.receipt,
-      notes: opts.notes,
-    }),
+  const requestBody = JSON.stringify({
+    amount: Math.round(opts.amount),
+    currency: opts.currency,
+    receipt: opts.receipt,
+    notes: opts.notes,
   });
 
-  if (resp.ok) {
-    return (await resp.json()) as RazorpayOrder;
+  let lastError = `Razorpay order create failed after ${maxAttempts} attempts`;
+  let lastStatus = 0;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    let resp: Response;
+    try {
+      resp = await fetch('https://api.razorpay.com/v1/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Basic ${auth}`,
+        },
+        body: requestBody,
+      });
+    } catch (e: any) {
+      // Network-layer failure — retry with backoff.
+      lastError = e?.message || 'Network error talking to Razorpay';
+      if (attempt < maxAttempts) {
+        console.warn(
+          `[razorpay] network error (attempt ${attempt}/${maxAttempts}): ${lastError} — retrying`,
+        );
+        await sleep(400 * attempt);
+        continue;
+      }
+      throw new Error(lastError);
+    }
+
+    if (resp.ok) {
+      return (await resp.json()) as RazorpayOrder;
+    }
+
+    // ── Razorpay returned non-2xx ──
+    lastStatus = resp.status;
+    let detail = `Razorpay returned HTTP ${resp.status}`;
+    try {
+      const body = (await resp.json()) as RazorpayErrorBody;
+      detail =
+        body?.error?.description ||
+        body?.error?.reason ||
+        body?.error?.code ||
+        detail;
+    } catch {
+      /* non-JSON body */
+    }
+    lastError = detail;
+
+    if (attempt < maxAttempts && isTransientRazorpayError(detail, resp.status)) {
+      console.warn(
+        `[razorpay] transient ${resp.status} (attempt ${attempt}/${maxAttempts}): ${detail} — retrying`,
+      );
+      await sleep(400 * attempt);
+      continue;
+    }
+
+    // Non-retryable, or out of attempts. Surface the real reason so
+    // the UI can show an accurate message (e.g. "Authentication
+    // failed" when keys are invalid). No demo-mode fallback —
+    // payments must go through real Razorpay or fail loudly.
+    throw new Error(detail);
   }
 
-  // ── Razorpay returned non-2xx ──
-  let detail = `Razorpay returned HTTP ${resp.status}`;
-  try {
-    const body = (await resp.json()) as RazorpayErrorBody;
-    detail =
-      body?.error?.description ||
-      body?.error?.reason ||
-      body?.error?.code ||
-      detail;
-  } catch {
-    /* non-JSON body */
-  }
-
-  // Surface the real Razorpay error to the caller so the UI can show
-  // an accurate message (e.g. "Authentication failed" when keys are
-  // invalid). No demo-mode fallback — payments must go through real
-  // Razorpay or fail loudly.
-  throw new Error(detail);
+  // Defensive — loop should always either return or throw.
+  throw new Error(`${lastError} (HTTP ${lastStatus})`);
 }
 
 export function verifyRazorpaySignature(

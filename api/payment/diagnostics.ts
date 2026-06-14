@@ -52,33 +52,55 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     razorpay_auth_error: null as string | null,
   };
 
-  // Live-probe Razorpay credentials.
+  // Live-probe Razorpay credentials by actually creating a tiny test
+  // order (₹1). This mirrors the FastAPI diagnostics endpoint — some
+  // test accounts have `orders.create` but no `payments.read` scope,
+  // which made the old `GET /v1/payments` probe falsely report
+  // "expired". The flaky-test-key 401s are absorbed by retrying up
+  // to 3 times before declaring auth dead.
   if (keyId && keySecret) {
-    try {
-      const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
-      const probe = await fetch(
-        'https://api.razorpay.com/v1/payments?count=1',
-        {
-          method: 'GET',
-          headers: { Authorization: `Basic ${auth}` },
-        },
-      );
-      if (probe.status === 200) {
-        diag.razorpay_auth_ok = true;
-      } else if (probe.status === 401) {
+    const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
+    let lastErr: string | null = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const probe = await fetch('https://api.razorpay.com/v1/orders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Basic ${auth}`,
+          },
+          body: JSON.stringify({
+            amount: 100,
+            currency: 'INR',
+            receipt: `diag_${Date.now()}_${attempt}`,
+            notes: { probe: 'diagnostics' },
+          }),
+        });
+        if (probe.status === 200 || probe.status === 201) {
+          diag.razorpay_auth_ok = true;
+          diag.razorpay_auth_error = null;
+          lastErr = null;
+          break;
+        }
         try {
           const body = (await probe.json()) as RazorpayErrorBody;
-          diag.razorpay_auth_error =
-            body?.error?.description || 'Authentication failed (401)';
+          lastErr =
+            body?.error?.description ||
+            body?.error?.reason ||
+            body?.error?.code ||
+            `HTTP ${probe.status}`;
         } catch {
-          diag.razorpay_auth_error = 'Authentication failed (401)';
+          lastErr = `HTTP ${probe.status}`;
         }
-      } else {
-        diag.razorpay_auth_error = `HTTP ${probe.status}`;
+      } catch (e: unknown) {
+        const name = e instanceof Error ? e.constructor.name : 'Error';
+        lastErr = `Network error: ${name}`;
       }
-    } catch (e: unknown) {
-      const name = e instanceof Error ? e.constructor.name : 'Error';
-      diag.razorpay_auth_error = `Network error: ${name}`;
+      // Back off briefly before the next probe attempt.
+      await new Promise((r) => setTimeout(r, 300 * attempt));
+    }
+    if (!diag.razorpay_auth_ok && lastErr) {
+      diag.razorpay_auth_error = lastErr;
     }
   }
 
