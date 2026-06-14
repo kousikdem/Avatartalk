@@ -118,7 +118,7 @@ yarn build
 ```
 
 ### Preview Site ✅
-- URL: https://supabase-connect-46.preview.emergentagent.com
+- URL: https://avatartalk-supabase.preview.emergentagent.com
 - Status: Working perfectly
 - Calendar component: Functional
 
