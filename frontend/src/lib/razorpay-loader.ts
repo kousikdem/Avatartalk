@@ -28,7 +28,42 @@ declare global {
   }
 }
 
-export function ensureRazorpayLoaded(timeoutMs = 15000): Promise<boolean> {
+/**
+ * Lightweight prefetch hint. Call from the root layout / App.tsx (or any
+ * authenticated screen) the moment we know the user might pay soon.
+ *
+ *  • Injects a `<link rel="preload" as="script">` for the Razorpay
+ *    checkout.js, which makes the browser start downloading it on the
+ *    network's idle lane — competing with NOTHING for bandwidth.
+ *  • Skips work if Razorpay is already on `window` or the preload link
+ *    already exists.
+ *  • Does NOT execute the script — that still happens inside
+ *    `ensureRazorpayLoaded` when the user clicks Pay. The preload just
+ *    primes the browser cache so the eventual `<script>` injection is
+ *    near-instant (typically 5-50 ms vs 500-1500 ms cold).
+ *
+ * Cost: ~85 KB gzipped fetched in background, only once per session.
+ */
+export function preloadRazorpayCheckout(): void {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+  if (window.Razorpay) return;
+  if (document.querySelector(`link[data-rzp-preload="1"]`)) return;
+  if (document.querySelector(`script[src="${RAZORPAY_SRC}"]`)) return;
+
+  try {
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'script';
+    link.href = RAZORPAY_SRC;
+    link.crossOrigin = 'anonymous';
+    link.setAttribute('data-rzp-preload', '1');
+    document.head.appendChild(link);
+  } catch {
+    // Preload is best-effort — never throw to the caller.
+  }
+}
+
+export function ensureRazorpayLoaded(timeoutMs = 8000): Promise<boolean> {
   // Already loaded → resolve immediately.
   if (typeof window !== 'undefined' && window.Razorpay) {
     return Promise.resolve(true);
