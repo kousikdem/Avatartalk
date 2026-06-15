@@ -98,7 +98,20 @@ See `/app/memory/test_credentials.md`. Razorpay test card: `4111 1111 1111 1111`
 - Frontend `DemoCheckoutModal`/`DemoCheckoutPortal` and the razorpay-interceptor were removed in an earlier pass; the SubscribeButton catch-block now surfaces `error.message` (the real Razorpay reason) instead of a generic toast.
 - Regression suite: `/app/backend/tests/test_demo_mode_removal.py` (7/7 passing) — verifies all 4 endpoints return clean 400 errors with the Razorpay reason and that no response body contains `demo_mode` or `demo_order_`.
 
-## Implemented (2026-06-14) — Razorpay retry parity on Vercel
+## Implemented (2026-06-15) — Share Smart Link-In-Bio strip on every dashboard page
+- New row added inside `/app/frontend/src/components/DashboardHeaderStrip.tsx` (sticky under the main header) — label "Share Smart Link-In-Bio" on the left, Copy + Share buttons on the right. Test IDs: `share-bio-strip`, `share-bio-copy-button`, `share-bio-share-button`, `share-bio-url`.
+- Because `DashboardHeaderStrip` is rendered by `DashboardPageLayout`, the strip appears on every dashboard page automatically (dashboard, avatar, tokens, social-links, account, earnings, …).
+- Copy: `navigator.clipboard.writeText(profileUrl)` with `execCommand('copy')` textarea fallback for older mobile WebViews; success toast "Link copied" shows the URL.
+- Share: reuses the existing `ShareModal` component (same modal triggered by the top-right Share button — by design, sharing single state).
+- Testing agent verified 100% — 6/6 routes show the strip, Copy populates the clipboard with `http://localhost:3000/avatartalktest`, Share opens ShareModal with the URL pre-filled (see `/app/test_reports/iteration_5.json`).
+
+## Implemented (2026-06-15) — Step-by-step server-side checkout UX
+- `BuyTokensPage.tsx` + `PricingPage.tsx` Pay buttons now log `step 1/4 → 4/4` to the console on click.
+- "Authentication failed" from Razorpay surfaces an unambiguous toast: "Razorpay keys are invalid — regenerate at dashboard.razorpay.com → Settings → API Keys".
+- Razorpay modal config explicitly enables `card / netbanking / upi / wallet / paylater / emi`; card-network detection is handled natively by Razorpay (BIN → Visa/Mastercard/Amex/RuPay/Discover/Diners). Works with both test (`rzp_test_*`) and live (`rzp_live_*`) keys.
+- Removed the secondary "Pay via Razorpay (hosted page)" button on `BuyTokensPage.tsx`.
+
+
 - `/app/api/_lib/helpers.ts::createRazorpayOrder` wraps every `POST /v1/orders` call in an exponential-backoff retry loop (4 attempts, 400ms × attempt). Retries on transient signatures only — `Authentication failed`, `api key`, `try again`, `timeout`, HTTP 5xx/408/429. Real 400 validation failures surface on the first attempt. Mirrors the FastAPI-side wrapper.
 - `/app/api/payment/diagnostics.ts` switched its probe from `GET /v1/payments` to `POST /v1/orders` with up to 3 retries — matches FastAPI.
 - `/app/backend/tests/test_vercel_razorpay_retry.js` Node smoke (transpiles `helpers.ts` with esbuild, stubs `global.fetch`).
