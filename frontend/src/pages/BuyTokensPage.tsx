@@ -90,21 +90,74 @@ const BuyTokensPage: React.FC = () => {
     if (processing || priceInINR < MIN_AMOUNT_INR) return;
     setProcessing(true);
 
+    // Step-by-step server-side checkout flow.
+    // Each step logs to the console so live debugging is one
+    // F12 → Console away — no need to wire DevTools breakpoints.
     try {
+      // ── Step 1/4 — Authenticated session check ─────────────────
+      console.log('[checkout] step 1/4 — auth check');
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast({ title: "Login Required", description: "Please log in to purchase tokens", variant: "destructive" });
         setProcessing(false);
         return;
       }
+      console.log('[checkout] step 1/4 — auth OK, user =', user.id);
 
-      const orderData = await callPaymentApi<any>('/api/payment/token-purchase/create-order', {
-        tokens: tokenAmount,
-        amount_inr: priceInINR,
-      });
+      // ── Step 2/4 — Server creates Razorpay order ───────────────
+      // This is the *real* server-side checkout step. The backend
+      // (FastAPI on Emergent preview, Vercel serverless on prod)
+      // calls Razorpay `POST /v1/orders` with the configured
+      // RAZORPAY_KEY_ID + SECRET and returns the order_id. If the
+      // keys are invalid this is where it fails — surfacing the
+      // exact Razorpay error message ("Authentication failed",
+      // "Amount must be at least 100 paise", etc.).
+      console.log('[checkout] step 2/4 — POST /api/payment/token-purchase/create-order', { tokens: tokenAmount, amount_inr: priceInINR });
+      let orderData: any;
+      try {
+        orderData = await callPaymentApi<any>('/api/payment/token-purchase/create-order', {
+          tokens: tokenAmount,
+          amount_inr: priceInINR,
+        });
+      } catch (orderErr: any) {
+        const detail = String(orderErr?.message || '');
+        console.error('[checkout] step 2/4 FAILED:', detail);
+        // Razorpay only returns "Authentication failed" when the
+        // KEY_ID + SECRET pair is invalid/expired. Code can't fix
+        // that — operator must regenerate the keys in the Razorpay
+        // Dashboard. Make this unambiguous in the UI.
+        if (/authentication failed/i.test(detail)) {
+          toast({
+            title: "Razorpay keys are invalid",
+            description:
+              "The server's Razorpay API key was rejected. Regenerate it at " +
+              "dashboard.razorpay.com → Settings → API Keys, then update " +
+              "RAZORPAY_KEY_ID + RAZORPAY_KEY_SECRET on the server.",
+            variant: "destructive",
+            duration: 12000,
+          });
+        } else {
+          toast({
+            title: "Failed to create order",
+            description: detail || 'Please try again or contact support.',
+            variant: "destructive",
+          });
+        }
+        setProcessing(false);
+        return;
+      }
+      console.log('[checkout] step 2/4 — order created:', orderData.order_id);
 
+      // ── Step 3/4 — Open Razorpay Checkout modal ────────────────
+      // Razorpay's hosted modal handles card-type auto-detection
+      // (BIN range → Visa/Mastercard/Amex/RuPay/Discover/Diners),
+      // CVV validation, 3DS step-up, UPI/Netbanking/Wallet
+      // alternatives, saved cards — all of it. We just hand it the
+      // order_id and key_id.
+      console.log('[checkout] step 3/4 — loading Razorpay SDK');
       const scriptLoaded = await ensureRazorpayLoaded();
       if (!scriptLoaded || !window.Razorpay) {
+        console.error('[checkout] step 3/4 FAILED: Razorpay SDK did not load');
         toast({
           title: "Payment system unavailable",
           description: "Could not load Razorpay. Please disable ad-blockers and refresh.",
@@ -113,20 +166,34 @@ const BuyTokensPage: React.FC = () => {
         setProcessing(false);
         return;
       }
+      console.log('[checkout] step 3/4 — SDK ready, opening modal');
 
       const razorpay = new window.Razorpay({
-        // `key_id` is returned by the edge function from the server-side
-        // RAZORPAY_KEY_ID Supabase secret. We also accept a Vercel-side
-        // VITE_RAZORPAY_KEY_ID as a redundant fallback so the modal still
-        // opens if the edge function ever returns a payload missing the
-        // key field (older deploy versions).
         key: orderData.key_id || (import.meta as any).env?.VITE_RAZORPAY_KEY_ID,
         amount: orderData.amount,
         currency: orderData.currency,
         name: "AvatarTalk.Co",
         description: `${formatTokens(tokenAmount)} AI Tokens`,
         order_id: orderData.order_id,
+        // Razorpay accepts ALL card networks by default (Visa,
+        // Mastercard, Amex, RuPay, Discover, Diners). Listing
+        // `method` explicitly keeps card on top while still
+        // showing UPI / Netbanking / Wallet for users who prefer
+        // them. Both test and live cards are accepted — the test
+        // cards listed at razorpay.com/docs/payments/test-card-details
+        // work when the keys are `rzp_test_*`; live cards work
+        // when keys are `rzp_live_*`.
+        method: {
+          card: true,
+          netbanking: true,
+          upi: true,
+          wallet: true,
+          paylater: true,
+          emi: true,
+        },
         handler: async (response: any) => {
+          // ── Step 4/4 — Server verifies HMAC + credits tokens ──
+          console.log('[checkout] step 4/4 — POST /verify', response.razorpay_payment_id);
           try {
             const verifyData = await callPaymentApi<any>('/api/payment/token-purchase/verify', {
               razorpay_payment_id: response.razorpay_payment_id,
@@ -134,18 +201,26 @@ const BuyTokensPage: React.FC = () => {
               razorpay_signature: response.razorpay_signature,
               purchase_id: orderData.purchase_id,
             });
+            console.log('[checkout] step 4/4 — verified, tokens credited:', verifyData.tokens_credited);
             toast({ title: "Success!", description: `${formatTokens(verifyData.tokens_credited)} tokens added` });
             await refetch();
           } catch (verr: any) {
+            console.error('[checkout] step 4/4 FAILED:', verr);
             toast({ title: "Verification Failed", description: verr?.message || "Please contact support if amount was debited.", variant: "destructive" });
           }
           setProcessing(false);
         },
         theme: { color: "#f59e0b" },
-        modal: { ondismiss: () => setProcessing(false) }
+        modal: {
+          ondismiss: () => {
+            console.log('[checkout] modal dismissed by user');
+            setProcessing(false);
+          },
+        },
       });
       razorpay.on('payment.failed', (resp: any) => {
         const err = resp?.error || {};
+        console.error('[checkout] payment.failed:', err);
         toast({
           title: "Payment Failed",
           description: err.description || err.reason || err.code || 'Payment could not be completed.',
@@ -155,47 +230,12 @@ const BuyTokensPage: React.FC = () => {
       });
       razorpay.open();
     } catch (error: any) {
-      console.error('Token purchase error:', error);
+      console.error('[checkout] unexpected error:', error);
       toast({
-        title: "Failed to create order",
-        description: (error?.message || 'Please try again.') + ' Tip: use "Pay via Razorpay (hosted page)" below as a backup.',
+        title: "Checkout error",
+        description: error?.message || 'Please try again or contact support.',
         variant: "destructive",
       });
-      setProcessing(false);
-    }
-  };
-
-  /**
-   * Server-side hosted-checkout fallback.
-   *
-   * Asks the backend for a Razorpay-hosted payment link, then opens
-   * it in a new tab. The user completes payment on Razorpay's own
-   * domain; our webhook (`POST /api/payment/webhook`) credits the
-   * tokens once `payment_link.paid` fires — no `/verify` round-trip
-   * required.
-   */
-  const openHostedCheckout = async () => {
-    setProcessing(true);
-    try {
-      const linkData = await callPaymentApi<any>('/api/payment/token-purchase/payment-link', {
-        tokens: tokenAmount,
-        amount_inr: priceInINR,
-        callback_url: `${window.location.origin}/settings/buy-tokens?paid=1`,
-      });
-      const url = linkData?.payment_link_url;
-      if (!url) throw new Error('No payment link returned by server');
-      toast({
-        title: 'Opening hosted checkout',
-        description: 'Complete the payment in the new tab. Tokens credit automatically.',
-      });
-      window.open(url, '_blank', 'noopener,noreferrer');
-    } catch (e: any) {
-      toast({
-        title: 'Hosted checkout failed',
-        description: e?.message || 'Please try again or contact support.',
-        variant: 'destructive',
-      });
-    } finally {
       setProcessing(false);
     }
   };
@@ -262,16 +302,6 @@ const BuyTokensPage: React.FC = () => {
 
                 <Button onClick={handlePurchase} disabled={processing || priceInINR < MIN_AMOUNT_INR} className="w-full h-11 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600" data-testid="buy-tokens-button">
                   {processing ? 'Processing...' : <><CreditCard className="w-4 h-4 mr-2" />Pay {formatPrice(priceInINR)}</>}
-                </Button>
-
-                <Button
-                  onClick={openHostedCheckout}
-                  disabled={processing || priceInINR < MIN_AMOUNT_INR}
-                  variant="outline"
-                  className="w-full h-9 text-xs"
-                  data-testid="open-hosted-checkout-fallback"
-                >
-                  Pay via Razorpay (hosted page) — no popup required
                 </Button>
               </CardContent>
             </Card>

@@ -352,24 +352,60 @@ const PricingPage = () => {
     }
 
     setProcessing(true);
+    // Step-by-step server-side Razorpay checkout for paid plans.
+    // Each step logs to the console so failures are debuggable
+    // without DevTools breakpoints.
     try {
+      // ── Step 1/4 — Authenticated session check ─────────────────
+      console.log('[plan-checkout] step 1/4 — auth check');
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
+      console.log('[plan-checkout] step 1/4 — OK');
 
-      const data = await callPaymentApi<any>('/api/payment/plan-checkout/create-order', {
-        planId,
-        billingCycleMonths: billingCycle,
-        currency: selectedCurrency === 'INR' ? 'INR' : 'USD',
-      });
-
-      if (!data?.orderId) {
-        throw new Error('Failed to create order');
+      // ── Step 2/4 — Server creates Razorpay order ───────────────
+      console.log('[plan-checkout] step 2/4 — POST /api/payment/plan-checkout/create-order', { planId, billingCycleMonths: billingCycle });
+      let data: any;
+      try {
+        data = await callPaymentApi<any>('/api/payment/plan-checkout/create-order', {
+          planId,
+          billingCycleMonths: billingCycle,
+          currency: selectedCurrency === 'INR' ? 'INR' : 'USD',
+        });
+      } catch (orderErr: any) {
+        const detail = String(orderErr?.message || '');
+        console.error('[plan-checkout] step 2/4 FAILED:', detail);
+        if (/authentication failed/i.test(detail)) {
+          toast({
+            title: "Razorpay keys are invalid",
+            description:
+              "The server's Razorpay API key was rejected. Regenerate it at " +
+              "dashboard.razorpay.com → Settings → API Keys, then update " +
+              "RAZORPAY_KEY_ID + RAZORPAY_KEY_SECRET on the server.",
+            variant: "destructive",
+            duration: 12000,
+          });
+        } else {
+          toast({
+            title: "Failed to create order",
+            description: detail || 'Please try again.',
+            variant: "destructive",
+          });
+        }
+        setProcessing(false);
+        return;
       }
+      if (!data?.orderId) {
+        throw new Error('Server did not return an order id');
+      }
+      console.log('[plan-checkout] step 2/4 — order created:', data.orderId);
 
+      // ── Step 3/4 — Open Razorpay Checkout modal ────────────────
+      console.log('[plan-checkout] step 3/4 — loading Razorpay SDK');
       const scriptLoaded = await ensureRazorpayLoaded();
       if (!scriptLoaded || !window.Razorpay) {
         throw new Error('Could not load Razorpay. Please disable ad-blockers and refresh.');
       }
+      console.log('[plan-checkout] step 3/4 — SDK ready, opening modal');
 
       const options = {
         key: data.keyId || (import.meta as any).env?.VITE_RAZORPAY_KEY_ID,
@@ -378,7 +414,22 @@ const PricingPage = () => {
         name: 'AvatarTalk',
         description: `${data.planName} Plan - ${durationLabels[billingCycle]}`,
         order_id: data.orderId,
+        // Razorpay accepts ALL card networks by default. Explicitly
+        // enabling each method keeps the modal showing every option
+        // (card / UPI / netbanking / wallet / paylater / EMI).
+        // Both test cards (rzp_test_*) and live cards (rzp_live_*)
+        // work — Razorpay auto-detects the card network from BIN.
+        method: {
+          card: true,
+          netbanking: true,
+          upi: true,
+          wallet: true,
+          paylater: true,
+          emi: true,
+        },
         handler: async (response: any) => {
+          // ── Step 4/4 — Server verifies HMAC + activates plan ──
+          console.log('[plan-checkout] step 4/4 — POST /verify', response.razorpay_payment_id);
           try {
             const verifyData = await callPaymentApi<any>('/api/payment/plan-checkout/verify', {
               razorpay_order_id: response.razorpay_order_id,
@@ -391,6 +442,7 @@ const PricingPage = () => {
             if (!verifyData?.success) {
               throw new Error(verifyData?.message || 'Verification failed');
             }
+            console.log('[plan-checkout] step 4/4 — plan activated');
 
             toast({
               title: "Subscription Activated",
@@ -400,7 +452,7 @@ const PricingPage = () => {
             refetchSubscription();
             navigate('/settings/dashboard');
           } catch (err: any) {
-            console.error('Verification error:', err);
+            console.error('[plan-checkout] step 4/4 FAILED:', err);
             toast({
               title: "Payment verification failed",
               description: err?.message || "Please contact support if the amount was debited.",
@@ -410,11 +462,18 @@ const PricingPage = () => {
         },
         prefill: { email: user.email },
         theme: { color: '#8B5CF6' },
+        modal: {
+          ondismiss: () => {
+            console.log('[plan-checkout] modal dismissed by user');
+            setProcessing(false);
+          },
+        },
       };
 
       const razorpay = new window.Razorpay(options);
       razorpay.on('payment.failed', (resp: any) => {
         const err = resp?.error || {};
+        console.error('[plan-checkout] payment.failed:', err);
         toast({
           title: "Payment Failed",
           description: err.description || err.reason || err.code || 'Payment could not be completed.',
@@ -424,13 +483,12 @@ const PricingPage = () => {
       });
       razorpay.open();
     } catch (error: any) {
-      console.error('Purchase error:', error);
+      console.error('[plan-checkout] unexpected error:', error);
       toast({
-        title: "Failed to start checkout",
+        title: "Checkout error",
         description: error?.message || "Please try again.",
         variant: "destructive",
       });
-    } finally {
       setProcessing(false);
     }
   };
