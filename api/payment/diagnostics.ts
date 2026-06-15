@@ -16,7 +16,7 @@
  * and inspect the returned JSON.
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { applyCors } from '../_lib/helpers';
+import { applyCors, getRazorpayCredentials } from '../_lib/helpers';
 
 interface RazorpayErrorBody {
   error?: { code?: string; description?: string; reason?: string };
@@ -30,8 +30,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const keyId = process.env.RAZORPAY_KEY_ID || '';
-  const keySecret = process.env.RAZORPAY_KEY_SECRET || '';
+  const { keyId, keySecret } = getRazorpayCredentials();
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
   const supabaseService = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
@@ -39,6 +38,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     runtime: 'vercel-serverless',
     razorpay_key_id_configured: Boolean(keyId),
     razorpay_key_id_prefix: keyId ? `${keyId.slice(0, 12)}…` : null,
+    razorpay_key_id_source: process.env.RAZORPAY_KEY_ID ? 'env' : 'code-fallback',
     razorpay_key_id_mode: keyId.startsWith('rzp_test_')
       ? 'test'
       : keyId.startsWith('rzp_live_')

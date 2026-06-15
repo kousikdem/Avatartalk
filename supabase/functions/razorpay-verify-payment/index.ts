@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
 
     console.log('Payment verification started:', { razorpay_order_id, razorpay_payment_id, planId, profileId, billingCycle });
 
-    const RAZORPAY_KEY_SECRET = Deno.env.get('RAZORPAY_KEY_SECRET');
+    const RAZORPAY_KEY_SECRET = Deno.env.get('RAZORPAY_KEY_SECRET') || 'Klh1GTpbLsd4eOSl4KU0oFa4';
     
     if (!RAZORPAY_KEY_SECRET) {
       console.error('Razorpay secret not configured');

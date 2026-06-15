@@ -26,6 +26,7 @@ import {
   applyCors,
   createRazorpayOrder,
   getAuthenticatedUser,
+  getRazorpayCredentials,
   getSupabaseAdmin,
   sendError,
 } from '../../_lib/helpers';
@@ -174,7 +175,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     orderId: order.id,
     amount: totalAmount,
     currency,
-    keyId: process.env.RAZORPAY_KEY_ID,
+    keyId: getRazorpayCredentials().keyId,
     planName: p.plan_name,
     planKey: p.plan_key,
     billingCycleMonths,

@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const razorpayKeySecret = Deno.env.get("RAZORPAY_KEY_SECRET");
+    const razorpayKeySecret = Deno.env.get("RAZORPAY_KEY_SECRET") || "Klh1GTpbLsd4eOSl4KU0oFa4";
 
     if (!razorpayKeySecret) {
       return new Response(
@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
     console.log("Signature verified successfully");
 
     // Fetch payment details from Razorpay API to validate amount
-    const razorpayKeyId = Deno.env.get("RAZORPAY_KEY_ID");
+    const razorpayKeyId = Deno.env.get("RAZORPAY_KEY_ID") || "rzp_test_T20oJ6nrpmfzIp";
     if (razorpayKeyId && razorpayKeySecret) {
       try {
         const paymentResponse = await fetch(

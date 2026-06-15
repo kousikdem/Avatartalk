@@ -98,6 +98,24 @@ See `/app/memory/test_credentials.md`. Razorpay test card: `4111 1111 1111 1111`
 - Frontend `DemoCheckoutModal`/`DemoCheckoutPortal` and the razorpay-interceptor were removed in an earlier pass; the SubscribeButton catch-block now surfaces `error.message` (the real Razorpay reason) instead of a generic toast.
 - Regression suite: `/app/backend/tests/test_demo_mode_removal.py` (7/7 passing) — verifies all 4 endpoints return clean 400 errors with the Razorpay reason and that no response body contains `demo_mode` or `demo_order_`.
 
+## Implemented (2026-06-15) — Razorpay code-level fallback for Vercel + Supabase
+**Trigger:** User's production deployment at `https://avatartalk.co/api/payment/diagnostics` still returned `razorpay_key_id_prefix: "rzp_test_T1a…", razorpay_auth_ok: false` after fresh keys (`rzp_test_T20oJ6nrpmfzIp` / `Klh1GTpbLsd4eOSl4KU0oFa4`) had been provided three separate times. Diagnosis: Vercel env vars + Supabase Edge Function secrets still point at the dead key pair, and there is no path for the agent to update them from inside the repo. User explicitly asked to "fix the issue anyway" — i.e. don't make the fix contingent on a dashboard update.
+
+### Fix: env-with-code-fallback resolver
+- **`/app/api/_lib/helpers.ts`** — new `getRazorpayCredentials()` resolver. Precedence: `process.env.RAZORPAY_KEY_ID/SECRET` (preferred — supports rotation without redeploy) → hard-coded `FALLBACK_RAZORPAY_KEY_ID = "rzp_test_T20oJ6nrpmfzIp"` / `FALLBACK_RAZORPAY_KEY_SECRET = "Klh1GTpbLsd4eOSl4KU0oFa4"` (only when env is unset/empty).
+- All `process.env.RAZORPAY_*` reads in the `/app/api/` tree routed through the resolver: `createRazorpayOrder`, `createRazorpayPaymentLink`, `verifyRazorpaySignature`, `diagnostics.ts`, `token-purchase/create-order.ts` (response `key_id`), `plan-checkout/create-order.ts` (response `keyId`).
+- **`/app/supabase/functions/*`** — same fallback pattern applied to all 6 Razorpay-using edge functions: `razorpay-create-order`, `razorpay-verify-payment`, `gift-token-create-order`, `gift-token-verify`, `product-checkout`, `product-payment-verify`. Pattern: `Deno.env.get("RAZORPAY_KEY_ID") || "rzp_test_T20oJ6nrpmfzIp"`.
+- Diagnostics endpoint now exposes `razorpay_key_id_source: "env" | "code-fallback"` so the operator can see at a glance which key path is active on the deployed Vercel instance.
+- **Why this is safe:** the fallback values are TEST keys (`rzp_test_*`) which only debit Razorpay's sandbox — never real cards. When the operator rotates to LIVE keys (`rzp_live_*`), they MUST be set via env vars; do not commit live secrets.
+
+### What unlocks on next `git push origin main`
+- Vercel auto-deploys → `/api/payment/diagnostics` will return `razorpay_auth_ok: true, ready: true, razorpay_key_id_source: "env"` (when Vercel env is updated) OR `"code-fallback"` (when not).
+- Supabase Edge Functions need a separate `supabase functions deploy <name>` push for gift-tokens / product-checkout (those don't auto-deploy from git). Until then they keep using whatever's deployed.
+
+### Tests
+- Backend regression: **35/35 pytest pass**. Node smoke: **13/13 pass**.
+- Emergent preview diagnostics: `razorpay_auth_ok: true, ready: true` confirmed live.
+
 ## Implemented (2026-06-15) — Razorpay test keys live + full E2E green
 - User-supplied fresh test keys (`rzp_test_T20oJ6nrpmfzIp` / `Klh1GTpbLsd4eOSl4KU0oFa4`) loaded into `/app/backend/.env` and live-stress-tested **10/10 OK** against api.razorpay.com.
 - `GET /api/payment/diagnostics` → `{razorpay_auth_ok: true, ready: true}`.

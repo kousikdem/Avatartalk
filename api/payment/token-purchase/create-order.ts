@@ -20,6 +20,7 @@ import {
   applyCors,
   createRazorpayOrder,
   getAuthenticatedUser,
+  getRazorpayCredentials,
   getSupabaseAdmin,
   sendError,
 } from '../../_lib/helpers';
@@ -149,7 +150,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     order_id: order.id,
     amount: order.amount,
     currency: order.currency,
-    key_id: process.env.RAZORPAY_KEY_ID,
+    key_id: getRazorpayCredentials().keyId,
     tokens,
     purchase_id: purchaseId,
   });
