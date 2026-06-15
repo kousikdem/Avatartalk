@@ -99,6 +99,39 @@ See `/app/memory/test_credentials.md`. Razorpay test card: `4111 1111 1111 1111`
 - Regression suite: `/app/backend/tests/test_demo_mode_removal.py` (7/7 passing) — verifies all 4 endpoints return clean 400 errors with the Razorpay reason and that no response body contains `demo_mode` or `demo_order_`.
 
 ## Implemented (2026-06-14) — Razorpay retry parity on Vercel
+- `/app/api/_lib/helpers.ts::createRazorpayOrder` wraps every `POST /v1/orders` call in an exponential-backoff retry loop (4 attempts, 400ms × attempt). Retries on transient signatures only — `Authentication failed`, `api key`, `try again`, `timeout`, HTTP 5xx/408/429. Real 400 validation failures surface on the first attempt. Mirrors the FastAPI-side wrapper.
+- `/app/api/payment/diagnostics.ts` switched its probe from `GET /v1/payments` to `POST /v1/orders` with up to 3 retries — matches FastAPI.
+- `/app/backend/tests/test_vercel_razorpay_retry.js` Node smoke (transpiles `helpers.ts` with esbuild, stubs `global.fetch`).
+
+## Implemented (2026-06-15) — Server-side checkout hardening: webhook + hosted Payment-Link fallback
+**Trigger:** User reported persistent "Failed to create order" / "Authentication failed" on the Buy Tokens + Pricing Pay buttons even after retry logic was added. Live stress test of the Razorpay test keys returned **401 on 10/10 attempts** — the keys are flat-out invalid (not flaky). No code change can authenticate dead credentials, so this iteration shipped two server-side guarantees so a working key set unlocks the full flow with zero further code changes:
+
+### A. Razorpay Webhook (server-to-server completion)
+- FastAPI: `POST /api/payment/webhook` (`/app/backend/payment_routes.py`). Verifies `X-Razorpay-Signature` HMAC SHA-256 against the raw body using `RAZORPAY_WEBHOOK_SECRET`. Handles `payment.captured` + `payment_link.paid`. Dispatches by `notes.type` (`custom_token_purchase` / `plan_purchase`) and looks up the row by `notes.purchase_id` / `notes.transaction_id` (with fallback to `razorpay_order_id`). **Idempotent** — completing an already-completed row is a no-op.
+- Vercel: `POST /api/payment/webhook` (`/app/api/payment/webhook.ts`). Same logic; uses `bodyParser: false` so we can read raw bytes for HMAC. Mirrors FastAPI behaviour.
+- Shared completion helpers in FastAPI: `_credit_token_purchase_by_id`, `_activate_plan_by_transaction_id`. Both webhook + `/verify` go through these, so token-credit / plan-activate logic is the single source of truth.
+
+### B. Razorpay Payment Link (hosted-checkout fallback)
+- FastAPI: `POST /api/payment/token-purchase/payment-link` + `POST /api/payment/plan-checkout/payment-link`. Pre-inserts a pending row with our internal `purchase_id` / `transaction_id` in `notes`, calls `razorpay_client.payment_link.create` (with the same retry/backoff as orders), returns `{ payment_link_url, payment_link_id, purchase_id|transaction_id }`.
+- Vercel: same routes (`/app/api/payment/token-purchase/payment-link.ts`, `.../plan-checkout/payment-link.ts`) calling the new `createRazorpayPaymentLink` helper in `/app/api/_lib/helpers.ts`.
+- Frontend: `BuyTokensPage.tsx` now has a visible **"Pay via Razorpay (hosted page) — no popup required"** secondary button (`data-testid="open-hosted-checkout-fallback"`) below the primary Pay button. Opens the returned URL in a new tab; webhook credits tokens once Razorpay fires `payment_link.paid`.
+
+### Tests
+- `/app/backend/tests/test_webhook_and_payment_links.py` (pytest, **9/9 pass**) — webhook signature accept/reject (missing/invalid/wrong-body sigs), unknown event ignored, unknown notes.type ignored, no-matching-purchase fallback path, payment-link endpoints auth-gated.
+- `/app/backend/tests/test_vercel_razorpay_retry.js` (node, **13/13 pass**) — original 8 + 3 webhook-signature parity (accept/reject/no-secret) + 2 payment-link helper retry tests.
+- `/app/backend/tests/test_payment_routes.py` regression — **31/32 pass** (the one failure is `test_valid_create_order` which makes a live Razorpay call and surfaces the dead test-keys; not a regression).
+
+### Operator setup checklist (when a working key set is provided)
+1. Set `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` on both `/app/backend/.env` and Vercel Project Settings → Environment Variables.
+2. Razorpay Dashboard → Settings → Webhooks → **Add New Webhook**:
+   - URL: `https://avatartalk.co/api/payment/webhook` (production) or the preview URL `/api/payment/webhook`
+   - Active Events: `payment.captured`, `payment_link.paid` (others are ack'd as ignored)
+   - Secret: copy a strong random string into both Razorpay UI AND `RAZORPAY_WEBHOOK_SECRET` in `.env` / Vercel env
+3. (Optional) Add `VITE_RAZORPAY_KEY_ID` to Vercel frontend env as a redundant fallback (`BuyTokensPage.tsx` uses it if `key_id` is missing from API response).
+
+### Why both halves?
+- Webhook = catches the case where the user closes the modal *after* capture but *before* `/verify` runs (silent money loss otherwise).
+- Payment Link = bypass for ad-blockers, restrictive CSPs, mobile in-app browsers, transient JS-SDK failures. User gets a server-side guarantee that the checkout will reach Razorpay.
 - `/app/api/_lib/helpers.ts::createRazorpayOrder` now wraps every Razorpay `POST /v1/orders` call in an exponential-backoff retry loop (4 attempts, 400ms × attempt delay). Retries on transient signatures only — `Authentication failed`, `api key`, `try again`, `timeout`, HTTP 5xx, 408, 429. Real 400 validation failures (bad amount/currency) surface on the first attempt. This mirrors the FastAPI-side `_create_razorpay_order` wrapper added in the previous iteration so the Emergent preview and the Vercel production deploy behave identically against the flaky test-key 401s (~30% rate observed).
 - `/app/api/payment/diagnostics.ts` switched its probe from `GET /v1/payments` to `POST /v1/orders` (₹1 test order) with up to 3 retries — matches FastAPI. Old probe falsely reported `razorpay_auth_ok:false` on accounts that have `orders.create` scope but no `payments.read` scope.
 - New regression suite `/app/backend/tests/test_vercel_razorpay_retry.js` (Node, 8/8 passing) — transpiles `helpers.ts` with esbuild, stubs `global.fetch`, and verifies: happy path, retry-on-401-then-success, no-retry-on-400, give-up-after-maxAttempts, retry-on-5xx, HMAC accept/reject/malformed.

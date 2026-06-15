@@ -63,7 +63,7 @@ fs.writeFileSync(helpersJsPath, out.code);
 process.env.RAZORPAY_KEY_ID = 'rzp_test_dummy';
 process.env.RAZORPAY_KEY_SECRET = 'dummy_secret';
 
-const { createRazorpayOrder, verifyRazorpaySignature } = require(helpersJsPath);
+const { createRazorpayOrder, verifyRazorpaySignature, verifyRazorpayWebhookSignature, createRazorpayPaymentLink } = require(helpersJsPath);
 
 // Tiny assertion helper.
 let passed = 0;
@@ -227,6 +227,82 @@ function mockFetch(responses) {
   await assert('verifyRazorpaySignature rejects malformed hex', async () => {
     if (verifyRazorpaySignature(orderId, paymentId, 'not-hex')) {
       throw new Error('malformed signature was accepted');
+    }
+  });
+
+  // ── Webhook signature parity ──
+  process.env.RAZORPAY_WEBHOOK_SECRET = 'whsec_test_avatartalk_e2e';
+  const rawBody = JSON.stringify({ event: 'payment.captured', payload: {} });
+  const webhookSig = crypto
+    .createHmac('sha256', process.env.RAZORPAY_WEBHOOK_SECRET)
+    .update(rawBody)
+    .digest('hex');
+
+  await assert('verifyRazorpayWebhookSignature accepts a valid HMAC', async () => {
+    if (!verifyRazorpayWebhookSignature(rawBody, webhookSig)) {
+      throw new Error('valid webhook signature was rejected');
+    }
+  });
+
+  await assert('verifyRazorpayWebhookSignature rejects tampered body', async () => {
+    if (verifyRazorpayWebhookSignature(rawBody + 'x', webhookSig)) {
+      throw new Error('tampered body was accepted');
+    }
+  });
+
+  await assert('verifyRazorpayWebhookSignature rejects when secret missing', async () => {
+    const saved = process.env.RAZORPAY_WEBHOOK_SECRET;
+    delete process.env.RAZORPAY_WEBHOOK_SECRET;
+    try {
+      if (verifyRazorpayWebhookSignature(rawBody, webhookSig)) {
+        throw new Error('verification succeeded without secret');
+      }
+    } finally {
+      process.env.RAZORPAY_WEBHOOK_SECRET = saved;
+    }
+  });
+
+  // ── Payment link helper: retries on transient 401, validation surfaces immediately ──
+  await assert('createRazorpayPaymentLink retries on transient 401 then succeeds', async () => {
+    let attempts = 0;
+    global.fetch = async () => {
+      attempts++;
+      if (attempts < 2) {
+        return {
+          ok: false,
+          status: 401,
+          json: async () => ({ error: { description: 'Authentication failed' } }),
+        };
+      }
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ id: 'plink_OK', short_url: 'https://rzp.io/i/test', status: 'created' }),
+      };
+    };
+    const pl = await createRazorpayPaymentLink({ amount: 1000, currency: 'INR' });
+    if (pl.id !== 'plink_OK') throw new Error(`got ${pl.id}`);
+    if (attempts !== 2) throw new Error(`expected 2 attempts, got ${attempts}`);
+  });
+
+  await assert('createRazorpayPaymentLink does NOT retry on real 400', async () => {
+    let attempts = 0;
+    global.fetch = async () => {
+      attempts++;
+      return {
+        ok: false,
+        status: 400,
+        json: async () => ({ error: { description: 'Amount must be at least 100' } }),
+      };
+    };
+    try {
+      await createRazorpayPaymentLink({ amount: 1, currency: 'INR' });
+      throw new Error('expected throw');
+    } catch (e) {
+      if (!/Amount must be at least 100/.test(e.message)) {
+        throw new Error(`wrong error: ${e.message}`);
+      }
+      if (attempts !== 1) throw new Error(`expected 1 attempt, got ${attempts}`);
     }
   });
 

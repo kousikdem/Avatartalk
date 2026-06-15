@@ -22,7 +22,7 @@ from typing import Any, Optional
 
 import httpx
 import razorpay
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 # ─── Config ───────────────────────────────────────────────────────────────
 RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
+RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "")
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", SUPABASE_SERVICE_ROLE_KEY)
@@ -810,3 +811,610 @@ async def plan_verify(body: PlanVerifyRequest, authorization: Optional[str] = He
         "planName": plan["plan_name"],
         "expiresAt": expires_at.isoformat(),
     }
+
+
+# ─── Razorpay Payment Link (hosted checkout fallback) ─────────────────────
+# Server creates a Razorpay-hosted payment URL. Users that hit Razorpay
+# Checkout JS failures (ad-blocker, CSP, mobile WebView issues) can be
+# redirected here as a guaranteed-working backup. The webhook below
+# credits tokens / activates plan once the link is paid.
+
+def _create_razorpay_payment_link(payload: dict, max_attempts: int = 4) -> dict:
+    """
+    Wrapper around `razorpay_client.payment_link.create` mirroring the
+    retry/backoff logic of `_create_razorpay_order` so flaky-key 401s
+    don't surface to the UI.
+    """
+    last_err: Optional[Exception] = None
+    for attempt in range(1, max_attempts + 1):
+        try:
+            return razorpay_client.payment_link.create(payload)
+        except razorpay.errors.BadRequestError as e:
+            msg = str(e) or ""
+            transient = (
+                "authentication failed" in msg.lower()
+                or "api key" in msg.lower()
+                or "try again" in msg.lower()
+            )
+            last_err = e
+            if not transient or attempt == max_attempts:
+                raise
+            logger.warning(
+                "Razorpay payment_link.create transient (%d/%d): %s — retrying",
+                attempt, max_attempts, msg,
+            )
+            time.sleep(0.4 * attempt)
+        except Exception as e:
+            last_err = e
+            if attempt == max_attempts:
+                raise
+            logger.warning(
+                "Razorpay payment_link.create error (%d/%d): %s — retrying",
+                attempt, max_attempts, e,
+            )
+            time.sleep(0.4 * attempt)
+    if last_err:
+        raise last_err
+    raise RuntimeError("Razorpay payment_link.create failed without exception")
+
+
+class TokenPaymentLinkRequest(BaseModel):
+    tokens: int = Field(..., gt=0)
+    amount_inr: float = Field(..., gt=0)
+    package_id: Optional[str] = None
+    callback_url: Optional[str] = None  # frontend success page
+
+
+@router.post("/token-purchase/payment-link")
+async def token_payment_link(
+    body: TokenPaymentLinkRequest, authorization: Optional[str] = Header(None)
+):
+    """
+    Server-side fallback when Razorpay Checkout JS can't open in the
+    user's browser (ad-blocker, restrictive CSP, mobile in-app
+    browser, etc.). Creates a Razorpay-hosted payment link and
+    returns the URL — the frontend opens it in a new tab.
+
+    Persists a pending `custom_token_purchases` row (with notes
+    carrying our internal `purchase_id`) so the webhook below can
+    credit tokens once Razorpay fires `payment_link.paid`.
+    """
+    user = await _get_user_from_token(authorization)
+    user_id = user["id"]
+
+    tokens = body.tokens
+    amount_inr = body.amount_inr
+    if tokens < MIN_TOKENS or tokens > MAX_TOKENS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Token amount must be between {MIN_TOKENS:,} and {MAX_TOKENS:,}",
+        )
+    if amount_inr < MIN_AMOUNT_INR:
+        raise HTTPException(
+            status_code=400, detail=f"Minimum purchase is ₹{MIN_AMOUNT_INR}"
+        )
+
+    # Insert pending row first so we have a purchase_id to put in notes.
+    purchase_row = await _supabase_post(
+        "custom_token_purchases",
+        {
+            "user_id": user_id,
+            "tokens_requested": tokens,
+            "amount_inr": amount_inr,
+            "amount_usd": round(amount_inr / 84, 2),
+            "razorpay_order_id": f"pending_plink_{uuid.uuid4().hex[:16]}",
+            "status": "pending",
+        },
+    )
+    if not purchase_row or not isinstance(purchase_row, list):
+        raise HTTPException(status_code=500, detail="Failed to create purchase record")
+    purchase_id = purchase_row[0].get("id")
+
+    amount_in_paise = round(amount_inr * 100)
+    callback_url = (body.callback_url or "").strip() or None
+
+    pl_payload = {
+        "amount": amount_in_paise,
+        "currency": "INR",
+        "accept_partial": False,
+        "description": f"{tokens:,} AI Tokens",
+        "customer": {
+            "name": (user.get("user_metadata") or {}).get("full_name")
+            or user.get("email")
+            or "AvatarTalk User",
+            "email": user.get("email") or "",
+        },
+        "notify": {"sms": False, "email": False},
+        "reminder_enable": False,
+        "notes": {
+            "user_id": user_id,
+            "purchase_id": purchase_id,
+            "tokens": str(tokens),
+            "type": "custom_token_purchase",
+        },
+    }
+    if callback_url:
+        pl_payload["callback_url"] = callback_url
+        pl_payload["callback_method"] = "get"
+
+    try:
+        pl = _create_razorpay_payment_link(pl_payload)
+    except razorpay.errors.BadRequestError as e:
+        logger.error("Razorpay payment_link BadRequest: %s", e)
+        # Roll back the pending row so we don't leak orphans.
+        await _supabase_patch(
+            "custom_token_purchases",
+            {"status": "failed"},
+            params={"id": f"eq.{purchase_id}"},
+        )
+        raise HTTPException(
+            status_code=400, detail=f"Failed to create payment link: {e}"
+        )
+    except Exception as e:
+        logger.exception("Razorpay payment_link failed")
+        await _supabase_patch(
+            "custom_token_purchases",
+            {"status": "failed"},
+            params={"id": f"eq.{purchase_id}"},
+        )
+        raise HTTPException(
+            status_code=502, detail=f"Failed to create payment link: {e}"
+        )
+
+    # Persist the payment_link id so the webhook can find this row.
+    # We piggyback on razorpay_order_id since the schema has no
+    # dedicated column (avoids a migration). Real order_id will be
+    # set when payment.captured fires.
+    await _supabase_patch(
+        "custom_token_purchases",
+        {"razorpay_order_id": pl["id"]},
+        params={"id": f"eq.{purchase_id}"},
+    )
+
+    return {
+        "success": True,
+        "payment_link_id": pl["id"],
+        "payment_link_url": pl.get("short_url") or pl.get("url"),
+        "purchase_id": purchase_id,
+        "amount": amount_in_paise,
+        "currency": "INR",
+        "tokens": tokens,
+    }
+
+
+class PlanPaymentLinkRequest(BaseModel):
+    planId: str
+    billingCycleMonths: int = Field(..., gt=0)
+    currency: str = "INR"
+    callback_url: Optional[str] = None
+
+
+@router.post("/plan-checkout/payment-link")
+async def plan_payment_link(
+    body: PlanPaymentLinkRequest, authorization: Optional[str] = Header(None)
+):
+    """
+    Same fallback as `token-purchase/payment-link` but for paid
+    platform subscriptions.
+    """
+    user = await _get_user_from_token(authorization)
+    user_id = user["id"]
+
+    plans = await _supabase_get(
+        "platform_pricing_plans", params={"select": "*", "id": f"eq.{body.planId}"}
+    )
+    if not plans:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    plan = plans[0]
+
+    amount = _resolve_plan_price(plan, body.billingCycleMonths, body.currency)
+    if not amount or amount <= 0:
+        raise HTTPException(status_code=400, detail="Invalid plan price")
+
+    amount_in_subunits = int(round(float(amount) * 100))
+    currency = body.currency.upper()
+
+    # Pre-insert pending transaction so webhook can correlate.
+    existing = await _supabase_get(
+        "user_platform_subscriptions",
+        params={"select": "plan_key", "user_id": f"eq.{user_id}"},
+    )
+    prev_plan_key = existing[0]["plan_key"] if existing else "free"
+
+    txn_row = await _supabase_post(
+        "platform_plan_transactions",
+        {
+            "user_id": user_id,
+            "plan_id": body.planId,
+            "plan_key": plan["plan_key"],
+            "amount": float(amount),
+            "currency": currency,
+            "billing_cycle_months": body.billingCycleMonths,
+            "razorpay_order_id": f"pending_plink_{uuid.uuid4().hex[:16]}",
+            "status": "pending",
+            "previous_plan_key": prev_plan_key,
+            "transaction_type": "upgrade" if existing else "purchase",
+        },
+    )
+    if not txn_row or not isinstance(txn_row, list):
+        raise HTTPException(status_code=500, detail="Failed to create transaction record")
+    transaction_id = txn_row[0].get("id")
+
+    callback_url = (body.callback_url or "").strip() or None
+    pl_payload = {
+        "amount": amount_in_subunits,
+        "currency": currency,
+        "accept_partial": False,
+        "description": f"{plan['plan_name']} ({body.billingCycleMonths} mo)",
+        "customer": {
+            "name": (user.get("user_metadata") or {}).get("full_name")
+            or user.get("email")
+            or "AvatarTalk User",
+            "email": user.get("email") or "",
+        },
+        "notify": {"sms": False, "email": False},
+        "reminder_enable": False,
+        "notes": {
+            "user_id": user_id,
+            "transaction_id": transaction_id,
+            "plan_id": body.planId,
+            "plan_key": plan["plan_key"],
+            "billing_cycle_months": str(body.billingCycleMonths),
+            "type": "plan_purchase",
+        },
+    }
+    if callback_url:
+        pl_payload["callback_url"] = callback_url
+        pl_payload["callback_method"] = "get"
+
+    try:
+        pl = _create_razorpay_payment_link(pl_payload)
+    except razorpay.errors.BadRequestError as e:
+        logger.error("Razorpay payment_link BadRequest (plan): %s", e)
+        await _supabase_patch(
+            "platform_plan_transactions",
+            {"status": "failed"},
+            params={"id": f"eq.{transaction_id}"},
+        )
+        raise HTTPException(
+            status_code=400, detail=f"Failed to create payment link: {e}"
+        )
+    except Exception as e:
+        logger.exception("Razorpay payment_link failed (plan)")
+        await _supabase_patch(
+            "platform_plan_transactions",
+            {"status": "failed"},
+            params={"id": f"eq.{transaction_id}"},
+        )
+        raise HTTPException(
+            status_code=502, detail=f"Failed to create payment link: {e}"
+        )
+
+    await _supabase_patch(
+        "platform_plan_transactions",
+        {"razorpay_order_id": pl["id"]},
+        params={"id": f"eq.{transaction_id}"},
+    )
+
+    return {
+        "success": True,
+        "payment_link_id": pl["id"],
+        "payment_link_url": pl.get("short_url") or pl.get("url"),
+        "transaction_id": transaction_id,
+        "amount": float(amount),
+        "currency": currency,
+        "planName": plan["plan_name"],
+        "billingCycleMonths": body.billingCycleMonths,
+    }
+
+
+# ─── Razorpay Webhook (server-side completion fallback) ───────────────────
+# Razorpay POSTs to this endpoint when a payment is captured or a
+# payment link is paid. The webhook is the authoritative source of
+# truth when the user closes the Checkout modal between capture and
+# the frontend's /verify call. Configure in Razorpay Dashboard →
+# Settings → Webhooks with this URL + the RAZORPAY_WEBHOOK_SECRET.
+
+def _verify_webhook_signature(body_bytes: bytes, signature: str) -> bool:
+    if not RAZORPAY_WEBHOOK_SECRET:
+        # Without a secret configured, fail closed — never trust
+        # unsigned webhooks.
+        logger.error("RAZORPAY_WEBHOOK_SECRET not configured — rejecting webhook")
+        return False
+    expected = hmac.new(
+        RAZORPAY_WEBHOOK_SECRET.encode(),
+        body_bytes,
+        hashlib.sha256,
+    ).hexdigest()
+    return hmac.compare_digest(expected, (signature or "").strip())
+
+
+async def _credit_token_purchase_by_id(
+    purchase_id: str,
+    razorpay_order_id: Optional[str],
+    razorpay_payment_id: Optional[str],
+    razorpay_signature: Optional[str] = None,
+) -> dict:
+    """
+    Idempotent crediting of a `custom_token_purchases` row. Returns
+    `{tokens_credited, new_balance, already_processed}`.
+    Used by both `/verify` and `/webhook` so completion logic stays
+    in one place.
+    """
+    rows = await _supabase_get(
+        "custom_token_purchases",
+        params={"select": "*", "id": f"eq.{purchase_id}"},
+    )
+    if not rows:
+        raise HTTPException(status_code=404, detail="Purchase record not found")
+    purchase = rows[0]
+    user_id = purchase.get("user_id")
+
+    if purchase.get("status") == "completed":
+        return {
+            "tokens_credited": purchase.get("tokens_requested", 0),
+            "already_processed": True,
+        }
+
+    tokens_to_credit = int(purchase.get("tokens_requested") or 0)
+    if tokens_to_credit <= 0:
+        raise HTTPException(status_code=400, detail="Invalid token amount in purchase record")
+
+    credit_result = await _supabase_rpc(
+        "credit_user_tokens",
+        {"p_user_id": user_id, "p_tokens": tokens_to_credit, "p_reason": "topup"},
+    )
+    if not credit_result or not credit_result.get("success"):
+        err = (credit_result or {}).get("error", "unknown")
+        logger.error("credit_user_tokens failed: %s", err)
+        raise HTTPException(status_code=500, detail=f"Failed to credit tokens: {err}")
+
+    patch_body: dict = {
+        "status": "completed",
+        "completed_at": datetime.now(timezone.utc).isoformat(),
+    }
+    if razorpay_order_id:
+        patch_body["razorpay_order_id"] = razorpay_order_id
+    if razorpay_payment_id:
+        patch_body["razorpay_payment_id"] = razorpay_payment_id
+    if razorpay_signature:
+        patch_body["razorpay_signature"] = razorpay_signature
+
+    await _supabase_patch(
+        "custom_token_purchases",
+        patch_body,
+        params={"id": f"eq.{purchase_id}"},
+    )
+    return {
+        "tokens_credited": tokens_to_credit,
+        "new_balance": credit_result.get("balance"),
+        "already_processed": False,
+    }
+
+
+async def _activate_plan_by_transaction_id(
+    transaction_id: str,
+    razorpay_order_id: Optional[str],
+    razorpay_payment_id: Optional[str],
+) -> dict:
+    """
+    Idempotent plan activation given a `platform_plan_transactions`
+    row id. Used by webhook + /verify path for the payment-link flow.
+    """
+    txns = await _supabase_get(
+        "platform_plan_transactions",
+        params={"select": "*", "id": f"eq.{transaction_id}"},
+    )
+    if not txns:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    txn = txns[0]
+    user_id = txn["user_id"]
+    plan_id = txn["plan_id"]
+    months = int(txn.get("billing_cycle_months") or 1)
+
+    if txn.get("status") == "completed":
+        return {"already_processed": True, "plan_key": txn.get("plan_key")}
+
+    plans = await _supabase_get(
+        "platform_pricing_plans", params={"select": "*", "id": f"eq.{plan_id}"}
+    )
+    if not plans:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    plan = plans[0]
+
+    expires_at = datetime.now(timezone.utc) + timedelta(days=30 * months)
+    now_iso = datetime.now(timezone.utc).isoformat()
+    next_credit_at = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+    monthly_tokens = PLAN_TOKENS_PER_MONTH.get(plan["plan_key"], plan.get("ai_tokens_monthly") or 0)
+    price_paid = float(txn.get("amount") or 0)
+
+    sub_data = {
+        "user_id": user_id,
+        "plan_id": plan_id,
+        "plan_key": plan["plan_key"],
+        "status": "active",
+        "billing_cycle_months": months,
+        "price_paid": price_paid,
+        "currency": txn.get("currency", "INR"),
+        "starts_at": now_iso,
+        "expires_at": expires_at.isoformat(),
+        "razorpay_order_id": razorpay_order_id or txn.get("razorpay_order_id"),
+        "razorpay_payment_id": razorpay_payment_id,
+        "monthly_token_amount": monthly_tokens,
+        "last_monthly_credit_at": now_iso,
+        "next_monthly_credit_at": next_credit_at,
+        "months_credited": 1,
+    }
+
+    existing = await _supabase_get(
+        "user_platform_subscriptions",
+        params={"select": "id", "user_id": f"eq.{user_id}"},
+    )
+    if existing:
+        await _supabase_patch(
+            "user_platform_subscriptions",
+            sub_data,
+            params={"id": f"eq.{existing[0]['id']}"},
+        )
+    else:
+        await _supabase_post(
+            "user_platform_subscriptions", sub_data, prefer="return=minimal"
+        )
+
+    txn_patch: dict = {"status": "completed"}
+    if razorpay_payment_id:
+        txn_patch["razorpay_payment_id"] = razorpay_payment_id
+    if razorpay_order_id:
+        txn_patch["razorpay_order_id"] = razorpay_order_id
+    await _supabase_patch(
+        "platform_plan_transactions",
+        txn_patch,
+        params={"id": f"eq.{transaction_id}"},
+    )
+
+    if monthly_tokens > 0:
+        try:
+            await _supabase_rpc(
+                "credit_user_tokens",
+                {
+                    "p_user_id": user_id,
+                    "p_tokens": monthly_tokens,
+                    "p_reason": f"plan_purchase_{plan['plan_key']}_month_1_of_{months}",
+                },
+            )
+        except Exception as e:
+            logger.warning("Plan token credit failed (non-fatal): %s", e)
+
+    return {
+        "already_processed": False,
+        "plan_key": plan["plan_key"],
+        "expires_at": expires_at.isoformat(),
+        "tokens_credited": monthly_tokens,
+    }
+
+
+@router.post("/webhook")
+async def razorpay_webhook(request: Request):
+    """
+    Razorpay → server callback. Razorpay POSTs the event payload with
+    an `X-Razorpay-Signature` header (HMAC SHA-256 over the raw body
+    using `RAZORPAY_WEBHOOK_SECRET`). Configure in Razorpay Dashboard
+    → Settings → Webhooks → Active Events: `payment.captured`,
+    `payment_link.paid`.
+
+    Idempotent: completing an already-completed purchase / activating
+    an already-active plan is a no-op (the shared helpers check
+    `status == 'completed'`).
+    """
+    raw_body = await request.body()
+    signature = request.headers.get("x-razorpay-signature") or request.headers.get(
+        "X-Razorpay-Signature", ""
+    )
+
+    if not _verify_webhook_signature(raw_body, signature):
+        logger.warning("Webhook signature mismatch")
+        raise HTTPException(status_code=400, detail="Invalid webhook signature")
+
+    try:
+        import json as _json
+        payload = _json.loads(raw_body.decode("utf-8") or "{}")
+    except Exception as e:
+        logger.error("Webhook JSON parse failed: %s", e)
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+
+    event = payload.get("event") or ""
+    container = payload.get("payload") or {}
+
+    # ── Standard Checkout: payment.captured ──
+    if event == "payment.captured":
+        payment = (container.get("payment") or {}).get("entity") or {}
+        notes = payment.get("notes") or {}
+        ptype = notes.get("type")
+
+        if ptype == "custom_token_purchase":
+            purchase_id = notes.get("purchase_id")
+            order_id = payment.get("order_id")
+            payment_id = payment.get("id")
+            if purchase_id:
+                result = await _credit_token_purchase_by_id(
+                    purchase_id, order_id, payment_id
+                )
+                logger.info("Webhook credited tokens: %s", result)
+                return {"success": True, "event": event, **result}
+            # Fall back to looking up by order_id.
+            if order_id:
+                rows = await _supabase_get(
+                    "custom_token_purchases",
+                    params={"select": "id", "razorpay_order_id": f"eq.{order_id}"},
+                )
+                if rows:
+                    result = await _credit_token_purchase_by_id(
+                        rows[0]["id"], order_id, payment_id
+                    )
+                    return {"success": True, "event": event, **result}
+            logger.warning("Webhook payment.captured: no matching purchase row")
+            return {"success": True, "event": event, "ignored": True}
+
+        if ptype == "plan_purchase":
+            transaction_id = notes.get("transaction_id")
+            order_id = payment.get("order_id")
+            payment_id = payment.get("id")
+            if transaction_id:
+                result = await _activate_plan_by_transaction_id(
+                    transaction_id, order_id, payment_id
+                )
+                logger.info("Webhook activated plan: %s", result)
+                return {"success": True, "event": event, **result}
+            if order_id:
+                rows = await _supabase_get(
+                    "platform_plan_transactions",
+                    params={"select": "id", "razorpay_order_id": f"eq.{order_id}"},
+                )
+                if rows:
+                    result = await _activate_plan_by_transaction_id(
+                        rows[0]["id"], order_id, payment_id
+                    )
+                    return {"success": True, "event": event, **result}
+            logger.warning("Webhook payment.captured: no matching plan txn")
+            return {"success": True, "event": event, "ignored": True}
+
+        # Unknown payment type — acknowledge so Razorpay stops retrying.
+        logger.info("Webhook payment.captured: unhandled type %s", ptype)
+        return {"success": True, "event": event, "ignored": True}
+
+    # ── Payment Link flow: payment_link.paid ──
+    if event == "payment_link.paid":
+        pl = (container.get("payment_link") or {}).get("entity") or {}
+        notes = pl.get("notes") or {}
+        ptype = notes.get("type")
+        # Razorpay also includes the underlying payment entity.
+        payment = (container.get("payment") or {}).get("entity") or {}
+        order_id = payment.get("order_id") or pl.get("order_id")
+        payment_id = payment.get("id")
+
+        if ptype == "custom_token_purchase":
+            purchase_id = notes.get("purchase_id")
+            if purchase_id:
+                result = await _credit_token_purchase_by_id(
+                    purchase_id, order_id, payment_id
+                )
+                logger.info("Webhook (link) credited tokens: %s", result)
+                return {"success": True, "event": event, **result}
+
+        if ptype == "plan_purchase":
+            transaction_id = notes.get("transaction_id")
+            if transaction_id:
+                result = await _activate_plan_by_transaction_id(
+                    transaction_id, order_id, payment_id
+                )
+                logger.info("Webhook (link) activated plan: %s", result)
+                return {"success": True, "event": event, **result}
+
+        logger.info("Webhook payment_link.paid: unhandled type %s", ptype)
+        return {"success": True, "event": event, "ignored": True}
+
+    # Other events (payment.failed, payment.authorized, etc.) — log
+    # and ack so Razorpay doesn't retry forever.
+    logger.info("Webhook event acknowledged but not processed: %s", event)
+    return {"success": True, "event": event, "ignored": True}
+

@@ -41,9 +41,8 @@ flow renders for logged-out visitors.
 
 ## Notes
 
-- Razorpay keys in pod env: `RAZORPAY_KEY_ID=rzp_test_SpjjvTzWU5fO6F`,
-  `RAZORPAY_KEY_SECRET` is in `/app/backend/.env`. Production keys
-  must be set on Vercel (see `/app/VERCEL_API_ROUTES_GUIDE.md`).
+- Razorpay keys in pod env: `RAZORPAY_KEY_ID=rzp_test_T1aQ71lQOJYCaZ` (**DEAD as of 2026-06-15 — 401 on 10/10 stress-test attempts**). Replace with a working pair from Razorpay Dashboard → Settings → API Keys → "Regenerate Test Key". Set on both `/app/backend/.env` (Emergent preview) AND Vercel Project Settings → Environment Variables (production).
+- Webhook secret: `RAZORPAY_WEBHOOK_SECRET=whsec_test_avatartalk_e2e` (pod default — replace with the secret you set in Razorpay Dashboard → Settings → Webhooks → Edit Webhook → Secret).
 - On the Emergent preview the `/api/*` routes are served by FastAPI
   (port 8001). On Vercel production they are served by the new
   Vercel Serverless Functions under `/app/api/`.

@@ -265,6 +265,104 @@ export function verifyRazorpaySignature(
   }
 }
 
+/**
+ * Verify Razorpay webhook signature.
+ *
+ * Razorpay posts the raw JSON body and adds the `X-Razorpay-Signature`
+ * header which is `HMAC_SHA256(rawBody, RAZORPAY_WEBHOOK_SECRET)`. We
+ * pass the raw body string in directly (NOT the parsed object) so the
+ * HMAC matches byte-for-byte.
+ */
+export function verifyRazorpayWebhookSignature(
+  rawBody: string,
+  signature: string,
+): boolean {
+  const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+  if (!secret) {
+    // Fail closed — never trust unsigned webhooks.
+    return false;
+  }
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(rawBody)
+    .digest('hex');
+  try {
+    return crypto.timingSafeEqual(
+      Buffer.from(expected, 'hex'),
+      Buffer.from((signature || '').trim(), 'hex'),
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Create a Razorpay Payment Link (hosted checkout URL).
+ *
+ * Same retry/backoff policy as `createRazorpayOrder`.
+ */
+export interface RazorpayPaymentLink {
+  id: string;
+  short_url?: string;
+  url?: string;
+  status?: string;
+}
+
+export async function createRazorpayPaymentLink(payload: Record<string, unknown>): Promise<RazorpayPaymentLink> {
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  if (!keyId || !keySecret) {
+    throw new Error('RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET env vars missing on Vercel.');
+  }
+
+  const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
+  const body = JSON.stringify(payload);
+  const maxAttempts = 4;
+  let lastError = 'Payment link create failed';
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    let resp: Response;
+    try {
+      resp = await fetch('https://api.razorpay.com/v1/payment_links', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Basic ${auth}`,
+        },
+        body,
+      });
+    } catch (e: any) {
+      lastError = e?.message || 'Network error';
+      if (attempt < maxAttempts) {
+        await sleep(400 * attempt);
+        continue;
+      }
+      throw new Error(lastError);
+    }
+
+    if (resp.ok) {
+      return (await resp.json()) as RazorpayPaymentLink;
+    }
+
+    let detail = `HTTP ${resp.status}`;
+    try {
+      const err = (await resp.json()) as RazorpayErrorBody;
+      detail =
+        err?.error?.description || err?.error?.reason || err?.error?.code || detail;
+    } catch {
+      /* non-JSON */
+    }
+    lastError = detail;
+
+    if (attempt < maxAttempts && isTransientRazorpayError(detail, resp.status)) {
+      await sleep(400 * attempt);
+      continue;
+    }
+    throw new Error(detail);
+  }
+  throw new Error(lastError);
+}
+
 /** ---------- Standard error responder ---------- */
 export function sendError(
   res: VercelResponse,

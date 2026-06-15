@@ -158,9 +158,44 @@ const BuyTokensPage: React.FC = () => {
       console.error('Token purchase error:', error);
       toast({
         title: "Failed to create order",
-        description: error?.message || 'Please try again or contact support.',
+        description: (error?.message || 'Please try again.') + ' Tip: use "Pay via Razorpay (hosted page)" below as a backup.',
         variant: "destructive",
       });
+      setProcessing(false);
+    }
+  };
+
+  /**
+   * Server-side hosted-checkout fallback.
+   *
+   * Asks the backend for a Razorpay-hosted payment link, then opens
+   * it in a new tab. The user completes payment on Razorpay's own
+   * domain; our webhook (`POST /api/payment/webhook`) credits the
+   * tokens once `payment_link.paid` fires — no `/verify` round-trip
+   * required.
+   */
+  const openHostedCheckout = async () => {
+    setProcessing(true);
+    try {
+      const linkData = await callPaymentApi<any>('/api/payment/token-purchase/payment-link', {
+        tokens: tokenAmount,
+        amount_inr: priceInINR,
+        callback_url: `${window.location.origin}/settings/buy-tokens?paid=1`,
+      });
+      const url = linkData?.payment_link_url;
+      if (!url) throw new Error('No payment link returned by server');
+      toast({
+        title: 'Opening hosted checkout',
+        description: 'Complete the payment in the new tab. Tokens credit automatically.',
+      });
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (e: any) {
+      toast({
+        title: 'Hosted checkout failed',
+        description: e?.message || 'Please try again or contact support.',
+        variant: 'destructive',
+      });
+    } finally {
       setProcessing(false);
     }
   };
@@ -227,6 +262,16 @@ const BuyTokensPage: React.FC = () => {
 
                 <Button onClick={handlePurchase} disabled={processing || priceInINR < MIN_AMOUNT_INR} className="w-full h-11 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600" data-testid="buy-tokens-button">
                   {processing ? 'Processing...' : <><CreditCard className="w-4 h-4 mr-2" />Pay {formatPrice(priceInINR)}</>}
+                </Button>
+
+                <Button
+                  onClick={openHostedCheckout}
+                  disabled={processing || priceInINR < MIN_AMOUNT_INR}
+                  variant="outline"
+                  className="w-full h-9 text-xs"
+                  data-testid="open-hosted-checkout-fallback"
+                >
+                  Pay via Razorpay (hosted page) — no popup required
                 </Button>
               </CardContent>
             </Card>
