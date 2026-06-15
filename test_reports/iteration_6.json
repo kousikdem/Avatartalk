@@ -1,0 +1,46 @@
+{
+  "summary": "E2E verification of the new Razorpay test keys (rzp_test_T20oJ6nrpmfzIp / Klh1GTpbLsd4eOSl4KU0oFa4) on both BuyTokensPage and PricingPage. Diagnostics returns razorpay_auth_ok:true, ready:true, key_prefix:'rzp_test_T20…'. Backend regression: 35/35 pytest PASS. Node smoke: 13/13 PASS. Buy-Tokens: console logs print 1/4 → 3/4, order_T21EWOZ7WuEvB5 created, real Razorpay test-mode modal opens with ₹1000 / 1M tokens, button transitions to 'Processing... disabled'. Pricing → Subscribe Pro Plan: same flow, order_T21FQLpuKLdKsW, modal opens with ₹15,106. No 'Razorpay keys are invalid' toast anywhere. Step 4/4 (post-OTP verify) is not testable via Playwright because the Razorpay iframe is cross-origin sandboxed — flagged as manual-verification step, but the HMAC verify path is already covered by pytest test_valid_signature_credits_tokens and test_idempotency_already_processed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "BuyTokensPage", "issues": ["Primary CTA still says 'Pay $10.50' (USD) while Razorpay actually charges ₹1000 (INR). Total row shows '$10.50 (₹1000)' so the user has both, but the button itself only shows USD — carryover from iteration_4, non-blocking."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_payment_routes.py",
+    "/app/backend/tests/test_demo_mode_removal.py",
+    "/app/backend/tests/test_webhook_and_payment_links.py",
+    "/app/backend/tests/test_vercel_razorpay_retry.js",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "RCA-CRITICAL (env setup, already fixed by this agent): The dev environment was missing /app/node_modules so every POST to localhost:3000/api/payment/* returned 500 'Cannot find module @supabase/supabase-js imported from /app/api/_lib/helpers.ts'. Vite's devApiPlugin SSR-loads /app/api/*.ts which imports @supabase/supabase-js declared in /app/package.json. Fix: ran `cd /app && npm install` then `sudo supervisorctl restart frontend`. Add `cd /app && npm install` to the bootstrap / supervisord prestart script so the next pod fork doesn't repeat this regression. Vercel production already does this automatically as part of its build pipeline, so prod was never broken — only the Emergent preview.",
+    "Step 4/4 (real card → /verify → tokens credited toast) was NOT exercised end-to-end via Playwright because Razorpay's checkout iframe is cross-origin sandboxed and rejects programmatic input. The HMAC verify path itself is already covered by pytest (test_valid_signature_credits_tokens, test_idempotency_already_processed) and the modal opens with the correct order_id+amount — manual verification with test card 4111 1111 1111 1111 (OTP '1111' or 'success') is still recommended before declaring the user story DONE.",
+    "Failure-card path (4000 0000 0000 0002) and modal-dismiss-X path likewise need manual verification — Playwright cannot drive them, but iteration_4 + iteration_6 both confirm the Pay button correctly enters 'Processing... disabled' state when the modal opens, and the existing ondismiss/onfailed handlers in BuyTokensPage.tsx and PricingPage.tsx (lines 175-225 and 415-485 respectively) re-enable the button.",
+    "(Optional, carried over) Surface ₹ amount on the primary 'Pay' button on BuyTokensPage to match what Razorpay actually charges."
+  ],
+  "critical_code_review_comments": [
+    "/app/backend/payment_routes.py is now ~740 lines — keeps growing each iteration. Split into per-feature modules + a shared razorpay_helpers.py.",
+    "Same retry/backoff policy is duplicated in /app/backend/payment_routes.py::_create_razorpay_order and /app/api/_lib/helpers.ts::createRazorpayOrder. Extract maxAttempts / base delay / jitter / retryable HTTP codes into a single shared config (env var) so future tuning doesn't drift.",
+    "/app/api/_lib/helpers.ts depends on root-level /app/package.json deps but there is no /app/node_modules in the fresh pod image. Either (a) move @supabase/supabase-js + ws into /app/frontend/package.json so the existing yarn install at /app/frontend covers it, OR (b) wire the root npm install into supervisord. Otherwise every fresh pod will reproduce today's 500.",
+    "Vite-only Vercel emulation path: when devApiPlugin SSR-loads the /app/api/*.ts handler, any TypeScript import error is surfaced to the browser as a JSON error body — this is what masquerades as a 'Razorpay keys are invalid' regression in the UI. Worth a defensive try/catch in /app/frontend/vite-plugins/dev-api.ts that returns a clear 'dev-api: module resolution failed — run npm install at repo root' message instead of leaking the raw stack."
+  ],
+  "updated_files": [
+    "/app/node_modules (npm install — environment fix, not source code)"
+  ],
+  "success_rate": {
+    "backend": "100% (35/35 pytest + 13/13 node smoke)",
+    "frontend": "95% — Buy-Tokens and Pricing modals both open with correct order_id+amount on the NEW keys, no 'invalid keys' toast, console step logs 1→3 fire correctly. Step 4/4 (card entry → OTP → verify → tokens credited) is iframe-sandboxed and not Playwright-testable; covered by backend HMAC pytest."
+  },
+  "test_credentials": "avatartalk_test@example.com / TestPassword!234 (Supabase). Live orders created during this run: BuyTokens order_T21EWOZ7WuEvB5 (₹1000 / 1M tokens), Pricing Pro order_T21FQLpuKLdKsW (₹15,106 annual).",
+  "seed_data_creation": "None. Two real Razorpay test-mode orders created (left in pending state on iframe close — same as iteration_4, by design).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "1) IMPORTANT pod-bootstrap gotcha: if any /api/payment/* call on localhost:3000 returns 500 'Cannot find module @supabase/supabase-js imported from /app/api/_lib/helpers.ts', run `cd /app && npm install` then `sudo supervisorctl restart frontend`. This is NOT a code bug — it's the root-level /app/package.json deps not being auto-installed on pod fork. Vercel prod auto-installs root deps so prod is fine. 2) Razorpay diagnostics MUST be hit via GET (POST returns 405 Method Not Allowed — fine, but easy to confuse with a real auth failure). 3) Razorpay's checkout iframe is cross-origin sandboxed → Playwright CANNOT type into the card fields or click the X-close. The success criterion is therefore: modal opens with correct .razorpay-container DOM marker + console log 'step 3/4 SDK ready, opening modal' + no 'Razorpay keys are invalid' toast on the parent page. The post-card-entry verify step is covered by pytest test_valid_signature_credits_tokens. 4) New test keys live-confirmed: rzp_test_T20oJ6nrpmfzIp / Klh1GTpbLsd4eOSl4KU0oFa4. Update /app/memory/test_credentials.md (it still lists the dead key rzp_test_T1aQ71lQOJYCaZ as the pod default).",
+  "rca of the issue": "Symptom on first attempt: BuyTokens UI button clicked → step 1/4 OK → step 2/4 POST returned 500 'Cannot find module @supabase/supabase-js imported from /app/api/_lib/helpers.ts'. Razorpay 'session' iframe (api.razorpay.com/v1/checkout/public) DID load — but that's just Razorpay's preflight pixel and does NOT mean the checkout modal opened (it does not). Root cause: localhost:3000 Vite dev server uses devApiPlugin to emulate Vercel serverless routes by SSR-loading /app/api/*.ts. helpers.ts imports @supabase/supabase-js which is declared in /app/package.json but /app/node_modules did not exist on the freshly-forked pod. Fix: cd /app && npm install (157 packages added), then sudo supervisorctl restart frontend. After fix: GET /api/payment/diagnostics → 200 razorpay_auth_ok:true, POST /api/payment/token-purchase/create-order → 200 with real order_T21EWOZ7WuEvB5, Razorpay test-mode modal opens with the right ₹1000 amount. Same fix unblocked /api/payment/plan-checkout/create-order which now returns order_T21FQLpuKLdKsW for the Pro annual plan. Mitigation for next pod fork: either wire `npm install` at /app root into supervisord prestart, or move @supabase/supabase-js+ws into /app/frontend/package.json (yarn install already runs there)."
+}
