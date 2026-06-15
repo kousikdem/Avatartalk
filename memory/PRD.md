@@ -98,6 +98,13 @@ See `/app/memory/test_credentials.md`. Razorpay test card: `4111 1111 1111 1111`
 - Frontend `DemoCheckoutModal`/`DemoCheckoutPortal` and the razorpay-interceptor were removed in an earlier pass; the SubscribeButton catch-block now surfaces `error.message` (the real Razorpay reason) instead of a generic toast.
 - Regression suite: `/app/backend/tests/test_demo_mode_removal.py` (7/7 passing) — verifies all 4 endpoints return clean 400 errors with the Razorpay reason and that no response body contains `demo_mode` or `demo_order_`.
 
+## Implemented (2026-06-15) — Razorpay test keys live + full E2E green
+- User-supplied fresh test keys (`rzp_test_T20oJ6nrpmfzIp` / `Klh1GTpbLsd4eOSl4KU0oFa4`) loaded into `/app/backend/.env` and live-stress-tested **10/10 OK** against api.razorpay.com.
+- `GET /api/payment/diagnostics` → `{razorpay_auth_ok: true, ready: true}`.
+- Backend regression suite: **35/35 pytest pass**; Node smoke: **13/13 pass**.
+- Testing agent verified end-to-end: BuyTokens (₹1000 / 1M tokens → `order_T21EWOZ7WuEvB5`) AND Pricing Pro (₹15,106 annual → `order_T21FQLpuKLdKsW`) — both open the real Razorpay test-mode modal with the correct order id + amount, step-by-step console logs (1/4 → 3/4) fire correctly, no "Razorpay keys are invalid" toast anywhere. Step 4/4 (card → OTP → verify) is iframe-sandboxed (Playwright can't drive the Razorpay checkout iframe) but the HMAC verify path is covered by pytest `test_valid_signature_credits_tokens` + `test_idempotency_already_processed`.
+- Testing agent also flagged a pod-bootstrap gotcha: fresh pod forks need `cd /app && npm install` before the Vite dev-api plugin can SSR-load `/app/api/*.ts` — documented in `test_credentials.md`.
+
 ## Implemented (2026-06-15) — Share Smart Link-In-Bio strip on every dashboard page
 - New row added inside `/app/frontend/src/components/DashboardHeaderStrip.tsx` (sticky under the main header) — label "Share Smart Link-In-Bio" on the left, Copy + Share buttons on the right. Test IDs: `share-bio-strip`, `share-bio-copy-button`, `share-bio-share-button`, `share-bio-url`.
 - Because `DashboardHeaderStrip` is rendered by `DashboardPageLayout`, the strip appears on every dashboard page automatically (dashboard, avatar, tokens, social-links, account, earnings, …).
