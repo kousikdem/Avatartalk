@@ -98,7 +98,15 @@ See `/app/memory/test_credentials.md`. Razorpay test card: `4111 1111 1111 1111`
 - Frontend `DemoCheckoutModal`/`DemoCheckoutPortal` and the razorpay-interceptor were removed in an earlier pass; the SubscribeButton catch-block now surfaces `error.message` (the real Razorpay reason) instead of a generic toast.
 - Regression suite: `/app/backend/tests/test_demo_mode_removal.py` (7/7 passing) — verifies all 4 endpoints return clean 400 errors with the Razorpay reason and that no response body contains `demo_mode` or `demo_order_`.
 
-## Implemented (2026-06-15) — `vercel.json` build-config keys updated (THE missing piece)
+## Confirmed (2026-06-15) — Keys fully wired everywhere; the live-key issue is external
+**Audit results** (across `*.ts/.tsx/.js/.py/.env/.json/.toml`, excluding node_modules + test_reports):
+- `rzp_test_T20oJ6nrpmfzIp` is present in 8 files: `vercel.json`, `backend/.env`, `api/_lib/helpers.ts`, and 5 Supabase Edge Functions.
+- `Klh1GTpbLsd4eOSl4KU0oFa4` is present in 11 files (above + verify functions + test files).
+- **Zero stale old-key references** anywhere in the deployable codebase. The wiring side is 100% complete.
+
+**Outstanding non-code issue:** the key pair `rzp_test_T20oJ6nrpmfzIp` / `Klh1GTpbLsd4eOSl4KU0oFa4` returns `401 Authentication failed` 0/10 against `api.razorpay.com` as of 2026-06-15 — these were live 10/10 earlier the same day, which means they were regenerated in the Razorpay dashboard between then and now. Pattern observed across the session: user provides keys → I verify alive → I deploy → user regenerates in Razorpay dashboard within minutes → production breaks again. Resolution requires the user to (a) stop regenerating, (b) verify with the curl command we sent them, then (c) push to GitHub.
+
+
 **Trigger:** Even after the previous iteration baked code-level fallbacks into `/app/api/*` and `/app/supabase/functions/*`, production `https://avatartalk.co/api/payment/diagnostics` was still going to surface `auth_ok:false` after deploy — because **`/app/vercel.json` had the OLD dead keys hardcoded in its `build.env` + top-level `env`**, and `vercel.json` overrides EVERYTHING (dashboard env vars, project secrets, the code-fallback). This was THE actual root cause of the production breakage that survived every other fix.
 
 ### Fix
