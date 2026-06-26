@@ -27,7 +27,7 @@ yarn build
 ```
 
 ### Preview Site
-**URL**: https://avatartalk-supabase.preview.emergentagent.com  
+**URL**: https://key-url-verify.preview.emergentagent.com  
 **Status**: ✅ Working perfectly
 
 ---
@@ -141,7 +141,7 @@ yarn build
 
 ## 🌐 URLs
 
-- **Preview**: https://avatartalk-supabase.preview.emergentagent.com
+- **Preview**: https://key-url-verify.preview.emergentagent.com
 - **Vercel**: https://avatartalk-p1ia4t6zc-kousik-kars-projects.vercel.app
 
 ---

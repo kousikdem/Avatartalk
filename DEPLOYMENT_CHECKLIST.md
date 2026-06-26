@@ -91,7 +91,7 @@ If Vercel shows login page:
 
 ## Support URLs
 
-- Preview: https://avatartalk-supabase.preview.emergentagent.com
+- Preview: https://key-url-verify.preview.emergentagent.com
 - Vercel: https://avatartalk-p1ia4t6zc-kousik-kars-projects.vercel.app
 - Docs: `/app/DEPLOYMENT.md`
 
