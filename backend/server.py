@@ -133,6 +133,10 @@ app.include_router(payment_router)
 from profile_routes import router as profile_router  # noqa: E402
 app.include_router(profile_router)
 
+# Avatar Studio routes (Gemini Nano Banana presets + face swap)
+from avatar_routes import router as avatar_router  # noqa: E402
+app.include_router(avatar_router)
+
 # -------------------------------------------------------
 # CORS — require explicit configuration; no wildcard default
 # -------------------------------------------------------
@@ -153,8 +157,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_credentials=False,          # Never combine credentials=True with wildcard
     allow_origins=_cors_origins,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type", "Authorization"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Admin-Key", "apikey"],
 )
 
 @app.on_event("shutdown")

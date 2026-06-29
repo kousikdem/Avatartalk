@@ -90,7 +90,7 @@ const DashboardPageLayout = lazy(() => import("@/components/DashboardPageLayout"
 const OnboardingFlow = lazy(() => import("./components/onboarding/OnboardingFlow"));
 const Index = lazy(() => import("./pages/Index"));
 const NotFound = lazy(() => import("./pages/NotFound"));
-const AvatarPage = lazy(() => import("./pages/AvatarPage"));
+const AvatarPage = lazy(() => import("./pages/NewAvatarStudio"));
 const FeedPage = lazy(() => import("./pages/FeedPage"));
 const VirtualCollaborationPage = lazy(() => import("./components/VirtualCollaborationPage"));
 const ProductsPage = lazy(() => import("./pages/ProductsPage"));
