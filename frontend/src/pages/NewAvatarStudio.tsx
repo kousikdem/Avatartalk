@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
@@ -51,7 +51,7 @@ const NewAvatarStudio: React.FC = () => {
 
   // Username for share link
   const [username, setUsername] = useState('');
-  React.useEffect(() => {
+  useEffect(() => {
     if (!user?.id) return;
     supabase.from('profiles').select('username,avatar_url,profile_pic_url').eq('id', user.id).maybeSingle().then(({ data }) => {
       if (data?.username) setUsername(data.username);
