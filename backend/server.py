@@ -137,6 +137,10 @@ app.include_router(profile_router)
 from avatar_routes import router as avatar_router  # noqa: E402
 app.include_router(avatar_router)
 
+# Razorpay Subscriptions + UPI Autopay
+from subscription_routes import router as subscription_router  # noqa: E402
+app.include_router(subscription_router)
+
 # -------------------------------------------------------
 # CORS — require explicit configuration; no wildcard default
 # -------------------------------------------------------

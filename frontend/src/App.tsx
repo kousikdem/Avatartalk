@@ -107,6 +107,7 @@ const BuyTokensPage = lazy(() => import("./pages/BuyTokensPage"));
 const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
 const EarningsPage = lazy(() => import("./pages/EarningsPage"));
 const PricingPage = lazy(() => import("./components/PricingPage"));
+const SubscriptionsPage = lazy(() => import("./pages/SubscriptionsPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
 const RefundPolicyPage = lazy(() => import("./pages/RefundPolicyPage"));
@@ -249,6 +250,7 @@ const AuthenticatedRoutes = memo(() => {
                 <Route path="/onboarding" element={<Navigate to="/settings/dashboard" replace />} />
                 <Route path="/settings/dashboard" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><Index mode="authed" /></DashboardPageLayout></Suspense>} />
                 <Route path="/settings/avatar" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><AvatarPage /></DashboardPageLayout></Suspense>} />
+                <Route path="/settings/subscriptions" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><SubscriptionsPage /></DashboardPageLayout></Suspense>} />
                 <Route path="/settings/virtual-collaboration" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><VirtualCollaborationPage /></DashboardPageLayout></Suspense>} />
                 <Route path="/settings/products" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><ProductsPage /></DashboardPageLayout></Suspense>} />
                 <Route path="/settings/promo" element={<Suspense fallback={<PageFallback />}><DashboardPageLayout><PromoSettingsPage /></DashboardPageLayout></Suspense>} />
