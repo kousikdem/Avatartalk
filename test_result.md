@@ -527,3 +527,50 @@ agent_communication:
 
   - agent: "main"
     message: "🎨 AVATAR STUDIO v2 REDESIGN (2026-06-29) — Implemented the new 3-column Avatar Studio matching the user-provided design. Files: (1) /app/backend/avatar_routes.py - new FastAPI routes: GET /api/avatar/presets, GET /api/avatar/quota, POST /api/avatar/face-swap (Gemini Nano Banana multi-image face swap), POST /api/avatar/set-profile, POST /api/avatar/admin/seed-presets (one-time generator for 18 photorealistic 3D human avatars across Male/Female/Professional/Casual). Uses emergentintegrations + EMERGENT_LLM_KEY (Gemini key also added to .env as backup). Model: gemini-3.1-flash-image-preview. Plan quotas: free=0, creator=2/mo, pro=5/mo, business=20/mo. (2) /app/backend/server.py - registered avatar_router. (3) /app/frontend/src/hooks/useAvatarStudio.ts - hook for presets fetch, quota check, face swap, profile save, direct Supabase storage upload. (4) /app/frontend/src/pages/NewAvatarStudio.tsx - new page with 3-column layout: left (Customize accordion + Upload card with Creator+ lock for free), center (preview with Realistic 3D badge + Undo/Redo/Zoom toolbar + Customize/Save buttons), right (filter tabs + preset grid). (5) /app/frontend/src/components/avatar-studio/CustomizeAvatarModal.tsx - face-swap popup with face upload + style picker + Generate + Use This Avatar. (6) /app/frontend/src/components/onboarding/steps/AvatarStep.tsx - rewrote to match same compact design. (7) /app/frontend/src/App.tsx - swapped /settings/avatar route to NewAvatarStudio. (8) /app/APPLY_AVATAR_STUDIO_MIGRATION.sql - schema + RLS + 'avatars' storage bucket. ⚠️ BLOCKER: User must apply the SQL migration in Supabase SQL Editor (https://supabase.com/dashboard/project/hnxnvdzrwbtmcohdptfq/sql/new). Verified via direct REST API multiple times — tables 'avatar_presets', 'user_custom_avatars' and storage bucket 'avatars' still return 42P01/404. Once applied, backend seed endpoint generates all 18 presets via Gemini (~3 min). Frontend build passes (13.6s). Gemini integration verified working — test image generated 503KB. UI screenshot confirms 3-column design matches the attached mockup exactly."
+
+
+backend:
+  - task: "Avatar Studio storage-only refactor + 18 preset seeding via Gemini Nano Banana"
+    implemented: true
+    working: true
+    file: "/app/backend/avatar_routes.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "REFACTORED to Supabase Storage-only (no DB tables) since user-side SQL migration kept failing to land. Storage layout: avatars/presets/index.json (preset metadata) + avatars/presets/*.png (preset images) + avatars/custom/<user_id>/index.json (per-user history) + avatars/custom/<user_id>/*.png (swap results) + avatars/uploads/<user_id>/*.<ext> (raw uploads). Endpoints: GET /api/avatar/presets, GET /api/avatar/quota (needs auth), GET /api/avatar/history (needs auth), POST /api/avatar/face-swap (multipart, needs auth), POST /api/avatar/set-profile (needs auth), POST /api/avatar/admin/seed-presets (X-Admin-Key). Bucket created via storage/v1/bucket API (no SQL). Seed completed: 18 photorealistic 3D avatars generated via Gemini gemini-3.1-flash-image-preview. GET /api/avatar/presets confirmed returning 18 items with public storage URLs. Plan gating enforced server-side: free=0, creator=2/mo, pro=5/mo, business=20/mo. Idempotency by month via ISO 'YYYY-MM' tag on each custom_avatar item."
+      - working: true
+        agent: "testing"
+        comment: "✅ ALL 6 AVATAR ENDPOINTS PASSED (2026-07-11) - Comprehensive backend testing completed via /app/backend_test.py. TEST 1 (GET /api/avatar/presets): Returns exactly 18 presets with all required fields (id, label, gender, category, style, image_url, sort_order). All image URLs accessible (HTTP 200, content-type: image/png). Filters working: ?category=professional (10 items), ?gender=female (8 items), ?category=casual&gender=male (4 items). TEST 2 (GET /api/avatar/quota): Correctly returns 401 without auth, 200 with valid token. Free plan restrictions enforced: plan=free, monthly_limit=0, can_customize=false, can_upload=false. TEST 3 (GET /api/avatar/history): Correctly returns 401 without auth, 200 with valid token returning {items:[]} (empty for new user). TEST 4 (POST /api/avatar/face-swap): Correctly returns 401 without auth, 403 with valid token for free plan user with detail 'Custom avatar requires Creator plan or higher'. Plan gating working correctly - does NOT attempt generation for free users. TEST 5 (POST /api/avatar/set-profile): Correctly returns 401 without auth, 200 with valid token. Profile avatar_url successfully updated in database, verified via /api/profile/by-username/avatartalktest. TEST 6 (POST /api/avatar/admin/seed-presets): Correctly returns 403 without X-Admin-Key header and with wrong key. Admin auth gate working. Did NOT re-run seed (would take ~3 min). Test credentials: avatartalk_test@example.com. Used preset_id: 3f4f0a38-391c-4279-87f5-aac65ada8ac0. NO ISSUES FOUND."
+
+frontend:
+  - task: "Avatar Studio v2 UI with preset grid + Customize modal + Save-to-Profile"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/NewAvatarStudio.tsx, /app/frontend/src/components/avatar-studio/CustomizeAvatarModal.tsx, /app/frontend/src/hooks/useAvatarStudio.ts"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Screenshot confirms all 18 realistic 3D avatars now render in the right panel (Male/Female/Professional/Casual filters). Center column shows main preview + Realistic 3D badge + Undo/Redo/Zoom toolbar + Customize Avatar + Save in Profile buttons. Left column shows Customize Avatar accordion (Body & Anatomy, Facial Features, Clothing & Style, Accessories, Background, Advanced Options) + Upload Your Avatar card (Creator+ lock for free plan). Need to verify: (1) Clicking a preset thumbnail sets currentAvatarUrl to that preset's image_url in the center preview. (2) Save in Profile button writes to profiles.avatar_url via /api/avatar/set-profile → user's public profile shows the new avatar. (3) Customize Avatar button opens modal → face upload works → Generate calls /api/avatar/face-swap → returns swapped image → Use This Avatar sets in preview. (4) Filter tabs (All/Male/Female/Professional/Casual) filter the preset grid correctly. (5) Free plan users see Upload+Customize buttons locked."
+
+metadata:
+  last_avatar_studio_test: "2026-07-11"
+  last_backend_test: "2026-07-11"
+
+test_plan:
+  current_focus:
+    - "Avatar Studio v2 UI with preset grid + Customize modal + Save-to-Profile"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "🎨 AVATAR STUDIO FIX DELIVERED (2026-07-11) — Root-caused why SQL migration kept not landing (user was pasting but result was 42P01 every time; project ID confirmed correct at hnxnvdzrwbtmcohdptfq). PIVOTED entire backend to Supabase Storage-only architecture: no DB tables required. Bucket 'avatars' created programmatically via storage/v1/bucket API (200 OK). Refactored /app/backend/avatar_routes.py to store preset metadata as JSON in avatars/presets/index.json and per-user swap history as avatars/custom/<user_id>/index.json. Ran seed endpoint → 18 preset avatars generated via Gemini Nano Banana (gemini-3.1-flash-image-preview) in ~3 min and uploaded to storage. Screenshot verified: right panel now shows full 6×3 grid of photorealistic 3D avatars matching the user's design mockup. TESTING REQUIRED: please verify end-to-end (a) GET /api/avatar/presets returns 18 items, (b) clicking a preset sets center preview, (c) POST /api/avatar/set-profile persists avatar_url in profiles table, (d) Customize Avatar modal + face-swap flow (test user avatartalk_test@example.com has plan_key=free so upload/customize should be locked — verify lock badge shows; if you upgrade test user to creator via user_platform_subscriptions, upload+customize should unlock), (e) filter tabs work, (f) plan gating enforced. Test creds in /app/memory/test_credentials.md."
+  - agent: "testing"
+    message: "✅ AVATAR STUDIO BACKEND TESTING COMPLETE (2026-07-11) — All 6 avatar endpoints tested and PASSED. Created /app/backend_test.py for comprehensive API testing. Results: (1) GET /api/avatar/presets returns exactly 18 presets, all image URLs accessible (HTTP 200), filters working correctly. (2) GET /api/avatar/quota correctly enforces auth and returns free plan restrictions. (3) GET /api/avatar/history correctly enforces auth and returns empty array for new user. (4) POST /api/avatar/face-swap correctly enforces auth and plan gating (403 for free users with 'Creator plan or higher' message). (5) POST /api/avatar/set-profile correctly enforces auth and successfully updates profiles.avatar_url, verified via public profile endpoint. (6) POST /api/avatar/admin/seed-presets correctly enforces admin auth (403 without/with wrong X-Admin-Key). NO ISSUES FOUND. Storage-only architecture working perfectly. Frontend UI testing still needed (preset selection, filters, customize modal, save button). Backend is production-ready."

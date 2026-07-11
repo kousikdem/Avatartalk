@@ -34,23 +34,13 @@ export function useAvatarStudio() {
   const fetchPresets = useCallback(async () => {
     setPresetsLoading(true);
     try {
-      // 1) Prefer backend (service-role, always works)
       const r = await fetch(`${BACKEND}/api/avatar/presets`);
       if (r.ok) {
         const data = await r.json();
         setPresets((data.presets || []) as AvatarPreset[]);
-        return;
+      } else {
+        setPresets([]);
       }
-    } catch (e) {
-      // fall through
-    }
-    // 2) Fallback to direct Supabase
-    try {
-      const { data } = await supabase
-        .from('avatar_presets' as any)
-        .select('id,label,gender,category,style,image_url,sort_order')
-        .order('sort_order');
-      setPresets((data || []) as unknown as AvatarPreset[]);
     } catch (e) {
       setPresets([]);
     } finally {
