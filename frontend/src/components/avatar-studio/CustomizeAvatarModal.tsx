@@ -1,10 +1,12 @@
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Upload, Sparkles, Check, X, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import type { AvatarPreset } from '@/hooks/useAvatarStudio';
+
+type ModalFilter = 'all' | 'male' | 'female' | 'professional' | 'casual';
 
 interface CustomizeAvatarModalProps {
   open: boolean;
@@ -27,8 +29,15 @@ const CustomizeAvatarModal: React.FC<CustomizeAvatarModalProps> = ({
   const [face, setFace] = useState<File | null>(null);
   const [faceUrl, setFaceUrl] = useState<string>('');
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<ModalFilter>('all');
   const [generating, setGenerating] = useState(false);
   const [resultUrl, setResultUrl] = useState<string>('');
+
+  const filteredPresets = useMemo(() => {
+    if (filter === 'all') return presets;
+    if (filter === 'male' || filter === 'female') return presets.filter(p => p.gender === filter);
+    return presets.filter(p => p.category === filter);
+  }, [presets, filter]);
 
   const reset = () => {
     setFace(null);
@@ -150,16 +159,32 @@ const CustomizeAvatarModal: React.FC<CustomizeAvatarModalProps> = ({
 
           {/* RIGHT: preset picker + generate */}
           <div className="space-y-3">
-            <label className="text-sm font-semibold text-gray-700 block">Step 2 — Pick a Style</label>
-            <div className="grid grid-cols-3 gap-2 max-h-[260px] overflow-y-auto pr-1">
-              {presets.length === 0 && (
-                <div className="col-span-3 text-center text-gray-400 text-sm py-8">No styles available yet</div>
+            <label className="text-sm font-semibold text-gray-700 block">Step 2 — Pick a Style ({presets.length} available)</label>
+            {/* Filters */}
+            <div className="flex flex-wrap gap-1.5">
+              {(['all','male','female','professional','casual'] as ModalFilter[]).map(c => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setFilter(c)}
+                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium transition ${
+                    filter === c ? 'bg-violet-600 text-white shadow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {c.charAt(0).toUpperCase() + c.slice(1)}
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-3 gap-2 max-h-[300px] overflow-y-auto pr-1">
+              {filteredPresets.length === 0 && (
+                <div className="col-span-3 text-center text-gray-400 text-sm py-8">No styles in this filter</div>
               )}
-              {presets.map((p) => (
+              {filteredPresets.map((p) => (
                 <button
                   key={p.id}
                   type="button"
                   onClick={() => setSelectedPresetId(p.id)}
+                  title={p.label}
                   className={`relative aspect-square rounded-xl overflow-hidden border-2 transition ${
                     selectedPresetId === p.id ? 'border-violet-600 ring-2 ring-violet-200' : 'border-transparent hover:border-violet-300'
                   }`}

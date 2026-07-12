@@ -44,10 +44,23 @@ const NewAvatarStudio: React.FC = () => {
   const [filter, setFilter] = useState<CategoryFilter>('all');
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
   const [currentAvatarUrl, setCurrentAvatarUrl] = useState<string>('');
+  const [imageError, setImageError] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [history, setHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
   const [savingProfile, setSavingProfile] = useState(false);
   const [showCustomizeModal, setShowCustomizeModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const uploadRef = useRef<HTMLInputElement>(null);
+
+  // Track avatar changes in history for undo/redo
+  const pushHistory = (url: string) => {
+    setHistory(prev => {
+      const truncated = prev.slice(0, historyIndex + 1);
+      return [...truncated, url];
+    });
+    setHistoryIndex(prev => prev + 1);
+  };
 
   // Username for share link
   const [username, setUsername] = useState('');
@@ -55,11 +68,25 @@ const NewAvatarStudio: React.FC = () => {
     if (!user?.id) return;
     supabase.from('profiles').select('username,avatar_url,profile_pic_url').eq('id', user.id).maybeSingle().then(({ data }) => {
       if (data?.username) setUsername(data.username);
-      if (!currentAvatarUrl && (data?.avatar_url || data?.profile_pic_url)) {
-        setCurrentAvatarUrl(data.avatar_url || data.profile_pic_url || '');
+      // Only pre-populate from profile if the URL is a proper avatar image from OUR storage bucket
+      const existing = data?.avatar_url || data?.profile_pic_url || '';
+      const isFromStorage = existing.includes('/storage/v1/object/public/avatars/');
+      if (!currentAvatarUrl && isFromStorage) {
+        setCurrentAvatarUrl(existing);
       }
     });
   }, [user?.id]);
+
+  // Auto-select first preset when presets load and no avatar has been picked yet
+  useEffect(() => {
+    if (!currentAvatarUrl && !selectedPresetId && presets.length > 0) {
+      const first = presets[0];
+      setSelectedPresetId(first.id);
+      setCurrentAvatarUrl(first.image_url);
+      setHistory([first.image_url]);
+      setHistoryIndex(0);
+    }
+  }, [presets, currentAvatarUrl, selectedPresetId]);
 
   const filteredPresets = useMemo(() => {
     if (filter === 'all') return presets;
@@ -70,6 +97,10 @@ const NewAvatarStudio: React.FC = () => {
   const handleSelectPreset = (p: AvatarPreset) => {
     setSelectedPresetId(p.id);
     setCurrentAvatarUrl(p.image_url);
+    setImageError(false);
+    setZoom(1);
+    pushHistory(p.image_url);
+    toast.success(`${p.label} selected — click "Save in Profile" to apply`, { duration: 1500 });
   };
 
   const handleUpload = async (file: File) => {
@@ -85,6 +116,9 @@ const NewAvatarStudio: React.FC = () => {
     if (res.success && res.image_url) {
       setCurrentAvatarUrl(res.image_url);
       setSelectedPresetId(null);
+      setImageError(false);
+      setZoom(1);
+      pushHistory(res.image_url);
       toast.success('Image uploaded — click "Save in Profile" to publish');
     } else {
       toast.error(res.error || 'Upload failed');
@@ -107,6 +141,11 @@ const NewAvatarStudio: React.FC = () => {
   const handleReset = () => {
     setSelectedPresetId(null);
     setCurrentAvatarUrl('');
+    setImageError(false);
+    setZoom(1);
+    setHistory([]);
+    setHistoryIndex(-1);
+    // Auto-selects first preset via useEffect
     toast.info('Reset');
   };
 
@@ -271,7 +310,7 @@ const NewAvatarStudio: React.FC = () => {
           {/* CENTER — Main avatar preview */}
           <section className="lg:col-span-5">
             <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-5 sticky top-4">
-              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-b from-gray-100 to-gray-50 aspect-[3/4] flex items-center justify-center">
+              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-b from-gray-100 via-white to-gray-50 aspect-[3/4] flex items-center justify-center">
                 {/* Realistic 3D badge */}
                 <div className="absolute top-3 left-3 z-10">
                   <Badge className="bg-white/90 backdrop-blur text-gray-700 border-gray-200 shadow-sm">
@@ -279,20 +318,69 @@ const NewAvatarStudio: React.FC = () => {
                   </Badge>
                 </div>
 
-                <img
-                  src={currentAvatarUrl || PLACEHOLDER_AVATAR}
-                  alt="Your avatar"
-                  className="w-full h-full object-cover"
-                />
+                {(!currentAvatarUrl || imageError) ? (
+                  <div className="flex flex-col items-center justify-center text-gray-400 gap-2">
+                    <UserIcon className="w-24 h-24 opacity-40" />
+                    <span className="text-sm font-medium">
+                      {imageError ? 'Image failed to load' : 'Pick an avatar from the right →'}
+                    </span>
+                  </div>
+                ) : (
+                  <img
+                    src={currentAvatarUrl}
+                    alt="Your avatar"
+                    style={{ transform: `scale(${zoom})`, transition: 'transform 0.2s ease' }}
+                    className="w-full h-full object-cover"
+                    onError={() => setImageError(true)}
+                    onLoad={() => setImageError(false)}
+                  />
+                )}
 
                 {/* Toolbar */}
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 bg-white/90 backdrop-blur rounded-full shadow-lg px-2 py-1 text-xs">
-                  <ToolbarBtn icon={Undo2} label="Undo" onClick={() => toast.info('Undo')} />
-                  <ToolbarBtn icon={Redo2} label="Redo" onClick={() => toast.info('Redo')} disabled />
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 bg-white/95 backdrop-blur rounded-full shadow-lg px-2 py-1 text-xs">
+                  <ToolbarBtn
+                    icon={Undo2}
+                    label="Undo"
+                    onClick={() => {
+                      if (historyIndex > 0) {
+                        const newIdx = historyIndex - 1;
+                        setHistoryIndex(newIdx);
+                        setCurrentAvatarUrl(history[newIdx]);
+                        setSelectedPresetId(presets.find(p => p.image_url === history[newIdx])?.id || null);
+                        setImageError(false);
+                      } else {
+                        toast.info('Nothing to undo');
+                      }
+                    }}
+                    disabled={historyIndex <= 0}
+                  />
+                  <ToolbarBtn
+                    icon={Redo2}
+                    label="Redo"
+                    onClick={() => {
+                      if (historyIndex < history.length - 1) {
+                        const newIdx = historyIndex + 1;
+                        setHistoryIndex(newIdx);
+                        setCurrentAvatarUrl(history[newIdx]);
+                        setSelectedPresetId(presets.find(p => p.image_url === history[newIdx])?.id || null);
+                        setImageError(false);
+                      } else {
+                        toast.info('Nothing to redo');
+                      }
+                    }}
+                    disabled={historyIndex >= history.length - 1}
+                  />
                   <span className="w-px h-4 bg-gray-200" />
-                  <ToolbarBtn icon={ZoomIn} label="Zoom In" onClick={() => toast.info('Zoom in')} />
-                  <ToolbarBtn icon={ZoomOut} label="Zoom Out" onClick={() => toast.info('Zoom out')} />
-                  <ToolbarBtn icon={Maximize} label="" onClick={() => toast.info('Fullscreen')} />
+                  <ToolbarBtn icon={ZoomIn} label="Zoom In" onClick={() => setZoom(z => Math.min(2, +(z + 0.15).toFixed(2)))} disabled={zoom >= 2} />
+                  <ToolbarBtn icon={ZoomOut} label="Zoom Out" onClick={() => setZoom(z => Math.max(0.5, +(z - 0.15).toFixed(2)))} disabled={zoom <= 0.5} />
+                  <ToolbarBtn
+                    icon={Maximize}
+                    label=""
+                    onClick={() => {
+                      if (currentAvatarUrl) window.open(currentAvatarUrl, '_blank', 'noopener');
+                    }}
+                    disabled={!currentAvatarUrl}
+                  />
                 </div>
               </div>
 
@@ -397,7 +485,13 @@ const NewAvatarStudio: React.FC = () => {
         presets={presets}
         quota={quota}
         onFaceSwap={faceSwap}
-        onSetAsAvatar={(url) => { setCurrentAvatarUrl(url); setSelectedPresetId(null); }}
+        onSetAsAvatar={(url) => {
+          setCurrentAvatarUrl(url);
+          setSelectedPresetId(null);
+          setImageError(false);
+          setZoom(1);
+          pushHistory(url);
+        }}
       />
     </div>
   );
