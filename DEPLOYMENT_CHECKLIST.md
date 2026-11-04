@@ -91,7 +91,7 @@ If Vercel shows login page:
 
 ## Support URLs
 
-- Preview: https://key-url-verify.preview.emergentagent.com
+- Preview: https://leak-sweep--0rfan5nr.preview.emergentagent.com
 - Vercel: https://avatartalk-p1ia4t6zc-kousik-kars-projects.vercel.app
 - Docs: `/app/DEPLOYMENT.md`
 

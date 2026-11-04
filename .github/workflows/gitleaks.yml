@@ -1,0 +1,18 @@
+name: secret-scan
+on:
+  push:
+  pull_request:
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks
+        run: |
+          V=8.30.1
+          curl -sSL -o gl.tgz https://github.com/gitleaks/gitleaks/releases/download/v${V}/gitleaks_${V}_linux_x64.tar.gz
+          tar xzf gl.tgz gitleaks && sudo mv gitleaks /usr/local/bin/
+      - name: Scan current files (fails the build on any committed secret)
+        run: gitleaks detect --no-git --source . --config .gitleaks.toml --redact -v

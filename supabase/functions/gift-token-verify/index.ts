@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const razorpayKeySecret = Deno.env.get("RAZORPAY_KEY_SECRET") || "Klh1GTpbLsd4eOSl4KU0oFa4";
+    const razorpayKeySecret = Deno.env.get("RAZORPAY_KEY_SECRET");
 
     if (!razorpayKeySecret) {
       return new Response(

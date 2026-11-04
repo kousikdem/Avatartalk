@@ -17,12 +17,13 @@ import pytest
 import requests
 
 BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://key-url-verify.preview.emergentagent.com"
+    "REACT_APP_BACKEND_URL", "https://leak-sweep--0rfan5nr.preview.emergentagent.com"
 ).rstrip("/")
 
-SUPABASE_URL = "https://hnxnvdzrwbtmcohdptfq.supabase.co"
-SUPABASE_ANON = "sb_publishable_uaL-zelOHdGlOlvaWuIa1A_wtL7mx3p"
-RAZORPAY_KEY_SECRET = "Klh1GTpbLsd4eOSl4KU0oFa4"
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://hnxnvdzrwbtmcohdptfq.supabase.co")
+SUPABASE_ANON = os.environ.get("SUPABASE_ANON_KEY", "")
+# Never hard-code secrets: read from env (backend/.env is loaded by the test runner / shell)
+RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
 
 # Endpoint paths with a minimal-but-valid body so Pydantic validation passes
 # and the auth check inside the handler is actually exercised.

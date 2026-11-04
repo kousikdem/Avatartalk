@@ -41,7 +41,7 @@ flow renders for logged-out visitors.
 
 ## Notes
 
-- Razorpay keys in pod env (UPDATED 2026-06-15): `RAZORPAY_KEY_ID=rzp_test_T20oJ6nrpmfzIp`, `RAZORPAY_KEY_SECRET=Klh1GTpbLsd4eOSl4KU0oFa4`. **Live-stress-tested 10/10 OK** against api.razorpay.com. Production Vercel needs the same pair set in Project Settings → Environment Variables.
+- Razorpay keys in pod env (UPDATED 2026-06-15): `RAZORPAY_KEY_ID=rzp_test_T20oJ6nrpmfzIp`, `RAZORPAY_KEY_SECRET=<REDACTED-ROTATE-ME>`. **Live-stress-tested 10/10 OK** against api.razorpay.com. Production Vercel needs the same pair set in Project Settings → Environment Variables.
 - Webhook secret: `RAZORPAY_WEBHOOK_SECRET=whsec_test_avatartalk_e2e` (placeholder — replace with the secret you set in Razorpay Dashboard → Settings → Webhooks → Edit Webhook → Secret).
 - **Pod-bootstrap gotcha (testing-agent flagged 2026-06-15)**: on fresh pod fork, run `cd /app && npm install` once. The dev-api Vite plugin SSR-loads `/app/api/*.ts` which imports `@supabase/supabase-js` declared in `/app/package.json` — without `/app/node_modules` it 500s with "Cannot find module @supabase/supabase-js". Vercel production auto-installs, so prod is fine. Only the Emergent preview needs this.
 - On the Emergent preview the `/api/*` routes are served by FastAPI

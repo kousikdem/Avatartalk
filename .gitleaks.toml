@@ -1,0 +1,27 @@
+# gitleaks config — extends the default ruleset.
+# Run on a full clone:  gitleaks detect --log-opts="--all" -v
+title = "AvatarTalk gitleaks config"
+
+[extend]
+useDefault = true
+
+# Only allowlist values that are PUBLIC BY DESIGN or obvious doc placeholders.
+# Real secrets (service_role keys, Razorpay key secrets, sk_live_...) must never
+# be added here - rotate them instead.
+[allowlist]
+description = "Public client keys and documentation placeholders"
+regexes = [
+  # Supabase publishable (browser) key - public by design, protected by RLS
+  '''sb_publishable_[A-Za-z0-9_-]+''',
+  # Supabase legacy ANON JWT (role=anon) - public by design. A service_role JWT is still flagged.
+  '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueG52ZHpyd2J0bWNvaGRwdGZxIiwicm9sZSI6ImFub24i[A-Za-z0-9_.-]*''',
+  # Razorpay key IDs are public (the *secret* is what must be protected)
+  '''rzp_(test|live)_[A-Za-z0-9]{14}''',
+  # Placeholder examples in security docs / redacted values
+  '''sk_live_(abc123[a-z0-9]*|your_key_here)''',
+  '''<REDACTED-ROTATE-ME>''',
+  '''wrong_admin_key''',
+  '''wrong_key_12345''',
+  # Truncated JWT header only (no payload/signature) used in docs
+  '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.\.\.''',
+]

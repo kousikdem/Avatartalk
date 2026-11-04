@@ -13,6 +13,17 @@
 - **Auth + DB**: Supabase (Postgres + Auth). Service-role key kept server-side only.
 - **Payments**: Razorpay. Python SDK on FastAPI, raw `fetch` to `api.razorpay.com/v1/orders` on Vercel.
 
+
+## Implemented (2026-09-01) — Secret leak sweep + RLS/GRANT hardening (see /app/SECURITY_REMEDIATION.md)
+- gitleaks 8.30.1 full-history scan: 5 real leaked secrets (Supabase service_role JWT, 4 Razorpay key secrets). All removed from current files; history needs KEY ROTATION (user action).
+- Removed hard-coded Razorpay fallback in api/_lib/helpers.ts + 6 edge functions; secrets removed from vercel.json `env` (must be set in Vercel dashboard).
+- .gitignore consolidated; .gitleaks.toml (allowlist = public keys/placeholders only); CI workflow .github/workflows/gitleaks.yml.
+- Migration supabase/migrations/20260901000000_security_hardening_rls_grants.sql (dry-run tested locally): RPC lockdown, credit_user_tokens guarded wrapper (private schema impl), profiles token-column guard trigger, user_platform_subscriptions paid-plan guard trigger, post_unlocks policies, grant hygiene, RLS enabled everywhere.
+- scripts/rls_audit.py = non-destructive black-box audit against live Supabase.
+- APPLIED to live DB 2026-09 via pooler aws-0-ap-south-1.pooler.supabase.com (user postgres.<ref>, password = SUPABASE_DB_PASSWORD in backend/.env; direct db host is IPv6-only/unreachable). Live audit: 14 issues -> 0; public reads, profile edits, service-role + super-admin credit verified.
+- PENDING USER ACTION: rotate Razorpay secrets + Supabase service_role key; set them in Vercel env; redeploy edge fn product-payment-verify.
+- Next round: server-side verification for post_unlocks / orders / creator subscriptions inserts.
+
 ## Implemented (2026-05-26) — Vercel Serverless API parity
 ### New Vercel routes (`/app/api/`)
 - `GET  /api/profile/by-username/[username]` — service-role profile fetch + related (user_stats, products, events, avatar_configurations, social_links). Used by `ProfilePage.tsx` TIER-0 path.
@@ -101,10 +112,10 @@ See `/app/memory/test_credentials.md`. Razorpay test card: `4111 1111 1111 1111`
 ## Confirmed (2026-06-15) — Keys fully wired everywhere; the live-key issue is external
 **Audit results** (across `*.ts/.tsx/.js/.py/.env/.json/.toml`, excluding node_modules + test_reports):
 - `rzp_test_T20oJ6nrpmfzIp` is present in 8 files: `vercel.json`, `backend/.env`, `api/_lib/helpers.ts`, and 5 Supabase Edge Functions.
-- `Klh1GTpbLsd4eOSl4KU0oFa4` is present in 11 files (above + verify functions + test files).
+- `<REDACTED-ROTATE-ME>` is present in 11 files (above + verify functions + test files).
 - **Zero stale old-key references** anywhere in the deployable codebase. The wiring side is 100% complete.
 
-**Outstanding non-code issue:** the key pair `rzp_test_T20oJ6nrpmfzIp` / `Klh1GTpbLsd4eOSl4KU0oFa4` returns `401 Authentication failed` 0/10 against `api.razorpay.com` as of 2026-06-15 — these were live 10/10 earlier the same day, which means they were regenerated in the Razorpay dashboard between then and now. Pattern observed across the session: user provides keys → I verify alive → I deploy → user regenerates in Razorpay dashboard within minutes → production breaks again. Resolution requires the user to (a) stop regenerating, (b) verify with the curl command we sent them, then (c) push to GitHub.
+**Outstanding non-code issue:** the key pair `rzp_test_T20oJ6nrpmfzIp` / `<REDACTED-ROTATE-ME>` returns `401 Authentication failed` 0/10 against `api.razorpay.com` as of 2026-06-15 — these were live 10/10 earlier the same day, which means they were regenerated in the Razorpay dashboard between then and now. Pattern observed across the session: user provides keys → I verify alive → I deploy → user regenerates in Razorpay dashboard within minutes → production breaks again. Resolution requires the user to (a) stop regenerating, (b) verify with the curl command we sent them, then (c) push to GitHub.
 
 
 **Trigger:** Even after the previous iteration baked code-level fallbacks into `/app/api/*` and `/app/supabase/functions/*`, production `https://avatartalk.co/api/payment/diagnostics` was still going to surface `auth_ok:false` after deploy — because **`/app/vercel.json` had the OLD dead keys hardcoded in its `build.env` + top-level `env`**, and `vercel.json` overrides EVERYTHING (dashboard env vars, project secrets, the code-fallback). This was THE actual root cause of the production breakage that survived every other fix.
@@ -114,7 +125,7 @@ See `/app/memory/test_credentials.md`. Razorpay test card: `4111 1111 1111 1111`
   - `build.env.VITE_RAZORPAY_KEY_ID`: `rzp_test_T1aQ71lQOJYCaZ` → `rzp_test_T20oJ6nrpmfzIp`
   - `env.VITE_RAZORPAY_KEY_ID`: same
   - `env.RAZORPAY_KEY_ID`: same
-  - `env.RAZORPAY_KEY_SECRET`: `M6KojcTOczx4RyLz5JI1uu6B` → `Klh1GTpbLsd4eOSl4KU0oFa4`
+  - `env.RAZORPAY_KEY_SECRET`: `<REDACTED-ROTATE-ME>` → `<REDACTED-ROTATE-ME>`
 - Cross-checked the entire deployable codebase (`.ts/.tsx/.js/.py/.env/.json/.toml`) — **0 stale references remain**. Old key strings only appear in historical `/app/test_reports/iteration_*.json` archives + old `*_FIX_GUIDE.md` docs (informational, not deployed).
 
 ### After `git push` → next Vercel build
@@ -123,10 +134,10 @@ See `/app/memory/test_credentials.md`. Razorpay test card: `4111 1111 1111 1111`
 - The code-fallback resolver from the previous iteration is still wired in as a defensive double-safety net.
 
 ## Implemented (2026-06-15) — Razorpay code-level fallback for Vercel + Supabase
-**Trigger:** User's production deployment at `https://avatartalk.co/api/payment/diagnostics` still returned `razorpay_key_id_prefix: "rzp_test_T1a…", razorpay_auth_ok: false` after fresh keys (`rzp_test_T20oJ6nrpmfzIp` / `Klh1GTpbLsd4eOSl4KU0oFa4`) had been provided three separate times. Diagnosis: Vercel env vars + Supabase Edge Function secrets still point at the dead key pair, and there is no path for the agent to update them from inside the repo. User explicitly asked to "fix the issue anyway" — i.e. don't make the fix contingent on a dashboard update.
+**Trigger:** User's production deployment at `https://avatartalk.co/api/payment/diagnostics` still returned `razorpay_key_id_prefix: "rzp_test_T1a…", razorpay_auth_ok: false` after fresh keys (`rzp_test_T20oJ6nrpmfzIp` / `<REDACTED-ROTATE-ME>`) had been provided three separate times. Diagnosis: Vercel env vars + Supabase Edge Function secrets still point at the dead key pair, and there is no path for the agent to update them from inside the repo. User explicitly asked to "fix the issue anyway" — i.e. don't make the fix contingent on a dashboard update.
 
 ### Fix: env-with-code-fallback resolver
-- **`/app/api/_lib/helpers.ts`** — new `getRazorpayCredentials()` resolver. Precedence: `process.env.RAZORPAY_KEY_ID/SECRET` (preferred — supports rotation without redeploy) → hard-coded `FALLBACK_RAZORPAY_KEY_ID = "rzp_test_T20oJ6nrpmfzIp"` / `FALLBACK_RAZORPAY_KEY_SECRET = "Klh1GTpbLsd4eOSl4KU0oFa4"` (only when env is unset/empty).
+- **`/app/api/_lib/helpers.ts`** — new `getRazorpayCredentials()` resolver. Precedence: `process.env.RAZORPAY_KEY_ID/SECRET` (preferred — supports rotation without redeploy) → hard-coded `FALLBACK_RAZORPAY_KEY_ID = "rzp_test_T20oJ6nrpmfzIp"` / `FALLBACK_RAZORPAY_KEY_SECRET = "<REDACTED-ROTATE-ME>"` (only when env is unset/empty).
 - All `process.env.RAZORPAY_*` reads in the `/app/api/` tree routed through the resolver: `createRazorpayOrder`, `createRazorpayPaymentLink`, `verifyRazorpaySignature`, `diagnostics.ts`, `token-purchase/create-order.ts` (response `key_id`), `plan-checkout/create-order.ts` (response `keyId`).
 - **`/app/supabase/functions/*`** — same fallback pattern applied to all 6 Razorpay-using edge functions: `razorpay-create-order`, `razorpay-verify-payment`, `gift-token-create-order`, `gift-token-verify`, `product-checkout`, `product-payment-verify`. Pattern: `Deno.env.get("RAZORPAY_KEY_ID") || "rzp_test_T20oJ6nrpmfzIp"`.
 - Diagnostics endpoint now exposes `razorpay_key_id_source: "env" | "code-fallback"` so the operator can see at a glance which key path is active on the deployed Vercel instance.
@@ -141,7 +152,7 @@ See `/app/memory/test_credentials.md`. Razorpay test card: `4111 1111 1111 1111`
 - Emergent preview diagnostics: `razorpay_auth_ok: true, ready: true` confirmed live.
 
 ## Implemented (2026-06-15) — Razorpay test keys live + full E2E green
-- User-supplied fresh test keys (`rzp_test_T20oJ6nrpmfzIp` / `Klh1GTpbLsd4eOSl4KU0oFa4`) loaded into `/app/backend/.env` and live-stress-tested **10/10 OK** against api.razorpay.com.
+- User-supplied fresh test keys (`rzp_test_T20oJ6nrpmfzIp` / `<REDACTED-ROTATE-ME>`) loaded into `/app/backend/.env` and live-stress-tested **10/10 OK** against api.razorpay.com.
 - `GET /api/payment/diagnostics` → `{razorpay_auth_ok: true, ready: true}`.
 - Backend regression suite: **35/35 pytest pass**; Node smoke: **13/13 pass**.
 - Testing agent verified end-to-end: BuyTokens (₹1000 / 1M tokens → `order_T21EWOZ7WuEvB5`) AND Pricing Pro (₹15,106 annual → `order_T21FQLpuKLdKsW`) — both open the real Razorpay test-mode modal with the correct order id + amount, step-by-step console logs (1/4 → 3/4) fire correctly, no "Razorpay keys are invalid" toast anywhere. Step 4/4 (card → OTP → verify) is iframe-sandboxed (Playwright can't drive the Razorpay checkout iframe) but the HMAC verify path is covered by pytest `test_valid_signature_credits_tokens` + `test_idempotency_already_processed`.

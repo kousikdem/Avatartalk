@@ -20,7 +20,7 @@ import httpx
 from PIL import Image
 
 # Test configuration
-BASE_URL = "https://a5195e1d-f035-4021-aa23-5db7ab334fff.preview.emergentagent.com"
+BASE_URL = "https://leak-sweep--0rfan5nr.preview.emergentagent.com"
 SUPABASE_URL = "https://hnxnvdzrwbtmcohdptfq.supabase.co"
 SUPABASE_ANON_KEY = "sb_publishable_uaL-zelOHdGlOlvaWuIa1A_wtL7mx3p"
 

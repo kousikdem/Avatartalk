@@ -68,7 +68,14 @@ Deno.serve(async (req) => {
     }
 
     // Decrement inventory atomically
-    const { data: inventoryResult, error: inventoryError } = await supabaseClient
+    // decrement_product_inventory is server-only (EXECUTE revoked from browser
+    // roles), so call it with the service-role client after the order was
+    // verified to belong to this buyer above.
+    const serviceClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    const { data: inventoryResult, error: inventoryError } = await serviceClient
       .rpc('decrement_product_inventory', {
         p_product_id: order.product_id,
         p_variant_id: order.variant_id,

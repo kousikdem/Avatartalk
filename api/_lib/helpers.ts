@@ -36,30 +36,15 @@ function ensureWebSocketPolyfill(): void {
 /**
  * Resolve the active Razorpay API key + secret.
  *
- * Precedence:
- *   1. Vercel / Node `process.env.RAZORPAY_KEY_ID` + `RAZORPAY_KEY_SECRET`
- *      (preferred — supports key rotation without a redeploy)
- *   2. Hard-coded fallback to the user-provided test keys
- *      (`rzp_test_T20oJ6nrpmfzIp` / `Klh1GTpbLsd4eOSl4KU0oFa4`),
- *      live-verified 10/10 OK against api.razorpay.com on 2026-06-15.
- *
- * The fallback exists because the Vercel project's env vars are still
- * pointing at a dead key pair (`rzp_test_T1a…`) and we can't update
- * them from inside this repo. Hard-coding the test keys is acceptable
- * here because (a) they are TEST keys — they can only debit the
- * sandbox, not real cards, and (b) the operator can override either
- * value by setting the corresponding env var on Vercel.
- *
- * IMPORTANT: when you rotate to LIVE keys (`rzp_live_*`), set them on
- * Vercel Env Vars instead of editing this file — never commit live
- * secrets.
+ * Credentials come ONLY from environment variables
+ * (Vercel → Project → Settings → Environment Variables, or backend/.env
+ * for the local dev-api plugin). Secrets must never be committed to git.
+ * If either value is missing we return empty strings and callers surface
+ * a clear "Razorpay not configured" error instead of using a stale key.
  */
-const FALLBACK_RAZORPAY_KEY_ID = 'rzp_test_T20oJ6nrpmfzIp';
-const FALLBACK_RAZORPAY_KEY_SECRET = 'Klh1GTpbLsd4eOSl4KU0oFa4';
-
 export function getRazorpayCredentials(): { keyId: string; keySecret: string } {
-  const keyId = process.env.RAZORPAY_KEY_ID || FALLBACK_RAZORPAY_KEY_ID;
-  const keySecret = process.env.RAZORPAY_KEY_SECRET || FALLBACK_RAZORPAY_KEY_SECRET;
+  const keyId = (process.env.RAZORPAY_KEY_ID || '').trim();
+  const keySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
   return { keyId, keySecret };
 }
 
@@ -191,6 +176,9 @@ export async function createRazorpayOrder(opts: {
   maxAttempts?: number;
 }): Promise<RazorpayOrder> {
   const { keyId, keySecret } = getRazorpayCredentials();
+  if (!keyId || !keySecret) {
+    throw new Error('Razorpay not configured: set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET env vars');
+  }
   const maxAttempts = Math.max(1, opts.maxAttempts ?? 4);
   const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
   const requestBody = JSON.stringify({
@@ -270,10 +258,7 @@ export function verifyRazorpaySignature(
   paymentId: string,
   signature: string,
 ): boolean {
-  // Must use the SAME secret that signed the order in createRazorpayOrder
-  // — so prefer env, fall back to the hard-coded test secret. Otherwise
-  // we'd verify a signature made with `FALLBACK_RAZORPAY_KEY_SECRET`
-  // against an env-only secret and reject every valid payment.
+  // Must use the SAME secret that signed the order in createRazorpayOrder.
   const { keySecret } = getRazorpayCredentials();
   if (!keySecret) return false;
   const expected = crypto
@@ -336,6 +321,9 @@ export interface RazorpayPaymentLink {
 
 export async function createRazorpayPaymentLink(payload: Record<string, unknown>): Promise<RazorpayPaymentLink> {
   const { keyId, keySecret } = getRazorpayCredentials();
+  if (!keyId || !keySecret) {
+    throw new Error('Razorpay not configured: set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET env vars');
+  }
   const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
   const body = JSON.stringify(payload);
   const maxAttempts = 4;

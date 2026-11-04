@@ -77,175 +77,46 @@ agenthub/agents/youtube/db
 # Mobile development
 android-sdk/
 
-# Environment & credential files (secrets only — public VITE_* keys live in .env.production)
+# ─── Secrets & credentials (NEVER commit) ─────────────────────────────
+# Env files at any depth (backend/.env, frontend/.env, api/.env, …)
 .env
-.env.local
-.env.development
-.env.development.local
-.env.test
-.env.test.local
-*.env.local
-credentials.json
-*token.json*
-*credentials.json*
+.env.*
+*.env
+**/.env
+**/.env.*
+# Supabase local secrets / CLI state
+supabase/.temp/
+supabase/.branches/
+**/supabase/.temp/
+**/supabase/.branches/
+supabase/functions/.env
+**/supabase/functions/.env
+# Vercel local env pulls
+.vercel
+.env*.local
+# Keys, certs & credential dumps
 *.pem
 *.key
+*.p12
+*.pfx
+*.keystore
+*.jks
+id_rsa*
+id_ed25519*
+credentials.json
+*credentials*.json
+*token.json*
+service-account*.json
+*-service-account.json
 .credentials
+secrets.json
+*.secret
+*.secrets
+# Secret-scan reports (contain raw findings)
+gitleaks-report*.json
 
-# Allow safe-to-commit env files
+# Allow safe-to-commit env templates (must stay LAST so they win)
 !.env.example
+!**/.env.example
 !.env.production
 !frontend/.env.production
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
