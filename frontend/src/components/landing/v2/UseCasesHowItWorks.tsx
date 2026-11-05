@@ -1,6 +1,6 @@
 import React from 'react';
 import { BadgeCheck, UserPlus, PenTool, Link2, ArrowRight } from 'lucide-react';
-import { IMG, SectionPill } from './assets';
+import { IMG, SectionPill, CARD } from './assets';
 
 const CASES = [
   { img: IMG.techFounder, handle: '@techfounder', role: 'Tech Founder', desc: 'Answering questions, sharing products & booking calls.' },
@@ -12,63 +12,63 @@ const CASES = [
 const STEPS = [
   { icon: UserPlus, title: 'Create Profile', desc: 'Sign up in seconds' },
   { icon: PenTool, title: 'Design Avatar', desc: 'Choose a style & voice' },
-  { icon: Link2, title: 'Add Links & AI', desc: 'Add links, products and train your AI' },
+  { icon: Link2, title: 'Add Links & AI', desc: 'Add your links, products and train your AI' },
 ];
 
 const UseCasesHowItWorks: React.FC = () => (
-  <section className="px-3 pt-16 sm:px-6 md:pt-20">
-    <div className="mx-auto grid max-w-7xl gap-6 xl:grid-cols-12">
-      {/* Use cases */}
-      <div id="use-cases" data-testid="use-cases-section" className="rounded-3xl bg-white p-5 ring-1 ring-violet-100 sm:p-7 xl:col-span-7">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,2fr)] lg:items-center">
-          <div>
-            <SectionPill>Use Cases</SectionPill>
-            <h2 className="mt-3 text-3xl font-extrabold leading-tight tracking-tight text-[#140F3A]">
-              Built for Creators, Founders, Businesses & More
-            </h2>
-            <p className="mt-3 text-sm leading-relaxed text-slate-600">One AI avatar platform for personal brand, business, education, coaching and beyond.</p>
-          </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {CASES.map((c) => (
-              <article key={c.handle} className="group overflow-hidden rounded-2xl bg-white ring-1 ring-violet-100 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-500/15">
-                <div className="aspect-[4/3.4] overflow-hidden bg-violet-100">
-                  <img src={c.img} alt={c.role} loading="lazy" className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105" />
-                </div>
-                <div className="p-2.5">
-                  <p className="flex items-center gap-1 truncate text-[11px] font-bold text-slate-800">{c.handle} <BadgeCheck className="h-3.5 w-3.5 flex-shrink-0 fill-sky-500 text-white" /></p>
-                  <h3 className="mt-0.5 text-sm font-bold text-[#140F3A]">{c.role}</h3>
-                  <p className="mt-0.5 text-[11px] leading-snug text-slate-500">{c.desc}</p>
-                </div>
-              </article>
-            ))}
-          </div>
+  <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] xl:gap-5">
+    {/* Use cases */}
+    <section id="use-cases" data-testid="use-cases-section" className={`${CARD} p-5 sm:p-6`}>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,250px)_minmax(0,1fr)] lg:items-center">
+        <div>
+          <SectionPill>Use Cases</SectionPill>
+          <h2 className="mt-3 text-[1.7rem] font-extrabold leading-[1.1] tracking-tight text-[#140F3A] sm:text-3xl">
+            Built for Creators, Founders, Businesses &amp; More
+          </h2>
+          <p className="mt-2.5 text-sm leading-relaxed text-slate-600">One AI avatar platform for personal brand, business, education, coaching and beyond.</p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {CASES.map((c) => (
+            <article key={c.handle} data-testid={`use-case-${c.handle.slice(1)}`} className="group overflow-hidden rounded-2xl bg-white ring-1 ring-violet-100 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-500/15">
+              <div className="aspect-[4/3] overflow-hidden bg-violet-100">
+                <img src={c.img} alt={c.role} loading="lazy" className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105" />
+              </div>
+              <div className="p-2.5">
+                <p className="flex items-center gap-1 truncate text-[11px] font-bold text-slate-800">{c.handle} <BadgeCheck className="h-3.5 w-3.5 flex-shrink-0 fill-sky-500 text-white" /></p>
+                <h3 className="mt-0.5 text-sm font-bold text-[#140F3A]">{c.role}</h3>
+                <p className="mt-0.5 text-[11px] leading-snug text-slate-500">{c.desc}</p>
+              </div>
+            </article>
+          ))}
         </div>
       </div>
+    </section>
 
-      {/* How it works */}
-      <div id="how-it-works" data-testid="how-it-works-section" className="rounded-3xl bg-gradient-to-br from-white to-violet-50 p-5 ring-1 ring-violet-100 sm:p-7 xl:col-span-5">
-        <SectionPill>How It Works</SectionPill>
-        <h2 className="mt-3 text-3xl font-extrabold leading-tight tracking-tight text-[#140F3A]">Create Your AI Avatar in 3 Simple Steps</h2>
-        <ol className="mt-6 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-          {STEPS.map(({ icon: Icon, title, desc }, i) => (
-            <React.Fragment key={title}>
-              <li className="flex-1 rounded-2xl bg-white p-4 text-center shadow-sm ring-1 ring-violet-100 transition-all hover:shadow-lg hover:shadow-violet-500/10">
-                <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-violet-600"><Icon className="h-5 w-5" /></span>
-                <div className="mt-3 flex items-center justify-center gap-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-600 text-xs font-extrabold text-white">{i + 1}</span>
-                  <h3 className="text-sm font-bold text-[#140F3A]">{title}</h3>
+    {/* How it works */}
+    <section id="how-it-works" data-testid="how-it-works-section" className={`${CARD} flex flex-col justify-center bg-gradient-to-br from-white to-violet-50/80 p-5 sm:p-6`}>
+      <SectionPill className="self-start">How It Works</SectionPill>
+      <h2 className="mt-3 text-[1.5rem] font-extrabold leading-tight tracking-tight text-[#140F3A] sm:text-[1.65rem]">Create Your AI Avatar in 3 Simple Steps</h2>
+      <ol className="mt-5 flex flex-col items-stretch gap-2 sm:flex-row sm:items-stretch">
+        {STEPS.map(({ icon: Icon, title, desc }, i) => (
+          <React.Fragment key={title}>
+            <li data-testid={`how-step-${i + 1}`} className="flex flex-1 items-center gap-3 rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-violet-100 transition-all hover:shadow-lg hover:shadow-violet-500/10 sm:flex-col sm:justify-center sm:text-center">
+              <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-violet-50 text-violet-600"><Icon className="h-5 w-5" /></span>
+              <div>
+                <div className="flex items-center gap-2 sm:justify-center">
+                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-violet-600 text-[11px] font-extrabold text-white">{i + 1}</span>
+                  <h3 className="text-[13px] font-bold leading-tight text-[#140F3A]">{title}</h3>
                 </div>
-                <p className="mt-1.5 text-xs leading-snug text-slate-500">{desc}</p>
-              </li>
-              {i < STEPS.length - 1 && (
-                <ArrowRight aria-hidden className="mx-auto h-5 w-5 flex-shrink-0 rotate-90 text-violet-500 sm:rotate-0" />
-              )}
-            </React.Fragment>
-          ))}
-        </ol>
-      </div>
-    </div>
-  </section>
+                <p className="mt-1 text-xs leading-snug text-slate-500">{desc}</p>
+              </div>
+            </li>
+            {i < STEPS.length - 1 && (
+              <ArrowRight aria-hidden className="mx-auto h-4 w-4 flex-shrink-0 rotate-90 self-center text-violet-500 sm:rotate-0" />
+            )}
+          </React.Fragment>
+        ))}
+      </ol>
+    </section>
+  </div>
 );
 
 export default UseCasesHowItWorks;

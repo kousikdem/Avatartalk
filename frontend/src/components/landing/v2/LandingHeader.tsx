@@ -57,7 +57,7 @@ const LandingHeader: React.FC<Props> = ({ onSignIn, onSignUp }) => {
       data-testid="landing-header"
       className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/85 shadow-[0_8px_30px_-12px_rgba(76,29,149,0.25)] backdrop-blur-xl' : 'bg-white/60 backdrop-blur-md'}`}
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+      <div className="mx-auto flex h-16 max-w-[1500px] items-center justify-between px-4 sm:px-6">
         <Link to="/" data-testid="header-logo" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
           <Logo />
         </Link>

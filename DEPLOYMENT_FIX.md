@@ -118,7 +118,7 @@ yarn build
 ```
 
 ### Preview Site ✅
-- URL: https://leak-sweep--0rfan5nr.preview.emergentagent.com
+- URL: https://avatartalk-v2--75bj1hoi.preview.emergentagent.com
 - Status: Working perfectly
 - Calendar component: Functional
 

@@ -11,17 +11,21 @@ export const IMG = {
   priya: `${BASE}/3ff7cae86ef298be9edb7e7e179ac77123a52628f36eb4c45468bb1608c34db0.jpeg`,
 };
 
+/** Shared layout tokens so every landing block lines up on one grid. */
+export const WRAP = 'mx-auto w-full max-w-[1500px] px-3 sm:px-5 lg:px-6';
+export const CARD =
+  'rounded-[24px] bg-white/90 ring-1 ring-violet-100 shadow-[0_18px_50px_-30px_rgba(91,33,182,0.45)] backdrop-blur';
+
 /** Smooth-scroll to a landing section by id (accounts for sticky header). */
 export const scrollToSection = (id: string) => {
   const el = document.getElementById(id);
   if (!el) return;
-  const top = el.getBoundingClientRect().top + window.scrollY - 76;
+  const top = el.getBoundingClientRect().top + window.scrollY - 80;
   window.scrollTo({ top, behavior: 'smooth' });
 };
 
 export const SectionPill: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
-  <span className={`inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-violet-700 ${className}`}>
+  <span className={`inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.1em] text-violet-700 ${className}`}>
     {children}
   </span>
 );
-

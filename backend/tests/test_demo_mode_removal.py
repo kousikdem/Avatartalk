@@ -16,7 +16,7 @@ import pytest
 import requests
 
 BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://leak-sweep--0rfan5nr.preview.emergentagent.com"
+    "REACT_APP_BACKEND_URL", "https://avatartalk-v2--75bj1hoi.preview.emergentagent.com"
 ).rstrip("/")
 SUPABASE_URL = "https://hnxnvdzrwbtmcohdptfq.supabase.co"
 SUPABASE_ANON = "sb_publishable_uaL-zelOHdGlOlvaWuIa1A_wtL7mx3p"

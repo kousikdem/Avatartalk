@@ -22,8 +22,8 @@ const Col: React.FC<{ title: string; children: React.ReactNode }> = ({ title, ch
 const btn = 'hover:text-white transition-colors text-left';
 
 const LandingFooter: React.FC = () => (
-  <footer data-testid="landing-footer" className="mt-16 px-3 pb-3 sm:px-6 md:mt-24">
-    <div className="mx-auto max-w-7xl rounded-[28px] bg-[#120E2E] px-6 py-10 sm:px-10">
+  <footer data-testid="landing-footer" className="mt-5 px-3 pb-3 sm:px-5 lg:px-6">
+    <div className="mx-auto max-w-[1452px] rounded-[24px] bg-[#120E2E] px-6 py-10 sm:px-10">
       <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr_1.4fr]">
         <div>
           <Logo light />
