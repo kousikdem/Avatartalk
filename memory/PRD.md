@@ -216,3 +216,4 @@ See `/app/memory/test_credentials.md`. Razorpay test card: `4111 1111 1111 1111`
 - Pricing reads platform_pricing_plans with realtime updates (Super Admin edits reflect instantly).
 - Files: frontend/src/components/LandingPage.tsx, components/landing/v2/* (FeaturesShowcase removed; FeaturesGrid + LiveProfilePreview added).
 - Frontend env needs VITE_SUPABASE_URL + VITE_SUPABASE_PUBLISHABLE_KEY (set via secrets).
+- Nov 2026 (later): reordered to top-to-bottom mockup rows: Hero → Quick features bar → Use cases|How it works → Features grid|See in Action (new SeeInAction.tsx) → Live profile (full-width purple banner) → Pricing|Social proof → Final CTA → Footer. Node pinned to 24.x for Vercel.

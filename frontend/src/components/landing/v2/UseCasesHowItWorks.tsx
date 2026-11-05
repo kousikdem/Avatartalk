@@ -34,7 +34,7 @@ const UseCasesHowItWorks: React.FC = () => (
                 <img src={c.img} alt={c.role} loading="lazy" className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105" />
               </div>
               <div className="p-2.5">
-                <p className="flex items-center gap-1 truncate text-[11px] font-bold text-slate-800">{c.handle} <BadgeCheck className="h-3.5 w-3.5 flex-shrink-0 fill-sky-500 text-white" /></p>
+                <p className="flex min-w-0 items-center gap-1 text-[11px] font-bold text-slate-800"><span className="truncate">{c.handle}</span> <BadgeCheck className="h-3.5 w-3.5 flex-shrink-0 fill-sky-500 text-white" /></p>
                 <h3 className="mt-0.5 text-sm font-bold text-[#140F3A]">{c.role}</h3>
                 <p className="mt-0.5 text-[11px] leading-snug text-slate-500">{c.desc}</p>
               </div>

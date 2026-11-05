@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { UserCircle2, MessageSquare, Crown, LayoutGrid, ArrowRight } from 'lucide-react';
+import { UserCircle2, MessageSquare, Crown, LayoutGrid, ArrowRight, CheckCircle2 } from 'lucide-react';
 import KousikProfileCard from './KousikProfileCard';
 import { SectionPill } from './assets';
 
@@ -94,6 +94,18 @@ const LiveProfilePreview: React.FC<{ onCreate: () => void }> = ({ onCreate }) =>
             See how your AI avatar profile looks and works with chat, subscription, links and products — this is
             <span className="font-semibold text-white"> @kousik</span>&apos;s page, exactly as visitors see it.
           </p>
+          <ul className="mt-5 space-y-2.5" data-testid="live-preview-highlights">
+            {[
+              'Talks to every visitor in your voice, 24/7',
+              'Sells products & books meetings right inside the chat',
+              'Paid subscriptions, followers and posts on one page',
+              'Shareable as a single link — avatartalk.co/yourname',
+            ].map((t) => (
+              <li key={t} className="flex items-start gap-2.5 text-sm text-violet-50">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-300" /> {t}
+              </li>
+            ))}
+          </ul>
           <button
             data-testid="live-preview-cta"
             onClick={onCreate}
