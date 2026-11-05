@@ -55,10 +55,10 @@ const Index: React.FC<{ mode?: IndexMode }> = ({ mode }) => {
     );
   }
 
-  // Default landing page (only for non-authenticated users)
+  // Default landing page (only for non-authenticated users).
+  // LandingPage renders its own header/nav.
   return (
     <>
-      <Navbar showAuth={true} />
       <LandingPage />
       
       {/* Auto Pop-up Visitor Auth Modal */}

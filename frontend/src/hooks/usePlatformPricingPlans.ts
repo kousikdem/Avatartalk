@@ -95,7 +95,7 @@ export const usePlatformPricingPlans = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchPlans = async () => {
+  const fetchPlans = async (silent = false) => {
     try {
       const { data, error } = await supabase
         .from('platform_pricing_plans')
@@ -107,11 +107,13 @@ export const usePlatformPricingPlans = () => {
       setPlans((data || []) as unknown as PlatformPricingPlan[]);
     } catch (error) {
       console.error('Error fetching platform plans:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load pricing plans",
-        variant: "destructive",
-      });
+      if (!silent) {
+        toast({
+          title: "Error",
+          description: "Failed to load pricing plans",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -119,12 +121,38 @@ export const usePlatformPricingPlans = () => {
 
   useEffect(() => {
     fetchPlans();
+
+    // Real-time: any change a super admin makes in Plan Management
+    // (price, discount, features, popular badge, active flag) is pushed
+    // to every open page instantly via Supabase Realtime.
+    const channel = supabase
+      .channel(`platform-pricing-plans-${Math.random().toString(36).slice(2)}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'platform_pricing_plans' },
+        () => { fetchPlans(true); }
+      )
+      .subscribe();
+
+    // Fallbacks in case Realtime is not enabled for the table:
+    // refresh when the tab regains focus and every 60s while visible.
+    const onFocus = () => { if (document.visibilityState === 'visible') fetchPlans(true); };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
+    const poll = window.setInterval(onFocus, 60000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onFocus);
+      window.clearInterval(poll);
+    };
   }, []);
 
   return {
     plans,
     loading,
-    refetch: fetchPlans
+    refetch: () => fetchPlans()
   };
 };
 
