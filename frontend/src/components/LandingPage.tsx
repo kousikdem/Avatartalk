@@ -7,6 +7,8 @@ import UseCasesHowItWorks from './landing/v2/UseCasesHowItWorks';
 import FeaturesGrid from './landing/v2/FeaturesGrid';
 import LiveProfilePreview from './landing/v2/LiveProfilePreview';
 import PricingSection from './landing/v2/PricingSection';
+import SocialProof from './landing/v2/SocialProof';
+import SeeInAction from './landing/v2/SeeInAction';
 import FinalCTA from './landing/v2/FinalCTA';
 import LandingFooter from './landing/v2/LandingFooter';
 import { scrollToSection, WRAP } from './landing/v2/assets';
@@ -36,35 +38,43 @@ const LandingPage: React.FC = () => {
       <LandingHeader onSignIn={() => openAuth('signin')} onSignUp={signUp} />
 
       <main className="relative space-y-4 pt-[76px] sm:space-y-5">
-        {/* Row 1 — Hero + Quick features */}
+        {/* 2 — Hero */}
         <div className={WRAP}>
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_460px] xl:gap-5">
-            <HeroSection onCreate={signUp} onDemo={() => scrollToSection('live-preview')} />
-            <QuickFeatures />
-          </div>
+          <HeroSection onCreate={signUp} onDemo={() => scrollToSection('live-preview')} />
         </div>
 
-        {/* Row 2 — Use cases + How it works */}
+        {/* 3 — Quick features bar */}
+        <div className={WRAP}>
+          <QuickFeatures />
+        </div>
+
+        {/* 4 + 5 — Use cases · How it works */}
         <div className={WRAP}>
           <UseCasesHowItWorks />
         </div>
 
-        {/* Row 3 — Features grid / Pricing  +  Live profile / Social proof */}
+        {/* 6 — Features grid · See it in action */}
         <div className={WRAP}>
-          <div className="grid gap-4 xl:grid-cols-12 xl:gap-5">
-            <div className="xl:col-span-5 xl:row-start-1">
-              <FeaturesGrid />
-            </div>
-            <div className="xl:col-span-7 xl:col-start-6 xl:row-span-2 xl:row-start-1">
-              <LiveProfilePreview onCreate={signUp} />
-            </div>
-            <div className="xl:col-span-5 xl:row-start-2">
-              <PricingSection onSelectPlan={signUp} />
-            </div>
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] lg:gap-5">
+            <FeaturesGrid />
+            <SeeInAction onWatch={() => scrollToSection('live-preview')} />
           </div>
         </div>
 
-        {/* Row 4 — Final CTA */}
+        {/* 7 — Live profile preview (@kousik) */}
+        <div className={WRAP}>
+          <LiveProfilePreview onCreate={signUp} />
+        </div>
+
+        {/* 8 + 9 — Pricing · Social proof */}
+        <div className={WRAP}>
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] lg:gap-5">
+            <PricingSection onSelectPlan={signUp} />
+            <SocialProof />
+          </div>
+        </div>
+
+        {/* 10 — Final CTA */}
         <div className={WRAP}>
           <FinalCTA onCreate={signUp} />
         </div>

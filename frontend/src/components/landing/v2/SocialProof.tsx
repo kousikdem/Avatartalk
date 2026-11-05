@@ -25,9 +25,9 @@ const SocialProof: React.FC = () => {
   const t = TESTIMONIALS[i];
 
   return (
-    <section data-testid="social-proof-section" className="relative z-20 rounded-2xl bg-white/95 p-4 ring-1 ring-violet-100 shadow-[0_12px_40px_-24px_rgba(91,33,182,0.45)]">
-      <h2 className="text-[17px] font-extrabold tracking-tight text-[#140F3A]">Loved by Creators &amp; Businesses</h2>
-      <div className="mt-3 grid grid-cols-3 gap-2">
+    <section data-testid="social-proof-section" className="relative z-20 flex h-full flex-col justify-center rounded-[24px] bg-white/95 p-5 ring-1 ring-violet-100 shadow-[0_18px_50px_-30px_rgba(91,33,182,0.45)] sm:p-6">
+      <h2 className="text-xl font-extrabold tracking-tight text-[#140F3A] sm:text-[1.4rem]">Loved by Creators &amp; Businesses</h2>
+      <div className="mt-4 grid grid-cols-3 gap-2">
         {STATS.map(({ icon: Icon, value, label, tone, fill }) => (
           <div key={label} className="flex flex-col items-center gap-1 rounded-xl bg-violet-50/60 px-1 py-2 text-center" data-testid={`stat-${label.toLowerCase().replace(/[^a-z]+/g, '-')}`}>
             <Icon className={`h-5 w-5 flex-shrink-0 ${tone}`} fill={fill ? 'currentColor' : 'none'} />

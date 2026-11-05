@@ -11,22 +11,24 @@ const ITEMS = [
   { icon: BarChart3, title: 'Analytics', sub: 'Track & grow', tone: 'from-indigo-500 to-violet-600', glow: 'shadow-indigo-500/40', ring: 'bg-indigo-100' },
 ];
 
-/** 6 core capabilities — strip on mobile/tablet, 3×2 tile grid beside the hero on desktop. */
+/** Full-width bar of 6 core capabilities (3×2 on phones, 6 across from tablet up). */
 const QuickFeatures: React.FC = () => (
-  <section data-testid="quick-features" aria-label="Quick features" className="grid grid-cols-3 gap-2.5 sm:gap-3 md:grid-cols-6 xl:grid-cols-3 xl:grid-rows-2">
-    {ITEMS.map(({ icon: Icon, title, sub, tone, glow, ring }) => (
+  <section data-testid="quick-features" aria-label="Quick features" className={`${CARD} grid grid-cols-3 gap-1 p-2 sm:p-3 md:grid-cols-6`}>
+    {ITEMS.map(({ icon: Icon, title, sub, tone, glow, ring }, i) => (
       <div
         key={title}
         data-testid={`quick-feature-${title.toLowerCase().replace(/[^a-z]+/g, '-')}`}
-        className={`${CARD} group flex flex-col items-center justify-center px-2 py-4 text-center transition-all duration-300 hover:-translate-y-1 hover:ring-violet-300 sm:py-5`}
+        className={`group relative flex flex-col items-center justify-center rounded-2xl px-1.5 py-3.5 text-center transition-colors duration-300 hover:bg-violet-50/80 sm:py-4 ${
+          i % 6 !== 0 ? 'md:before:absolute md:before:left-0 md:before:top-1/4 md:before:h-1/2 md:before:w-px md:before:bg-violet-100' : ''
+        }`}
       >
-        <span className={`flex h-12 w-12 items-center justify-center rounded-full ${ring} transition-transform duration-300 group-hover:scale-110 sm:h-14 sm:w-14 xl:h-16 xl:w-16`}>
-          <span className={`flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br ${tone} text-white shadow-lg ${glow} sm:h-10 sm:w-10 xl:h-12 xl:w-12`}>
-            <Icon className="h-5 w-5 xl:h-6 xl:w-6" />
+        <span className={`flex h-12 w-12 items-center justify-center rounded-full ${ring} transition-transform duration-300 group-hover:scale-110 sm:h-14 sm:w-14`}>
+          <span className={`flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br ${tone} text-white shadow-lg ${glow} sm:h-10 sm:w-10`}>
+            <Icon className="h-5 w-5" />
           </span>
         </span>
-        <h3 className="mt-2.5 text-[13px] font-bold leading-tight text-[#140F3A] sm:text-sm xl:text-base">{title}</h3>
-        <p className="mt-0.5 text-[11px] leading-tight text-slate-500 sm:text-xs xl:text-[13px]">{sub}</p>
+        <h3 className="mt-2 text-[13px] font-bold leading-tight text-[#140F3A] sm:text-[15px]">{title}</h3>
+        <p className="mt-0.5 text-[11px] leading-tight text-slate-500 sm:text-[13px]">{sub}</p>
       </div>
     ))}
   </section>

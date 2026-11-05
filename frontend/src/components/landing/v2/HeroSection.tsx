@@ -32,13 +32,13 @@ const HeroSection: React.FC<Props> = ({ onCreate, onDemo }) => {
       <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-fuchsia-300/40 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-32 left-1/3 h-80 w-80 rounded-full bg-indigo-300/30 blur-3xl" />
 
-      <div className="relative grid items-center gap-2 px-5 pt-7 sm:px-8 md:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] md:pt-0 lg:px-10">
+      <div className="relative grid items-center gap-2 px-5 pt-7 sm:px-8 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] md:pt-0 lg:px-10">
         {/* Copy */}
         <div className="py-2 md:py-10">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs font-bold text-violet-700 shadow-sm ring-1 ring-violet-200">
             <Hash className="h-3.5 w-3.5" /> #1 AI Avatar for Your Digital Identity
           </span>
-          <h1 className="mt-4 text-[2.2rem] font-extrabold leading-[1.04] tracking-tight text-[#140F3A] sm:text-5xl lg:text-[3rem] 2xl:text-[3.25rem]">
+          <h1 className="mt-4 text-[2.2rem] font-extrabold leading-[1.04] tracking-tight text-[#140F3A] sm:text-5xl lg:text-[3.4rem] 2xl:text-[3.9rem]">
             <span className="whitespace-nowrap">Your AI Avatar.</span> <span className="whitespace-nowrap">One Link.</span>{' '}
             <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-500 bg-clip-text text-transparent">
               Endless Opportunities.
@@ -72,7 +72,7 @@ const HeroSection: React.FC<Props> = ({ onCreate, onDemo }) => {
         </div>
 
         {/* Visual */}
-        <div className="relative mx-auto h-[380px] w-full max-w-[460px] self-end sm:h-[420px]">
+        <div className="relative mx-auto h-[380px] w-full max-w-[560px] self-end sm:h-[440px]">
           <div className="absolute bottom-0 right-0 h-full w-[66%]">
             <div className="absolute inset-x-6 bottom-6 top-10 rounded-full bg-white/60 blur-2xl" />
             <img
