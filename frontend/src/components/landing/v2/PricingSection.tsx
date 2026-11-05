@@ -87,7 +87,7 @@ const PricingSection: React.FC<{ onSelectPlan: (planKey: string) => void }> = ({
                     <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold ${pop ? 'bg-white text-violet-700' : 'bg-amber-100 text-amber-700'}`}>{p.offer_badge || 'Popular'}</span>
                   )}
                 </div>
-                <p className={`truncate text-[11px] ${pop ? 'text-violet-100' : 'text-slate-500'}`}>{p.tagline || (isFree ? 'Get started' : '')}</p>
+                <p className={`text-[11px] leading-snug ${pop ? 'text-violet-100' : 'text-slate-500'}`}>{p.tagline || (isFree ? 'Get started' : '')}</p>
 
                 <div className="mt-2.5 flex items-end gap-1" data-testid={`plan-price-${p.plan_key}`}>
                   <span key={`${cur}-${price}`} className="text-[1.6rem] font-extrabold leading-none tracking-tight animate-in fade-in slide-in-from-bottom-1 duration-500">{symbol}{fmt(price)}</span>

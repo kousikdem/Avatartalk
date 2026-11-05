@@ -210,3 +210,9 @@ See `/app/memory/test_credentials.md`. Razorpay test card: `4111 1111 1111 1111`
 - New regression suite `/app/backend/tests/test_vercel_razorpay_retry.js` (Node, 8/8 passing) — transpiles `helpers.ts` with esbuild, stubs `global.fetch`, and verifies: happy path, retry-on-401-then-success, no-retry-on-400, give-up-after-maxAttempts, retry-on-5xx, HMAC accept/reject/malformed.
 - `/app/backend/tests/test_payment_routes.py` regression — still 19/19 passing (the live-Razorpay test still goes through, proving the FastAPI retry wrapper masks the flaky 401s).
 - UI verified: Buy Tokens page → `data-testid="buy-tokens-button"` → POST `/api/payment/token-purchase/create-order` returns 200 → real Razorpay test-mode modal opens with the correct order_id + amount.
+
+## Landing page bento redesign (Nov 2026)
+- `/` LandingPage rebuilt as bento layout matching mockup: Header · Hero + Quick features · Use cases + How it works · Features grid + Pricing (left) | Live @kousik profile preview (real-profile replica, live data w/ sample fallback, indicators + connectors) + Social proof · Final CTA · Footer (unchanged content).
+- Pricing reads platform_pricing_plans with realtime updates (Super Admin edits reflect instantly).
+- Files: frontend/src/components/LandingPage.tsx, components/landing/v2/* (FeaturesShowcase removed; FeaturesGrid + LiveProfilePreview added).
+- Frontend env needs VITE_SUPABASE_URL + VITE_SUPABASE_PUBLISHABLE_KEY (set via secrets).

@@ -42,8 +42,8 @@ const SocialProof: React.FC = () => {
         <img src={t.img} alt={t.name} className="h-11 w-11 flex-shrink-0 rounded-full object-cover object-top ring-2 ring-violet-100" loading="lazy" />
         <div className="min-w-0 flex-1">
           <blockquote key={i} className="min-h-[54px] text-[12.5px] italic leading-snug text-slate-700 animate-in fade-in duration-500">“{t.quote}”</blockquote>
-          <figcaption className="mt-1.5 flex items-center justify-between gap-2">
-            <span className="truncate text-xs font-semibold text-[#140F3A]">— {t.name}, <span className="font-normal text-slate-500">{t.role}</span></span>
+          <figcaption className="mt-1.5 flex flex-wrap items-center justify-between gap-2">
+            <span className="text-xs font-semibold leading-snug text-[#140F3A]">— {t.name}, <span className="font-normal text-slate-500">{t.role}</span></span>
             <span className="flex flex-shrink-0 gap-1.5">
               <button data-testid="testimonial-prev" onClick={() => setI((x) => (x - 1 + n) % n)} aria-label="Previous testimonial" className="flex h-7 w-7 items-center justify-center rounded-full bg-white ring-1 ring-violet-200 transition-colors hover:bg-violet-600 hover:text-white"><ChevronLeft className="h-3.5 w-3.5" /></button>
               <button data-testid="testimonial-next" onClick={() => setI((x) => (x + 1) % n)} aria-label="Next testimonial" className="flex h-7 w-7 items-center justify-center rounded-full bg-white ring-1 ring-violet-200 transition-colors hover:bg-violet-600 hover:text-white"><ChevronRight className="h-3.5 w-3.5" /></button>

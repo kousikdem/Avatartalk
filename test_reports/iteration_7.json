@@ -1,0 +1,29 @@
+{
+  "summary": "Frontend-only test of the redesigned bento landing page at '/' (localStorage hasSeenVisitorAuth=true). Tested at 1920, 1536, 768 and 390px with Playwright. All requested flows pass: header nav scrolls to features/use-cases/live-preview/pricing, the Resources dropdown shows 6 items, Sign In and Create Account open the auth modal on the right tab, and the mobile menu opens, scrolls, closes and opens signup. Hero: 4 question chips show the right answers, Create opens signup, Live Demo and Talk to Me scroll to #live-preview. 6 quick-feature tiles, 4 use-case cards, 3 how-steps and 6 feature tiles render. Kousik card shows 'Kousik Kar' / '@kousik', sample stats 847 chats / 1.2K followers / 5.3K views / 940, 'Subscribe - ₹99/mo' and Follow. Posts/Chat/Product tabs switch content, the theme toggle switches dark/light and the demo chat auto-plays. On desktop there are 4 SVG connectors, hovering an indicator highlights it and scales its marker, and indicators don't overlap the card. Pricing from the DB: INR 0/999/1,699/3,999 and USD 0/12/19/49, Pro marked Popular. The currency toggle works, free/creator/pro CTAs open signup and the compare link goes to /pricing. Testimonial next/prev rotate. The final CTA opens signup. The footer has 5 social links. No horizontal scroll at 390, 768 or 1536. No page errors.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Desktop social proof (in live preview)", "issues": ["Testimonial caption cut off as '— Rahul…'; the role is hidden because the caption is squeezed next to the prev/next buttons in the narrow column"]},
+      {"screen": "Desktop pricing cards", "issues": ["Plan taglines cut off ('Personal Brand B…', 'Professional & C…') at 1536 and 1920"]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Optional: let the testimonial name/role wrap (or move prev/next buttons to their own row) so the role isn't cut off",
+    "Optional: let pricing taglines wrap to 2 lines (line-clamp-2) instead of cutting them off"
+  ],
+  "critical_code_review_comments": [
+    "HeroSection.ask: setTimeout isn't cleared on unmount or on quick repeat clicks; an earlier timer can end the typing state early (cosmetic)",
+    "SocialProof: the 6s auto-rotate interval isn't reset after manual prev/next, so the slide can change right after a user click",
+    "PricingSection 'Live' indicator is always shown; it doesn't reflect the realtime channel's subscription status",
+    "Kousik card posts/product tab content has no data-testid wrappers (tested via text)"
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100%"},
+  "seed_data_creation": "None. No DB changes.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Landing v2 components are in frontend/src/components/landing/v2. Default currency at test time was USD. Realtime super-admin price updates were not triggered (no admin rights); only the rendered DB prices were checked. @kousik profile doesn't exist, so sample stats show."
+}
