@@ -457,8 +457,8 @@ export const DoneStep: React.FC<StepProps & { onDashboard: () => void }> = ({ us
   const copy = async () => { try { await navigator.clipboard.writeText(url); toast.success('Link copied'); } catch { toast.error('Copy failed'); } };
   return (
     <div className="text-center">
+      <div className="flex justify-center gap-6 text-xl mb-2">{['🎉', '✨', '🎊', '💜'].map((e) => <span key={e} className="animate-bounce">{e}</span>)}</div>
       <div className="relative mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-200"><Check className="w-10 h-10 text-white" /></div>
-      <div className="pointer-events-none absolute inset-x-0 top-24 flex justify-center gap-6 text-xl">{['🎉', '✨', '🎊', '💜'].map((e) => <span key={e} className="animate-bounce">{e}</span>)}</div>
       <h2 className="mt-4 text-3xl font-extrabold text-slate-900">Your AI Avatar is Ready! 🎉</h2>
       <p className="text-sm text-slate-500 mt-2">Your profile is live. Share your link, start chatting, selling, and growing your audience.</p>
       <div className="relative mx-auto mt-5 w-40 h-40 rounded-2xl overflow-hidden bg-slate-100 shadow">{p.avatar && <img src={p.avatar} alt="" className="w-full h-full object-cover object-top" />}

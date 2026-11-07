@@ -217,3 +217,15 @@ See `/app/memory/test_credentials.md`. Razorpay test card: `4111 1111 1111 1111`
 - Files: frontend/src/components/LandingPage.tsx, components/landing/v2/* (FeaturesShowcase removed; FeaturesGrid + LiveProfilePreview added).
 - Frontend env needs VITE_SUPABASE_URL + VITE_SUPABASE_PUBLISHABLE_KEY (set via secrets).
 - Nov 2026 (later): reordered to top-to-bottom mockup rows: Hero → Quick features bar → Use cases|How it works → Features grid|See in Action (new SeeInAction.tsx) → Live profile (full-width purple banner) → Pricing|Social proof → Final CTA → Footer. Node pinned to 24.x for Vercel.
+
+## Implemented (2026-11) — Full redesign: dashboard, Avatar Studio (3D), 12-step onboarding
+- Env: frontend/.env (VITE_SUPABASE_URL/PUBLISHABLE_KEY/PROJECT_ID) + backend/.env (SUPABASE_URL, SUPABASE_ANON_KEY, MONGO_URL, DB_NAME) — both gitignored.
+- Theme violet/indigo (index.css vars), lavender dashboard bg, `.dash-page` skin for all dashboard pages; Analytics converted to light.
+- New shell: DashboardSidebar (gradient active pill, Products/Virtual Collab sub-menus, upgrade card), DashboardHeaderStrip (feature search, Create menu, tokens, bell, user menu w/ share, setup guide).
+- DashboardHome (components/dashboard): welcome banner, realtime stats (user_stats/notifications channels), quick actions, activity tabs, next steps, avatar card, earnings, integrations (host_integrations), tokens, plan.
+- Avatar: lib/avatar/{presets,avatarConfig}.ts, hooks/useAvatarEditor (undo/redo, AI edit, save everywhere), components/avatar3d/{AvatarStage (R3F photo card + procedural 3D character), AvatarEditorPanel, AvatarPresetGrid}; pages/AvatarStudioPage.tsx. Cartoon/anime presets in /public/avatars. Save → storage uploads/<uid>/ + profiles.avatar_url/profile_pic_url + `avatartalk:avatar-updated` event.
+- Backend POST /api/avatar/ai-edit (Gemini Nano Banana via EMERGENT_LLM_KEY, Creator+ plan). Not on Vercel functions yet.
+- Auth: components/auth/AuthCard (sign in / sign up with phone, OAuth), AuthModal wraps it.
+- Onboarding: components/onboarding/OnboardingFlow.tsx + v2/OnbSteps.tsx + PlanPaywall (monthly/yearly, Razorpay via hooks/usePlanCheckout).
+- Plan gating: Free = presets, colour/light, background, 3D character; Creator+ = photo upload, AI restyle.
+- PENDING: SUPABASE_SERVICE_ROLE_KEY not set in backend → /api/payment/* return 503 with clear message.
