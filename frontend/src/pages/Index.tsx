@@ -2,9 +2,9 @@ import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import LandingPage from '@/components/LandingPage';
-import Dashboard from '@/components/Dashboard';
+import Dashboard from '@/components/dashboard/DashboardHome';
 import PricingPage from '@/components/PricingPage';
-import VisitorAuth from '@/components/VisitorAuth';
+import VisitorAuth from '@/components/AuthModal';
 
 const EnhancedAvatarStudio = lazy(() => import('@/components/EnhancedAvatarStudio'));
 

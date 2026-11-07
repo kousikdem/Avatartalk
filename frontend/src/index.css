@@ -36,24 +36,24 @@
 
   :root {
     --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
+    --foreground: 232 40% 14%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 0%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 0%;
-    --primary: 217 91% 60%;
+    --primary: 248 84% 60%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96%;
+    --secondary: 248 60% 97%;
     --secondary-foreground: 0 0% 0%;
-    --muted: 210 40% 96%;
+    --muted: 248 40% 97%;
     --muted-foreground: 215 16% 47%;
-    --accent: 210 40% 96%;
+    --accent: 248 60% 96%;
     --accent-foreground: 0 0% 0%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 217 91% 60%;
+    --border: 245 30% 92%;
+    --input: 245 30% 90%;
+    --ring: 248 84% 60%;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
@@ -72,24 +72,24 @@
 
   .dark {
     --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
+    --foreground: 232 40% 14%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 0%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 0%;
-    --primary: 217 91% 60%;
+    --primary: 248 84% 60%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96%;
+    --secondary: 248 60% 97%;
     --secondary-foreground: 0 0% 0%;
-    --muted: 210 40% 96%;
+    --muted: 248 40% 97%;
     --muted-foreground: 215 16% 47%;
-    --accent: 210 40% 96%;
+    --accent: 248 60% 96%;
     --accent-foreground: 0 0% 0%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 217 91% 60%;
+    --border: 245 30% 92%;
+    --input: 245 30% 90%;
+    --ring: 248 84% 60%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -337,3 +337,22 @@
   opacity: 1.0;
   transform: rotate(3deg) translate(0px, -4px);
 }
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
+/* ── Dashboard page skin (applies the new design language to every dashboard page) ── */
+.dash-page > div:first-child,
+.dash-page > div:first-child > .min-h-screen { background: transparent !important; }
+.dash-page .min-h-screen { min-height: auto; }
+.dash-page .bg-card.border,
+.dash-page .rounded-lg.border.bg-white,
+.dash-page .rounded-xl.border.bg-white {
+  border-radius: 1rem;
+  border-color: hsl(245 30% 93%);
+  box-shadow: 0 4px 20px -12px rgba(76, 61, 190, 0.25);
+}
+.dash-page [role="tablist"] { border-radius: 0.85rem; }
+.dash-page [role="tab"][data-state="active"] { color: hsl(248 84% 55%); font-weight: 600; }

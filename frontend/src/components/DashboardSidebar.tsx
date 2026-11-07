@@ -1,38 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { 
-  Home, 
-  Plus, 
-  Users, 
-  MessageSquare, 
-  Settings, 
-  BarChart3,
-  Calendar,
-  Brain,
-  User,
-  Package,
-  Share2,
-  Shield,
-  ArrowUp,
-  Sparkles,
-  DollarSign
+import React, { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import {
+  LayoutDashboard, SquarePen, Package, Video, MessageSquareText, Bot, BrainCircuit, Share2,
+  BarChart3, CircleDollarSign, Users, Settings, Shield, ChevronDown, Menu, Crown, ArrowRight,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarHeader,
-  SidebarFooter,
-  useSidebar,
-} from "@/components/ui/sidebar";
-import { Button } from '@/components/ui/button';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarFooter, useSidebar } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { usePlanFeatures, PlanFeatureKey } from '@/hooks/usePlanFeatures';
+import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import Logo from './Logo';
 
 interface DashboardSidebarProps {
@@ -42,172 +17,129 @@ interface DashboardSidebarProps {
 interface NavItem {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
-  url: string;
-  gradient: string;
-  requiredPlan?: 'free' | 'creator' | 'pro' | 'business';
-  featureKey?: PlanFeatureKey;
+  url?: string;
+  action?: 'create-post';
+  children?: { title: string; url: string }[];
 }
 
-const navigationItems: NavItem[] = [
-  { title: "Dashboard", icon: Home, url: "/settings/dashboard", gradient: "from-blue-500 to-cyan-500", requiredPlan: 'free' },
-  { title: "Products", icon: Package, url: "/settings/products", gradient: "from-emerald-500 to-teal-500", requiredPlan: 'creator', featureKey: 'payments_enabled' },
-  { title: "Virtual Collaboration", icon: Calendar, url: "/settings/virtual-collaboration", gradient: "from-violet-500 to-purple-500", requiredPlan: 'pro', featureKey: 'virtual_meetings_enabled' },
-  { title: "Feed", icon: MessageSquare, url: "/settings/feed", gradient: "from-pink-500 to-rose-500", requiredPlan: 'free' },
-  { title: "Avatar", icon: User, url: "/settings/avatar", gradient: "from-amber-500 to-orange-500", requiredPlan: 'free' },
-  { title: "AI Training", icon: Brain, url: "/settings/ai-training", gradient: "from-fuchsia-500 to-pink-500", requiredPlan: 'free' },
-  { title: "Social Links", icon: Share2, url: "/settings/social-links", gradient: "from-sky-500 to-blue-500", requiredPlan: 'free' },
-  { title: "Analytics", icon: BarChart3, url: "/settings/analytics", gradient: "from-indigo-500 to-violet-500", requiredPlan: 'pro', featureKey: 'advanced_analytics' },
-  { title: "Earnings", icon: DollarSign, url: "/settings/earnings", gradient: "from-emerald-500 to-green-600", requiredPlan: 'free' },
-  { title: "Followers", icon: Users, url: "/settings/followers", gradient: "from-green-500 to-emerald-500", requiredPlan: 'free' },
-  { title: "Settings", icon: Settings, url: "/settings/account", gradient: "from-slate-500 to-gray-600", requiredPlan: 'free' },
+const NAV: NavItem[] = [
+  { title: 'Dashboard', icon: LayoutDashboard, url: '/settings/dashboard' },
+  { title: 'Create Post', icon: SquarePen, action: 'create-post' },
+  { title: 'Products', icon: Package, url: '/settings/products', children: [
+    { title: 'All Products', url: '/settings/products' },
+    { title: 'Promo Codes', url: '/settings/promo' },
+  ] },
+  { title: 'Virtual Collaboration', icon: Video, url: '/settings/virtual-collaboration', children: [
+    { title: 'Meetings & Bookings', url: '/settings/virtual-collaboration' },
+    { title: 'Subscriptions', url: '/settings/subscriptions' },
+  ] },
+  { title: 'Feed', icon: MessageSquareText, url: '/settings/feed' },
+  { title: 'Avatar Studio', icon: Bot, url: '/settings/avatar' },
+  { title: 'AI Training', icon: BrainCircuit, url: '/settings/ai-training' },
+  { title: 'Social Links', icon: Share2, url: '/settings/social-links' },
+  { title: 'Analytics', icon: BarChart3, url: '/settings/analytics' },
+  { title: 'Earnings', icon: CircleDollarSign, url: '/settings/earnings' },
+  { title: 'Followers', icon: Users, url: '/settings/followers' },
+  { title: 'Settings', icon: Settings, url: '/settings/account' },
 ];
-
-const planHierarchy: Record<string, number> = {
-  free: 0,
-  creator: 1,
-  pro: 2,
-  business: 3,
-};
 
 const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ onCreatePost }) => {
   const navigate = useNavigate();
-  const { state, setOpen } = useSidebar();
-  const isCollapsed = state === "collapsed";
+  const { pathname } = useLocation();
+  const { state, setOpen, setOpenMobile, toggleSidebar } = useSidebar();
+  const collapsed = state === 'collapsed';
   const isMobile = useIsMobile();
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const { effectivePlanKey, loading: planLoading } = usePlanFeatures();
-
-  const userPlanLevel = planHierarchy[effectivePlanKey] || 0;
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const { effectivePlanKey } = usePlanFeatures();
 
   useEffect(() => {
-    const checkSuperAdmin = async () => {
+    (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
-      const { data } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .single();
-
+      const { data } = await supabase.from('user_roles').select('role').eq('user_id', user.id).maybeSingle();
       setIsSuperAdmin(data?.role === 'super_admin');
-    };
-    checkSuperAdmin();
+    })();
   }, []);
 
-
-  const handleMenuItemClick = (e: React.MouseEvent, item: NavItem) => {
-    // Navigate to page directly - features are locked on the page itself, not the sidebar
-    if (isMobile) {
-      setOpen(false);
-    }
-  };
-
-  // Sidebar menu items are never locked - pages handle their own feature locking
-  const isFeatureLocked = (item: NavItem): boolean => {
-    return false;
-  };
-
-  const allNavItems: NavItem[] = isSuperAdmin 
-    ? [...navigationItems, { title: "Super Admin", icon: Shield, url: "/settings/super-admin", gradient: "from-yellow-500 to-amber-500", requiredPlan: 'free' }]
-    : navigationItems;
-
-  const nextPlan = effectivePlanKey === 'free' ? 'Creator' 
-    : effectivePlanKey === 'creator' ? 'Pro'
-    : effectivePlanKey === 'pro' ? 'Business'
-    : null;
+  const close = () => { if (isMobile) { setOpenMobile?.(false); setOpen(false); } };
+  const items: NavItem[] = isSuperAdmin ? [...NAV, { title: 'Super Admin', icon: Shield, url: '/settings/super-admin' }] : NAV;
+  const nextPlan = effectivePlanKey === 'free' ? 'Creator' : effectivePlanKey === 'creator' ? 'Pro' : effectivePlanKey === 'pro' ? 'Business' : null;
+  const isActive = (it: NavItem) => !!it.url && (pathname === it.url || it.children?.some((c) => c.url === pathname));
 
   return (
-    <Sidebar 
-      className="border-r border-gray-200 bg-white shadow-sm"
-      collapsible="icon"
-    >
-      <SidebarHeader className="p-3 border-b border-gray-200 bg-white">
-        {/* Minimal header - main branding is in the header strip */}
-        <div className="flex items-center justify-center">
-          {isCollapsed ? (
+    <Sidebar className="border-r border-slate-100 bg-white" collapsible="icon">
+      <SidebarHeader className="px-4 pt-5 pb-3 bg-white">
+        <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'}`}>
+          <button type="button" onClick={() => navigate('/settings/dashboard')} className="flex items-center gap-2" data-testid="sidebar-logo">
             <Logo size="sm" className="shadow-md" />
-          ) : (
-            <p className="text-xs text-gray-500 font-medium">Navigation</p>
+            {!collapsed && <span className="text-xl font-extrabold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">AvatarTalk.co</span>}
+          </button>
+          {!collapsed && (
+            <button type="button" onClick={toggleSidebar} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100" data-testid="sidebar-collapse">
+              <Menu className="w-5 h-5" />
+            </button>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="p-3 bg-white">
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <div className="mb-4">
-              <Button
-                onClick={onCreatePost}
-                className={`w-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 hover:from-blue-600 hover:via-purple-600 hover:to-indigo-700 text-white border-0 ${
-                  isCollapsed ? 'px-3 py-4' : 'px-4 py-3'
-                }`}
-                size={isCollapsed ? "icon" : "default"}
-              >
-                <Plus className={`flex-shrink-0 ${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`} strokeWidth={2.5} />
-                {!isCollapsed && <span className="ml-2 text-sm font-semibold">Create Post</span>}
-              </Button>
-            </div>
-
-            <SidebarMenu className="space-y-1.5">
-              {allNavItems.map((item) => {
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      className={`bg-white hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 text-gray-700 hover:text-gray-900 w-full transition-all duration-200 rounded-lg border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md backdrop-blur-sm ${
-                        item.title === 'Super Admin' ? 'border-primary/30 bg-primary/5' : ''
-                      }`}
-                      tooltip={isCollapsed ? item.title : undefined}
-                    >
-                      <Link 
-                        to={item.url} 
-                        className={`flex items-center w-full ${
-                          isCollapsed ? 'justify-center p-3' : 'gap-3 p-3'
-                        }`}
-                        onClick={(e) => handleMenuItemClick(e, item)}
-                      >
-                        <div className={`p-1.5 rounded-lg bg-gradient-to-br ${item.gradient}`}>
-                          <item.icon className="w-4 h-4 flex-shrink-0 text-white" />
-                        </div>
-                        {!isCollapsed && (
-                          <div className="flex items-center justify-between flex-1 min-w-0">
-                            <span className="truncate text-sm font-medium text-gray-700">
-                              {item.title}
-                            </span>
-                          </div>
-                        )}
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+      <SidebarContent className="px-3 py-2 bg-white">
+        <nav className="space-y-1" data-testid="sidebar-nav">
+          {items.map((it) => {
+            const active = isActive(it);
+            const open = expanded === it.title || (active && !!it.children && expanded !== `!${it.title}`);
+            const cls = `group flex items-center w-full rounded-xl transition-all ${collapsed ? 'justify-center p-2.5' : 'gap-3 px-3.5 py-2.5'} ${active
+              ? 'bg-gradient-to-r from-violet-600 to-indigo-500 text-white shadow-md shadow-violet-200'
+              : 'text-slate-700 hover:bg-violet-50 hover:text-violet-700'}`;
+            const inner = (
+              <>
+                <it.icon className={`w-5 h-5 shrink-0 ${active ? 'text-white' : 'text-slate-600 group-hover:text-violet-600'}`} />
+                {!collapsed && <span className="flex-1 text-left text-[15px] font-medium truncate">{it.title}</span>}
+                {!collapsed && it.children && (
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpanded(open ? `!${it.title}` : it.title); }}
+                  />
+                )}
+              </>
+            );
+            const testId = `nav-${it.title.toLowerCase().replace(/\s+/g, '-')}`;
+            return (
+              <div key={it.title}>
+                {it.action === 'create-post' ? (
+                  <button type="button" className={cls} onClick={() => { onCreatePost(); close(); }} data-testid={testId} title={it.title}>{inner}</button>
+                ) : (
+                  <Link to={it.url!} className={cls} onClick={close} data-testid={testId} title={it.title}>{inner}</Link>
+                )}
+                {!collapsed && it.children && open && (
+                  <div className="ml-11 mt-1 mb-1 space-y-0.5 border-l border-violet-100 pl-3">
+                    {it.children.map((c) => (
+                      <Link key={c.url + c.title} to={c.url} onClick={close} data-testid={`subnav-${c.title.toLowerCase().replace(/[^a-z]+/g, '-')}`}
+                        className={`block text-sm py-1.5 ${pathname === c.url ? 'text-violet-700 font-semibold' : 'text-slate-500 hover:text-violet-700'}`}>{c.title}</Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </nav>
       </SidebarContent>
 
-      {/* Pricing Plan Button at Bottom */}
-      <SidebarFooter className="p-3 border-t border-gray-200 bg-white">
-        <Button
-          onClick={() => navigate('/pricing')}
-          className={`w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-md hover:shadow-lg transition-all ${
-            isCollapsed ? 'px-2 py-2' : 'px-4 py-2.5'
-          }`}
-          size={isCollapsed ? "icon" : "default"}
-        >
-          {isCollapsed ? (
-            <Sparkles className="w-4 h-4" />
-          ) : (
-            <>
-              <Sparkles className="w-4 h-4 mr-2" />
-              <span className="text-sm font-medium">
-                {nextPlan ? `Upgrade to ${nextPlan}` : 'View Plans'}
-              </span>
-              {nextPlan && <ArrowUp className="w-3.5 h-3.5 ml-1" />}
-            </>
-          )}
-        </Button>
+      <SidebarFooter className="p-3 bg-white">
+        {collapsed ? (
+          <button type="button" onClick={() => navigate('/pricing')} className="mx-auto w-10 h-10 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white flex items-center justify-center" data-testid="sidebar-upgrade-icon">
+            <Crown className="w-4 h-4" />
+          </button>
+        ) : (
+          <div className="rounded-2xl bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-100 p-4" data-testid="sidebar-upgrade-card">
+            <p className="flex items-center gap-2 font-bold text-violet-700"><Crown className="w-4 h-4 text-amber-500" /> {nextPlan ? `Upgrade to ${nextPlan}` : 'You are on Business'}</p>
+            <p className="text-xs text-slate-500 mt-1">{nextPlan ? 'Unlock all features & earn more' : 'All features unlocked'}</p>
+            <button type="button" onClick={() => { navigate('/pricing'); close(); }} data-testid="sidebar-upgrade-btn"
+              className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 shadow-md">
+              {nextPlan ? 'Upgrade Now' : 'View Plans'} <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </SidebarFooter>
     </Sidebar>
   );

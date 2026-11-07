@@ -27,7 +27,7 @@ yarn build
 ```
 
 ### Preview Site
-**URL**: https://avatartalk-v2--75bj1hoi.preview.emergentagent.com  
+**URL**: https://persona-dashboard-3--22wewsgq.preview.emergentagent.com  
 **Status**: ✅ Working perfectly
 
 ---
@@ -141,7 +141,7 @@ yarn build
 
 ## 🌐 URLs
 
-- **Preview**: https://avatartalk-v2--75bj1hoi.preview.emergentagent.com
+- **Preview**: https://persona-dashboard-3--22wewsgq.preview.emergentagent.com
 - **Vercel**: https://avatartalk-p1ia4t6zc-kousik-kars-projects.vercel.app
 
 ---

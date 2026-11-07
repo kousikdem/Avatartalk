@@ -57,6 +57,19 @@ app = FastAPI(
     openapi_url="/api/openapi.json"
 )
 
+
+@app.middleware("http")
+async def _require_payment_config(request, call_next):
+    """Return a clear message instead of a 500 when payment secrets are missing."""
+    p = request.url.path
+    if p.startswith("/api/payment/") and request.method == "POST" and "webhook" not in p:
+        missing = [k for k in ("RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET", "SUPABASE_SERVICE_ROLE_KEY") if not os.environ.get(k)]
+        if missing:
+            from fastapi.responses import JSONResponse
+            return JSONResponse(status_code=503, content={"detail": "Payments are not configured yet (missing server keys). Please try again shortly.", "missing": missing})
+    return await call_next(request)
+
+
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 

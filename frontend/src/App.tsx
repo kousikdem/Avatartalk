@@ -90,7 +90,7 @@ const DashboardPageLayout = lazy(() => import("@/components/DashboardPageLayout"
 const OnboardingFlow = lazy(() => import("./components/onboarding/OnboardingFlow"));
 const Index = lazy(() => import("./pages/Index"));
 const NotFound = lazy(() => import("./pages/NotFound"));
-const AvatarPage = lazy(() => import("./pages/NewAvatarStudio"));
+const AvatarPage = lazy(() => import("./pages/AvatarStudioPage"));
 const FeedPage = lazy(() => import("./pages/FeedPage"));
 const VirtualCollaborationPage = lazy(() => import("./components/VirtualCollaborationPage"));
 const ProductsPage = lazy(() => import("./pages/ProductsPage"));
@@ -149,7 +149,7 @@ ProfileFallback.displayName = 'ProfileFallback';
 
 // ─── Authenticated Routes ────────────────────────────────────────────────────────
 const AuthenticatedRoutes = memo(() => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 768);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const isMobile = useIsMobile();
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
@@ -176,6 +176,17 @@ const AuthenticatedRoutes = memo(() => {
     });
     return () => { cancelled = true; };
   }, [user?.id]);
+
+  useEffect(() => {
+    const open = () => setIsCreatePostOpen(true);
+    const openOnb = () => setNeedsOnboarding(true);
+    window.addEventListener('avatartalk:create-post', open);
+    window.addEventListener('avatartalk:open-onboarding', openOnb);
+    return () => {
+      window.removeEventListener('avatartalk:create-post', open);
+      window.removeEventListener('avatartalk:open-onboarding', openOnb);
+    };
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -239,11 +250,11 @@ const AuthenticatedRoutes = memo(() => {
         open={sidebarOpen}
         onOpenChange={setSidebarOpen}
       >
-        <div className="flex min-h-screen w-full bg-background">
+        <div className="flex min-h-screen w-full bg-[#f6f5ff]">
           <Suspense fallback={null}>
             <DashboardSidebar onCreatePost={() => setIsCreatePostOpen(true)} />
           </Suspense>
-          <main className="flex-1 min-w-0 transition-all duration-200 bg-background">
+          <main className="flex-1 min-w-0 transition-all duration-200 bg-[#f6f5ff]">
             <Suspense fallback={<PageFallback />}>
               <Routes>
                 <Route path="/" element={<Navigate to="/settings/dashboard" replace />} />

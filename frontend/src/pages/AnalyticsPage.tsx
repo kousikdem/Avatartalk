@@ -39,7 +39,7 @@ const PIE_RING = [
 
 // ─── Shared chart defaults ───────────────────────────────────────────────────
 const AXIS_STYLE = { fill: '#64748b', fontSize: 11, fontFamily: 'inherit' };
-const GRID_COLOR = 'rgba(255,255,255,0.04)';
+const GRID_COLOR = 'rgba(15,23,42,0.06)';
 
 // ─── Custom Tooltip ───────────────────────────────────────────────────────────
 const ModernTooltip = ({ active, payload, label, fmtValue }: any) => {
@@ -47,15 +47,15 @@ const ModernTooltip = ({ active, payload, label, fmtValue }: any) => {
   let displayLabel = label;
   try { displayLabel = format(new Date(label), 'MMM d, yyyy'); } catch {}
   return (
-    <div className="rounded-2xl border border-white/10 bg-slate-900/95 backdrop-blur-xl p-4 shadow-2xl shadow-black/60 min-w-[160px]">
-      <p className="text-xs text-slate-400 font-medium mb-3 pb-2 border-b border-white/8">{displayLabel}</p>
+    <div className="rounded-2xl border border-slate-200 bg-white backdrop-blur-xl p-4 shadow-2xl shadow-black/60 min-w-[160px]">
+      <p className="text-xs text-slate-500 font-medium mb-3 pb-2 border-b border-slate-100">{displayLabel}</p>
       {payload.map((e: any, i: number) => (
         <div key={`${e.dataKey || e.name || 'series'}-${i}`} className="flex items-center justify-between gap-4 mb-1.5">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: e.color || e.fill }} />
-            <span className="text-xs text-slate-400">{e.name}</span>
+            <span className="text-xs text-slate-500">{e.name}</span>
           </div>
-          <span className="text-sm font-bold text-white">
+          <span className="text-sm font-bold text-slate-900">
             {fmtValue ? fmtValue(e.value) : e.value?.toLocaleString()}
           </span>
         </div>
@@ -82,7 +82,7 @@ const ChartLegend = ({ items }: { items: { label: string; color: string }[] }) =
     {items.map(it => (
       <div key={it.label} className="flex items-center gap-1.5">
         <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: it.color }} />
-        <span className="text-xs text-slate-400">{it.label}</span>
+        <span className="text-xs text-slate-500">{it.label}</span>
       </div>
     ))}
   </div>
@@ -96,8 +96,8 @@ const KpiCard = ({ title, value, change, trend, icon: Icon, from, to }: {
   <div
     className="relative overflow-hidden rounded-2xl p-5 flex flex-col gap-3 group cursor-default"
     style={{
-      background: 'rgba(15,15,25,0.7)',
-      border: '1px solid rgba(255,255,255,0.07)',
+      background: '#ffffff',
+      border: '1px solid #eeedf8',
       boxShadow: `0 0 30px ${from}18`,
     }}
   >
@@ -105,13 +105,13 @@ const KpiCard = ({ title, value, change, trend, icon: Icon, from, to }: {
     <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-20 blur-2xl transition-opacity duration-500 group-hover:opacity-40"
       style={{ background: `radial-gradient(circle, ${from}, ${to})` }} />
     <div className="flex items-center justify-between relative z-10">
-      <p className="text-xs font-medium text-slate-400 tracking-wide uppercase">{title}</p>
+      <p className="text-xs font-medium text-slate-500 tracking-wide uppercase">{title}</p>
       <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
         style={{ background: `linear-gradient(135deg,${from},${to})`, boxShadow: `0 4px 15px ${from}40` }}>
-        <Icon className="w-4 h-4 text-white" />
+        <Icon className="w-4 h-4 text-slate-900" />
       </div>
     </div>
-    <p className="text-2xl font-extrabold text-white tracking-tight relative z-10">{value}</p>
+    <p className="text-2xl font-extrabold text-slate-900 tracking-tight relative z-10">{value}</p>
     {change !== undefined && (
       <div className="flex items-center gap-1 relative z-10">
         {trend === 'up'
@@ -133,15 +133,15 @@ const ChartCard = ({ title, subtitle, accent, children }: {
   <div
     className="rounded-2xl p-5 sm:p-6"
     style={{
-      background: 'rgba(10,10,20,0.8)',
+      background: '#ffffff',
       border: `1px solid ${accent}25`,
-      boxShadow: `0 0 40px ${accent}10, inset 0 1px 0 rgba(255,255,255,0.05)`,
+      boxShadow: `0 0 40px ${accent}10, 0 4px 20px -12px rgba(76,61,190,0.25)`,
     }}
   >
     <div className="flex items-center gap-3 mb-5">
       <div className="w-1 h-5 rounded-full" style={{ background: `linear-gradient(to bottom, ${accent}, transparent)` }} />
       <div>
-        <h3 className="text-sm font-semibold text-white">{title}</h3>
+        <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
         {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
       </div>
     </div>
@@ -184,8 +184,8 @@ const DonutCenter = ({ data, colors, centerLabel, centerValue, fmtValue }: {
       </ResponsiveContainer>
       {/* Centre text */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <span className="text-2xl font-black text-white">{centerValue}</span>
-        <span className="text-xs text-slate-400 mt-0.5">{centerLabel}</span>
+        <span className="text-2xl font-black text-slate-900">{centerValue}</span>
+        <span className="text-xs text-slate-500 mt-0.5">{centerLabel}</span>
       </div>
     </div>
   );
@@ -219,7 +219,7 @@ const AnalyticsPage = () => {
   return (
     <div
       className="min-h-screen p-3 sm:p-5 space-y-6"
-      style={{ background: 'linear-gradient(160deg,#08080f 0%,#0d0d1a 50%,#08080f 100%)' }}
+      style={{ background: 'transparent' }}
     >
       {/* ── Header ── */}
       <div className="flex flex-col gap-3">
@@ -227,26 +227,26 @@ const AnalyticsPage = () => {
           <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
             style={{ background: `linear-gradient(135deg,${C.violet.a},${C.indigo.b})`,
               boxShadow: `0 0 20px ${C.violet.a}60` }}>
-            <BarChart3 className="w-5 h-5 text-white" />
+            <BarChart3 className="w-5 h-5 text-slate-900" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-white">Analytics</h1>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900">Analytics</h1>
             <p className="text-xs text-slate-500">Track performance & growth</p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <TokenDisplay />
           <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
-            <SelectTrigger className="w-32 bg-slate-900/60 border-slate-700/50 text-slate-300 rounded-xl text-xs">
+            <SelectTrigger className="w-32 bg-white border-slate-200 text-slate-600 rounded-xl text-xs">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-slate-900 border-slate-700">
+            <SelectContent className="bg-white border-slate-200">
               {[['7d','Last 7 days'],['30d','Last 30 days'],['90d','Last 90 days'],['1y','Last year']]
-                .map(([v, l]) => <SelectItem key={v} value={v} className="text-slate-300">{l}</SelectItem>)}
+                .map(([v, l]) => <SelectItem key={v} value={v} className="text-slate-600">{l}</SelectItem>)}
             </SelectContent>
           </Select>
           <Button variant="outline" size="icon"
-            className="border-slate-700/50 bg-slate-900/60 text-slate-400 hover:text-white rounded-xl w-8 h-8"
+            className="border-slate-200 bg-white text-slate-500 hover:text-slate-900 rounded-xl w-8 h-8"
             onClick={refetch}>
             <RefreshCw className="w-3.5 h-3.5" />
           </Button>
@@ -265,17 +265,17 @@ const AnalyticsPage = () => {
       {!canAccessAnalytics ? (
         <div
           className="rounded-2xl p-12 flex flex-col items-center gap-5"
-          style={{ background:'rgba(10,10,20,0.8)', border:`1px solid ${C.violet.a}30` }}
+          style={{ background:'#ffffff', border:`1px solid ${C.violet.a}30` }}
         >
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
             style={{ background:`linear-gradient(135deg,${C.violet.a},${C.indigo.b})`, boxShadow:`0 0 30px ${C.violet.a}50` }}>
-            <Lock className="w-7 h-7 text-white" />
+            <Lock className="w-7 h-7 text-slate-900" />
           </div>
           <div className="text-center space-y-1.5">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2 justify-center">
+            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2 justify-center">
               Analytics Dashboard <PlanBadge planKey="creator" size="sm" />
             </h3>
-            <p className="text-sm text-slate-400 max-w-md">
+            <p className="text-sm text-slate-500 max-w-md">
               Unlock detailed analytics to track performance, monitor engagement, and grow your audience.
             </p>
           </div>
@@ -287,12 +287,12 @@ const AnalyticsPage = () => {
       ) : (
         <Tabs defaultValue="overview" className="space-y-5">
           {/* Tab list */}
-          <TabsList className="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-1.5 flex overflow-x-auto gap-1 scrollbar-none h-auto">
+          <TabsList className="bg-white border border-slate-200 rounded-2xl p-1.5 flex overflow-x-auto gap-1 scrollbar-none h-auto">
             {[['overview','Overview'],['visitors','Visitors'],['products','Products'],
               ['engagement','Engagement'],['followers','Followers'],
               ['subscriptions','Subscriptions'],['collaborations','Collab']].map(([v,l]) => (
               <TabsTrigger key={v} value={v}
-                className="rounded-xl text-xs px-3 py-1.5 text-slate-400 data-[state=active]:bg-violet-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-violet-600/30 whitespace-nowrap transition-all">
+                className="rounded-xl text-xs px-3 py-1.5 text-slate-500 data-[state=active]:bg-violet-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-violet-600/30 whitespace-nowrap transition-all">
                 {l}
               </TabsTrigger>
             ))}
@@ -343,16 +343,16 @@ const AnalyticsPage = () => {
                 {(analytics?.topProducts||[]).slice(0,5).map((p,i) => (
                   <div key={p.id}
                     className="flex items-center justify-between px-4 py-3 rounded-xl"
-                    style={{ background:`rgba(255,255,255,0.03)`, border:`1px solid rgba(255,255,255,0.05)` }}
+                    style={{ background:'#faf9ff', border:'1px solid #eeedf8' }}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-white flex-shrink-0"
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-slate-900 flex-shrink-0"
                         style={{ background:`linear-gradient(135deg,${PIE_RING[i%PIE_RING.length]},${PIE_RING[(i+2)%PIE_RING.length]})`,
                           boxShadow:`0 0 10px ${PIE_RING[i%PIE_RING.length]}50` }}>
                         {i+1}
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-white leading-tight">{p.title}</p>
+                        <p className="text-sm font-semibold text-slate-900 leading-tight">{p.title}</p>
                         <p className="text-xs text-slate-500">{p.views} views · {p.sales} sales</p>
                       </div>
                     </div>
@@ -430,9 +430,9 @@ const AnalyticsPage = () => {
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center"
                           style={{ background:`linear-gradient(135deg,${color}cc,${color}80)`, boxShadow:`0 4px 12px ${color}40` }}>
-                          <Icon className="w-4 h-4 text-white" />
+                          <Icon className="w-4 h-4 text-slate-900" />
                         </div>
-                        <span className="text-sm text-slate-300">{label}</span>
+                        <span className="text-sm text-slate-600">{label}</span>
                       </div>
                       <span className="text-base font-extrabold" style={{ color }}>
                         {fmtN(val)}{suffix||''}
@@ -452,15 +452,15 @@ const AnalyticsPage = () => {
                       ? (loc.views / analytics!.viewsByLocation[0].views) * 100 : 0;
                     return (
                       <div key={loc.country} className="flex items-center gap-3 py-1.5">
-                        <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white flex-shrink-0"
+                        <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-slate-900 flex-shrink-0"
                           style={{ background:`linear-gradient(135deg,${PIE_RING[i%PIE_RING.length]},${PIE_RING[(i+1)%PIE_RING.length]})` }}>{i+1}</span>
-                        <span className="text-sm text-slate-300 w-28 truncate">{loc.country}</span>
-                        <div className="flex-1 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                        <span className="text-sm text-slate-600 w-28 truncate">{loc.country}</span>
+                        <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
                           <div className="h-full rounded-full transition-all duration-700"
                             style={{ width:`${pct}%`, background:`linear-gradient(90deg,${PIE_RING[i%PIE_RING.length]},${PIE_RING[(i+2)%PIE_RING.length]})`,
                               boxShadow:`0 0 6px ${PIE_RING[i%PIE_RING.length]}80` }} />
                         </div>
-                        <span className="text-xs font-semibold text-slate-400 w-10 text-right">{loc.views}</span>
+                        <span className="text-xs font-semibold text-slate-500 w-10 text-right">{loc.views}</span>
                       </div>
                     );
                   })}
@@ -578,8 +578,8 @@ const AnalyticsPage = () => {
                     </RadialBarChart>
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-3xl font-black text-white">{analytics?.engagementScore?.toFixed(0)||'0'}</span>
-                    <span className="text-xs text-slate-400">out of 100</span>
+                    <span className="text-3xl font-black text-slate-900">{analytics?.engagementScore?.toFixed(0)||'0'}</span>
+                    <span className="text-xs text-slate-500">out of 100</span>
                   </div>
                 </div>
               </div>
@@ -632,14 +632,14 @@ const AnalyticsPage = () => {
                       ? (loc.views/analytics!.viewsByLocation[0].views)*100 : 0;
                     return (
                       <div key={loc.country} className="flex items-center gap-3 py-1">
-                        <span className="w-5 h-5 rounded-md flex items-center justify-center text-xs font-black text-white flex-shrink-0"
+                        <span className="w-5 h-5 rounded-md flex items-center justify-center text-xs font-black text-slate-900 flex-shrink-0"
                           style={{ background:PIE_RING[i%PIE_RING.length] }}>{i+1}</span>
-                        <span className="text-sm text-slate-300 w-24 truncate">{loc.country}</span>
-                        <div className="flex-1 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                        <span className="text-sm text-slate-600 w-24 truncate">{loc.country}</span>
+                        <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
                           <div className="h-full rounded-full" style={{ width:`${pct}%`,
                             background:`linear-gradient(90deg,${PIE_RING[i%PIE_RING.length]},${PIE_RING[(i+2)%PIE_RING.length]})` }} />
                         </div>
-                        <span className="text-xs text-slate-400 w-8 text-right">{loc.views}</span>
+                        <span className="text-xs text-slate-500 w-8 text-right">{loc.views}</span>
                       </div>
                     );
                   })}

@@ -118,7 +118,7 @@ yarn build
 ```
 
 ### Preview Site ✅
-- URL: https://avatartalk-v2--75bj1hoi.preview.emergentagent.com
+- URL: https://persona-dashboard-3--22wewsgq.preview.emergentagent.com
 - Status: Working perfectly
 - Calendar component: Functional
 

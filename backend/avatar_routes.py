@@ -426,3 +426,65 @@ async def seed_presets(x_admin_key: Optional[str] = Header(None), force: bool = 
     await _storage_put_json("presets/index.json", final)
 
     return {"created": len(final), "errors": errors, "total_presets": len(final)}
+
+
+# ─── AI edit (realistic photo restyle: outfit, colours, body style…) ─────────
+class AIEditBody(BaseModel):
+    image_b64: str
+    instruction: str
+    style: Optional[str] = "realistic"
+
+
+async def _plan_for_token(token: str, user_id: str) -> str:
+    """Plan lookup using the caller's own JWT (RLS lets users read their row).
+    Falls back to the service-role lookup when configured."""
+    if SUPABASE_SERVICE_ROLE_KEY:
+        return await _get_user_plan_key(user_id)
+    async with httpx.AsyncClient(timeout=10) as cx:
+        r = await cx.get(
+            f"{SUPABASE_URL}/rest/v1/user_platform_subscriptions",
+            headers={"apikey": SUPABASE_ANON_KEY, "Authorization": f"Bearer {token}"},
+            params={"select": "plan_key,expires_at,status", "user_id": f"eq.{user_id}", "limit": 1},
+        )
+    rows = r.json() if r.status_code == 200 else []
+    if not rows:
+        return "free"
+    sub = rows[0]
+    if (sub.get("status") or "active") != "active":
+        return "free"
+    exp = sub.get("expires_at")
+    if exp:
+        try:
+            if datetime.fromisoformat(str(exp).replace("Z", "+00:00")) < datetime.now(timezone.utc):
+                return "free"
+        except Exception:
+            pass
+    return (sub.get("plan_key") or "free").lower()
+
+
+@router.post("/ai-edit")
+async def ai_edit(body: AIEditBody, authorization: Optional[str] = Header(None)):
+    user = await _get_user_from_token(authorization)
+    user_id = user.get("id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid user")
+    token = authorization.split(" ", 1)[1].strip()
+    plan = await _plan_for_token(token, user_id)
+    if plan == "free":
+        raise HTTPException(status_code=403, detail="AI avatar editing requires the Creator plan or higher")
+    instruction = (body.instruction or "").strip()[:400]
+    if not instruction:
+        raise HTTPException(status_code=400, detail="Instruction is required")
+    if len(body.image_b64) > 8 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Image too large")
+    look = {
+        "cartoon": "Keep the 3D Pixar-style cartoon look.",
+        "anime": "Keep the anime cel-shaded illustration look.",
+    }.get((body.style or "").lower(), "Keep it ultra-photorealistic with natural skin texture.")
+    prompt = (
+        f"Edit this avatar portrait: {instruction}. "
+        "Keep the same person, identity, face, pose, framing and camera angle. "
+        f"{look} Head-and-shoulders, centered, studio lighting. Return only the edited image."
+    )
+    img_bytes = await _gemini_generate(prompt, [body.image_b64])
+    return {"success": True, "image_b64": base64.b64encode(img_bytes).decode()}

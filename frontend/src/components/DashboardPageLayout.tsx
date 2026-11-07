@@ -13,7 +13,7 @@ const DashboardPageLayout: React.FC<DashboardPageLayoutProps> = ({
   return (
     <div className="flex flex-col min-h-screen">
       {!hideHeaderStrip && <DashboardHeaderStrip />}
-      <div className="flex-1">
+      <div className="flex-1 dash-page">
         {children}
       </div>
     </div>

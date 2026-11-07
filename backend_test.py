@@ -20,7 +20,7 @@ import httpx
 from PIL import Image
 
 # Test configuration
-BASE_URL = "https://avatartalk-v2--75bj1hoi.preview.emergentagent.com"
+BASE_URL = "https://persona-dashboard-3--22wewsgq.preview.emergentagent.com"
 SUPABASE_URL = "https://hnxnvdzrwbtmcohdptfq.supabase.co"
 SUPABASE_ANON_KEY = "sb_publishable_uaL-zelOHdGlOlvaWuIa1A_wtL7mx3p"
 
